@@ -2,6 +2,7 @@ package business_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	commercev1 "buf.build/gen/go/antinvestor/commerce/protocolbuffers/go/commerce/v1"
@@ -285,6 +286,41 @@ func (bts *BusinessTestSuite) TestUpdateProductVariant() {
 		require.Equal(t, "Updated Variant", updated.GetName())
 		require.Equal(t, "EUR", updated.GetPrice().GetCurrencyCode())
 		require.Equal(t, int64(20), updated.GetPrice().GetUnits())
+	})
+}
+
+func (bts *BusinessTestSuite) TestListProductVariants() {
+	t := bts.T()
+
+	bts.WithTestDependancies(t, func(t *testing.T, dep *definition.DependencyOption) {
+		ctx, svc := bts.CreateService(t, dep)
+		biz := bts.getBusiness(ctx, svc)
+
+		shop := bts.createTestShop(ctx, biz)
+
+		product, err := biz.catalogBiz.CreateProduct(ctx, &commercev1.CreateProductRequest{
+			ShopId: shop.GetId(),
+			Name:   "Product With Variants",
+		})
+		require.NoError(t, err)
+
+		for i := range 3 {
+			_, err := biz.catalogBiz.CreateProductVariant(ctx, &commercev1.CreateProductVariantRequest{
+				ProductId: product.GetId(),
+				Sku:       fmt.Sprintf("SKU-VAR-%d-%s", i, util.RandomAlphaNumericString(6)),
+				Name:      fmt.Sprintf("Variant %d", i),
+				Price: &money.Money{
+					CurrencyCode: "USD",
+					Units:        int64(10 + i),
+				},
+				StockQuantity: 50,
+			})
+			require.NoError(t, err)
+		}
+
+		variants, err := biz.catalogBiz.ListProductVariants(ctx, product.GetId())
+		require.NoError(t, err)
+		require.Len(t, variants, 3)
 	})
 }
 

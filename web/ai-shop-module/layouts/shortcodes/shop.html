@@ -1,0 +1,34 @@
+{{/*
+  Shop Widget Shortcode
+
+  Usage:
+    {{</* shop
+      shopId="shop-123"
+      productIds="prod-1,prod-2"
+      apiUrl="https://commerce.example.com"
+      profileApiUrl="https://profile.example.com"
+      token="eyJhbG..."
+      mediaBaseUrl="https://files.example.com"
+      paymentUrl="https://pay.example.com/checkout"
+    */>}}
+
+  Parameters:
+    shopId        - (required) Shop identifier
+    productIds    - (optional) Comma-separated product IDs; if 1 product, detail view loads immediately
+    apiUrl        - (required) Commerce Connect-RPC API base URL
+    profileApiUrl - (optional) Profile Connect-RPC API base URL
+    token         - (optional) Bearer token for authentication
+    profileId     - (optional) Explicit profile ID (fallback if JWT sub unavailable)
+    mediaBaseUrl  - (optional) Base URL for media/images
+    paymentUrl    - (optional) Payment page URL for redirect after order
+*/}}
+{{ partial "shop/widget.html" (dict
+  "shopId"        (.Get "shopId")
+  "productIds"    (.Get "productIds")
+  "apiUrl"        (.Get "apiUrl")
+  "profileApiUrl" (.Get "profileApiUrl")
+  "token"         (.Get "token")
+  "profileId"     (.Get "profileId")
+  "mediaBaseUrl"  (.Get "mediaBaseUrl")
+  "paymentUrl"    (.Get "paymentUrl")
+) }}

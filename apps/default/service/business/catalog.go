@@ -18,6 +18,7 @@ type CatalogBusiness interface {
 	ListProducts(ctx context.Context, req *commercev1.ListProductsRequest) ([]*commercev1.Product, error)
 	CreateProductVariant(ctx context.Context, req *commercev1.CreateProductVariantRequest) (*commercev1.ProductVariant, error)
 	UpdateProductVariant(ctx context.Context, req *commercev1.UpdateProductVariantRequest) (*commercev1.ProductVariant, error)
+	ListProductVariants(ctx context.Context, productID string) ([]*commercev1.ProductVariant, error)
 }
 
 func NewCatalogBusiness(
@@ -119,6 +120,19 @@ func (cb *catalogBusiness) CreateProductVariant(ctx context.Context, req *commer
 	}
 
 	return variant.ToAPI(), nil
+}
+
+func (cb *catalogBusiness) ListProductVariants(ctx context.Context, productID string) ([]*commercev1.ProductVariant, error) {
+	variants, err := cb.variantRepo.ListByProductID(ctx, productID)
+	if err != nil {
+		return nil, data.ErrorConvertToAPI(err)
+	}
+
+	result := make([]*commercev1.ProductVariant, 0, len(variants))
+	for _, v := range variants {
+		result = append(result, v.ToAPI())
+	}
+	return result, nil
 }
 
 func (cb *catalogBusiness) UpdateProductVariant(ctx context.Context, req *commercev1.UpdateProductVariantRequest) (*commercev1.ProductVariant, error) {

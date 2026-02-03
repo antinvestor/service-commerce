@@ -121,6 +121,10 @@ func (cs *CommerceServer) ListProducts(
 	return connect.NewResponse(&commercev1.ListProductsResponse{Products: products}), nil
 }
 
+// ListProductVariants handler will be wired here once the proto is updated with:
+//   rpc ListProductVariants(ListProductVariantsRequest) returns (ListProductVariantsResponse)
+// The business logic is already implemented in CatalogBusiness.ListProductVariants().
+
 func (cs *CommerceServer) CreateProductVariant(
 	ctx context.Context,
 	req *connect.Request[commercev1.CreateProductVariantRequest],

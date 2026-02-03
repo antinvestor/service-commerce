@@ -1,0 +1,27 @@
+{{/*
+  Shop Widget Partial
+
+  Renders the shop widget root element, injects configuration,
+  and loads the CSS/JS assets via Hugo's asset pipeline.
+
+  Expects a dict with: shopId, productIds, apiUrl, profileApiUrl, token, profileId, mediaBaseUrl, paymentUrl
+*/}}
+
+{{- $css := resources.Get "css/shop-widget.css" | minify | fingerprint -}}
+<link rel="stylesheet" href="{{ $css.RelPermalink }}" integrity="{{ $css.Data.Integrity }}">
+
+{{- $widgetId := printf "ai-shop-%s" (default "default" .shopId) -}}
+
+<div id="{{ $widgetId }}" class="ai-shop-widget" data-config='{{ dict
+  "shopId"        (default "" .shopId)
+  "productIds"    (default "" .productIds)
+  "apiUrl"        (default "" .apiUrl)
+  "profileApiUrl" (default "" .profileApiUrl)
+  "token"         (default "" .token)
+  "profileId"     (default "" .profileId)
+  "mediaBaseUrl"  (default "" .mediaBaseUrl)
+  "paymentUrl"    (default "" .paymentUrl)
+  | jsonify }}'></div>
+
+{{- $js := resources.Get "js/shop-widget.js" | minify | fingerprint -}}
+<script src="{{ $js.RelPermalink }}" integrity="{{ $js.Data.Integrity }}" defer></script>

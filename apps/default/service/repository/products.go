@@ -23,7 +23,11 @@ func NewProductRepository(ctx context.Context, dbPool pool.Pool, workMan workerp
 	}
 }
 
-func (r *productRepository) ListByShopID(ctx context.Context, shopID string, limit, offset int) ([]*models.Product, error) {
+func (r *productRepository) ListByShopID(
+	ctx context.Context,
+	shopID string,
+	limit, offset int,
+) ([]*models.Product, error) {
 	var products []*models.Product
 	query := r.Pool().DB(ctx, true).Where("shop_id = ?", shopID).Order("created_at DESC")
 	if limit > 0 {
@@ -40,7 +44,11 @@ type productVariantRepository struct {
 	datastore.BaseRepository[*models.ProductVariant]
 }
 
-func NewProductVariantRepository(ctx context.Context, dbPool pool.Pool, workMan workerpool.Manager) ProductVariantRepository {
+func NewProductVariantRepository(
+	ctx context.Context,
+	dbPool pool.Pool,
+	workMan workerpool.Manager,
+) ProductVariantRepository {
 	return &productVariantRepository{
 		BaseRepository: datastore.NewBaseRepository[*models.ProductVariant](
 			ctx, dbPool, workMan, func() *models.ProductVariant { return &models.ProductVariant{} },
@@ -48,7 +56,10 @@ func NewProductVariantRepository(ctx context.Context, dbPool pool.Pool, workMan 
 	}
 }
 
-func (r *productVariantRepository) ListByProductID(ctx context.Context, productID string) ([]*models.ProductVariant, error) {
+func (r *productVariantRepository) ListByProductID(
+	ctx context.Context,
+	productID string,
+) ([]*models.ProductVariant, error) {
 	var variants []*models.ProductVariant
 	err := r.Pool().DB(ctx, true).Where("product_id = ?", productID).Find(&variants).Error
 	return variants, err

@@ -50,11 +50,25 @@ func (bts *BusinessTestSuite) getBusiness(ctx context.Context, svc *frame.Servic
 	fulfilmentLineRepo := repository.NewFulfilmentLineRepository(ctx, dbPool, workMan)
 
 	return allBiz{
-		shopBiz:       business.NewShopBusiness(ctx, shopRepo),
-		catalogBiz:    business.NewCatalogBusiness(ctx, productRepo, variantRepo, shopRepo),
-		cartBiz:       business.NewCartBusiness(ctx, cartRepo, cartLineRepo, variantRepo),
-		orderBiz:      business.NewOrderBusiness(ctx, orderRepo, orderLineRepo, variantRepo, shopRepo, cartRepo, cartLineRepo),
-		fulfilmentBiz: business.NewFulfilmentBusiness(ctx, fulfilmentRepo, fulfilmentLineRepo, orderRepo, orderLineRepo),
+		shopBiz:    business.NewShopBusiness(ctx, shopRepo),
+		catalogBiz: business.NewCatalogBusiness(ctx, productRepo, variantRepo, shopRepo),
+		cartBiz:    business.NewCartBusiness(ctx, cartRepo, cartLineRepo, variantRepo),
+		orderBiz: business.NewOrderBusiness(
+			ctx,
+			orderRepo,
+			orderLineRepo,
+			variantRepo,
+			shopRepo,
+			cartRepo,
+			cartLineRepo,
+		),
+		fulfilmentBiz: business.NewFulfilmentBusiness(
+			ctx,
+			fulfilmentRepo,
+			fulfilmentLineRepo,
+			orderRepo,
+			orderLineRepo,
+		),
 	}
 }
 
@@ -68,7 +82,11 @@ func (bts *BusinessTestSuite) createTestShop(ctx context.Context, biz allBiz) *c
 	return shop
 }
 
-func (bts *BusinessTestSuite) createTestProductWithVariant(ctx context.Context, biz allBiz, shopID string) (*commercev1.Product, *commercev1.ProductVariant) {
+func (bts *BusinessTestSuite) createTestProductWithVariant(
+	ctx context.Context,
+	biz allBiz,
+	shopID string,
+) (*commercev1.Product, *commercev1.ProductVariant) {
 	t := bts.T()
 
 	product, err := biz.catalogBiz.CreateProduct(ctx, &commercev1.CreateProductRequest{

@@ -49,7 +49,10 @@ func (r *cartLineRepository) GetByCartID(ctx context.Context, cartID string) ([]
 	return lines, err
 }
 
-func (r *cartLineRepository) GetByCartAndVariant(ctx context.Context, cartID, variantID string) (*models.CartLine, error) {
+func (r *cartLineRepository) GetByCartAndVariant(
+	ctx context.Context,
+	cartID, variantID string,
+) (*models.CartLine, error) {
 	line := &models.CartLine{}
 	err := r.Pool().DB(ctx, true).
 		Where("cart_id = ? AND product_variant_id = ?", cartID, variantID).

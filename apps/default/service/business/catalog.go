@@ -16,8 +16,14 @@ type CatalogBusiness interface {
 	CreateProduct(ctx context.Context, req *commercev1.CreateProductRequest) (*commercev1.Product, error)
 	GetProduct(ctx context.Context, id string) (*commercev1.Product, error)
 	ListProducts(ctx context.Context, req *commercev1.ListProductsRequest) ([]*commercev1.Product, error)
-	CreateProductVariant(ctx context.Context, req *commercev1.CreateProductVariantRequest) (*commercev1.ProductVariant, error)
-	UpdateProductVariant(ctx context.Context, req *commercev1.UpdateProductVariantRequest) (*commercev1.ProductVariant, error)
+	CreateProductVariant(
+		ctx context.Context,
+		req *commercev1.CreateProductVariantRequest,
+	) (*commercev1.ProductVariant, error)
+	UpdateProductVariant(
+		ctx context.Context,
+		req *commercev1.UpdateProductVariantRequest,
+	) (*commercev1.ProductVariant, error)
 	ListProductVariants(ctx context.Context, productID string) ([]*commercev1.ProductVariant, error)
 }
 
@@ -40,7 +46,10 @@ type catalogBusiness struct {
 	shopRepo    repository.ShopRepository
 }
 
-func (cb *catalogBusiness) CreateProduct(ctx context.Context, req *commercev1.CreateProductRequest) (*commercev1.Product, error) {
+func (cb *catalogBusiness) CreateProduct(
+	ctx context.Context,
+	req *commercev1.CreateProductRequest,
+) (*commercev1.Product, error) {
 	// Validate shop exists
 	_, err := cb.shopRepo.GetByID(ctx, req.GetShopId())
 	if err != nil {
@@ -72,7 +81,10 @@ func (cb *catalogBusiness) GetProduct(ctx context.Context, id string) (*commerce
 	return product.ToAPI(), nil
 }
 
-func (cb *catalogBusiness) ListProducts(ctx context.Context, req *commercev1.ListProductsRequest) ([]*commercev1.Product, error) {
+func (cb *catalogBusiness) ListProducts(
+	ctx context.Context,
+	req *commercev1.ListProductsRequest,
+) ([]*commercev1.Product, error) {
 	limit := 50
 	offset := 0
 	if req.GetSearch() != nil && req.GetSearch().GetCursor() != nil {
@@ -93,7 +105,10 @@ func (cb *catalogBusiness) ListProducts(ctx context.Context, req *commercev1.Lis
 	return result, nil
 }
 
-func (cb *catalogBusiness) CreateProductVariant(ctx context.Context, req *commercev1.CreateProductVariantRequest) (*commercev1.ProductVariant, error) {
+func (cb *catalogBusiness) CreateProductVariant(
+	ctx context.Context,
+	req *commercev1.CreateProductVariantRequest,
+) (*commercev1.ProductVariant, error) {
 	// Validate product exists
 	_, err := cb.productRepo.GetByID(ctx, req.GetProductId())
 	if err != nil {
@@ -122,7 +137,10 @@ func (cb *catalogBusiness) CreateProductVariant(ctx context.Context, req *commer
 	return variant.ToAPI(), nil
 }
 
-func (cb *catalogBusiness) ListProductVariants(ctx context.Context, productID string) ([]*commercev1.ProductVariant, error) {
+func (cb *catalogBusiness) ListProductVariants(
+	ctx context.Context,
+	productID string,
+) ([]*commercev1.ProductVariant, error) {
 	variants, err := cb.variantRepo.ListByProductID(ctx, productID)
 	if err != nil {
 		return nil, data.ErrorConvertToAPI(err)
@@ -135,7 +153,10 @@ func (cb *catalogBusiness) ListProductVariants(ctx context.Context, productID st
 	return result, nil
 }
 
-func (cb *catalogBusiness) UpdateProductVariant(ctx context.Context, req *commercev1.UpdateProductVariantRequest) (*commercev1.ProductVariant, error) {
+func (cb *catalogBusiness) UpdateProductVariant(
+	ctx context.Context,
+	req *commercev1.UpdateProductVariantRequest,
+) (*commercev1.ProductVariant, error) {
 	variant, err := cb.variantRepo.GetByID(ctx, req.GetVariantId())
 	if err != nil {
 		return nil, data.ErrorConvertToAPI(err)

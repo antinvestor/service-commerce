@@ -15,10 +15,10 @@ import (
 )
 
 type CommerceServer struct {
-	shopBusiness      business.ShopBusiness
-	catalogBusiness   business.CatalogBusiness
-	cartBusiness      business.CartBusiness
-	orderBusiness     business.OrderBusiness
+	shopBusiness       business.ShopBusiness
+	catalogBusiness    business.CatalogBusiness
+	cartBusiness       business.CartBusiness
+	orderBusiness      business.OrderBusiness
 	fulfilmentBusiness business.FulfilmentBusiness
 
 	commercev1connect.UnimplementedCommerceServiceHandler
@@ -42,8 +42,22 @@ func NewCommerceServer(ctx context.Context, svc *frame.Service) *CommerceServer 
 		shopBusiness:    business.NewShopBusiness(ctx, shopRepo),
 		catalogBusiness: business.NewCatalogBusiness(ctx, productRepo, variantRepo, shopRepo),
 		cartBusiness:    business.NewCartBusiness(ctx, cartRepo, cartLineRepo, variantRepo),
-		orderBusiness:   business.NewOrderBusiness(ctx, orderRepo, orderLineRepo, variantRepo, shopRepo, cartRepo, cartLineRepo),
-		fulfilmentBusiness: business.NewFulfilmentBusiness(ctx, fulfilmentRepo, fulfilmentLineRepo, orderRepo, orderLineRepo),
+		orderBusiness: business.NewOrderBusiness(
+			ctx,
+			orderRepo,
+			orderLineRepo,
+			variantRepo,
+			shopRepo,
+			cartRepo,
+			cartLineRepo,
+		),
+		fulfilmentBusiness: business.NewFulfilmentBusiness(
+			ctx,
+			fulfilmentRepo,
+			fulfilmentLineRepo,
+			orderRepo,
+			orderLineRepo,
+		),
 	}
 }
 

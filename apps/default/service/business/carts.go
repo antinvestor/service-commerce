@@ -108,7 +108,10 @@ func (cb *cartBusiness) AddCartLine(ctx context.Context, req *commercev1.AddCart
 	return cb.GetCart(ctx, req.GetCartId())
 }
 
-func (cb *cartBusiness) RemoveCartLine(ctx context.Context, req *commercev1.RemoveCartLineRequest) (*commercev1.Cart, error) {
+func (cb *cartBusiness) RemoveCartLine(
+	ctx context.Context,
+	req *commercev1.RemoveCartLineRequest,
+) (*commercev1.Cart, error) {
 	cart, err := cb.cartRepo.GetWithLines(ctx, req.GetCartId())
 	if err != nil {
 		return nil, data.ErrorConvertToAPI(err)

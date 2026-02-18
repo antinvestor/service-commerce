@@ -88,7 +88,7 @@ type Product struct {
 	Status         int32 `gorm:"default:1"`
 	MediaIDs       StringArray
 
-	Shop     *Shop            `gorm:"foreignKey:ShopID"`
+	Shop     *Shop             `gorm:"foreignKey:ShopID"`
 	Variants []*ProductVariant `gorm:"foreignKey:ProductID"`
 }
 

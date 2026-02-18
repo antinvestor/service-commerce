@@ -59,11 +59,15 @@ func (rts *RepositoryTestSuite) createTestShop(ctx context.Context, shopRepo rep
 	}
 	shop.GenID(ctx)
 	err := shopRepo.Create(ctx, shop)
-	require.NoError(rts.T(), err)
+	rts.Require().NoError(err)
 	return shop
 }
 
-func (rts *RepositoryTestSuite) createTestProduct(ctx context.Context, productRepo repository.ProductRepository, shopID string) *models.Product {
+func (rts *RepositoryTestSuite) createTestProduct(
+	ctx context.Context,
+	productRepo repository.ProductRepository,
+	shopID string,
+) *models.Product {
 	product := &models.Product{
 		ShopID: shopID,
 		Name:   "Test Product " + util.RandomAlphaNumericString(6),
@@ -71,11 +75,15 @@ func (rts *RepositoryTestSuite) createTestProduct(ctx context.Context, productRe
 	}
 	product.GenID(ctx)
 	err := productRepo.Create(ctx, product)
-	require.NoError(rts.T(), err)
+	rts.Require().NoError(err)
 	return product
 }
 
-func (rts *RepositoryTestSuite) createTestVariant(ctx context.Context, variantRepo repository.ProductVariantRepository, productID string) *models.ProductVariant {
+func (rts *RepositoryTestSuite) createTestVariant(
+	ctx context.Context,
+	variantRepo repository.ProductVariantRepository,
+	productID string,
+) *models.ProductVariant {
 	variant := &models.ProductVariant{
 		ProductID:     productID,
 		SKU:           "SKU-" + util.RandomAlphaNumericString(8),
@@ -88,7 +96,7 @@ func (rts *RepositoryTestSuite) createTestVariant(ctx context.Context, variantRe
 	}
 	variant.GenID(ctx)
 	err := variantRepo.Create(ctx, variant)
-	require.NoError(rts.T(), err)
+	rts.Require().NoError(err)
 	return variant
 }
 

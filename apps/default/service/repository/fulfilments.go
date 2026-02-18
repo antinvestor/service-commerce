@@ -43,7 +43,11 @@ type fulfilmentLineRepository struct {
 	datastore.BaseRepository[*models.FulfilmentLine]
 }
 
-func NewFulfilmentLineRepository(ctx context.Context, dbPool pool.Pool, workMan workerpool.Manager) FulfilmentLineRepository {
+func NewFulfilmentLineRepository(
+	ctx context.Context,
+	dbPool pool.Pool,
+	workMan workerpool.Manager,
+) FulfilmentLineRepository {
 	return &fulfilmentLineRepository{
 		BaseRepository: datastore.NewBaseRepository[*models.FulfilmentLine](
 			ctx, dbPool, workMan, func() *models.FulfilmentLine { return &models.FulfilmentLine{} },
@@ -51,13 +55,19 @@ func NewFulfilmentLineRepository(ctx context.Context, dbPool pool.Pool, workMan 
 	}
 }
 
-func (r *fulfilmentLineRepository) GetByFulfilmentID(ctx context.Context, fulfilmentID string) ([]*models.FulfilmentLine, error) {
+func (r *fulfilmentLineRepository) GetByFulfilmentID(
+	ctx context.Context,
+	fulfilmentID string,
+) ([]*models.FulfilmentLine, error) {
 	var lines []*models.FulfilmentLine
 	err := r.Pool().DB(ctx, true).Where("fulfilment_id = ?", fulfilmentID).Find(&lines).Error
 	return lines, err
 }
 
-func (r *fulfilmentLineRepository) GetFulfilledQuantityByOrderLineID(ctx context.Context, orderLineID string) (int64, error) {
+func (r *fulfilmentLineRepository) GetFulfilledQuantityByOrderLineID(
+	ctx context.Context,
+	orderLineID string,
+) (int64, error) {
 	var total int64
 	err := r.Pool().DB(ctx, true).
 		Model(&models.FulfilmentLine{}).

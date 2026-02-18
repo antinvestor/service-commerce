@@ -50,7 +50,10 @@ type orderBusiness struct {
 	cartLineRepo  repository.CartLineRepository
 }
 
-func (ob *orderBusiness) CreateOrder(ctx context.Context, req *commercev1.CreateOrderRequest) (*commercev1.Order, error) {
+func (ob *orderBusiness) CreateOrder(
+	ctx context.Context,
+	req *commercev1.CreateOrderRequest,
+) (*commercev1.Order, error) {
 	// Idempotency check
 	if req.GetIdempotencyKey() != "" {
 		existing, err := ob.orderRepo.GetByIdempotencyKey(ctx, req.GetIdempotencyKey())
@@ -73,7 +76,11 @@ func (ob *orderBusiness) CreateOrder(ctx context.Context, req *commercev1.Create
 	}
 
 	// Validate all variants and snapshot prices
-	orderLines, subtotalCurrency, subtotalUnits, subtotalNanos, err := ob.buildOrderLines(ctx, req.GetShopId(), req.GetLines())
+	orderLines, subtotalCurrency, subtotalUnits, subtotalNanos, err := ob.buildOrderLines(
+		ctx,
+		req.GetShopId(),
+		req.GetLines(),
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -123,7 +130,10 @@ func (ob *orderBusiness) CreateOrder(ctx context.Context, req *commercev1.Create
 	return ob.GetOrder(ctx, order.GetID())
 }
 
-func (ob *orderBusiness) CreateOrderFromCart(ctx context.Context, req *commercev1.CreateOrderFromCartRequest) (*commercev1.Order, error) {
+func (ob *orderBusiness) CreateOrderFromCart(
+	ctx context.Context,
+	req *commercev1.CreateOrderFromCartRequest,
+) (*commercev1.Order, error) {
 	cart, err := ob.cartRepo.GetWithLines(ctx, req.GetCartId())
 	if err != nil {
 		return nil, data.ErrorConvertToAPI(err)
@@ -177,7 +187,10 @@ func (ob *orderBusiness) GetOrder(ctx context.Context, id string) (*commercev1.O
 	return order.ToAPI(), nil
 }
 
-func (ob *orderBusiness) ListOrders(ctx context.Context, req *commercev1.ListOrdersRequest) ([]*commercev1.Order, error) {
+func (ob *orderBusiness) ListOrders(
+	ctx context.Context,
+	req *commercev1.ListOrdersRequest,
+) ([]*commercev1.Order, error) {
 	limit := 50
 	offset := 0
 	if req.GetSearch() != nil && req.GetSearch().GetCursor() != nil {

@@ -42,7 +42,10 @@ type fulfilmentBusiness struct {
 	orderLineRepo      repository.OrderLineRepository
 }
 
-func (fb *fulfilmentBusiness) CreateFulfilment(ctx context.Context, req *commercev1.CreateFulfilmentRequest) (*commercev1.Fulfilment, error) {
+func (fb *fulfilmentBusiness) CreateFulfilment(
+	ctx context.Context,
+	req *commercev1.CreateFulfilmentRequest,
+) (*commercev1.Fulfilment, error) {
 	// Validate order exists and is in a fulfillable state
 	order, err := fb.orderRepo.GetWithLines(ctx, req.GetOrderId())
 	if err != nil {
@@ -113,7 +116,10 @@ func (fb *fulfilmentBusiness) CreateFulfilment(ctx context.Context, req *commerc
 	return fb.GetFulfilment(ctx, fulfilment.GetID())
 }
 
-func (fb *fulfilmentBusiness) UpdateFulfilment(ctx context.Context, req *commercev1.UpdateFulfilmentRequest) (*commercev1.Fulfilment, error) {
+func (fb *fulfilmentBusiness) UpdateFulfilment(
+	ctx context.Context,
+	req *commercev1.UpdateFulfilmentRequest,
+) (*commercev1.Fulfilment, error) {
 	fulfilment, err := fb.fulfilmentRepo.GetWithLines(ctx, req.GetId())
 	if err != nil {
 		return nil, data.ErrorConvertToAPI(err)

@@ -1,13 +1,13 @@
 module github.com/antinvestor/service-commerce
 
-go 1.25.6
+go 1.26
 
 require (
 	buf.build/gen/go/antinvestor/commerce/connectrpc/go v1.19.1-20260203091223-77ee0776a762.2
 	buf.build/gen/go/antinvestor/commerce/protocolbuffers/go v1.36.11-20260203091223-77ee0776a762.1
 	connectrpc.com/connect v1.19.1
-	github.com/pitabwire/frame v1.73.0
-	github.com/pitabwire/util v0.5.0
+	github.com/pitabwire/frame v1.74.0
+	github.com/pitabwire/util v0.6.0
 	github.com/stretchr/testify v1.11.1
 	google.golang.org/genproto v0.0.0-20260203192932-546029d2fa20
 	google.golang.org/protobuf v1.36.11

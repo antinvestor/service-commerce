@@ -98,7 +98,7 @@ func (sb *shopBusiness) UpdateShop(ctx context.Context, req *commercev1.UpdateSh
 		case "media_ids":
 			shop.MediaIDs = models.StringArray(req.GetMediaIds())
 			updateColumns = append(updateColumns, "media_ids")
-		case "status":
+		case fieldStatus:
 			if req.GetStatus() != commercev1.ShopStatus_SHOP_STATUS_UNSPECIFIED {
 				shop.Status = int32(req.GetStatus())
 				updateColumns = append(updateColumns, "status")

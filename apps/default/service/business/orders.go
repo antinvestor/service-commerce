@@ -216,10 +216,12 @@ func (ob *orderBusiness) buildOrderLines(
 	shopID string,
 	lines []*commercev1.CreateOrderLine,
 ) ([]*models.OrderLine, string, int64, int32, error) {
+	const nanosPerUnit int64 = 1_000_000_000
+
 	var orderLines []*models.OrderLine
 	var subtotalCurrency string
 	var subtotalUnits int64
-	var subtotalNanos int32
+	var subtotalNanos int64
 
 	for _, line := range lines {
 		if line.GetQuantity() <= 0 {
@@ -234,11 +236,9 @@ func (ob *orderBusiness) buildOrderLines(
 		}
 
 		// Validate variant belongs to a product in this shop
-		product, prodErr := variant.Product, error(nil)
-		if product == nil {
+		if variant.Product == nil {
 			// Need to load the product to check shop_id
-			_, prodErr = ob.shopRepo.GetByID(ctx, shopID)
-			if prodErr != nil {
+			if _, prodErr := ob.shopRepo.GetByID(ctx, shopID); prodErr != nil {
 				return nil, "", 0, 0, connect.NewError(connect.CodeNotFound, errors.New("shop not found"))
 			}
 		}
@@ -250,12 +250,10 @@ func (ob *orderBusiness) buildOrderLines(
 					line.GetVariantId(), line.GetQuantity(), variant.StockQuantity))
 		}
 
-		// Compute line total
-		lineTotalUnits := variant.PriceUnits * line.GetQuantity()
-		lineTotalNanos := int32(int64(variant.PriceNanos) * line.GetQuantity())
-		// Handle nanos overflow
-		lineTotalUnits += int64(lineTotalNanos / 1_000_000_000)
-		lineTotalNanos = lineTotalNanos % 1_000_000_000
+		// Compute line total using int64 to avoid overflow
+		lineTotalNanos := int64(variant.PriceNanos) * line.GetQuantity()
+		lineTotalUnits := variant.PriceUnits*line.GetQuantity() + lineTotalNanos/nanosPerUnit
+		lineTotalNanos %= nanosPerUnit
 
 		orderLine := &models.OrderLine{
 			ProductVariantID:   variant.GetID(),
@@ -267,7 +265,7 @@ func (ob *orderBusiness) buildOrderLines(
 			Quantity:           line.GetQuantity(),
 			TotalPriceCurrency: variant.CurrencyCode,
 			TotalPriceUnits:    lineTotalUnits,
-			TotalPriceNanos:    lineTotalNanos,
+			TotalPriceNanos:    int32(lineTotalNanos),
 		}
 		orderLines = append(orderLines, orderLine)
 
@@ -277,11 +275,11 @@ func (ob *orderBusiness) buildOrderLines(
 		}
 		subtotalUnits += lineTotalUnits
 		subtotalNanos += lineTotalNanos
-		subtotalUnits += int64(subtotalNanos / 1_000_000_000)
-		subtotalNanos = subtotalNanos % 1_000_000_000
+		subtotalUnits += subtotalNanos / nanosPerUnit
+		subtotalNanos %= nanosPerUnit
 	}
 
-	return orderLines, subtotalCurrency, subtotalUnits, subtotalNanos, nil
+	return orderLines, subtotalCurrency, subtotalUnits, int32(subtotalNanos), nil
 }
 
 func generateOrderNumber() string {

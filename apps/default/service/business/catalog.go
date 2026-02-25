@@ -191,7 +191,7 @@ func (cb *catalogBusiness) UpdateProductVariant(
 		case "stock_quantity":
 			variant.StockQuantity = req.GetStockQuantity()
 			updateColumns = append(updateColumns, "stock_quantity")
-		case "status":
+		case fieldStatus:
 			if req.GetStatus() != commercev1.ProductVariantStatus_PRODUCT_VARIANT_STATUS_UNSPECIFIED {
 				variant.Status = int32(req.GetStatus())
 				updateColumns = append(updateColumns, "status")

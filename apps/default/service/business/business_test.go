@@ -323,7 +323,7 @@ func (bts *BusinessTestSuite) TestListProductVariants() {
 		require.NoError(t, err)
 
 		for i := range 3 {
-			_, err := biz.catalogBiz.CreateProductVariant(ctx, &commercev1.CreateProductVariantRequest{
+			_, varErr := biz.catalogBiz.CreateProductVariant(ctx, &commercev1.CreateProductVariantRequest{
 				ProductId: product.GetId(),
 				Sku:       fmt.Sprintf("SKU-VAR-%d-%s", i, util.RandomAlphaNumericString(6)),
 				Name:      fmt.Sprintf("Variant %d", i),
@@ -333,7 +333,7 @@ func (bts *BusinessTestSuite) TestListProductVariants() {
 				},
 				StockQuantity: 50,
 			})
-			require.NoError(t, err)
+			require.NoError(t, varErr)
 		}
 
 		variants, err := biz.catalogBiz.ListProductVariants(ctx, product.GetId())

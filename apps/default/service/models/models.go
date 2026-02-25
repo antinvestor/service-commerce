@@ -16,18 +16,18 @@ import (
 // StringArray stores string slices as JSONB in PostgreSQL.
 type StringArray []string
 
-func (s StringArray) ToStringSlice() []string {
-	if s == nil {
+func (s *StringArray) ToStringSlice() []string {
+	if s == nil || *s == nil {
 		return nil
 	}
-	return []string(s)
+	return []string(*s)
 }
 
-func (s StringArray) Value() (driver.Value, error) {
-	if s == nil {
-		return nil, nil
+func (s *StringArray) Value() (driver.Value, error) {
+	if s == nil || *s == nil {
+		return "[]", nil
 	}
-	return json.Marshal(s)
+	return json.Marshal(*s)
 }
 
 func (s *StringArray) Scan(value any) error {
@@ -42,9 +42,9 @@ func (s *StringArray) Scan(value any) error {
 	return json.Unmarshal(b, s)
 }
 
-func (StringArray) GormDataType() string { return "jsonb" }
+func (*StringArray) GormDataType() string { return "jsonb" }
 
-func (StringArray) GormDBDataType(db *gorm.DB, _ *schema.Field) string {
+func (*StringArray) GormDBDataType(db *gorm.DB, _ *schema.Field) string {
 	switch db.Dialector.Name() {
 	case "postgres":
 		return "JSONB"

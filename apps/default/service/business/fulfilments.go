@@ -60,32 +60,8 @@ func (fb *fulfilmentBusiness) CreateFulfilment(
 		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("fulfilment must have at least one line"))
 	}
 
-	// Build a map of order line IDs for validation
-	orderLineMap := make(map[string]*models.OrderLine, len(order.Lines))
-	for _, ol := range order.Lines {
-		orderLineMap[ol.GetID()] = ol
-	}
-
-	// Validate fulfilment lines
-	for _, fl := range req.GetLines() {
-		ol, ok := orderLineMap[fl.GetOrderLineId()]
-		if !ok {
-			return nil, connect.NewError(connect.CodeInvalidArgument,
-				fmt.Errorf("order line %s not found in order", fl.GetOrderLineId()))
-		}
-
-		// Check remaining unfulfilled quantity
-		fulfilledQty, qErr := fb.fulfilmentLineRepo.GetFulfilledQuantityByOrderLineID(ctx, fl.GetOrderLineId())
-		if qErr != nil {
-			return nil, data.ErrorConvertToAPI(qErr)
-		}
-
-		remaining := ol.Quantity - fulfilledQty
-		if fl.GetQuantity() > remaining {
-			return nil, connect.NewError(connect.CodeFailedPrecondition,
-				fmt.Errorf("quantity %d exceeds remaining unfulfilled quantity %d for order line %s",
-					fl.GetQuantity(), remaining, fl.GetOrderLineId()))
-		}
+	if validErr := fb.validateFulfilmentLines(ctx, order, req.GetLines()); validErr != nil {
+		return nil, validErr
 	}
 
 	// Create fulfilment
@@ -116,6 +92,41 @@ func (fb *fulfilmentBusiness) CreateFulfilment(
 	return fb.GetFulfilment(ctx, fulfilment.GetID())
 }
 
+func (fb *fulfilmentBusiness) validateFulfilmentLines(
+	ctx context.Context,
+	order *models.Order,
+	lines []*commercev1.FulfilmentLine,
+) error {
+	// Build a map of order line IDs for validation
+	orderLineMap := make(map[string]*models.OrderLine, len(order.Lines))
+	for _, ol := range order.Lines {
+		orderLineMap[ol.GetID()] = ol
+	}
+
+	for _, fl := range lines {
+		ol, ok := orderLineMap[fl.GetOrderLineId()]
+		if !ok {
+			return connect.NewError(connect.CodeInvalidArgument,
+				fmt.Errorf("order line %s not found in order", fl.GetOrderLineId()))
+		}
+
+		// Check remaining unfulfilled quantity
+		fulfilledQty, qErr := fb.fulfilmentLineRepo.GetFulfilledQuantityByOrderLineID(ctx, fl.GetOrderLineId())
+		if qErr != nil {
+			return data.ErrorConvertToAPI(qErr)
+		}
+
+		remaining := ol.Quantity - fulfilledQty
+		if fl.GetQuantity() > remaining {
+			return connect.NewError(connect.CodeFailedPrecondition,
+				fmt.Errorf("quantity %d exceeds remaining unfulfilled quantity %d for order line %s",
+					fl.GetQuantity(), remaining, fl.GetOrderLineId()))
+		}
+	}
+
+	return nil
+}
+
 func (fb *fulfilmentBusiness) UpdateFulfilment(
 	ctx context.Context,
 	req *commercev1.UpdateFulfilmentRequest,
@@ -125,36 +136,7 @@ func (fb *fulfilmentBusiness) UpdateFulfilment(
 		return nil, data.ErrorConvertToAPI(err)
 	}
 
-	fields := req.GetUpdateMask().GetPaths()
-	if len(fields) == 0 {
-		fields = []string{"status", "carrier", "tracking_number", "shipped_at"}
-	}
-
-	updateColumns := make([]string, 0, len(fields))
-	for _, field := range fields {
-		switch field {
-		case "status":
-			if req.GetStatus() != commercev1.FulfilmentStatus_FULFILMENT_STATUS_UNSPECIFIED {
-				fulfilment.Status = int32(req.GetStatus())
-				updateColumns = append(updateColumns, "status")
-			}
-		case "carrier":
-			if req.GetCarrier() != "" {
-				fulfilment.Carrier = req.GetCarrier()
-				updateColumns = append(updateColumns, "carrier")
-			}
-		case "tracking_number":
-			if req.GetTrackingNumber() != "" {
-				fulfilment.TrackingNumber = req.GetTrackingNumber()
-				updateColumns = append(updateColumns, "tracking_number")
-			}
-		case "shipped_at":
-			if req.GetShippedAt() != nil && req.GetShippedAt() != (&timestamppb.Timestamp{}) {
-				// shipped_at is tracked via the status transition to SHIPPED
-				updateColumns = append(updateColumns, "modified_at")
-			}
-		}
-	}
+	updateColumns := applyFulfilmentFields(fulfilment, req)
 
 	if len(updateColumns) > 0 {
 		_, updateErr := fb.fulfilmentRepo.Update(ctx, fulfilment, updateColumns...)
@@ -170,6 +152,43 @@ func (fb *fulfilmentBusiness) UpdateFulfilment(
 	}
 
 	return fb.GetFulfilment(ctx, req.GetId())
+}
+
+func applyFulfilmentFields(
+	fulfilment *models.Fulfilment,
+	req *commercev1.UpdateFulfilmentRequest,
+) []string {
+	fields := req.GetUpdateMask().GetPaths()
+	if len(fields) == 0 {
+		fields = []string{fieldStatus, "carrier", "tracking_number", "shipped_at"}
+	}
+
+	updateColumns := make([]string, 0, len(fields))
+	for _, field := range fields {
+		switch field {
+		case fieldStatus:
+			if req.GetStatus() != commercev1.FulfilmentStatus_FULFILMENT_STATUS_UNSPECIFIED {
+				fulfilment.Status = int32(req.GetStatus())
+				updateColumns = append(updateColumns, fieldStatus)
+			}
+		case "carrier":
+			if req.GetCarrier() != "" {
+				fulfilment.Carrier = req.GetCarrier()
+				updateColumns = append(updateColumns, "carrier")
+			}
+		case "tracking_number":
+			if req.GetTrackingNumber() != "" {
+				fulfilment.TrackingNumber = req.GetTrackingNumber()
+				updateColumns = append(updateColumns, "tracking_number")
+			}
+		case "shipped_at":
+			if req.GetShippedAt() != nil && req.GetShippedAt() != (&timestamppb.Timestamp{}) {
+				updateColumns = append(updateColumns, "modified_at")
+			}
+		}
+	}
+
+	return updateColumns
 }
 
 func (fb *fulfilmentBusiness) GetFulfilment(ctx context.Context, id string) (*commercev1.Fulfilment, error) {

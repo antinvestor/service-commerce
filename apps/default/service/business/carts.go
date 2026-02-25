@@ -84,16 +84,18 @@ func (cb *cartBusiness) AddCartLine(ctx context.Context, req *commercev1.AddCart
 
 	// Check if line already exists for this variant
 	existing, findErr := cb.cartLineRepo.GetByCartAndVariant(ctx, req.GetCartId(), req.GetProductVariantId())
-	if findErr == nil && existing != nil {
+
+	switch {
+	case findErr == nil && existing != nil:
 		// Update existing line quantity
 		existing.Quantity += req.GetQuantity()
 		_, updateErr := cb.cartLineRepo.Update(ctx, existing, "quantity")
 		if updateErr != nil {
 			return nil, data.ErrorConvertToAPI(updateErr)
 		}
-	} else if findErr != nil && !frame.ErrorIsNotFound(findErr) {
+	case findErr != nil && !frame.ErrorIsNotFound(findErr):
 		return nil, data.ErrorConvertToAPI(findErr)
-	} else {
+	default:
 		// Create new line
 		line := &models.CartLine{
 			CartID:           req.GetCartId(),

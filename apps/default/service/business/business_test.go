@@ -176,6 +176,10 @@ func (bts *BusinessTestSuite) TestGetShop() {
 		ctx, svc := bts.CreateService(t, dep)
 		biz := bts.getBusiness(ctx, svc)
 
+		// Test not found error path
+		_, err := biz.shopBiz.GetShop(ctx, "nonexistent-id")
+		require.Error(t, err)
+
 		shop := bts.createTestShop(ctx, biz)
 
 		retrieved, err := biz.shopBiz.GetShop(ctx, shop.GetId())
@@ -193,12 +197,29 @@ func (bts *BusinessTestSuite) TestUpdateShop() {
 
 		shop := bts.createTestShop(ctx, biz)
 
+		// Update description
 		updated, err := biz.shopBiz.UpdateShop(ctx, &commercev1.UpdateShopRequest{
 			Id:          shop.GetId(),
 			Description: "Updated description",
 		})
 		require.NoError(t, err)
 		require.Equal(t, "Updated description", updated.GetDescription())
+
+		// Update status
+		updated, err = biz.shopBiz.UpdateShop(ctx, &commercev1.UpdateShopRequest{
+			Id:     shop.GetId(),
+			Status: commercev1.ShopStatus_SHOP_STATUS_DISABLED,
+		})
+		require.NoError(t, err)
+		require.Equal(t, commercev1.ShopStatus_SHOP_STATUS_DISABLED, updated.GetStatus())
+
+		// Update name
+		updated, err = biz.shopBiz.UpdateShop(ctx, &commercev1.UpdateShopRequest{
+			Id:   shop.GetId(),
+			Name: "Updated Shop Name",
+		})
+		require.NoError(t, err)
+		require.Equal(t, "Updated Shop Name", updated.GetName())
 	})
 }
 
@@ -221,6 +242,16 @@ func (bts *BusinessTestSuite) TestCreateProduct() {
 		require.NoError(t, err)
 		require.NotEmpty(t, product.GetId())
 		require.Equal(t, "Laptop", product.GetName())
+
+		// Also test GetProduct
+		retrieved, err := biz.catalogBiz.GetProduct(ctx, product.GetId())
+		require.NoError(t, err)
+		require.Equal(t, product.GetId(), retrieved.GetId())
+		require.Equal(t, "Laptop", retrieved.GetName())
+
+		// Test GetProduct not found
+		_, err = biz.catalogBiz.GetProduct(ctx, "nonexistent-product")
+		require.Error(t, err)
 	})
 }
 
@@ -360,6 +391,15 @@ func (bts *BusinessTestSuite) TestCreateCart() {
 		require.NoError(t, err)
 		require.NotEmpty(t, cart.GetId())
 		require.Equal(t, commercev1.CartStatus_CART_STATUS_ACTIVE, cart.GetStatus())
+
+		// Also test GetCart success
+		retrieved, err := biz.cartBiz.GetCart(ctx, cart.GetId())
+		require.NoError(t, err)
+		require.Equal(t, cart.GetId(), retrieved.GetId())
+
+		// Test GetCart not found
+		_, err = biz.cartBiz.GetCart(ctx, "nonexistent-cart")
+		require.Error(t, err)
 	})
 }
 
@@ -378,6 +418,23 @@ func (bts *BusinessTestSuite) TestAddCartLine() {
 		})
 		require.NoError(t, err)
 
+		// Test zero quantity error
+		_, err = biz.cartBiz.AddCartLine(ctx, &commercev1.AddCartLineRequest{
+			CartId:           cart.GetId(),
+			ProductVariantId: variant.GetId(),
+			Quantity:         0,
+		})
+		require.Error(t, err)
+
+		// Test invalid variant error
+		_, err = biz.cartBiz.AddCartLine(ctx, &commercev1.AddCartLineRequest{
+			CartId:           cart.GetId(),
+			ProductVariantId: "nonexistent-variant",
+			Quantity:         1,
+		})
+		require.Error(t, err)
+
+		// Test successful add
 		updatedCart, err := biz.cartBiz.AddCartLine(ctx, &commercev1.AddCartLineRequest{
 			CartId:           cart.GetId(),
 			ProductVariantId: variant.GetId(),
@@ -466,6 +523,19 @@ func (bts *BusinessTestSuite) TestCreateOrder() {
 
 		shop := bts.createTestShop(ctx, biz)
 		_, variant := bts.createTestProductWithVariant(ctx, biz, shop.GetId())
+
+		// Test invalid shop
+		_, err := biz.orderBiz.CreateOrder(ctx, &commercev1.CreateOrderRequest{
+			ShopId: "nonexistent-shop",
+			Lines: []*commercev1.CreateOrderLine{
+				{VariantId: "some-variant", Quantity: 1},
+			},
+		})
+		require.Error(t, err)
+
+		// Test GetOrder not found
+		_, err = biz.orderBiz.GetOrder(ctx, "nonexistent-order")
+		require.Error(t, err)
 
 		order, err := biz.orderBiz.CreateOrder(ctx, &commercev1.CreateOrderRequest{
 			ShopId:    shop.GetId(),
@@ -642,6 +712,10 @@ func (bts *BusinessTestSuite) TestCreateFulfilment() {
 		shop := bts.createTestShop(ctx, biz)
 		_, variant := bts.createTestProductWithVariant(ctx, biz, shop.GetId())
 
+		// Test GetFulfilment not found
+		_, err := biz.fulfilmentBiz.GetFulfilment(ctx, "nonexistent-fulfilment")
+		require.Error(t, err)
+
 		order, err := biz.orderBiz.CreateOrder(ctx, &commercev1.CreateOrderRequest{
 			ShopId: shop.GetId(),
 			Lines: []*commercev1.CreateOrderLine{
@@ -652,6 +726,13 @@ func (bts *BusinessTestSuite) TestCreateFulfilment() {
 			},
 		})
 		require.NoError(t, err)
+
+		// Test empty lines error
+		_, err = biz.fulfilmentBiz.CreateFulfilment(ctx, &commercev1.CreateFulfilmentRequest{
+			OrderId: order.GetId(),
+			Lines:   nil,
+		})
+		require.Error(t, err)
 
 		orderLineID := order.GetLines()[0].GetId()
 

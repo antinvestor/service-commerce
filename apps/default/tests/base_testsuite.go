@@ -2,6 +2,8 @@ package tests
 
 import (
 	"context"
+	"fmt"
+	"net/url"
 	"testing"
 
 	"github.com/pitabwire/frame"
@@ -15,7 +17,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	aconfig "github.com/antinvestor/service-commerce/apps/default/config"
+	"github.com/antinvestor/service-commerce/apps/default/service/authz"
 	"github.com/antinvestor/service-commerce/apps/default/service/repository"
+	"github.com/antinvestor/service-commerce/apps/default/tests/testketo"
 )
 
 const PostgresqlDBImage = "postgres:latest"
@@ -26,18 +30,45 @@ const (
 
 type CommerceBaseTestSuite struct {
 	frametests.FrameBaseTestSuite
+	AuthzMiddleware authz.Middleware
+	ketoReadURI     string
+	ketoWriteURI    string
 }
 
 func initResources(_ context.Context) []definition.TestResource {
 	pg := testpostgres.NewWithOpts("service_commerce", definition.WithUserName("ant"))
-
-	resources := []definition.TestResource{pg}
-	return resources
+	keto := testketo.NewWithOpts(
+		definition.WithDependancies(pg),
+		definition.WithEnableLogging(true),
+	)
+	return []definition.TestResource{pg, keto}
 }
 
 func (bs *CommerceBaseTestSuite) SetupSuite() {
 	bs.InitResourceFunc = initResources
 	bs.FrameBaseTestSuite.SetupSuite()
+
+	ctx := bs.T().Context()
+
+	// Find Keto dependency and extract read/write URIs
+	var ketoDep definition.DependancyConn
+	for _, res := range bs.Resources() {
+		if res.Name() == testketo.ImageName {
+			ketoDep = res
+			break
+		}
+	}
+	bs.Require().NotNil(ketoDep, "keto dependency should be available")
+
+	// Write API: default port (4467/tcp, first in port list)
+	writeURL, err := url.Parse(string(ketoDep.GetDS(ctx)))
+	bs.Require().NoError(err)
+	bs.ketoWriteURI = writeURL.Host
+
+	// Read API: port 4466/tcp (second in port list)
+	readPort, err := ketoDep.PortMapping(ctx, "4466/tcp")
+	bs.Require().NoError(err)
+	bs.ketoReadURI = fmt.Sprintf("%s:%s", writeURL.Hostname(), readPort)
 }
 
 func (bs *CommerceBaseTestSuite) CreateService(
@@ -66,10 +97,18 @@ func (bs *CommerceBaseTestSuite) CreateService(
 	cfg.DatabasePrimaryURL = []string{testDS.String()}
 	cfg.DatabaseReplicaURL = []string{testDS.String()}
 
+	// Configure real Keto authorizer URIs
+	cfg.AuthorizationServiceReadURI = bs.ketoReadURI
+	cfg.AuthorizationServiceWriteURI = bs.ketoWriteURI
+
 	ctx, svc := frame.NewServiceWithContext(t.Context(), frame.WithName("commerce tests"),
 		frame.WithConfig(&cfg),
 		frame.WithDatastore(pool.WithTraceConfig(&cfg)),
 		frametests.WithNoopDriver())
+
+	// Use real Keto authorizer via SecurityManager
+	sm := svc.SecurityManager()
+	bs.AuthzMiddleware = authz.NewMiddleware(sm.GetAuthorizer(ctx))
 
 	svc.Init(ctx)
 
@@ -79,7 +118,7 @@ func (bs *CommerceBaseTestSuite) CreateService(
 	err = svc.Run(ctx, "")
 	require.NoError(t, err)
 
-	return security.SkipTenancyChecksOnClaims(ctx), svc
+	return ctx, svc
 }
 
 func (bs *CommerceBaseTestSuite) TearDownSuite() {
@@ -100,4 +139,39 @@ func (bs *CommerceBaseTestSuite) WithTestDependancies(
 	}
 
 	frametests.WithTestDependencies(t, options, testFn)
+}
+
+// WithAuthClaims adds authentication claims to a context for testing.
+func (bs *CommerceBaseTestSuite) WithAuthClaims(ctx context.Context, tenantID, profileID string) context.Context {
+	claims := &security.AuthenticationClaims{
+		TenantID:  tenantID,
+		AccessID:  util.IDString(),
+		ContactID: profileID,
+		SessionID: util.IDString(),
+		DeviceID:  "test-device",
+	}
+	claims.Subject = profileID
+	return claims.ClaimsToContext(ctx)
+}
+
+// SeedTenantRole writes a tenant-level ReBAC tuple granting the given role to a profile.
+func (bs *CommerceBaseTestSuite) SeedTenantRole(ctx context.Context, svc *frame.Service, tenantID, profileID, role string) {
+	auth := svc.SecurityManager().GetAuthorizer(ctx)
+	err := auth.WriteTuple(ctx, security.RelationTuple{
+		Object:   security.ObjectRef{Namespace: authz.NamespaceTenant, ID: tenantID},
+		Relation: role,
+		Subject:  security.SubjectRef{Namespace: authz.NamespaceProfile, ID: profileID},
+	})
+	bs.Require().NoError(err, "failed to seed tenant role")
+}
+
+// SeedShopRole writes a shop-level ReBAC tuple granting the given role to a profile.
+func (bs *CommerceBaseTestSuite) SeedShopRole(ctx context.Context, svc *frame.Service, shopID, profileID, role string) {
+	auth := svc.SecurityManager().GetAuthorizer(ctx)
+	err := auth.WriteTuple(ctx, security.RelationTuple{
+		Object:   security.ObjectRef{Namespace: authz.NamespaceShop, ID: shopID},
+		Relation: role,
+		Subject:  security.SubjectRef{Namespace: authz.NamespaceProfile, ID: profileID},
+	})
+	bs.Require().NoError(err, "failed to seed shop role")
 }

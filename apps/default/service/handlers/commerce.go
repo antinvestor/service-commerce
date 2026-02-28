@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"errors"
 
 	"buf.build/gen/go/antinvestor/commerce/connectrpc/go/commerce/v1/commercev1connect"
 	commercev1 "buf.build/gen/go/antinvestor/commerce/protocolbuffers/go/commerce/v1"
@@ -67,28 +66,6 @@ func NewCommerceServer(ctx context.Context, svc *frame.Service, authzMiddleware 
 	}
 }
 
-// toConnectError translates authorizer errors into appropriate ConnectRPC error codes.
-func toConnectError(err error) error {
-	if err == nil {
-		return nil
-	}
-
-	var permErr *authorizer.PermissionDeniedError
-	if errors.As(err, &permErr) {
-		return connect.NewError(connect.CodePermissionDenied, err)
-	}
-
-	if errors.Is(err, authorizer.ErrInvalidSubject) {
-		return connect.NewError(connect.CodeUnauthenticated, err)
-	}
-
-	if errors.Is(err, authorizer.ErrInvalidObject) {
-		return connect.NewError(connect.CodeFailedPrecondition, err)
-	}
-
-	return connect.NewError(connect.CodeInternal, err)
-}
-
 // ----------------------
 // Shop
 // ----------------------
@@ -98,7 +75,7 @@ func (cs *CommerceServer) CreateShop(
 	req *connect.Request[commercev1.CreateShopRequest],
 ) (*connect.Response[commercev1.CreateShopResponse], error) {
 	if err := cs.authz.CanCreateShop(ctx); err != nil {
-		return nil, toConnectError(err)
+		return nil, authorizer.ToConnectError(err)
 	}
 
 	shop, err := cs.shopBusiness.CreateShop(ctx, req.Msg)
@@ -122,7 +99,7 @@ func (cs *CommerceServer) GetShop(
 	req *connect.Request[commercev1.GetShopRequest],
 ) (*connect.Response[commercev1.GetShopResponse], error) {
 	if err := cs.authz.CanViewShop(ctx, req.Msg.GetId()); err != nil {
-		return nil, toConnectError(err)
+		return nil, authorizer.ToConnectError(err)
 	}
 
 	shop, err := cs.shopBusiness.GetShop(ctx, req.Msg.GetId())
@@ -137,7 +114,7 @@ func (cs *CommerceServer) UpdateShop(
 	req *connect.Request[commercev1.UpdateShopRequest],
 ) (*connect.Response[commercev1.UpdateShopResponse], error) {
 	if err := cs.authz.CanUpdateShop(ctx, req.Msg.GetId()); err != nil {
-		return nil, toConnectError(err)
+		return nil, authorizer.ToConnectError(err)
 	}
 
 	shop, err := cs.shopBusiness.UpdateShop(ctx, req.Msg)
@@ -156,7 +133,7 @@ func (cs *CommerceServer) CreateProduct(
 	req *connect.Request[commercev1.CreateProductRequest],
 ) (*connect.Response[commercev1.CreateProductResponse], error) {
 	if err := cs.authz.CanManageProducts(ctx, req.Msg.GetShopId()); err != nil {
-		return nil, toConnectError(err)
+		return nil, authorizer.ToConnectError(err)
 	}
 
 	product, err := cs.catalogBusiness.CreateProduct(ctx, req.Msg)
@@ -183,7 +160,7 @@ func (cs *CommerceServer) ListProducts(
 	req *connect.Request[commercev1.ListProductsRequest],
 ) (*connect.Response[commercev1.ListProductsResponse], error) {
 	if err := cs.authz.CanViewProducts(ctx, req.Msg.GetShopId()); err != nil {
-		return nil, toConnectError(err)
+		return nil, authorizer.ToConnectError(err)
 	}
 
 	products, err := cs.catalogBusiness.ListProducts(ctx, req.Msg)
@@ -233,7 +210,7 @@ func (cs *CommerceServer) CreateCart(
 ) (*connect.Response[commercev1.CreateCartResponse], error) {
 	// Carts are customer-facing; check that the caller can view products in the shop
 	if err := cs.authz.CanViewProducts(ctx, req.Msg.GetShopId()); err != nil {
-		return nil, toConnectError(err)
+		return nil, authorizer.ToConnectError(err)
 	}
 
 	cart, err := cs.cartBusiness.CreateCart(ctx, req.Msg)
@@ -300,7 +277,7 @@ func (cs *CommerceServer) CreateOrder(
 	req *connect.Request[commercev1.CreateOrderRequest],
 ) (*connect.Response[commercev1.CreateOrderResponse], error) {
 	if err := cs.authz.CanManageOrders(ctx, req.Msg.GetShopId()); err != nil {
-		return nil, toConnectError(err)
+		return nil, authorizer.ToConnectError(err)
 	}
 
 	order, err := cs.orderBusiness.CreateOrder(ctx, req.Msg)
@@ -327,7 +304,7 @@ func (cs *CommerceServer) ListOrders(
 	req *connect.Request[commercev1.ListOrdersRequest],
 ) (*connect.Response[commercev1.ListOrdersResponse], error) {
 	if err := cs.authz.CanViewOrders(ctx, req.Msg.GetShopId()); err != nil {
-		return nil, toConnectError(err)
+		return nil, authorizer.ToConnectError(err)
 	}
 
 	orders, err := cs.orderBusiness.ListOrders(ctx, req.Msg)

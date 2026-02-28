@@ -6,9 +6,10 @@ require (
 	buf.build/gen/go/antinvestor/commerce/connectrpc/go v1.19.1-20260219062149-38a37287b8c7.2
 	buf.build/gen/go/antinvestor/commerce/protocolbuffers/go v1.36.11-20260219062149-38a37287b8c7.1
 	connectrpc.com/connect v1.19.1
-	github.com/pitabwire/frame v1.75.0
+	github.com/pitabwire/frame v1.76.1
 	github.com/pitabwire/util v0.6.0
 	github.com/stretchr/testify v1.11.1
+	github.com/testcontainers/testcontainers-go v0.40.0
 	google.golang.org/genproto v0.0.0-20260223185530-2f722ef697dc
 	google.golang.org/protobuf v1.36.11
 	gorm.io/gorm v1.31.1
@@ -92,7 +93,6 @@ require (
 	github.com/shirou/gopsutil/v4 v4.26.1 // indirect
 	github.com/sirupsen/logrus v1.9.4 // indirect
 	github.com/sony/gobreaker/v2 v2.4.0 // indirect
-	github.com/testcontainers/testcontainers-go v0.40.0 // indirect
 	github.com/testcontainers/testcontainers-go/modules/postgres v0.40.0 // indirect
 	github.com/tklauser/go-sysconf v0.3.16 // indirect
 	github.com/tklauser/numcpus v0.11.0 // indirect

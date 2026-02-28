@@ -10,27 +10,35 @@ import (
 )
 
 // middleware implements the Middleware interface.
+// Tenant-level checks use FunctionChecker (service_commerce namespace).
+// Shop-level checks use raw authorizer (commerce_shop namespace).
 type middleware struct {
+	checker *authorizer.FunctionChecker
 	service security.Authorizer
 }
 
 // NewMiddleware creates a new Middleware with the given authorizer service.
+// Data access (tenancy_access) is verified by the TenancyAccessInterceptor
+// in the Connect middleware chain. This middleware only checks functional
+// permissions in the service_commerce namespace and resource-level permissions
+// in the commerce_shop namespace.
 func NewMiddleware(service security.Authorizer) Middleware {
 	return &middleware{
+		checker: authorizer.NewFunctionChecker(service, NamespaceCommerce),
 		service: service,
 	}
 }
 
-// --- Tenant-level checks ---
+// --- Tenant-level checks (via FunctionChecker) ---
 
 // CanCreateShop checks if the caller can create a shop within their tenant.
 func (m *middleware) CanCreateShop(ctx context.Context) error {
-	return m.check(ctx, PermissionCreateShop)
+	return m.checker.Check(ctx, PermissionCreateShop)
 }
 
 // CanViewShops checks if the caller can list shops within their tenant.
 func (m *middleware) CanViewShops(ctx context.Context) error {
-	return m.check(ctx, PermissionViewShops)
+	return m.checker.Check(ctx, PermissionViewShops)
 }
 
 // --- Shop-level checks (resource-level ReBAC) ---
@@ -131,40 +139,6 @@ func (m *middleware) UpdateShopMemberRole(ctx context.Context, shopID, profileID
 }
 
 // --- Internal helpers ---
-
-// check performs a tenant-level permission check using claims from context.
-func (m *middleware) check(ctx context.Context, permission string) error {
-	claims := security.ClaimsFromContext(ctx)
-	if claims == nil {
-		return authorizer.ErrInvalidSubject
-	}
-
-	subjectID, err := claims.GetSubject()
-	if err != nil || subjectID == "" {
-		return authorizer.ErrInvalidSubject
-	}
-
-	tenantID := claims.GetTenantID()
-	if tenantID == "" {
-		return authorizer.ErrInvalidObject
-	}
-
-	req := security.CheckRequest{
-		Object:     security.ObjectRef{Namespace: NamespaceTenant, ID: tenantID},
-		Permission: permission,
-		Subject:    security.SubjectRef{Namespace: NamespaceProfile, ID: subjectID},
-	}
-
-	result, err := m.service.Check(ctx, req)
-	if err != nil {
-		return fmt.Errorf("authorization check failed: %w", err)
-	}
-	if !result.Allowed {
-		return authorizer.NewPermissionDeniedError(req.Object, permission, req.Subject, result.Reason)
-	}
-
-	return nil
-}
 
 // checkShopPermission performs a shop-level permission check using claims from context.
 func (m *middleware) checkShopPermission(ctx context.Context, shopID, permission string) error {

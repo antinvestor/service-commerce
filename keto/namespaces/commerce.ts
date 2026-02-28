@@ -1,24 +1,35 @@
 import { Namespace, Context } from "@ory/keto-namespace-types"
 
-class profile implements Namespace {}
+class profile_user implements Namespace {}
 
-class commerce_tenant implements Namespace {
+class tenancy_access implements Namespace {
   related: {
-    owner: profile[]
-    admin: profile[]
-    member: profile[]
+    member: (profile_user | tenancy_access)[]
+    service: profile_user[]
+  }
+}
 
-    create_shop: profile[]
-    view_shops: profile[]
+class service_commerce implements Namespace {
+  related: {
+    owner: profile_user[]
+    admin: profile_user[]
+    member: profile_user[]
+    service: (profile_user | tenancy_access)[]
+
+    // Direct permission grants (accept service_commerce subject sets for service role bridging)
+    create_shop: (profile_user | service_commerce)[]
+    view_shops: (profile_user | service_commerce)[]
   }
 
   permits = {
     create_shop: (ctx: Context): boolean =>
+      this.related.service.includes(ctx.subject) ||
       this.related.owner.includes(ctx.subject) ||
       this.related.admin.includes(ctx.subject) ||
       this.related.create_shop.includes(ctx.subject),
 
     view_shops: (ctx: Context): boolean =>
+      this.related.service.includes(ctx.subject) ||
       this.permits.create_shop(ctx) ||
       this.related.member.includes(ctx.subject) ||
       this.related.view_shops.includes(ctx.subject),
@@ -27,18 +38,18 @@ class commerce_tenant implements Namespace {
 
 class commerce_shop implements Namespace {
   related: {
-    owner: profile[]
-    admin: profile[]
-    operator: profile[]
-    viewer: profile[]
+    owner: profile_user[]
+    admin: profile_user[]
+    operator: profile_user[]
+    viewer: profile_user[]
 
-    view: profile[]
-    update: profile[]
-    manage_products: profile[]
-    view_products: profile[]
-    manage_orders: profile[]
-    view_orders: profile[]
-    manage_fulfilment: profile[]
+    view: profile_user[]
+    update: profile_user[]
+    manage_products: profile_user[]
+    view_products: profile_user[]
+    manage_orders: profile_user[]
+    view_orders: profile_user[]
+    manage_fulfilment: profile_user[]
   }
 
   permits = {

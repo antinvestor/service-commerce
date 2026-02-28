@@ -9,6 +9,7 @@ import (
 	"github.com/pitabwire/frame"
 	"github.com/pitabwire/frame/config"
 	"github.com/pitabwire/frame/datastore"
+	"github.com/pitabwire/frame/security/authorizer"
 	connectInterceptors "github.com/pitabwire/frame/security/interceptors/connect"
 	"github.com/pitabwire/util"
 
@@ -84,13 +85,19 @@ func handleDatabaseMigration(
 // setupConnectServer initializes and configures the gRPC server.
 func setupConnectServer(ctx context.Context, svc *frame.Service) http.Handler {
 	securityMan := svc.SecurityManager()
-	authenticator := securityMan.GetAuthenticator(ctx)
 
-	defaultInterceptorList, err := connectInterceptors.DefaultList(ctx, authenticator)
+	// Layer 1: TenancyAccessChecker verifies caller can access the partition.
+	tenancyAccessChecker := authorizer.NewTenancyAccessChecker(
+		securityMan.GetAuthorizer(ctx), authz.NamespaceTenancyAccess)
+	tenancyAccessInterceptor := connectInterceptors.NewTenancyAccessInterceptor(tenancyAccessChecker)
+
+	defaultInterceptorList, err := connectInterceptors.DefaultList(
+		ctx, securityMan.GetAuthenticator(ctx), tenancyAccessInterceptor)
 	if err != nil {
 		util.Log(ctx).WithError(err).Fatal("main -- Could not create default interceptors")
 	}
 
+	// Layer 2: Functional permissions middleware (service_commerce + commerce_shop).
 	authzMiddleware := authz.NewMiddleware(securityMan.GetAuthorizer(ctx))
 	implementation := handlers.NewCommerceServer(ctx, svc, authzMiddleware)
 

@@ -164,29 +164,17 @@ func (bs *CommerceBaseTestSuite) SeedTenantAccess(ctx context.Context, svc *fram
 	bs.Require().NoError(err, "failed to seed tenant access")
 }
 
-// SeedTenantRole writes functional permission tuples in the service_commerce
-// namespace for the given role. Uses tenancyPath (tenantID/partitionID) as object ID.
+// SeedTenantRole writes a role tuple in the service_commerce namespace.
+// Only the role tuple is needed — Keto's OPL permits resolve individual permissions.
 func (bs *CommerceBaseTestSuite) SeedTenantRole(ctx context.Context, svc *frame.Service, tenantID, partitionID, profileID, role string) {
 	auth := svc.SecurityManager().GetAuthorizer(ctx)
 	tenancyPath := fmt.Sprintf("%s/%s", tenantID, partitionID)
 
-	permissions := authz.RolePermissions[role]
-	tuples := make([]security.RelationTuple, 0, 1+len(permissions))
-
-	tuples = append(tuples, security.RelationTuple{
+	err := auth.WriteTuple(ctx, security.RelationTuple{
 		Object:   security.ObjectRef{Namespace: authz.NamespaceCommerce, ID: tenancyPath},
 		Relation: role,
 		Subject:  security.SubjectRef{Namespace: authz.NamespaceProfile, ID: profileID},
 	})
-	for _, perm := range permissions {
-		tuples = append(tuples, security.RelationTuple{
-			Object:   security.ObjectRef{Namespace: authz.NamespaceCommerce, ID: tenancyPath},
-			Relation: perm,
-			Subject:  security.SubjectRef{Namespace: authz.NamespaceProfile, ID: profileID},
-		})
-	}
-
-	err := auth.WriteTuples(ctx, tuples)
 	bs.Require().NoError(err, "failed to seed tenant role")
 }
 

@@ -55,23 +55,23 @@ class service_commerce implements Namespace {
     member: profile_user[]
     service: (profile_user | tenancy_access)[]
 
-    // Direct permission grants (accept service_commerce subject sets for service role bridging)
-    create_shop: (profile_user | service_commerce)[]
-    view_shops: (profile_user | service_commerce)[]
+    // Direct permission grants use granted_ prefix to avoid name conflicts with permits
+    granted_shop_create: (profile_user | service_commerce)[]
+    granted_shops_view: (profile_user | service_commerce)[]
   }
 
   permits = {
-    create_shop: (ctx: Context): boolean =>
+    shop_create: (ctx: Context): boolean =>
       this.related.service.includes(ctx.subject) ||
       this.related.owner.includes(ctx.subject) ||
       this.related.admin.includes(ctx.subject) ||
-      this.related.create_shop.includes(ctx.subject),
+      this.related.granted_shop_create.includes(ctx.subject),
 
-    view_shops: (ctx: Context): boolean =>
+    shops_view: (ctx: Context): boolean =>
       this.related.service.includes(ctx.subject) ||
-      this.permits.create_shop(ctx) ||
+      this.permits.shop_create(ctx) ||
       this.related.member.includes(ctx.subject) ||
-      this.related.view_shops.includes(ctx.subject),
+      this.related.granted_shops_view.includes(ctx.subject),
   }
 }
 
@@ -82,55 +82,56 @@ class commerce_shop implements Namespace {
     operator: profile_user[]
     viewer: profile_user[]
 
-    view: profile_user[]
-    update: profile_user[]
-    manage_products: profile_user[]
-    view_products: profile_user[]
-    manage_orders: profile_user[]
-    view_orders: profile_user[]
-    manage_fulfilment: profile_user[]
+    // Direct permission grants use granted_ prefix to avoid name conflicts with permits
+    granted_shop_view: profile_user[]
+    granted_shop_update: profile_user[]
+    granted_products_manage: profile_user[]
+    granted_products_view: profile_user[]
+    granted_orders_manage: profile_user[]
+    granted_orders_view: profile_user[]
+    granted_fulfilment_manage: profile_user[]
   }
 
   permits = {
-    view: (ctx: Context): boolean =>
+    shop_view: (ctx: Context): boolean =>
       this.related.owner.includes(ctx.subject) ||
       this.related.admin.includes(ctx.subject) ||
       this.related.operator.includes(ctx.subject) ||
       this.related.viewer.includes(ctx.subject) ||
-      this.related.view.includes(ctx.subject),
+      this.related.granted_shop_view.includes(ctx.subject),
 
-    update: (ctx: Context): boolean =>
+    shop_update: (ctx: Context): boolean =>
       this.related.owner.includes(ctx.subject) ||
       this.related.admin.includes(ctx.subject) ||
-      this.related.update.includes(ctx.subject),
+      this.related.granted_shop_update.includes(ctx.subject),
 
-    manage_products: (ctx: Context): boolean =>
+    products_manage: (ctx: Context): boolean =>
       this.related.owner.includes(ctx.subject) ||
       this.related.admin.includes(ctx.subject) ||
       this.related.operator.includes(ctx.subject) ||
-      this.related.manage_products.includes(ctx.subject),
+      this.related.granted_products_manage.includes(ctx.subject),
 
-    view_products: (ctx: Context): boolean =>
-      this.permits.manage_products(ctx) ||
+    products_view: (ctx: Context): boolean =>
+      this.permits.products_manage(ctx) ||
       this.related.viewer.includes(ctx.subject) ||
-      this.related.view_products.includes(ctx.subject),
+      this.related.granted_products_view.includes(ctx.subject),
 
-    manage_orders: (ctx: Context): boolean =>
+    orders_manage: (ctx: Context): boolean =>
       this.related.owner.includes(ctx.subject) ||
       this.related.admin.includes(ctx.subject) ||
       this.related.operator.includes(ctx.subject) ||
-      this.related.manage_orders.includes(ctx.subject),
+      this.related.granted_orders_manage.includes(ctx.subject),
 
-    view_orders: (ctx: Context): boolean =>
-      this.permits.manage_orders(ctx) ||
+    orders_view: (ctx: Context): boolean =>
+      this.permits.orders_manage(ctx) ||
       this.related.viewer.includes(ctx.subject) ||
-      this.related.view_orders.includes(ctx.subject),
+      this.related.granted_orders_view.includes(ctx.subject),
 
-    manage_fulfilment: (ctx: Context): boolean =>
+    fulfilment_manage: (ctx: Context): boolean =>
       this.related.owner.includes(ctx.subject) ||
       this.related.admin.includes(ctx.subject) ||
       this.related.operator.includes(ctx.subject) ||
-      this.related.manage_fulfilment.includes(ctx.subject),
+      this.related.granted_fulfilment_manage.includes(ctx.subject),
   }
 }
 `

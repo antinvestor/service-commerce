@@ -25,28 +25,18 @@ func BuildServiceAccessTuple(tenancyPath, profileID string) security.RelationTup
 // BuildServiceInheritanceTuples creates the subject set chain that gives service
 // accounts automatic access to functional roles via Keto composition.
 //
-// For service_commerce it writes:
-//  1. Cross-namespace bridge: service_commerce:path#service <- tenancy_access:path#service
-//  2. Permission bridges: service_commerce:path#perm <- service_commerce:path#service
+// It writes a single cross-namespace bridge:
+//
+//	service_commerce:path#service <- tenancy_access:path#service
+//
+// Permission resolution from service role to individual permissions is handled
+// by Keto's OPL permits evaluation, so no permission bridge tuples are needed.
 func BuildServiceInheritanceTuples(tenancyPath string) []security.RelationTuple {
-	servicePermissions := RolePermissions[RoleService]
-	tuples := make([]security.RelationTuple, 0, 1+len(servicePermissions))
-
-	// Cross-namespace bridge: service_commerce#service <- tenancy_access#service
-	tuples = append(tuples, security.RelationTuple{
-		Object:   security.ObjectRef{Namespace: NamespaceCommerce, ID: tenancyPath},
-		Relation: RoleService,
-		Subject:  security.SubjectRef{Namespace: NamespaceTenancyAccess, ID: tenancyPath, Relation: RoleService},
-	})
-
-	// Permission bridges: service_commerce#perm <- service_commerce#service
-	for _, perm := range servicePermissions {
-		tuples = append(tuples, security.RelationTuple{
+	return []security.RelationTuple{
+		{
 			Object:   security.ObjectRef{Namespace: NamespaceCommerce, ID: tenancyPath},
-			Relation: perm,
-			Subject:  security.SubjectRef{Namespace: NamespaceCommerce, ID: tenancyPath, Relation: RoleService},
-		})
+			Relation: RoleService,
+			Subject:  security.SubjectRef{Namespace: NamespaceTenancyAccess, ID: tenancyPath, Relation: RoleService},
+		},
 	}
-
-	return tuples
 }

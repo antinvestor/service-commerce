@@ -11,7 +11,7 @@ const (
 	NamespaceTenancyAccess = "tenancy_access"
 
 	// NamespaceProfile is the platform-wide user identity namespace.
-	NamespaceProfile = "profile/user"
+	NamespaceProfile = "profile_user"
 )
 
 // Shop-level namespace (resource-level ReBAC, not affected by two-layer model).
@@ -19,19 +19,38 @@ const NamespaceShop = "commerce_shop"
 
 // Tenant-level permissions (checked in service_commerce namespace).
 const (
-	PermissionCreateShop = "create_shop"
-	PermissionViewShops  = "view_shops"
+	PermissionShopCreate = "shop_create"
+	PermissionShopsView  = "shops_view"
+)
+
+// Granted relation constants for direct permission grants.
+// These use the "granted_" prefix so that Keto does not skip permit evaluation
+// when a relation shares the same name as a permit function.
+const (
+	GrantedShopCreate = "granted_shop_create"
+	GrantedShopsView  = "granted_shops_view"
 )
 
 // Shop-level permissions (checked in commerce_shop namespace).
 const (
-	PermissionView             = "view"
-	PermissionUpdate           = "update"
-	PermissionManageProducts   = "manage_products"
-	PermissionViewProducts     = "view_products"
-	PermissionManageOrders     = "manage_orders"
-	PermissionViewOrders       = "view_orders"
-	PermissionManageFulfilment = "manage_fulfilment"
+	PermissionShopView          = "shop_view"
+	PermissionShopUpdate        = "shop_update"
+	PermissionProductsManage    = "products_manage"
+	PermissionProductsView      = "products_view"
+	PermissionOrdersManage      = "orders_manage"
+	PermissionOrdersView        = "orders_view"
+	PermissionFulfilmentManage  = "fulfilment_manage"
+)
+
+// Granted relation constants for shop-level direct permission grants.
+const (
+	GrantedShopView         = "granted_shop_view"
+	GrantedShopUpdate       = "granted_shop_update"
+	GrantedProductsManage   = "granted_products_manage"
+	GrantedProductsView     = "granted_products_view"
+	GrantedOrdersManage     = "granted_orders_manage"
+	GrantedOrdersView       = "granted_orders_view"
+	GrantedFulfilmentManage = "granted_fulfilment_manage"
 )
 
 // Role constants.
@@ -44,24 +63,31 @@ const (
 	RoleService  = "service"
 )
 
-// RolePermissions maps each role to the permissions it grants in the service_commerce namespace.
-// This materialises the permission model defined in the OPL namespace config,
-// since the Keto v1alpha2 gRPC API does not evaluate OPL permits.
+// GrantedRelation returns the granted_ prefixed relation name for a permission.
+// This is used when writing direct permission grant tuples to avoid name conflicts
+// with OPL permit functions in Keto.
+func GrantedRelation(permission string) string {
+	return "granted_" + permission
+}
+
+// RolePermissions documents the permission model defined in the OPL namespace config.
+// Keto's Check API evaluates OPL permits, so only role tuples need to be written;
+// permission resolution happens automatically through the OPL model.
 var RolePermissions = map[string][]string{ //nolint:gochecknoglobals // permission model registry
 	RoleOwner: {
-		PermissionCreateShop,
-		PermissionViewShops,
+		PermissionShopCreate,
+		PermissionShopsView,
 	},
 	RoleAdmin: {
-		PermissionCreateShop,
-		PermissionViewShops,
+		PermissionShopCreate,
+		PermissionShopsView,
 	},
 	RoleMember: {
-		PermissionViewShops,
+		PermissionShopsView,
 	},
 	RoleService: {
-		PermissionCreateShop,
-		PermissionViewShops,
+		PermissionShopCreate,
+		PermissionShopsView,
 	},
 }
 

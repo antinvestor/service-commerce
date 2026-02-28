@@ -31,51 +31,51 @@ func NewMiddleware(service security.Authorizer) Middleware {
 
 // --- Tenant-level checks (via FunctionChecker) ---
 
-// CanCreateShop checks if the caller can create a shop within their tenant.
-func (m *middleware) CanCreateShop(ctx context.Context) error {
-	return m.checker.Check(ctx, PermissionCreateShop)
+// CanShopCreate checks if the caller can create a shop within their tenant.
+func (m *middleware) CanShopCreate(ctx context.Context) error {
+	return m.checker.Check(ctx, PermissionShopCreate)
 }
 
-// CanViewShops checks if the caller can list shops within their tenant.
-func (m *middleware) CanViewShops(ctx context.Context) error {
-	return m.checker.Check(ctx, PermissionViewShops)
+// CanShopsView checks if the caller can list shops within their tenant.
+func (m *middleware) CanShopsView(ctx context.Context) error {
+	return m.checker.Check(ctx, PermissionShopsView)
 }
 
 // --- Shop-level checks (resource-level ReBAC) ---
 
-// CanViewShop checks if the caller can view a specific shop.
-func (m *middleware) CanViewShop(ctx context.Context, shopID string) error {
-	return m.checkShopPermission(ctx, shopID, PermissionView)
+// CanShopView checks if the caller can view a specific shop.
+func (m *middleware) CanShopView(ctx context.Context, shopID string) error {
+	return m.checkShopPermission(ctx, shopID, PermissionShopView)
 }
 
-// CanUpdateShop checks if the caller can update a specific shop.
-func (m *middleware) CanUpdateShop(ctx context.Context, shopID string) error {
-	return m.checkShopPermission(ctx, shopID, PermissionUpdate)
+// CanShopUpdate checks if the caller can update a specific shop.
+func (m *middleware) CanShopUpdate(ctx context.Context, shopID string) error {
+	return m.checkShopPermission(ctx, shopID, PermissionShopUpdate)
 }
 
-// CanManageProducts checks if the caller can manage products for a shop.
-func (m *middleware) CanManageProducts(ctx context.Context, shopID string) error {
-	return m.checkShopPermission(ctx, shopID, PermissionManageProducts)
+// CanProductsManage checks if the caller can manage products for a shop.
+func (m *middleware) CanProductsManage(ctx context.Context, shopID string) error {
+	return m.checkShopPermission(ctx, shopID, PermissionProductsManage)
 }
 
-// CanViewProducts checks if the caller can view products for a shop.
-func (m *middleware) CanViewProducts(ctx context.Context, shopID string) error {
-	return m.checkShopPermission(ctx, shopID, PermissionViewProducts)
+// CanProductsView checks if the caller can view products for a shop.
+func (m *middleware) CanProductsView(ctx context.Context, shopID string) error {
+	return m.checkShopPermission(ctx, shopID, PermissionProductsView)
 }
 
-// CanManageOrders checks if the caller can manage orders for a shop.
-func (m *middleware) CanManageOrders(ctx context.Context, shopID string) error {
-	return m.checkShopPermission(ctx, shopID, PermissionManageOrders)
+// CanOrdersManage checks if the caller can manage orders for a shop.
+func (m *middleware) CanOrdersManage(ctx context.Context, shopID string) error {
+	return m.checkShopPermission(ctx, shopID, PermissionOrdersManage)
 }
 
-// CanViewOrders checks if the caller can view orders for a shop.
-func (m *middleware) CanViewOrders(ctx context.Context, shopID string) error {
-	return m.checkShopPermission(ctx, shopID, PermissionViewOrders)
+// CanOrdersView checks if the caller can view orders for a shop.
+func (m *middleware) CanOrdersView(ctx context.Context, shopID string) error {
+	return m.checkShopPermission(ctx, shopID, PermissionOrdersView)
 }
 
-// CanManageFulfilment checks if the caller can manage fulfilment for a shop.
-func (m *middleware) CanManageFulfilment(ctx context.Context, shopID string) error {
-	return m.checkShopPermission(ctx, shopID, PermissionManageFulfilment)
+// CanFulfilmentManage checks if the caller can manage fulfilment for a shop.
+func (m *middleware) CanFulfilmentManage(ctx context.Context, shopID string) error {
+	return m.checkShopPermission(ctx, shopID, PermissionFulfilmentManage)
 }
 
 // --- Tuple management ---

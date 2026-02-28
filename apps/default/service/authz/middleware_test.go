@@ -98,26 +98,14 @@ func (s *MiddlewareTestSuite) ctxWithSystemInternalClaims(subjectID string) cont
 	return claims.ClaimsToContext(context.Background())
 }
 
-// seedRole writes functional permission tuples in service_commerce namespace.
+// seedRole writes a role tuple in service_commerce namespace.
+// Only the role tuple is needed — Keto's OPL permits resolve individual permissions.
 func (s *MiddlewareTestSuite) seedRole(auth security.Authorizer, tenancyPath, profileID, role string) {
-	permissions := authz.RolePermissions[role]
-	tuples := make([]security.RelationTuple, 0, 1+len(permissions))
-
-	tuples = append(tuples, security.RelationTuple{
+	err := auth.WriteTuple(s.T().Context(), security.RelationTuple{
 		Object:   security.ObjectRef{Namespace: authz.NamespaceCommerce, ID: tenancyPath},
 		Relation: role,
 		Subject:  security.SubjectRef{Namespace: authz.NamespaceProfile, ID: profileID},
 	})
-
-	for _, perm := range permissions {
-		tuples = append(tuples, security.RelationTuple{
-			Object:   security.ObjectRef{Namespace: authz.NamespaceCommerce, ID: tenancyPath},
-			Relation: perm,
-			Subject:  security.SubjectRef{Namespace: authz.NamespaceProfile, ID: profileID},
-		})
-	}
-
-	err := auth.WriteTuples(s.T().Context(), tuples)
 	s.Require().NoError(err)
 }
 
@@ -136,8 +124,8 @@ func (s *MiddlewareTestSuite) TestOwnerHasAllPermissions() {
 	mw := authz.NewMiddleware(auth)
 	ctx := s.ctxWithClaims("user1")
 
-	s.NoError(mw.CanCreateShop(ctx))
-	s.NoError(mw.CanViewShops(ctx))
+	s.NoError(mw.CanShopCreate(ctx))
+	s.NoError(mw.CanShopsView(ctx))
 }
 
 func (s *MiddlewareTestSuite) TestAdminPermissions() {
@@ -147,8 +135,8 @@ func (s *MiddlewareTestSuite) TestAdminPermissions() {
 	mw := authz.NewMiddleware(auth)
 	ctx := s.ctxWithClaims("user2")
 
-	s.NoError(mw.CanCreateShop(ctx))
-	s.NoError(mw.CanViewShops(ctx))
+	s.NoError(mw.CanShopCreate(ctx))
+	s.NoError(mw.CanShopsView(ctx))
 }
 
 func (s *MiddlewareTestSuite) TestMemberPermissions() {
@@ -159,17 +147,17 @@ func (s *MiddlewareTestSuite) TestMemberPermissions() {
 	ctx := s.ctxWithClaims("user3")
 
 	// Member can view shops
-	s.NoError(mw.CanViewShops(ctx))
+	s.NoError(mw.CanShopsView(ctx))
 
 	// Member cannot create shops
-	s.Error(mw.CanCreateShop(ctx))
+	s.Error(mw.CanShopCreate(ctx))
 }
 
 func (s *MiddlewareTestSuite) TestNoClaims() {
 	auth := s.newAuthorizer()
 	mw := authz.NewMiddleware(auth)
 
-	err := mw.CanViewShops(context.Background())
+	err := mw.CanShopsView(context.Background())
 	s.ErrorIs(err, authorizer.ErrInvalidSubject)
 }
 
@@ -180,7 +168,7 @@ func (s *MiddlewareTestSuite) TestNoTenant() {
 	claims := &security.AuthenticationClaims{}
 	claims.Subject = "user1"
 	ctx := claims.ClaimsToContext(context.Background())
-	err := mw.CanViewShops(ctx)
+	err := mw.CanShopsView(ctx)
 	s.ErrorIs(err, authorizer.ErrInvalidObject)
 }
 
@@ -248,18 +236,18 @@ func (s *MiddlewareTestSuite) TestServiceBotViaSubjectSets() {
 	s.NoError(accessChecker.CheckAccess(botCtx))
 
 	// Layer 2: Functional permissions resolved through subject sets
-	s.NoError(mw.CanCreateShop(botCtx))
-	s.NoError(mw.CanViewShops(botCtx))
+	s.NoError(mw.CanShopCreate(botCtx))
+	s.NoError(mw.CanShopsView(botCtx))
 }
 
 func (s *MiddlewareTestSuite) TestDirectPermissionGrant() {
 	auth := s.newAuthorizer()
 	mw := authz.NewMiddleware(auth)
 
-	// User has a direct permission grant for create_shop only
+	// User has a direct permission grant for shop_create only (using granted_ prefix)
 	err := auth.WriteTuple(s.T().Context(), security.RelationTuple{
 		Object:   security.ObjectRef{Namespace: authz.NamespaceCommerce, ID: testTenancyPath},
-		Relation: authz.PermissionCreateShop,
+		Relation: authz.GrantedShopCreate,
 		Subject:  security.SubjectRef{Namespace: authz.NamespaceProfile, ID: "user4"},
 	})
 	s.Require().NoError(err)
@@ -267,11 +255,10 @@ func (s *MiddlewareTestSuite) TestDirectPermissionGrant() {
 	ctx := s.ctxWithClaims("user4")
 
 	// Direct grant works
-	s.NoError(mw.CanCreateShop(ctx))
+	s.NoError(mw.CanShopCreate(ctx))
 
-	// view_shops inherits from create_shop in OPL, but since we materialise permissions,
-	// the user only has create_shop. view_shops requires its own tuple.
-	s.Error(mw.CanViewShops(ctx))
+	// shops_view inherits from shop_create via OPL permits
+	s.NoError(mw.CanShopsView(ctx))
 }
 
 // ---------------------------------------------------------------------------
@@ -279,14 +266,13 @@ func (s *MiddlewareTestSuite) TestDirectPermissionGrant() {
 // ---------------------------------------------------------------------------
 
 // seedShopPermissions writes direct permission tuples for shop-level checks.
-// The Keto v1alpha2 gRPC Check API checks direct relation tuples, not OPL permits,
-// so we materialise the permission tuples explicitly.
+// This tests direct permission grants at the resource level using granted_ prefix.
 func (s *MiddlewareTestSuite) seedShopPermissions(auth security.Authorizer, shopID, profileID string, permissions []string) {
 	tuples := make([]security.RelationTuple, len(permissions))
 	for i, perm := range permissions {
 		tuples[i] = security.RelationTuple{
 			Object:   security.ObjectRef{Namespace: authz.NamespaceShop, ID: shopID},
-			Relation: perm,
+			Relation: authz.GrantedRelation(perm),
 			Subject:  security.SubjectRef{Namespace: authz.NamespaceProfile, ID: profileID},
 		}
 	}
@@ -300,22 +286,22 @@ func (s *MiddlewareTestSuite) TestShopOwnerHasAllPermissions() {
 
 	shopID := "shop-1"
 	ownerPermissions := []string{
-		authz.PermissionView, authz.PermissionUpdate,
-		authz.PermissionManageProducts, authz.PermissionViewProducts,
-		authz.PermissionManageOrders, authz.PermissionViewOrders,
-		authz.PermissionManageFulfilment,
+		authz.PermissionShopView, authz.PermissionShopUpdate,
+		authz.PermissionProductsManage, authz.PermissionProductsView,
+		authz.PermissionOrdersManage, authz.PermissionOrdersView,
+		authz.PermissionFulfilmentManage,
 	}
 	s.seedShopPermissions(auth, shopID, "shop-owner", ownerPermissions)
 
 	ctx := s.ctxWithClaims("shop-owner")
 
-	s.NoError(mw.CanViewShop(ctx, shopID))
-	s.NoError(mw.CanUpdateShop(ctx, shopID))
-	s.NoError(mw.CanManageProducts(ctx, shopID))
-	s.NoError(mw.CanViewProducts(ctx, shopID))
-	s.NoError(mw.CanManageOrders(ctx, shopID))
-	s.NoError(mw.CanViewOrders(ctx, shopID))
-	s.NoError(mw.CanManageFulfilment(ctx, shopID))
+	s.NoError(mw.CanShopView(ctx, shopID))
+	s.NoError(mw.CanShopUpdate(ctx, shopID))
+	s.NoError(mw.CanProductsManage(ctx, shopID))
+	s.NoError(mw.CanProductsView(ctx, shopID))
+	s.NoError(mw.CanOrdersManage(ctx, shopID))
+	s.NoError(mw.CanOrdersView(ctx, shopID))
+	s.NoError(mw.CanFulfilmentManage(ctx, shopID))
 }
 
 func (s *MiddlewareTestSuite) TestShopViewerPermissions() {
@@ -324,20 +310,20 @@ func (s *MiddlewareTestSuite) TestShopViewerPermissions() {
 
 	shopID := "shop-2"
 	viewerPermissions := []string{
-		authz.PermissionView, authz.PermissionViewProducts, authz.PermissionViewOrders,
+		authz.PermissionShopView, authz.PermissionProductsView, authz.PermissionOrdersView,
 	}
 	s.seedShopPermissions(auth, shopID, "shop-viewer", viewerPermissions)
 
 	ctx := s.ctxWithClaims("shop-viewer")
 
 	// Viewer can view
-	s.NoError(mw.CanViewShop(ctx, shopID))
-	s.NoError(mw.CanViewProducts(ctx, shopID))
-	s.NoError(mw.CanViewOrders(ctx, shopID))
+	s.NoError(mw.CanShopView(ctx, shopID))
+	s.NoError(mw.CanProductsView(ctx, shopID))
+	s.NoError(mw.CanOrdersView(ctx, shopID))
 
 	// Viewer cannot manage
-	s.Error(mw.CanUpdateShop(ctx, shopID))
-	s.Error(mw.CanManageProducts(ctx, shopID))
-	s.Error(mw.CanManageOrders(ctx, shopID))
-	s.Error(mw.CanManageFulfilment(ctx, shopID))
+	s.Error(mw.CanShopUpdate(ctx, shopID))
+	s.Error(mw.CanProductsManage(ctx, shopID))
+	s.Error(mw.CanOrdersManage(ctx, shopID))
+	s.Error(mw.CanFulfilmentManage(ctx, shopID))
 }

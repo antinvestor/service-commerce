@@ -74,7 +74,7 @@ func (cs *CommerceServer) CreateShop(
 	ctx context.Context,
 	req *connect.Request[commercev1.CreateShopRequest],
 ) (*connect.Response[commercev1.CreateShopResponse], error) {
-	if err := cs.authz.CanCreateShop(ctx); err != nil {
+	if err := cs.authz.CanShopCreate(ctx); err != nil {
 		return nil, authorizer.ToConnectError(err)
 	}
 
@@ -98,7 +98,7 @@ func (cs *CommerceServer) GetShop(
 	ctx context.Context,
 	req *connect.Request[commercev1.GetShopRequest],
 ) (*connect.Response[commercev1.GetShopResponse], error) {
-	if err := cs.authz.CanViewShop(ctx, req.Msg.GetId()); err != nil {
+	if err := cs.authz.CanShopView(ctx, req.Msg.GetId()); err != nil {
 		return nil, authorizer.ToConnectError(err)
 	}
 
@@ -113,7 +113,7 @@ func (cs *CommerceServer) UpdateShop(
 	ctx context.Context,
 	req *connect.Request[commercev1.UpdateShopRequest],
 ) (*connect.Response[commercev1.UpdateShopResponse], error) {
-	if err := cs.authz.CanUpdateShop(ctx, req.Msg.GetId()); err != nil {
+	if err := cs.authz.CanShopUpdate(ctx, req.Msg.GetId()); err != nil {
 		return nil, authorizer.ToConnectError(err)
 	}
 
@@ -132,7 +132,7 @@ func (cs *CommerceServer) CreateProduct(
 	ctx context.Context,
 	req *connect.Request[commercev1.CreateProductRequest],
 ) (*connect.Response[commercev1.CreateProductResponse], error) {
-	if err := cs.authz.CanManageProducts(ctx, req.Msg.GetShopId()); err != nil {
+	if err := cs.authz.CanProductsManage(ctx, req.Msg.GetShopId()); err != nil {
 		return nil, authorizer.ToConnectError(err)
 	}
 
@@ -147,7 +147,7 @@ func (cs *CommerceServer) GetProduct(
 	ctx context.Context,
 	req *connect.Request[commercev1.GetProductRequest],
 ) (*connect.Response[commercev1.GetProductResponse], error) {
-	// TODO: add shop-level CanViewProducts check once product lookup provides shopID
+	// TODO: add shop-level CanProductsView check once product lookup provides shopID
 	product, err := cs.catalogBusiness.GetProduct(ctx, req.Msg.GetId())
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
@@ -159,7 +159,7 @@ func (cs *CommerceServer) ListProducts(
 	ctx context.Context,
 	req *connect.Request[commercev1.ListProductsRequest],
 ) (*connect.Response[commercev1.ListProductsResponse], error) {
-	if err := cs.authz.CanViewProducts(ctx, req.Msg.GetShopId()); err != nil {
+	if err := cs.authz.CanProductsView(ctx, req.Msg.GetShopId()); err != nil {
 		return nil, authorizer.ToConnectError(err)
 	}
 
@@ -180,7 +180,7 @@ func (cs *CommerceServer) CreateProductVariant(
 	ctx context.Context,
 	req *connect.Request[commercev1.CreateProductVariantRequest],
 ) (*connect.Response[commercev1.CreateProductVariantResponse], error) {
-	// TODO: add shop-level CanManageProducts check once product lookup provides shopID
+	// TODO: add shop-level CanProductsManage check once product lookup provides shopID
 	variant, err := cs.catalogBusiness.CreateProductVariant(ctx, req.Msg)
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
@@ -192,7 +192,7 @@ func (cs *CommerceServer) UpdateProductVariant(
 	ctx context.Context,
 	req *connect.Request[commercev1.UpdateProductVariantRequest],
 ) (*connect.Response[commercev1.UpdateProductVariantResponse], error) {
-	// TODO: add shop-level CanManageProducts check once variant lookup provides shopID
+	// TODO: add shop-level CanProductsManage check once variant lookup provides shopID
 	variant, err := cs.catalogBusiness.UpdateProductVariant(ctx, req.Msg)
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
@@ -209,7 +209,7 @@ func (cs *CommerceServer) CreateCart(
 	req *connect.Request[commercev1.CreateCartRequest],
 ) (*connect.Response[commercev1.CreateCartResponse], error) {
 	// Carts are customer-facing; check that the caller can view products in the shop
-	if err := cs.authz.CanViewProducts(ctx, req.Msg.GetShopId()); err != nil {
+	if err := cs.authz.CanProductsView(ctx, req.Msg.GetShopId()); err != nil {
 		return nil, authorizer.ToConnectError(err)
 	}
 
@@ -264,7 +264,7 @@ func (cs *CommerceServer) CreateOrderFromCart(
 	ctx context.Context,
 	req *connect.Request[commercev1.CreateOrderFromCartRequest],
 ) (*connect.Response[commercev1.CreateOrderFromCartResponse], error) {
-	// TODO: add shop-level CanManageOrders check once cart lookup provides shopID
+	// TODO: add shop-level CanOrdersManage check once cart lookup provides shopID
 	order, err := cs.orderBusiness.CreateOrderFromCart(ctx, req.Msg)
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
@@ -276,7 +276,7 @@ func (cs *CommerceServer) CreateOrder(
 	ctx context.Context,
 	req *connect.Request[commercev1.CreateOrderRequest],
 ) (*connect.Response[commercev1.CreateOrderResponse], error) {
-	if err := cs.authz.CanManageOrders(ctx, req.Msg.GetShopId()); err != nil {
+	if err := cs.authz.CanOrdersManage(ctx, req.Msg.GetShopId()); err != nil {
 		return nil, authorizer.ToConnectError(err)
 	}
 
@@ -303,7 +303,7 @@ func (cs *CommerceServer) ListOrders(
 	ctx context.Context,
 	req *connect.Request[commercev1.ListOrdersRequest],
 ) (*connect.Response[commercev1.ListOrdersResponse], error) {
-	if err := cs.authz.CanViewOrders(ctx, req.Msg.GetShopId()); err != nil {
+	if err := cs.authz.CanOrdersView(ctx, req.Msg.GetShopId()); err != nil {
 		return nil, authorizer.ToConnectError(err)
 	}
 
@@ -334,7 +334,7 @@ func (cs *CommerceServer) UpdateFulfilment(
 	ctx context.Context,
 	req *connect.Request[commercev1.UpdateFulfilmentRequest],
 ) (*connect.Response[commercev1.UpdateFulfilmentResponse], error) {
-	// TODO: add shop-level CanManageFulfilment check once fulfilment lookup provides shopID
+	// TODO: add shop-level CanFulfilmentManage check once fulfilment lookup provides shopID
 	fulfilment, err := cs.fulfilmentBusiness.UpdateFulfilment(ctx, req.Msg)
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
@@ -346,7 +346,7 @@ func (cs *CommerceServer) GetFulfilment(
 	ctx context.Context,
 	req *connect.Request[commercev1.GetFulfilmentRequest],
 ) (*connect.Response[commercev1.GetFulfilmentResponse], error) {
-	// TODO: add shop-level CanViewOrders or CanManageFulfilment check once fulfilment lookup provides shopID
+	// TODO: add shop-level CanOrdersView or CanFulfilmentManage check once fulfilment lookup provides shopID
 	fulfilment, err := cs.fulfilmentBusiness.GetFulfilment(ctx, req.Msg.GetId())
 	if err != nil {
 		return nil, errorutil.CleanErr(err)

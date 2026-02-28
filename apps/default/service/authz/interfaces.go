@@ -5,17 +5,17 @@ import "context"
 // Middleware defines permission checks for commerce operations.
 type Middleware interface {
 	// Tenant-level checks
-	CanCreateShop(ctx context.Context) error
-	CanViewShops(ctx context.Context) error
+	CanShopCreate(ctx context.Context) error
+	CanShopsView(ctx context.Context) error
 
 	// Shop-level checks (resource-level ReBAC)
-	CanViewShop(ctx context.Context, shopID string) error
-	CanUpdateShop(ctx context.Context, shopID string) error
-	CanManageProducts(ctx context.Context, shopID string) error
-	CanViewProducts(ctx context.Context, shopID string) error
-	CanManageOrders(ctx context.Context, shopID string) error
-	CanViewOrders(ctx context.Context, shopID string) error
-	CanManageFulfilment(ctx context.Context, shopID string) error
+	CanShopView(ctx context.Context, shopID string) error
+	CanShopUpdate(ctx context.Context, shopID string) error
+	CanProductsManage(ctx context.Context, shopID string) error
+	CanProductsView(ctx context.Context, shopID string) error
+	CanOrdersManage(ctx context.Context, shopID string) error
+	CanOrdersView(ctx context.Context, shopID string) error
+	CanFulfilmentManage(ctx context.Context, shopID string) error
 
 	// Tuple management
 	AddShopMember(ctx context.Context, shopID string, profileID string, role string) error

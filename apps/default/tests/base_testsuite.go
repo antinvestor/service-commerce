@@ -8,6 +8,7 @@ import (
 
 	"github.com/pitabwire/frame"
 	"github.com/pitabwire/frame/config"
+	"github.com/pitabwire/frame/datastore"
 	"github.com/pitabwire/frame/datastore/pool"
 	"github.com/pitabwire/frame/frametests"
 	"github.com/pitabwire/frame/frametests/definition"
@@ -85,6 +86,8 @@ func (bs *CommerceBaseTestSuite) CreateService(
 	cfg.ServerPort = ""
 	cfg.DatabaseMigrate = true
 	cfg.DatabaseTraceQueries = true
+	cfg.DatabaseMaxOpenConnections = 1
+	cfg.DatabaseMaxIdleConnections = 0
 
 	res := depOpts.ByIsDatabase(t.Context())
 	testDS, cleanup, err0 := res.GetRandomisedDS(t.Context(), depOpts.Prefix())
@@ -95,7 +98,7 @@ func (bs *CommerceBaseTestSuite) CreateService(
 	})
 
 	cfg.DatabasePrimaryURL = []string{testDS.String()}
-	cfg.DatabaseReplicaURL = []string{testDS.String()}
+	cfg.DatabaseReplicaURL = []string{}
 
 	// Configure real Keto authorizer URIs
 	cfg.AuthorizationServiceReadURI = bs.ketoReadURI
@@ -114,9 +117,16 @@ func (bs *CommerceBaseTestSuite) CreateService(
 
 	err = repository.Migrate(ctx, svc.DatastoreManager(), "../../migrations/0001")
 	require.NoError(t, err)
+	svc.DatastoreManager().RemovePool(ctx, datastore.DefaultMigrationPoolName)
 
 	err = svc.Run(ctx, "")
 	require.NoError(t, err)
+
+	t.Cleanup(func() {
+		bgCtx := context.Background()
+		svc.Stop(bgCtx)
+		svc.DatastoreManager().Close(bgCtx)
+	})
 
 	return ctx, svc
 }
@@ -142,7 +152,10 @@ func (bs *CommerceBaseTestSuite) WithTestDependancies(
 }
 
 // WithAuthClaims adds authentication claims to a context for testing.
-func (bs *CommerceBaseTestSuite) WithAuthClaims(ctx context.Context, tenantID, partitionID, profileID string) context.Context {
+func (bs *CommerceBaseTestSuite) WithAuthClaims(
+	ctx context.Context,
+	tenantID, partitionID, profileID string,
+) context.Context {
 	claims := &security.AuthenticationClaims{
 		TenantID:    tenantID,
 		PartitionID: partitionID,
@@ -157,7 +170,11 @@ func (bs *CommerceBaseTestSuite) WithAuthClaims(ctx context.Context, tenantID, p
 
 // SeedTenantAccess writes a tenancy_access member tuple so the profile can pass
 // the TenancyAccessChecker (data access layer).
-func (bs *CommerceBaseTestSuite) SeedTenantAccess(ctx context.Context, svc *frame.Service, tenantID, partitionID, profileID string) {
+func (bs *CommerceBaseTestSuite) SeedTenantAccess(
+	ctx context.Context,
+	svc *frame.Service,
+	tenantID, partitionID, profileID string,
+) {
 	auth := svc.SecurityManager().GetAuthorizer(ctx)
 	tenancyPath := fmt.Sprintf("%s/%s", tenantID, partitionID)
 	err := auth.WriteTuple(ctx, authz.BuildAccessTuple(tenancyPath, profileID))
@@ -166,7 +183,11 @@ func (bs *CommerceBaseTestSuite) SeedTenantAccess(ctx context.Context, svc *fram
 
 // SeedTenantRole writes a role tuple in the service_commerce namespace.
 // Only the role tuple is needed — Keto's OPL permits resolve individual permissions.
-func (bs *CommerceBaseTestSuite) SeedTenantRole(ctx context.Context, svc *frame.Service, tenantID, partitionID, profileID, role string) {
+func (bs *CommerceBaseTestSuite) SeedTenantRole(
+	ctx context.Context,
+	svc *frame.Service,
+	tenantID, partitionID, profileID, role string,
+) {
 	auth := svc.SecurityManager().GetAuthorizer(ctx)
 	tenancyPath := fmt.Sprintf("%s/%s", tenantID, partitionID)
 

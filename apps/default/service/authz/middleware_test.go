@@ -6,8 +6,6 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/antinvestor/service-commerce/apps/default/service/authz"
-	"github.com/antinvestor/service-commerce/apps/default/tests/testketo"
 	"github.com/pitabwire/frame/config"
 	"github.com/pitabwire/frame/frametests"
 	"github.com/pitabwire/frame/frametests/definition"
@@ -15,6 +13,9 @@ import (
 	"github.com/pitabwire/frame/security"
 	"github.com/pitabwire/frame/security/authorizer"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/antinvestor/service-commerce/apps/default/service/authz"
+	"github.com/antinvestor/service-commerce/apps/default/tests/testketo"
 )
 
 const (
@@ -267,7 +268,11 @@ func (s *MiddlewareTestSuite) TestDirectPermissionGrant() {
 
 // seedShopPermissions writes direct permission tuples for shop-level checks.
 // This tests direct permission grants at the resource level using granted_ prefix.
-func (s *MiddlewareTestSuite) seedShopPermissions(auth security.Authorizer, shopID, profileID string, permissions []string) {
+func (s *MiddlewareTestSuite) seedShopPermissions(
+	auth security.Authorizer,
+	shopID, profileID string,
+	permissions []string,
+) {
 	tuples := make([]security.RelationTuple, len(permissions))
 	for i, perm := range permissions {
 		tuples[i] = security.RelationTuple{

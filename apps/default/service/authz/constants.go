@@ -33,13 +33,13 @@ const (
 
 // Shop-level permissions (checked in commerce_shop namespace).
 const (
-	PermissionShopView          = "shop_view"
-	PermissionShopUpdate        = "shop_update"
-	PermissionProductsManage    = "products_manage"
-	PermissionProductsView      = "products_view"
-	PermissionOrdersManage      = "orders_manage"
-	PermissionOrdersView        = "orders_view"
-	PermissionFulfilmentManage  = "fulfilment_manage"
+	PermissionShopView         = "shop_view"
+	PermissionShopUpdate       = "shop_update"
+	PermissionProductsManage   = "products_manage"
+	PermissionProductsView     = "products_view"
+	PermissionOrdersManage     = "orders_manage"
+	PermissionOrdersView       = "orders_view"
+	PermissionFulfilmentManage = "fulfilment_manage"
 )
 
 // Granted relation constants for shop-level direct permission grants.

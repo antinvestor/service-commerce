@@ -9,7 +9,7 @@ require (
 	github.com/pitabwire/frame v1.79.0
 	github.com/pitabwire/util v0.6.1
 	github.com/stretchr/testify v1.11.1
-	github.com/testcontainers/testcontainers-go v0.40.0
+	github.com/testcontainers/testcontainers-go v0.41.0
 	google.golang.org/genproto v0.0.0-20260223185530-2f722ef697dc
 	google.golang.org/protobuf v1.36.11
 	gorm.io/gorm v1.31.1

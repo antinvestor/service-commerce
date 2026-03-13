@@ -21,9 +21,8 @@ import (
 const (
 	testTenantID    = "tenant1"
 	testPartitionID = "partition1"
+	testTenancyPath = testTenantID + "/" + testPartitionID
 )
-
-var testTenancyPath = fmt.Sprintf("%s/%s", testTenantID, testPartitionID)
 
 // ---------------------------------------------------------------------------
 // Test suite with real Keto
@@ -125,8 +124,8 @@ func (s *MiddlewareTestSuite) TestOwnerHasAllPermissions() {
 	mw := authz.NewMiddleware(auth)
 	ctx := s.ctxWithClaims("user1")
 
-	s.NoError(mw.CanShopCreate(ctx))
-	s.NoError(mw.CanShopsView(ctx))
+	s.Require().NoError(mw.CanShopCreate(ctx))
+	s.Require().NoError(mw.CanShopsView(ctx))
 }
 
 func (s *MiddlewareTestSuite) TestAdminPermissions() {
@@ -136,8 +135,8 @@ func (s *MiddlewareTestSuite) TestAdminPermissions() {
 	mw := authz.NewMiddleware(auth)
 	ctx := s.ctxWithClaims("user2")
 
-	s.NoError(mw.CanShopCreate(ctx))
-	s.NoError(mw.CanShopsView(ctx))
+	s.Require().NoError(mw.CanShopCreate(ctx))
+	s.Require().NoError(mw.CanShopsView(ctx))
 }
 
 func (s *MiddlewareTestSuite) TestMemberPermissions() {
@@ -148,10 +147,10 @@ func (s *MiddlewareTestSuite) TestMemberPermissions() {
 	ctx := s.ctxWithClaims("user3")
 
 	// Member can view shops
-	s.NoError(mw.CanShopsView(ctx))
+	s.Require().NoError(mw.CanShopsView(ctx))
 
 	// Member cannot create shops
-	s.Error(mw.CanShopCreate(ctx))
+	s.Require().Error(mw.CanShopCreate(ctx))
 }
 
 func (s *MiddlewareTestSuite) TestNoClaims() {
@@ -186,7 +185,7 @@ func (s *MiddlewareTestSuite) TestAccessChecker_MemberAllowed() {
 	s.Require().NoError(err)
 
 	ctx := s.ctxWithClaims("member-user")
-	s.NoError(checker.CheckAccess(ctx))
+	s.Require().NoError(checker.CheckAccess(ctx))
 }
 
 func (s *MiddlewareTestSuite) TestAccessChecker_ServiceBotAllowed() {
@@ -198,7 +197,7 @@ func (s *MiddlewareTestSuite) TestAccessChecker_ServiceBotAllowed() {
 	s.Require().NoError(err)
 
 	ctx := s.ctxWithSystemInternalClaims("bot-user")
-	s.NoError(checker.CheckAccess(ctx))
+	s.Require().NoError(checker.CheckAccess(ctx))
 }
 
 func (s *MiddlewareTestSuite) TestAccessChecker_NoTupleDenied() {
@@ -206,7 +205,7 @@ func (s *MiddlewareTestSuite) TestAccessChecker_NoTupleDenied() {
 	checker := authorizer.NewTenancyAccessChecker(auth, authz.NamespaceTenancyAccess)
 
 	ctx := s.ctxWithClaims("unknown-user")
-	s.Error(checker.CheckAccess(ctx))
+	s.Require().Error(checker.CheckAccess(ctx))
 }
 
 // ---------------------------------------------------------------------------
@@ -234,11 +233,11 @@ func (s *MiddlewareTestSuite) TestServiceBotViaSubjectSets() {
 	botCtx := s.ctxWithSystemInternalClaims("service-bot")
 
 	// Layer 1: Access check passes
-	s.NoError(accessChecker.CheckAccess(botCtx))
+	s.Require().NoError(accessChecker.CheckAccess(botCtx))
 
 	// Layer 2: Functional permissions resolved through subject sets
-	s.NoError(mw.CanShopCreate(botCtx))
-	s.NoError(mw.CanShopsView(botCtx))
+	s.Require().NoError(mw.CanShopCreate(botCtx))
+	s.Require().NoError(mw.CanShopsView(botCtx))
 }
 
 func (s *MiddlewareTestSuite) TestDirectPermissionGrant() {
@@ -256,10 +255,10 @@ func (s *MiddlewareTestSuite) TestDirectPermissionGrant() {
 	ctx := s.ctxWithClaims("user4")
 
 	// Direct grant works
-	s.NoError(mw.CanShopCreate(ctx))
+	s.Require().NoError(mw.CanShopCreate(ctx))
 
 	// shops_view inherits from shop_create via OPL permits
-	s.NoError(mw.CanShopsView(ctx))
+	s.Require().NoError(mw.CanShopsView(ctx))
 }
 
 // ---------------------------------------------------------------------------
@@ -300,13 +299,13 @@ func (s *MiddlewareTestSuite) TestShopOwnerHasAllPermissions() {
 
 	ctx := s.ctxWithClaims("shop-owner")
 
-	s.NoError(mw.CanShopView(ctx, shopID))
-	s.NoError(mw.CanShopUpdate(ctx, shopID))
-	s.NoError(mw.CanProductsManage(ctx, shopID))
-	s.NoError(mw.CanProductsView(ctx, shopID))
-	s.NoError(mw.CanOrdersManage(ctx, shopID))
-	s.NoError(mw.CanOrdersView(ctx, shopID))
-	s.NoError(mw.CanFulfilmentManage(ctx, shopID))
+	s.Require().NoError(mw.CanShopView(ctx, shopID))
+	s.Require().NoError(mw.CanShopUpdate(ctx, shopID))
+	s.Require().NoError(mw.CanProductsManage(ctx, shopID))
+	s.Require().NoError(mw.CanProductsView(ctx, shopID))
+	s.Require().NoError(mw.CanOrdersManage(ctx, shopID))
+	s.Require().NoError(mw.CanOrdersView(ctx, shopID))
+	s.Require().NoError(mw.CanFulfilmentManage(ctx, shopID))
 }
 
 func (s *MiddlewareTestSuite) TestShopViewerPermissions() {
@@ -322,13 +321,13 @@ func (s *MiddlewareTestSuite) TestShopViewerPermissions() {
 	ctx := s.ctxWithClaims("shop-viewer")
 
 	// Viewer can view
-	s.NoError(mw.CanShopView(ctx, shopID))
-	s.NoError(mw.CanProductsView(ctx, shopID))
-	s.NoError(mw.CanOrdersView(ctx, shopID))
+	s.Require().NoError(mw.CanShopView(ctx, shopID))
+	s.Require().NoError(mw.CanProductsView(ctx, shopID))
+	s.Require().NoError(mw.CanOrdersView(ctx, shopID))
 
 	// Viewer cannot manage
-	s.Error(mw.CanShopUpdate(ctx, shopID))
-	s.Error(mw.CanProductsManage(ctx, shopID))
-	s.Error(mw.CanOrdersManage(ctx, shopID))
-	s.Error(mw.CanFulfilmentManage(ctx, shopID))
+	s.Require().Error(mw.CanShopUpdate(ctx, shopID))
+	s.Require().Error(mw.CanProductsManage(ctx, shopID))
+	s.Require().Error(mw.CanOrdersManage(ctx, shopID))
+	s.Require().Error(mw.CanFulfilmentManage(ctx, shopID))
 }

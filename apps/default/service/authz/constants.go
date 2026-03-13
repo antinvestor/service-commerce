@@ -14,7 +14,7 @@ const (
 	NamespaceProfile = "profile_user"
 )
 
-// Shop-level namespace (resource-level ReBAC, not affected by two-layer model).
+// NamespaceShop is the shop-level namespace (resource-level ReBAC, not affected by two-layer model).
 const NamespaceShop = "commerce_shop"
 
 // Tenant-level permissions (checked in service_commerce namespace).

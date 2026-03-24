@@ -6,7 +6,7 @@ toolchain go1.26.1
 
 require (
 	buf.build/gen/go/antinvestor/commerce/connectrpc/go v1.19.1-20260219062149-38a37287b8c7.2
-	buf.build/gen/go/antinvestor/commerce/protocolbuffers/go v1.36.11-20260219062149-38a37287b8c7.1
+	buf.build/gen/go/antinvestor/commerce/protocolbuffers/go v1.36.11-20260324161313-20bf568e88e2.1
 	connectrpc.com/connect v1.19.1
 	github.com/pitabwire/frame v1.81.1
 	github.com/pitabwire/util v0.6.1
@@ -18,7 +18,7 @@ require (
 )
 
 require (
-	buf.build/gen/go/antinvestor/common/protocolbuffers/go v1.36.11-20260219054105-fe125014d75c.1 // indirect
+	buf.build/gen/go/antinvestor/common/protocolbuffers/go v1.36.11-20260324155536-90f3f009e08b.1 // indirect
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.11-20260209202127-80ab13bee0bf.1 // indirect
 	buf.build/gen/go/gnostic/gnostic/protocolbuffers/go v1.36.11-20230414000709-087bc8072ce4.1 // indirect
 	buf.build/go/protovalidate v1.1.3 // indirect

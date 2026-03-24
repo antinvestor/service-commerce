@@ -9,7 +9,7 @@ require (
 	buf.build/gen/go/antinvestor/commerce/protocolbuffers/go v1.36.11-20260219062149-38a37287b8c7.1
 	connectrpc.com/connect v1.19.1
 	github.com/pitabwire/frame v1.81.1
-	github.com/pitabwire/util v0.6.1
+	github.com/pitabwire/util v0.7.0
 	github.com/stretchr/testify v1.11.1
 	github.com/testcontainers/testcontainers-go v0.41.0
 	google.golang.org/genproto v0.0.0-20260316180232-0b37fe3546d5

@@ -193,8 +193,8 @@ github.com/pitabwire/frame v1.81.1 h1:Z4hsvYJnyybpARzajLMFX2b2VGWB5aFQaeS8lhFlU8
 github.com/pitabwire/frame v1.81.1/go.mod h1:ahOzZruNLhErO0C7Q2JOopkEnTbHVfIhvU3AgL1pcKo=
 github.com/pitabwire/natspubsub v0.8.0 h1:Z3cevthjRVmGhqycGYm6KxvVIiXYNNklBi2Ig2jd8UM=
 github.com/pitabwire/natspubsub v0.8.0/go.mod h1:ytLmmd6CZ5m2ackMRDDvF5gmXHDuTG+1vcjiLRUKSgs=
-github.com/pitabwire/util v0.6.1 h1:aXk3gp3qbs/gTSiqSbA8mcNn0So+7mNXrTBt1DJI9Ok=
-github.com/pitabwire/util v0.6.1/go.mod h1:JrLiS3K4VXsLZE38LLvq1N0X2j0fs33QLz/zMXf3zc4=
+github.com/pitabwire/util v0.7.0 h1:37QUftcS/h9cPwSUJTU2gx/JWUfg4HXSPoejKE0Pqn4=
+github.com/pitabwire/util v0.7.0/go.mod h1:JrLiS3K4VXsLZE38LLvq1N0X2j0fs33QLz/zMXf3zc4=
 github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
 github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=

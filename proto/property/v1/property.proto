@@ -1,0 +1,636 @@
+// Copyright 2023-2026 Ant Investor Ltd
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package property.v1;
+
+// -----------------------------------------------------
+// Core notes (normative):
+// - Property Service manages real estate and asset properties
+// - Supports hierarchical property structures (parent-child)
+// - Geospatial locality tracking with points and boundaries
+// - Property type classification and state history
+// - Subscription-based access control with roles
+// - All timestamps are RFC3339 / google.protobuf.Timestamp
+// -----------------------------------------------------
+
+import "buf/validate/validate.proto";
+import "common/v1/common.proto";
+import "common/v1/permissions.proto";
+import "gnostic/openapi/v3/annotations.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/antinvestor/apis/go/property/v1;propertyv1";
+option java_multiple_files = true;
+option java_package = "propertyv1";
+option (gnostic.openapi.v3.document) = {
+  info: {
+    title: "Property Service"
+    version: "v1.0.0"
+    description: "The Property Service manages real estate and asset properties with geospatial locality tracking, hierarchical structures, and subscription-based access control. It supports property type classification, state history tracking, and role-based subscriptions. Properties can be organized hierarchically and associated with geographic localities defined by points or boundaries."
+    contact: {
+      name: "Ant Investor Ltd"
+      url: "https://github.com/antinvestor/service-property"
+      email: "info@antinvestor.com"
+    }
+    license: {
+      name: "Apache License"
+      url: "https://github.com/antinvestor/apis/blob/master/LICENSE"
+    }
+  }
+  components: {
+    security_schemes: {
+      additional_properties: [
+        {
+          name: "BearerAuth"
+          value: {
+            security_scheme: {
+              type: "http"
+              scheme: "bearer"
+              bearer_format: "JWT"
+            }
+          }
+        }
+      ]
+    }
+  }
+};
+
+// -----------------------------------------------------
+// Core Data Types
+// -----------------------------------------------------
+
+// Locality represents a geographic location with geospatial features.
+message Locality {
+  string id = 1 [
+    (buf.validate.field).ignore = IGNORE_IF_ZERO_VALUE,
+    (buf.validate.field).string.min_len = 3,
+    (buf.validate.field).string.max_len = 40,
+    (buf.validate.field).string.pattern = "[0-9a-z_-]{3,40}"
+  ]; // Unique locality ID
+  string parent_id = 2 [
+    (buf.validate.field).ignore = IGNORE_IF_ZERO_VALUE,
+    (buf.validate.field).string.min_len = 3,
+    (buf.validate.field).string.max_len = 40,
+    (buf.validate.field).string.pattern = "[0-9a-z_-]{3,40}"
+  ]; // Parent locality ID for hierarchical structure
+  string name = 5 [
+    (buf.validate.field).string.min_len = 3,
+    (buf.validate.field).string.max_len = 60
+  ]; // Locality name (city, district, neighborhood)
+  string description = 6 [
+    (buf.validate.field).ignore = IGNORE_IF_ZERO_VALUE,
+    (buf.validate.field).string.min_len = 50
+  ]; // Detailed description
+  google.protobuf.Struct extras = 7; // Additional metadata
+  google.protobuf.Timestamp created_at = 8; // Creation timestamp
+
+  oneof feature {
+    // Geospatial feature: either point or boundary must be set
+    option (buf.validate.oneof).required = true;
+
+    string point = 3 [
+      (buf.validate.field).string.min_len = 10,
+      (buf.validate.field).string.max_len = 100
+    ]; // Point location (lat,lng format)
+    string boundary = 4 [
+      (buf.validate.field).string.min_len = 10,
+      (buf.validate.field).string.max_len = 2048
+    ]; // Boundary polygon (GeoJSON or WKT format)
+  }
+}
+
+message AddLocalityRequest {
+  Locality data = 1;
+}
+message AddLocalityResponse {
+  Locality data = 1;
+}
+
+// PropertyType defines a classification for properties.
+message PropertyType {
+  string id = 1 [
+    (buf.validate.field).ignore = IGNORE_IF_ZERO_VALUE,
+    (buf.validate.field).string.min_len = 3,
+    (buf.validate.field).string.max_len = 40,
+    (buf.validate.field).string.pattern = "[0-9a-z_-]{3,40}"
+  ]; // Unique property type ID
+  string name = 2 [
+    (buf.validate.field).string.min_len = 3,
+    (buf.validate.field).string.max_len = 60
+  ]; // Type name (residential, commercial, land, etc.)
+  string description = 3 [
+    (buf.validate.field).ignore = IGNORE_IF_ZERO_VALUE,
+    (buf.validate.field).string.min_len = 50
+  ]; // Type description
+  google.protobuf.Struct extra = 4; // Additional metadata
+  google.protobuf.Timestamp created_at = 5; // Creation timestamp
+}
+
+// PropertyState represents a state snapshot in property history.
+message PropertyState {
+  string id = 1 [
+    (buf.validate.field).string.min_len = 3,
+    (buf.validate.field).string.max_len = 40,
+    (buf.validate.field).string.pattern = "[0-9a-z_-]{3,40}"
+  ]; // Unique state record ID
+  string propertyid = 2 [
+    (buf.validate.field).string.min_len = 3,
+    (buf.validate.field).string.max_len = 40,
+    (buf.validate.field).string.pattern = "[0-9a-z_-]{3,40}"
+  ]; // Associated property ID
+  common.v1.STATE state = 3; // Property state
+  common.v1.STATUS status = 4; // Property status
+  string name = 5 [
+    (buf.validate.field).string.min_len = 3,
+    (buf.validate.field).string.max_len = 60
+  ]; // State name/label
+  string description = 6 [
+    (buf.validate.field).ignore = IGNORE_IF_ZERO_VALUE,
+    (buf.validate.field).string.min_len = 50
+  ]; // State description
+  google.protobuf.Struct extras = 7; // Additional metadata
+  google.protobuf.Timestamp created_at = 8; // State timestamp
+}
+
+message AddPropertyTypeRequest {
+  PropertyType data = 1;
+}
+message AddPropertyTypeResponse {
+  PropertyType data = 1;
+}
+
+// Subscription represents a profile's access to a property with a role.
+message Subscription {
+  string id = 1 [
+    (buf.validate.field).ignore = IGNORE_IF_ZERO_VALUE,
+    (buf.validate.field).string.min_len = 3,
+    (buf.validate.field).string.max_len = 40,
+    (buf.validate.field).string.pattern = "[0-9a-z_-]{3,40}"
+  ]; // Unique subscription ID
+  string property_id = 2 [
+    (buf.validate.field).string.min_len = 3,
+    (buf.validate.field).string.max_len = 40
+  ]; // Property ID
+  string profile_id = 3 [
+    (buf.validate.field).ignore = IGNORE_IF_ZERO_VALUE,
+    (buf.validate.field).string.min_len = 3,
+    (buf.validate.field).string.max_len = 50
+  ]; // Profile ID of subscriber
+  string role = 4 [
+    (buf.validate.field).ignore = IGNORE_IF_ZERO_VALUE,
+    (buf.validate.field).string.min_len = 3,
+    (buf.validate.field).string.max_len = 50
+  ]; // Role (owner, manager, tenant, viewer, etc.)
+  google.protobuf.Struct extra = 5; // Additional metadata
+  google.protobuf.Timestamp created_at = 6; // Subscription start
+  google.protobuf.Timestamp expires_at = 7; // Subscription expiry
+}
+
+message AddSubscriptionRequest {
+  Subscription data = 1;
+}
+message AddSubscriptionResponse {
+  Subscription data = 1;
+}
+
+// Property represents a real estate or asset property.
+message Property {
+  string id = 1 [
+    (buf.validate.field).ignore = IGNORE_IF_ZERO_VALUE,
+    (buf.validate.field).string.min_len = 3,
+    (buf.validate.field).string.max_len = 40,
+    (buf.validate.field).string.pattern = "[0-9a-z_-]{3,40}"
+  ]; // Unique property ID
+  string parent_id = 2 [
+    (buf.validate.field).ignore = IGNORE_IF_ZERO_VALUE,
+    (buf.validate.field).string.min_len = 3,
+    (buf.validate.field).string.max_len = 40,
+    (buf.validate.field).string.pattern = "[0-9a-z_-]{3,40}"
+  ]; // Parent property ID for hierarchical structures
+  string name = 3 [
+    (buf.validate.field).string.min_len = 3,
+    (buf.validate.field).string.max_len = 60
+  ]; // Property name
+  string description = 4 [
+    (buf.validate.field).ignore = IGNORE_IF_ZERO_VALUE,
+    (buf.validate.field).string.min_len = 50
+  ]; // Property description
+  PropertyType property_type = 5; // Property classification
+  Locality locality = 6; // Geographic location
+  google.protobuf.Timestamp started_at = 7 [(buf.validate.field).timestamp.lt_now = true]; // Property start date
+  google.protobuf.Timestamp created_at = 8; // Creation timestamp
+  google.protobuf.Struct extra = 9; // Additional property metadata
+}
+
+message CreatePropertyRequest {
+  Property data = 1;
+}
+message CreatePropertyResponse {
+  Property data = 1;
+}
+
+message ListPropertyTypeRequest {
+  string query = 1;
+  int64 page = 2;
+  int32 count = 3;
+  string start_date = 4;
+  string end_date = 5;
+  repeated string properties = 6;
+  google.protobuf.Struct extras = 7;
+}
+
+message ListPropertyTypeResponse {
+  repeated PropertyType data = 1;
+}
+
+message SearchPropertyRequest {
+  string query = 1;
+  int64 page = 2;
+  int32 count = 3;
+  string start_date = 4;
+  string end_date = 5;
+  repeated string properties = 6;
+  google.protobuf.Struct extras = 7;
+}
+
+message SearchPropertyResponse {
+  repeated Property data = 1;
+}
+
+message DeleteLocalityRequest {
+  string id = 1 [
+    (buf.validate.field).string.min_len = 3,
+    (buf.validate.field).string.max_len = 40,
+    (buf.validate.field).string.pattern = "[0-9a-z_-]{3,40}"
+  ];
+}
+
+message DeleteLocalityResponse {
+  bool success = 1;
+}
+
+message DeletePropertyRequest {
+  string id = 1 [
+    (buf.validate.field).string.min_len = 3,
+    (buf.validate.field).string.max_len = 40,
+    (buf.validate.field).string.pattern = "[0-9a-z_-]{3,40}"
+  ];
+}
+
+message DeletePropertyResponse {
+  bool success = 1;
+}
+
+message StateOfPropertyRequest {
+  string id = 1 [
+    (buf.validate.field).string.min_len = 3,
+    (buf.validate.field).string.max_len = 40,
+    (buf.validate.field).string.pattern = "[0-9a-z_-]{3,40}"
+  ];
+}
+
+message StateOfPropertyResponse {
+  PropertyState data = 1;
+}
+
+message HistoryOfPropertyRequest {
+  string id = 1 [
+    (buf.validate.field).string.min_len = 3,
+    (buf.validate.field).string.max_len = 40,
+    (buf.validate.field).string.pattern = "[0-9a-z_-]{3,40}"
+  ];
+}
+
+message HistoryOfPropertyResponse {
+  repeated PropertyState data = 1;
+}
+
+message UpdatePropertyRequest {
+  string id = 1 [
+    (buf.validate.field).string.min_len = 3,
+    (buf.validate.field).string.max_len = 40,
+    (buf.validate.field).string.pattern = "[0-9a-z_-]{3,40}"
+  ];
+  common.v1.STATE state = 2;
+  common.v1.STATUS status = 3;
+  string name = 4 [
+    (buf.validate.field).ignore = IGNORE_IF_ZERO_VALUE,
+    (buf.validate.field).string.min_len = 3,
+    (buf.validate.field).string.max_len = 60
+  ];
+  string description = 5 [
+    (buf.validate.field).ignore = IGNORE_IF_ZERO_VALUE,
+    (buf.validate.field).string.min_len = 60
+  ];
+  string guardian_id = 6 [
+    (buf.validate.field).ignore = IGNORE_IF_ZERO_VALUE,
+    (buf.validate.field).string.min_len = 3,
+    (buf.validate.field).string.max_len = 40,
+    (buf.validate.field).string.pattern = "[0-9a-z_-]{3,40}"
+  ];
+  string locality_id = 7 [
+    (buf.validate.field).ignore = IGNORE_IF_ZERO_VALUE,
+    (buf.validate.field).string.min_len = 3,
+    (buf.validate.field).string.max_len = 40,
+    (buf.validate.field).string.pattern = "[0-9a-z_-]{3,40}"
+  ];
+  google.protobuf.Struct extras = 8;
+}
+
+message UpdatePropertyResponse {
+  Property data = 1;
+}
+
+message ListSubscriptionRequest {
+  string property_id = 1;
+  string query = 2;
+}
+
+message ListSubscriptionResponse {
+  repeated Subscription data = 1;
+}
+
+message DeleteSubscriptionRequest {
+  string id = 1 [
+    (buf.validate.field).string.min_len = 3,
+    (buf.validate.field).string.max_len = 40,
+    (buf.validate.field).string.pattern = "[0-9a-z_-]{3,40}"
+  ];
+}
+
+message DeleteSubscriptionResponse {
+  bool success = 1;
+}
+
+// -----------------------------------------------------
+// Property Service
+// -----------------------------------------------------
+
+// PropertyService manages real estate and asset properties.
+// All RPCs require authentication via Bearer token.
+service PropertyService {
+  option (common.v1.service_permissions) = {
+    namespace: "service_property"
+    permissions: [
+      "property_type_view",
+      "property_type_manage",
+      "locality_manage",
+      "property_view",
+      "property_manage",
+      "property_subscription_view",
+      "property_subscription_manage"
+    ]
+    role_bindings: [
+      {
+        role: ROLE_OWNER
+        permissions: [
+          "property_type_view",
+          "property_type_manage",
+          "locality_manage",
+          "property_view",
+          "property_manage",
+          "property_subscription_view",
+          "property_subscription_manage"
+        ]
+      },
+      {
+        role: ROLE_ADMIN
+        permissions: [
+          "property_type_view",
+          "property_type_manage",
+          "locality_manage",
+          "property_view",
+          "property_manage",
+          "property_subscription_view",
+          "property_subscription_manage"
+        ]
+      },
+      {
+        role: ROLE_OPERATOR
+        permissions: [
+          "property_type_view",
+          "property_view",
+          "property_manage",
+          "property_subscription_view",
+          "property_subscription_manage"
+        ]
+      },
+      {
+        role: ROLE_VIEWER
+        permissions: [
+          "property_type_view",
+          "property_view",
+          "property_subscription_view"
+        ]
+      },
+      {
+        role: ROLE_MEMBER
+        permissions: [
+          "property_type_view",
+          "property_view",
+          "property_subscription_view"
+        ]
+      },
+      {
+        role: ROLE_SERVICE
+        permissions: [
+          "property_type_view",
+          "property_type_manage",
+          "locality_manage",
+          "property_view",
+          "property_manage",
+          "property_subscription_view",
+          "property_subscription_manage"
+        ]
+      }
+    ]
+  };
+
+  // AddPropertyType creates a new property type classification.
+  rpc AddPropertyType(AddPropertyTypeRequest) returns (AddPropertyTypeResponse) {
+    option (common.v1.method_permissions) = {
+      permissions: ["property_type_manage"]
+    };
+    option (gnostic.openapi.v3.operation) = {
+      operation_id: "addPropertyType"
+      summary: "Add property type"
+      description: "Creates a new property type classification (residential, commercial, land, etc.) for categorizing properties."
+      tags: "Property Types"
+    };
+  }
+
+  // ListPropertyType retrieves all property types.
+  rpc ListPropertyType(ListPropertyTypeRequest) returns (stream ListPropertyTypeResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (common.v1.method_permissions) = {
+      permissions: ["property_type_view"]
+    };
+    option (gnostic.openapi.v3.operation) = {
+      operation_id: "listPropertyTypes"
+      summary: "List property types"
+      description: "Retrieves all property type classifications with optional filtering by date range and properties. Returns a stream of property types."
+      tags: "Property Types"
+    };
+  }
+
+  // AddLocality creates a new geographic locality.
+  rpc AddLocality(AddLocalityRequest) returns (AddLocalityResponse) {
+    option (common.v1.method_permissions) = {
+      permissions: ["locality_manage"]
+    };
+    option (gnostic.openapi.v3.operation) = {
+      operation_id: "addLocality"
+      summary: "Add locality"
+      description: "Creates a new geographic locality with geospatial features (point or boundary). Supports hierarchical locality structures."
+      tags: "Localities"
+    };
+  }
+
+  // DeleteLocality removes a locality from the system.
+  rpc DeleteLocality(DeleteLocalityRequest) returns (DeleteLocalityResponse) {
+    option (common.v1.method_permissions) = {
+      permissions: ["locality_manage"]
+    };
+    option (gnostic.openapi.v3.operation) = {
+      operation_id: "deleteLocality"
+      summary: "Delete locality"
+      description: "Removes a geographic locality from the system. Properties associated with this locality must be reassigned first."
+      tags: "Localities"
+    };
+  }
+
+  // CreateProperty creates a new property.
+  rpc CreateProperty(CreatePropertyRequest) returns (CreatePropertyResponse) {
+    option (common.v1.method_permissions) = {
+      permissions: ["property_manage"]
+    };
+    option (gnostic.openapi.v3.operation) = {
+      operation_id: "createProperty"
+      summary: "Create property"
+      description: "Creates a new property with type classification, locality, and optional hierarchical parent. Properties can represent buildings, units, or land parcels."
+      tags: "Properties"
+    };
+  }
+
+  // UpdateProperty updates an existing property.
+  rpc UpdateProperty(UpdatePropertyRequest) returns (UpdatePropertyResponse) {
+    option (common.v1.method_permissions) = {
+      permissions: ["property_manage"]
+    };
+    option (gnostic.openapi.v3.operation) = {
+      operation_id: "updateProperty"
+      summary: "Update property"
+      description: "Updates an existing property's details including state, status, name, description, guardian, and locality. Creates a new state history entry."
+      tags: "Properties"
+    };
+  }
+
+  // DeleteProperty removes a property from the system.
+  rpc DeleteProperty(DeletePropertyRequest) returns (DeletePropertyResponse) {
+    option (common.v1.method_permissions) = {
+      permissions: ["property_manage"]
+    };
+    option (gnostic.openapi.v3.operation) = {
+      operation_id: "deleteProperty"
+      summary: "Delete property"
+      description: "Removes a property from the system. Child properties and subscriptions must be removed first."
+      tags: "Properties"
+    };
+  }
+
+  // StateOfProperty retrieves the current state of a property.
+  rpc StateOfProperty(StateOfPropertyRequest) returns (StateOfPropertyResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (common.v1.method_permissions) = {
+      permissions: ["property_view"]
+    };
+    option (gnostic.openapi.v3.operation) = {
+      operation_id: "getPropertyState"
+      summary: "Get property state"
+      description: "Retrieves the current state and status of a property including the latest state transition information."
+      tags: "Properties"
+    };
+  }
+
+  // HistoryOfProperty retrieves the complete state history.
+  rpc HistoryOfProperty(HistoryOfPropertyRequest) returns (stream HistoryOfPropertyResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (common.v1.method_permissions) = {
+      permissions: ["property_view"]
+    };
+    option (gnostic.openapi.v3.operation) = {
+      operation_id: "getPropertyHistory"
+      summary: "Get property history"
+      description: "Retrieves the complete state transition history of a property over its lifetime. Returns a stream of state snapshots in chronological order."
+      tags: "Properties"
+    };
+  }
+
+  // SearchProperty finds properties matching criteria.
+  rpc SearchProperty(SearchPropertyRequest) returns (stream SearchPropertyResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (common.v1.method_permissions) = {
+      permissions: ["property_view"]
+    };
+    option (gnostic.openapi.v3.operation) = {
+      operation_id: "searchProperties"
+      summary: "Search properties"
+      description: "Searches for properties matching specified criteria including name, type, locality, date range, and custom properties. Returns a stream of matching properties."
+      tags: "Properties"
+    };
+  }
+
+  // ListSubscription retrieves subscriptions for a property.
+  rpc ListSubscription(ListSubscriptionRequest) returns (stream ListSubscriptionResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+    option (common.v1.method_permissions) = {
+      permissions: ["property_subscription_view"]
+    };
+    option (gnostic.openapi.v3.operation) = {
+      operation_id: "listSubscriptions"
+      summary: "List property subscriptions"
+      description: "Retrieves all subscriptions (access grants) for a specific property including profile IDs, roles, and expiration dates."
+      tags: "Subscriptions"
+    };
+  }
+
+  // AddSubscription grants a profile access to a property.
+  rpc AddSubscription(AddSubscriptionRequest) returns (AddSubscriptionResponse) {
+    option (common.v1.method_permissions) = {
+      permissions: ["property_subscription_manage"]
+    };
+    option (gnostic.openapi.v3.operation) = {
+      operation_id: "addSubscription"
+      summary: "Add subscription"
+      description: "Grants a profile access to a property with a specific role (owner, manager, tenant, viewer). Supports expiration dates for time-limited access."
+      tags: "Subscriptions"
+    };
+  }
+
+  // DeleteSubscription revokes a profile's access to a property.
+  rpc DeleteSubscription(DeleteSubscriptionRequest) returns (DeleteSubscriptionResponse) {
+    option (common.v1.method_permissions) = {
+      permissions: ["property_subscription_manage"]
+    };
+    option (gnostic.openapi.v3.operation) = {
+      operation_id: "deleteSubscription"
+      summary: "Delete subscription"
+      description: "Revokes a profile's access to a property by removing their subscription. The profile will no longer have access to the property."
+      tags: "Subscriptions"
+    };
+  }
+}

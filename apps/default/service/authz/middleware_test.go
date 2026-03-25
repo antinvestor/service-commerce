@@ -112,16 +112,6 @@ func (s *MiddlewareTestSuite) ctxWithSystemInternalClaims(subjectID string) cont
 	return claims.ClaimsToContext(context.Background())
 }
 
-// seedRole writes a role tuple in service_commerce namespace.
-// Only the role tuple is needed — Keto's OPL permits resolve individual permissions.
-func (s *MiddlewareTestSuite) seedRole(auth security.Authorizer, tenancyPath, profileID, role string) {
-	err := auth.WriteTuple(s.T().Context(), security.RelationTuple{
-		Object:   security.ObjectRef{Namespace: authz.NamespaceCommerce, ID: tenancyPath},
-		Relation: role,
-		Subject:  security.SubjectRef{Namespace: authz.NamespaceProfile, ID: profileID},
-	})
-	s.Require().NoError(err)
-}
 
 func TestMiddlewareSuite(t *testing.T) {
 	suite.Run(t, new(MiddlewareTestSuite))

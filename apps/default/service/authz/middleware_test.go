@@ -114,62 +114,26 @@ func TestMiddlewareSuite(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
-// FunctionChecker (middleware) tests — only checks service_commerce permissions
+// Shop-level middleware tests — tenant-level checks are now handled by
+// the FunctionAccessInterceptor, so we only test shop-level ReBAC here.
 // ---------------------------------------------------------------------------
-
-func (s *MiddlewareTestSuite) TestOwnerHasAllPermissions() {
-	auth := s.newAuthorizer()
-	s.seedRole(auth, testTenancyPath, "user1", authz.RoleOwner)
-
-	mw := authz.NewMiddleware(auth)
-	ctx := s.ctxWithClaims("user1")
-
-	s.Require().NoError(mw.CanShopCreate(ctx))
-	s.Require().NoError(mw.CanShopsView(ctx))
-}
-
-func (s *MiddlewareTestSuite) TestAdminPermissions() {
-	auth := s.newAuthorizer()
-	s.seedRole(auth, testTenancyPath, "user2", authz.RoleAdmin)
-
-	mw := authz.NewMiddleware(auth)
-	ctx := s.ctxWithClaims("user2")
-
-	s.Require().NoError(mw.CanShopCreate(ctx))
-	s.Require().NoError(mw.CanShopsView(ctx))
-}
-
-func (s *MiddlewareTestSuite) TestMemberPermissions() {
-	auth := s.newAuthorizer()
-	s.seedRole(auth, testTenancyPath, "user3", authz.RoleMember)
-
-	mw := authz.NewMiddleware(auth)
-	ctx := s.ctxWithClaims("user3")
-
-	// Member can view shops
-	s.Require().NoError(mw.CanShopsView(ctx))
-
-	// Member cannot create shops
-	s.Require().Error(mw.CanShopCreate(ctx))
-}
 
 func (s *MiddlewareTestSuite) TestNoClaims() {
 	auth := s.newAuthorizer()
 	mw := authz.NewMiddleware(auth)
 
-	err := mw.CanShopsView(context.Background())
+	err := mw.CanShopView(context.Background(), "shop-1")
 	s.ErrorIs(err, authorizer.ErrInvalidSubject)
 }
 
-func (s *MiddlewareTestSuite) TestNoTenant() {
+func (s *MiddlewareTestSuite) TestNoSubject() {
 	auth := s.newAuthorizer()
 	mw := authz.NewMiddleware(auth)
 
 	claims := &security.AuthenticationClaims{}
-	claims.Subject = "user1"
 	ctx := claims.ClaimsToContext(context.Background())
-	err := mw.CanShopsView(ctx)
-	s.ErrorIs(err, authorizer.ErrInvalidObject)
+	err := mw.CanShopView(ctx, "shop-1")
+	s.ErrorIs(err, authorizer.ErrInvalidSubject)
 }
 
 // ---------------------------------------------------------------------------
@@ -220,7 +184,6 @@ func (s *MiddlewareTestSuite) seedServiceBridgeTuples(auth security.Authorizer, 
 
 func (s *MiddlewareTestSuite) TestServiceBotViaSubjectSets() {
 	auth := s.newAuthorizer()
-	mw := authz.NewMiddleware(auth)
 	accessChecker := authorizer.NewTenancyAccessChecker(auth, authz.NamespaceTenancyAccess)
 
 	// Step 1: Write bridge tuples (normally done at partition sync).
@@ -235,30 +198,28 @@ func (s *MiddlewareTestSuite) TestServiceBotViaSubjectSets() {
 	// Layer 1: Access check passes
 	s.Require().NoError(accessChecker.CheckAccess(botCtx))
 
-	// Layer 2: Functional permissions resolved through subject sets
-	s.Require().NoError(mw.CanShopCreate(botCtx))
-	s.Require().NoError(mw.CanShopsView(botCtx))
+	// Note: Tenant-level functional permissions (shop_create, shops_view)
+	// are now checked by the FunctionAccessInterceptor, not the middleware.
 }
 
 func (s *MiddlewareTestSuite) TestDirectPermissionGrant() {
 	auth := s.newAuthorizer()
-	mw := authz.NewMiddleware(auth)
 
-	// User has a direct permission grant for shop_create only (using granted_ prefix)
+	// Direct permission grants for tenant-level permissions (shop_create, shops_view)
+	// are now verified by the FunctionAccessInterceptor, not the middleware.
+	// Here we verify a direct shop-level grant works through the middleware.
+	shopID := "shop-direct-grant"
 	err := auth.WriteTuple(s.T().Context(), security.RelationTuple{
-		Object:   security.ObjectRef{Namespace: authz.NamespaceCommerce, ID: testTenancyPath},
-		Relation: authz.GrantedShopCreate,
+		Object:   security.ObjectRef{Namespace: authz.NamespaceShop, ID: shopID},
+		Relation: authz.GrantedRelation(authz.PermissionShopView),
 		Subject:  security.SubjectRef{Namespace: authz.NamespaceProfile, ID: "user4"},
 	})
 	s.Require().NoError(err)
 
+	mw := authz.NewMiddleware(auth)
 	ctx := s.ctxWithClaims("user4")
 
-	// Direct grant works
-	s.Require().NoError(mw.CanShopCreate(ctx))
-
-	// shops_view inherits from shop_create via OPL permits
-	s.Require().NoError(mw.CanShopsView(ctx))
+	s.Require().NoError(mw.CanShopView(ctx, shopID))
 }
 
 // ---------------------------------------------------------------------------

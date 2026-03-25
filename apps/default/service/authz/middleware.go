@@ -10,35 +10,21 @@ import (
 )
 
 // middleware implements the Middleware interface.
-// Tenant-level checks use FunctionChecker (service_commerce namespace).
-// Shop-level checks use raw authorizer (commerce_shop namespace).
+// Tenant-level checks are handled by the FunctionAccessInterceptor.
+// Shop-level checks use the raw authorizer (commerce_shop namespace).
 type middleware struct {
-	checker *authorizer.FunctionChecker
 	service security.Authorizer
 }
 
 // NewMiddleware creates a new Middleware with the given authorizer service.
 // Data access (tenancy_access) is verified by the TenancyAccessInterceptor
-// in the Connect middleware chain. This middleware only checks functional
-// permissions in the service_commerce namespace and resource-level permissions
-// in the commerce_shop namespace.
+// in the Connect middleware chain. Tenant-level functional permissions are
+// enforced by the FunctionAccessInterceptor. This middleware only checks
+// resource-level permissions in the commerce_shop namespace.
 func NewMiddleware(service security.Authorizer) Middleware {
 	return &middleware{
-		checker: authorizer.NewFunctionChecker(service, NamespaceCommerce),
 		service: service,
 	}
-}
-
-// --- Tenant-level checks (via FunctionChecker) ---
-
-// CanShopCreate checks if the caller can create a shop within their tenant.
-func (m *middleware) CanShopCreate(ctx context.Context) error {
-	return m.checker.Check(ctx, PermissionShopCreate)
-}
-
-// CanShopsView checks if the caller can list shops within their tenant.
-func (m *middleware) CanShopsView(ctx context.Context) error {
-	return m.checker.Check(ctx, PermissionShopsView)
 }
 
 // --- Shop-level checks (resource-level ReBAC) ---

@@ -3,11 +3,10 @@ package authz
 import "context"
 
 // Middleware defines permission checks for commerce operations.
+// Tenant-level checks (e.g. shop_create, shops_view) are handled by
+// the FunctionAccessInterceptor. This interface only exposes
+// shop-level (resource-level ReBAC) checks and tuple management.
 type Middleware interface {
-	// Tenant-level checks
-	CanShopCreate(ctx context.Context) error
-	CanShopsView(ctx context.Context) error
-
 	// Shop-level checks (resource-level ReBAC)
 	CanShopView(ctx context.Context, shopID string) error
 	CanShopUpdate(ctx context.Context, shopID string) error

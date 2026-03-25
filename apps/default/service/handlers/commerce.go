@@ -74,10 +74,7 @@ func (cs *CommerceServer) CreateShop(
 	ctx context.Context,
 	req *connect.Request[commercev1.CreateShopRequest],
 ) (*connect.Response[commercev1.CreateShopResponse], error) {
-	if err := cs.authz.CanShopCreate(ctx); err != nil {
-		return nil, authorizer.ToConnectError(err)
-	}
-
+	// Tenant-level shop_create permission is enforced by the FunctionAccessInterceptor.
 	shop, err := cs.shopBusiness.CreateShop(ctx, req.Msg)
 	if err != nil {
 		return nil, errorutil.CleanErr(err)

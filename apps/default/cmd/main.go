@@ -5,7 +5,9 @@ import (
 	"net/http"
 
 	"buf.build/gen/go/antinvestor/commerce/connectrpc/go/commerce/v1/commercev1connect"
+	commercepb "buf.build/gen/go/antinvestor/commerce/protocolbuffers/go/commerce/v1"
 	"connectrpc.com/connect"
+	"github.com/antinvestor/apis/go/common/permissions"
 	"github.com/pitabwire/frame"
 	"github.com/pitabwire/frame/config"
 	"github.com/pitabwire/frame/datastore"
@@ -85,13 +87,20 @@ func handleDatabaseMigration(
 func setupConnectServer(ctx context.Context, svc *frame.Service) http.Handler {
 	securityMan := svc.SecurityManager()
 
+	auth := securityMan.GetAuthorizer(ctx)
+
 	// Layer 1: TenancyAccessChecker verifies caller can access the partition.
-	tenancyAccessChecker := authorizer.NewTenancyAccessChecker(
-		securityMan.GetAuthorizer(ctx), authz.NamespaceTenancyAccess)
+	tenancyAccessChecker := authorizer.NewTenancyAccessChecker(auth, authz.NamespaceTenancyAccess)
 	tenancyAccessInterceptor := connectInterceptors.NewTenancyAccessInterceptor(tenancyAccessChecker)
 
+	// Layer 2: FunctionAccessInterceptor enforces per-RPC permissions from proto annotations.
+	sd := commercepb.File_commerce_v1_commerce_proto.Services().ByName("CommerceService")
+	procMap := permissions.BuildProcedureMap(sd)
+	functionChecker := authorizer.NewFunctionChecker(auth, "service_commerce")
+	functionAccessInterceptor := connectInterceptors.NewFunctionAccessInterceptor(functionChecker, procMap)
+
 	defaultInterceptorList, err := connectInterceptors.DefaultList(
-		ctx, securityMan.GetAuthenticator(ctx), tenancyAccessInterceptor)
+		ctx, securityMan.GetAuthenticator(ctx), tenancyAccessInterceptor, functionAccessInterceptor)
 	if err != nil {
 		util.Log(ctx).WithError(err).Fatal("main -- Could not create default interceptors")
 	}

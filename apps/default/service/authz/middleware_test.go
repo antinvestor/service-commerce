@@ -112,7 +112,6 @@ func (s *MiddlewareTestSuite) ctxWithSystemInternalClaims(subjectID string) cont
 	return claims.ClaimsToContext(context.Background())
 }
 
-
 func TestMiddlewareSuite(t *testing.T) {
 	suite.Run(t, new(MiddlewareTestSuite))
 }

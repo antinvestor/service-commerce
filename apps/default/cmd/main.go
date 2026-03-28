@@ -21,7 +21,7 @@ import (
 	"buf.build/gen/go/antinvestor/commerce/connectrpc/go/commerce/v1/commercev1connect"
 	commercepb "buf.build/gen/go/antinvestor/commerce/protocolbuffers/go/commerce/v1"
 	"connectrpc.com/connect"
-	"github.com/pitabwire/common/permissions"
+	"github.com/antinvestor/common/permissions"
 	"github.com/pitabwire/frame"
 	"github.com/pitabwire/frame/config"
 	"github.com/pitabwire/frame/datastore"

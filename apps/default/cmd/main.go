@@ -110,7 +110,8 @@ func setupConnectServer(ctx context.Context, svc *frame.Service) http.Handler {
 	// Layer 2: FunctionAccessInterceptor enforces per-RPC permissions from proto annotations.
 	sd := commercepb.File_commerce_v1_commerce_proto.Services().ByName("CommerceService")
 	procMap := permissions.BuildProcedureMap(sd)
-	functionChecker := authorizer.NewFunctionChecker(auth, "service_commerce")
+	svcPerms := permissions.ForService(sd)
+	functionChecker := authorizer.NewFunctionChecker(auth, svcPerms.Namespace)
 	functionAccessInterceptor := connectInterceptors.NewFunctionAccessInterceptor(functionChecker, procMap)
 
 	defaultInterceptorList, err := connectInterceptors.DefaultList(

@@ -1,6 +1,6 @@
 name: antinvestor_api_commerce
 description: Dart client library for Ant Investor Commerce Service
-version: 0.1.0
+version: 1.54.0
 repository: https://github.com/antinvestor/service-commerce
 homepage: https://github.com/antinvestor/service-commerce
 issue_tracker: https://github.com/antinvestor/service-commerce/issues

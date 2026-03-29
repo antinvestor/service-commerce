@@ -1,6 +1,6 @@
 /// Dart client library for Ant Investor Commerce Service.
 ///
-/// Provides Commerce and Property service functionality using Connect RPC protocol.
+/// Provides Commerce service functionality using Connect RPC protocol.
 library;
 
 // Commerce service
@@ -9,13 +9,6 @@ export 'src/v1/commerce.pbenum.dart';
 export 'src/v1/commerce.pbjson.dart';
 export 'src/v1/commerce.connect.client.dart';
 export 'src/v1/commerce.connect.spec.dart';
-
-// Property service
-export 'src/v1/property.pb.dart';
-export 'src/v1/property.pbenum.dart';
-export 'src/v1/property.pbjson.dart';
-export 'src/v1/property.connect.client.dart';
-export 'src/v1/property.connect.spec.dart';
 
 // Common types
 export 'src/common/v1/common.pb.dart';

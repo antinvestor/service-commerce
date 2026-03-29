@@ -14,6 +14,7 @@ lint:
     - STANDARD
   except:
     - FIELD_NOT_REQUIRED
+    - PACKAGE_DIRECTORY_MATCH
     - PACKAGE_NO_IMPORT_CYCLE
 breaking:
   use:

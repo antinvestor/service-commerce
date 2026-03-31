@@ -41,7 +41,7 @@ func main() {
 	// Initialize configuration
 	cfg, err := config.LoadWithOIDC[aconfig.CommerceConfig](ctx)
 	if err != nil {
-		util.Log(ctx).With("err", err).Error("could not process configs")
+		util.Log(ctx).WithError(err).Error("could not process configs")
 		return
 	}
 

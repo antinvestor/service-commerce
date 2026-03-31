@@ -7,7 +7,7 @@ toolchain go1.26.1
 require (
 	buf.build/gen/go/antinvestor/commerce/protocolbuffers/go v1.36.11-20260219062149-38a37287b8c7.1
 	connectrpc.com/connect v1.19.1
-	github.com/antinvestor/common v1.4.0
+	github.com/antinvestor/common v1.4.1
 	github.com/pitabwire/frame v1.93.0
 	github.com/pitabwire/util v0.8.0
 	github.com/stretchr/testify v1.11.1

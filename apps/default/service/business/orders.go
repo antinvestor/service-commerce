@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"time"
 
-	commercev1 "buf.build/gen/go/antinvestor/commerce/protocolbuffers/go/commerce/v1"
+	commercev1 "buf.build/gen/go/antinvestor/commerce/protocolbuffers/go/v1"
 	"connectrpc.com/connect"
 	"github.com/pitabwire/frame"
 	"github.com/pitabwire/frame/data"

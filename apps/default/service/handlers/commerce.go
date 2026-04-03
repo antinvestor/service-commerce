@@ -17,8 +17,8 @@ package handlers
 import (
 	"context"
 
-	"buf.build/gen/go/antinvestor/commerce/connectrpc/go/commerce/v1/commercev1connect"
-	commercev1 "buf.build/gen/go/antinvestor/commerce/protocolbuffers/go/commerce/v1"
+	"buf.build/gen/go/antinvestor/commerce/connectrpc/go/v1/commercev1connect"
+	commercev1 "buf.build/gen/go/antinvestor/commerce/protocolbuffers/go/v1"
 	"connectrpc.com/connect"
 	"github.com/pitabwire/frame"
 	"github.com/pitabwire/frame/datastore"

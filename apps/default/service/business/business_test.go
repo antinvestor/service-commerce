@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"testing"
 
-	commercev1 "buf.build/gen/go/antinvestor/commerce/protocolbuffers/go/commerce/v1"
+	commercev1 "buf.build/gen/go/antinvestor/commerce/protocolbuffers/go/v1"
 	"github.com/pitabwire/frame"
 	"github.com/pitabwire/frame/datastore"
 	"github.com/pitabwire/frame/frametests/definition"

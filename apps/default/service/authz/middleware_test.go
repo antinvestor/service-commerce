@@ -90,7 +90,7 @@ func (s *MiddlewareTestSuite) newAuthorizer() security.Authorizer {
 		AuthorizationServiceReadURI:  s.ketoReadURI,
 		AuthorizationServiceWriteURI: s.ketoWriteURI,
 	}
-	return authorizer.NewKetoAdapter(cfg, nil, nil)
+	return authorizer.NewKetoAdapter(cfg, nil)
 }
 
 func (s *MiddlewareTestSuite) ctxWithClaims(subjectID string) context.Context {

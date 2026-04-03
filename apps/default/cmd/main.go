@@ -18,8 +18,8 @@ import (
 	"context"
 	"net/http"
 
-	"buf.build/gen/go/antinvestor/commerce/connectrpc/go/commerce/v1/commercev1connect"
-	commercepb "buf.build/gen/go/antinvestor/commerce/protocolbuffers/go/commerce/v1"
+	"buf.build/gen/go/antinvestor/commerce/connectrpc/go/v1/commercev1connect"
+	commercepb "buf.build/gen/go/antinvestor/commerce/protocolbuffers/go/v1"
 	"connectrpc.com/connect"
 	"github.com/antinvestor/common/permissions"
 	"github.com/pitabwire/frame"
@@ -108,7 +108,7 @@ func setupConnectServer(ctx context.Context, svc *frame.Service) http.Handler {
 	tenancyAccessInterceptor := connectInterceptors.NewTenancyAccessInterceptor(tenancyAccessChecker)
 
 	// Layer 2: FunctionAccessInterceptor enforces per-RPC permissions from proto annotations.
-	sd := commercepb.File_commerce_v1_commerce_proto.Services().ByName("CommerceService")
+	sd := commercepb.File_v1_commerce_proto.Services().ByName("CommerceService")
 	procMap := permissions.BuildProcedureMap(sd)
 	svcPerms := permissions.ForService(sd)
 	functionChecker := authorizer.NewFunctionChecker(auth, svcPerms.Namespace)

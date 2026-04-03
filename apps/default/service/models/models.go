@@ -19,7 +19,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	commercev1 "buf.build/gen/go/antinvestor/commerce/protocolbuffers/go/commerce/v1"
+	commercev1 "buf.build/gen/go/antinvestor/commerce/protocolbuffers/go/v1"
 	"github.com/pitabwire/frame/data"
 	money "google.golang.org/genproto/googleapis/type/money"
 	"google.golang.org/protobuf/types/known/timestamppb"

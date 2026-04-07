@@ -69,7 +69,11 @@ func main() {
 	connectHandler := setupConnectServer(ctx, svc)
 
 	// Setup HTTP handlers and start service
-	serviceOptions := []frame.Option{frame.WithHTTPHandler(connectHandler)}
+	commerceSD := commercepb.File_v1_commerce_proto.Services().ByName("CommerceService")
+	serviceOptions := []frame.Option{
+		frame.WithHTTPHandler(connectHandler),
+		frame.WithPermissionRegistration(commerceSD),
+	}
 
 	// Initialize the service with all options
 	svc.Init(ctx, serviceOptions...)

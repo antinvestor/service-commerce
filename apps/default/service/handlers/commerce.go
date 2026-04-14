@@ -28,7 +28,7 @@ import (
 	"github.com/antinvestor/service-commerce/apps/default/service/authz"
 	"github.com/antinvestor/service-commerce/apps/default/service/business"
 	"github.com/antinvestor/service-commerce/apps/default/service/repository"
-	"github.com/antinvestor/service-commerce/internal/errorutil"
+	"github.com/antinvestor/service-commerce/pkg/errorutil"
 )
 
 type CommerceServer struct {

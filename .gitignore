@@ -1,3 +1,4 @@
 
 # Shared Makefile cache
 .tmp/
+.claude/

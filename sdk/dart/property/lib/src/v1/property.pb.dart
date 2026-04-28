@@ -15,7 +15,7 @@ import 'dart:core' as $core;
 import 'package:fixnum/fixnum.dart' as $fixnum;
 import 'package:protobuf/protobuf.dart' as $pb;
 
-import '../common/v1/common.pbenum.dart' as $8;
+import '../common/v1/common.pbenum.dart' as $7;
 import '../google/protobuf/struct.pb.dart' as $6;
 import '../google/protobuf/timestamp.pb.dart' as $2;
 
@@ -407,8 +407,8 @@ class PropertyState extends $pb.GeneratedMessage {
   factory PropertyState({
     $core.String? id,
     $core.String? propertyid,
-    $8.STATE? state,
-    $8.STATUS? status,
+    $7.STATE? state,
+    $7.STATUS? status,
     $core.String? name,
     $core.String? description,
     $6.Struct? extras,
@@ -448,8 +448,8 @@ class PropertyState extends $pb.GeneratedMessage {
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'PropertyState', package: const $pb.PackageName(_omitMessageNames ? '' : 'property.v1'), createEmptyInstance: create)
     ..aOS(1, _omitFieldNames ? '' : 'id')
     ..aOS(2, _omitFieldNames ? '' : 'propertyid')
-    ..e<$8.STATE>(3, _omitFieldNames ? '' : 'state', $pb.PbFieldType.OE, defaultOrMaker: $8.STATE.CREATED, valueOf: $8.STATE.valueOf, enumValues: $8.STATE.values)
-    ..e<$8.STATUS>(4, _omitFieldNames ? '' : 'status', $pb.PbFieldType.OE, defaultOrMaker: $8.STATUS.UNKNOWN, valueOf: $8.STATUS.valueOf, enumValues: $8.STATUS.values)
+    ..e<$7.STATE>(3, _omitFieldNames ? '' : 'state', $pb.PbFieldType.OE, defaultOrMaker: $7.STATE.CREATED, valueOf: $7.STATE.valueOf, enumValues: $7.STATE.values)
+    ..e<$7.STATUS>(4, _omitFieldNames ? '' : 'status', $pb.PbFieldType.OE, defaultOrMaker: $7.STATUS.UNKNOWN, valueOf: $7.STATUS.valueOf, enumValues: $7.STATUS.values)
     ..aOS(5, _omitFieldNames ? '' : 'name')
     ..aOS(6, _omitFieldNames ? '' : 'description')
     ..aOM<$6.Struct>(7, _omitFieldNames ? '' : 'extras', subBuilder: $6.Struct.create)
@@ -497,18 +497,18 @@ class PropertyState extends $pb.GeneratedMessage {
   void clearPropertyid() => clearField(2);
 
   @$pb.TagNumber(3)
-  $8.STATE get state => $_getN(2);
+  $7.STATE get state => $_getN(2);
   @$pb.TagNumber(3)
-  set state($8.STATE v) { setField(3, v); }
+  set state($7.STATE v) { setField(3, v); }
   @$pb.TagNumber(3)
   $core.bool hasState() => $_has(2);
   @$pb.TagNumber(3)
   void clearState() => clearField(3);
 
   @$pb.TagNumber(4)
-  $8.STATUS get status => $_getN(3);
+  $7.STATUS get status => $_getN(3);
   @$pb.TagNumber(4)
-  set status($8.STATUS v) { setField(4, v); }
+  set status($7.STATUS v) { setField(4, v); }
   @$pb.TagNumber(4)
   $core.bool hasStatus() => $_has(3);
   @$pb.TagNumber(4)
@@ -1928,8 +1928,8 @@ class HistoryOfPropertyResponse extends $pb.GeneratedMessage {
 class UpdatePropertyRequest extends $pb.GeneratedMessage {
   factory UpdatePropertyRequest({
     $core.String? id,
-    $8.STATE? state,
-    $8.STATUS? status,
+    $7.STATE? state,
+    $7.STATUS? status,
     $core.String? name,
     $core.String? description,
     $core.String? guardianId,
@@ -1969,8 +1969,8 @@ class UpdatePropertyRequest extends $pb.GeneratedMessage {
 
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'UpdatePropertyRequest', package: const $pb.PackageName(_omitMessageNames ? '' : 'property.v1'), createEmptyInstance: create)
     ..aOS(1, _omitFieldNames ? '' : 'id')
-    ..e<$8.STATE>(2, _omitFieldNames ? '' : 'state', $pb.PbFieldType.OE, defaultOrMaker: $8.STATE.CREATED, valueOf: $8.STATE.valueOf, enumValues: $8.STATE.values)
-    ..e<$8.STATUS>(3, _omitFieldNames ? '' : 'status', $pb.PbFieldType.OE, defaultOrMaker: $8.STATUS.UNKNOWN, valueOf: $8.STATUS.valueOf, enumValues: $8.STATUS.values)
+    ..e<$7.STATE>(2, _omitFieldNames ? '' : 'state', $pb.PbFieldType.OE, defaultOrMaker: $7.STATE.CREATED, valueOf: $7.STATE.valueOf, enumValues: $7.STATE.values)
+    ..e<$7.STATUS>(3, _omitFieldNames ? '' : 'status', $pb.PbFieldType.OE, defaultOrMaker: $7.STATUS.UNKNOWN, valueOf: $7.STATUS.valueOf, enumValues: $7.STATUS.values)
     ..aOS(4, _omitFieldNames ? '' : 'name')
     ..aOS(5, _omitFieldNames ? '' : 'description')
     ..aOS(6, _omitFieldNames ? '' : 'guardianId')
@@ -2010,18 +2010,18 @@ class UpdatePropertyRequest extends $pb.GeneratedMessage {
   void clearId() => clearField(1);
 
   @$pb.TagNumber(2)
-  $8.STATE get state => $_getN(1);
+  $7.STATE get state => $_getN(1);
   @$pb.TagNumber(2)
-  set state($8.STATE v) { setField(2, v); }
+  set state($7.STATE v) { setField(2, v); }
   @$pb.TagNumber(2)
   $core.bool hasState() => $_has(1);
   @$pb.TagNumber(2)
   void clearState() => clearField(2);
 
   @$pb.TagNumber(3)
-  $8.STATUS get status => $_getN(2);
+  $7.STATUS get status => $_getN(2);
   @$pb.TagNumber(3)
-  set status($8.STATUS v) { setField(3, v); }
+  set status($7.STATUS v) { setField(3, v); }
   @$pb.TagNumber(3)
   $core.bool hasStatus() => $_has(2);
   @$pb.TagNumber(3)

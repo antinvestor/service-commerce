@@ -14,10 +14,10 @@ import 'dart:core' as $core;
 import 'dart:typed_data' as $typed_data;
 
 import '../common/v1/common.pbjson.dart' as $8;
+import '../common/v1/money.pbjson.dart' as $7;
 import '../google/protobuf/field_mask.pbjson.dart' as $1;
 import '../google/protobuf/struct.pbjson.dart' as $6;
 import '../google/protobuf/timestamp.pbjson.dart' as $2;
-import '../google/type/money.pbjson.dart' as $7;
 
 @$core.Deprecated('Use shopStatusDescriptor instead')
 const ShopStatus$json = {
@@ -323,7 +323,7 @@ const ProductVariant$json = {
     {'1': 'product_id', '3': 2, '4': 1, '5': 9, '8': {}, '10': 'productId'},
     {'1': 'sku', '3': 3, '4': 1, '5': 9, '10': 'sku'},
     {'1': 'name', '3': 4, '4': 1, '5': 9, '10': 'name'},
-    {'1': 'price', '3': 5, '4': 1, '5': 11, '6': '.google.type.Money', '10': 'price'},
+    {'1': 'price', '3': 5, '4': 1, '5': 11, '6': '.common.v1.Money', '10': 'price'},
     {'1': 'stock_quantity', '3': 7, '4': 1, '5': 3, '10': 'stockQuantity'},
     {'1': 'attributes', '3': 6, '4': 3, '5': 11, '6': '.commerce.v1.ProductVariant.AttributesEntry', '10': 'attributes'},
     {'1': 'media_ids', '3': 10, '4': 3, '5': 9, '10': 'mediaIds'},
@@ -347,14 +347,14 @@ const ProductVariant_AttributesEntry$json = {
 final $typed_data.Uint8List productVariantDescriptor = $convert.base64Decode(
     'Cg5Qcm9kdWN0VmFyaWFudBIrCgJpZBgBIAEoCUIbukgYchYQAxgoMhBbMC05YS16Xy1dezMsND'
     'B9UgJpZBI6Cgpwcm9kdWN0X2lkGAIgASgJQhu6SBhyFhADGCgyEFswLTlhLXpfLV17Myw0MH1S'
-    'CXByb2R1Y3RJZBIQCgNza3UYAyABKAlSA3NrdRISCgRuYW1lGAQgASgJUgRuYW1lEigKBXByaW'
-    'NlGAUgASgLMhIuZ29vZ2xlLnR5cGUuTW9uZXlSBXByaWNlEiUKDnN0b2NrX3F1YW50aXR5GAcg'
-    'ASgDUg1zdG9ja1F1YW50aXR5EksKCmF0dHJpYnV0ZXMYBiADKAsyKy5jb21tZXJjZS52MS5Qcm'
-    '9kdWN0VmFyaWFudC5BdHRyaWJ1dGVzRW50cnlSCmF0dHJpYnV0ZXMSGwoJbWVkaWFfaWRzGAog'
-    'AygJUghtZWRpYUlkcxI5CgZzdGF0dXMYCCABKA4yIS5jb21tZXJjZS52MS5Qcm9kdWN0VmFyaW'
-    'FudFN0YXR1c1IGc3RhdHVzEjkKCmNyZWF0ZWRfYXQYCSABKAsyGi5nb29nbGUucHJvdG9idWYu'
-    'VGltZXN0YW1wUgljcmVhdGVkQXQaPQoPQXR0cmlidXRlc0VudHJ5EhAKA2tleRgBIAEoCVIDa2'
-    'V5EhQKBXZhbHVlGAIgASgJUgV2YWx1ZToCOAE=');
+    'CXByb2R1Y3RJZBIQCgNza3UYAyABKAlSA3NrdRISCgRuYW1lGAQgASgJUgRuYW1lEiYKBXByaW'
+    'NlGAUgASgLMhAuY29tbW9uLnYxLk1vbmV5UgVwcmljZRIlCg5zdG9ja19xdWFudGl0eRgHIAEo'
+    'A1INc3RvY2tRdWFudGl0eRJLCgphdHRyaWJ1dGVzGAYgAygLMisuY29tbWVyY2UudjEuUHJvZH'
+    'VjdFZhcmlhbnQuQXR0cmlidXRlc0VudHJ5UgphdHRyaWJ1dGVzEhsKCW1lZGlhX2lkcxgKIAMo'
+    'CVIIbWVkaWFJZHMSOQoGc3RhdHVzGAggASgOMiEuY29tbWVyY2UudjEuUHJvZHVjdFZhcmlhbn'
+    'RTdGF0dXNSBnN0YXR1cxI5CgpjcmVhdGVkX2F0GAkgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRp'
+    'bWVzdGFtcFIJY3JlYXRlZEF0Gj0KD0F0dHJpYnV0ZXNFbnRyeRIQCgNrZXkYASABKAlSA2tleR'
+    'IUCgV2YWx1ZRgCIAEoCVIFdmFsdWU6AjgB');
 
 @$core.Deprecated('Use createProductRequestDescriptor instead')
 const CreateProductRequest$json = {
@@ -465,7 +465,7 @@ const CreateProductVariantRequest$json = {
     {'1': 'product_id', '3': 1, '4': 1, '5': 9, '8': {}, '10': 'productId'},
     {'1': 'sku', '3': 2, '4': 1, '5': 9, '10': 'sku'},
     {'1': 'name', '3': 3, '4': 1, '5': 9, '10': 'name'},
-    {'1': 'price', '3': 4, '4': 1, '5': 11, '6': '.google.type.Money', '10': 'price'},
+    {'1': 'price', '3': 4, '4': 1, '5': 11, '6': '.common.v1.Money', '10': 'price'},
     {'1': 'stock_quantity', '3': 6, '4': 1, '5': 3, '10': 'stockQuantity'},
     {'1': 'attributes', '3': 5, '4': 3, '5': 11, '6': '.commerce.v1.CreateProductVariantRequest.AttributesEntry', '10': 'attributes'},
     {'1': 'media_ids', '3': 7, '4': 3, '5': 9, '10': 'mediaIds'},
@@ -487,12 +487,12 @@ const CreateProductVariantRequest_AttributesEntry$json = {
 final $typed_data.Uint8List createProductVariantRequestDescriptor = $convert.base64Decode(
     'ChtDcmVhdGVQcm9kdWN0VmFyaWFudFJlcXVlc3QSOgoKcHJvZHVjdF9pZBgBIAEoCUIbukgYch'
     'YQAxgoMhBbMC05YS16Xy1dezMsNDB9Uglwcm9kdWN0SWQSEAoDc2t1GAIgASgJUgNza3USEgoE'
-    'bmFtZRgDIAEoCVIEbmFtZRIoCgVwcmljZRgEIAEoCzISLmdvb2dsZS50eXBlLk1vbmV5UgVwcm'
-    'ljZRIlCg5zdG9ja19xdWFudGl0eRgGIAEoA1INc3RvY2tRdWFudGl0eRJYCgphdHRyaWJ1dGVz'
-    'GAUgAygLMjguY29tbWVyY2UudjEuQ3JlYXRlUHJvZHVjdFZhcmlhbnRSZXF1ZXN0LkF0dHJpYn'
-    'V0ZXNFbnRyeVIKYXR0cmlidXRlcxIbCgltZWRpYV9pZHMYByADKAlSCG1lZGlhSWRzGj0KD0F0'
-    'dHJpYnV0ZXNFbnRyeRIQCgNrZXkYASABKAlSA2tleRIUCgV2YWx1ZRgCIAEoCVIFdmFsdWU6Aj'
-    'gB');
+    'bmFtZRgDIAEoCVIEbmFtZRImCgVwcmljZRgEIAEoCzIQLmNvbW1vbi52MS5Nb25leVIFcHJpY2'
+    'USJQoOc3RvY2tfcXVhbnRpdHkYBiABKANSDXN0b2NrUXVhbnRpdHkSWAoKYXR0cmlidXRlcxgF'
+    'IAMoCzI4LmNvbW1lcmNlLnYxLkNyZWF0ZVByb2R1Y3RWYXJpYW50UmVxdWVzdC5BdHRyaWJ1dG'
+    'VzRW50cnlSCmF0dHJpYnV0ZXMSGwoJbWVkaWFfaWRzGAcgAygJUghtZWRpYUlkcxo9Cg9BdHRy'
+    'aWJ1dGVzRW50cnkSEAoDa2V5GAEgASgJUgNrZXkSFAoFdmFsdWUYAiABKAlSBXZhbHVlOgI4AQ'
+    '==');
 
 @$core.Deprecated('Use createProductVariantResponseDescriptor instead')
 const CreateProductVariantResponse$json = {
@@ -515,7 +515,7 @@ const UpdateProductVariantRequest$json = {
     {'1': 'update_mask', '3': 2, '4': 1, '5': 11, '6': '.google.protobuf.FieldMask', '10': 'updateMask'},
     {'1': 'sku', '3': 3, '4': 1, '5': 9, '10': 'sku'},
     {'1': 'name', '3': 4, '4': 1, '5': 9, '10': 'name'},
-    {'1': 'price', '3': 5, '4': 1, '5': 11, '6': '.google.type.Money', '10': 'price'},
+    {'1': 'price', '3': 5, '4': 1, '5': 11, '6': '.common.v1.Money', '10': 'price'},
     {'1': 'stock_quantity', '3': 7, '4': 1, '5': 3, '10': 'stockQuantity'},
     {'1': 'status', '3': 8, '4': 1, '5': 14, '6': '.commerce.v1.ProductVariantStatus', '10': 'status'},
     {'1': 'attributes', '3': 6, '4': 3, '5': 11, '6': '.commerce.v1.UpdateProductVariantRequest.AttributesEntry', '10': 'attributes'},
@@ -538,13 +538,13 @@ const UpdateProductVariantRequest_AttributesEntry$json = {
 final $typed_data.Uint8List updateProductVariantRequestDescriptor = $convert.base64Decode(
     'ChtVcGRhdGVQcm9kdWN0VmFyaWFudFJlcXVlc3QSHQoKdmFyaWFudF9pZBgBIAEoCVIJdmFyaW'
     'FudElkEjsKC3VwZGF0ZV9tYXNrGAIgASgLMhouZ29vZ2xlLnByb3RvYnVmLkZpZWxkTWFza1IK'
-    'dXBkYXRlTWFzaxIQCgNza3UYAyABKAlSA3NrdRISCgRuYW1lGAQgASgJUgRuYW1lEigKBXByaW'
-    'NlGAUgASgLMhIuZ29vZ2xlLnR5cGUuTW9uZXlSBXByaWNlEiUKDnN0b2NrX3F1YW50aXR5GAcg'
-    'ASgDUg1zdG9ja1F1YW50aXR5EjkKBnN0YXR1cxgIIAEoDjIhLmNvbW1lcmNlLnYxLlByb2R1Y3'
-    'RWYXJpYW50U3RhdHVzUgZzdGF0dXMSWAoKYXR0cmlidXRlcxgGIAMoCzI4LmNvbW1lcmNlLnYx'
-    'LlVwZGF0ZVByb2R1Y3RWYXJpYW50UmVxdWVzdC5BdHRyaWJ1dGVzRW50cnlSCmF0dHJpYnV0ZX'
-    'MSGwoJbWVkaWFfaWRzGAkgAygJUghtZWRpYUlkcxo9Cg9BdHRyaWJ1dGVzRW50cnkSEAoDa2V5'
-    'GAEgASgJUgNrZXkSFAoFdmFsdWUYAiABKAlSBXZhbHVlOgI4AQ==');
+    'dXBkYXRlTWFzaxIQCgNza3UYAyABKAlSA3NrdRISCgRuYW1lGAQgASgJUgRuYW1lEiYKBXByaW'
+    'NlGAUgASgLMhAuY29tbW9uLnYxLk1vbmV5UgVwcmljZRIlCg5zdG9ja19xdWFudGl0eRgHIAEo'
+    'A1INc3RvY2tRdWFudGl0eRI5CgZzdGF0dXMYCCABKA4yIS5jb21tZXJjZS52MS5Qcm9kdWN0Vm'
+    'FyaWFudFN0YXR1c1IGc3RhdHVzElgKCmF0dHJpYnV0ZXMYBiADKAsyOC5jb21tZXJjZS52MS5V'
+    'cGRhdGVQcm9kdWN0VmFyaWFudFJlcXVlc3QuQXR0cmlidXRlc0VudHJ5UgphdHRyaWJ1dGVzEh'
+    'sKCW1lZGlhX2lkcxgJIAMoCVIIbWVkaWFJZHMaPQoPQXR0cmlidXRlc0VudHJ5EhAKA2tleRgB'
+    'IAEoCVIDa2V5EhQKBXZhbHVlGAIgASgJUgV2YWx1ZToCOAE=');
 
 @$core.Deprecated('Use updateProductVariantResponseDescriptor instead')
 const UpdateProductVariantResponse$json = {
@@ -758,8 +758,8 @@ const Order$json = {
     {'1': 'profile_id', '3': 5, '4': 1, '5': 9, '8': {}, '10': 'profileId'},
     {'1': 'contact_id', '3': 6, '4': 1, '5': 9, '8': {}, '10': 'contactId'},
     {'1': 'address_id', '3': 7, '4': 1, '5': 9, '8': {}, '10': 'addressId'},
-    {'1': 'subtotal', '3': 8, '4': 1, '5': 11, '6': '.google.type.Money', '10': 'subtotal'},
-    {'1': 'total', '3': 9, '4': 1, '5': 11, '6': '.google.type.Money', '10': 'total'},
+    {'1': 'subtotal', '3': 8, '4': 1, '5': 11, '6': '.common.v1.Money', '10': 'subtotal'},
+    {'1': 'total', '3': 9, '4': 1, '5': 11, '6': '.common.v1.Money', '10': 'total'},
     {'1': 'lines', '3': 10, '4': 3, '5': 11, '6': '.commerce.v1.OrderLine', '10': 'lines'},
     {'1': 'created_at', '3': 11, '4': 1, '5': 11, '6': '.google.protobuf.Timestamp', '10': 'createdAt'},
   ],
@@ -776,10 +776,10 @@ final $typed_data.Uint8List orderDescriptor = $convert.base64Decode(
     'cxI6Cgpwcm9maWxlX2lkGAUgASgJQhu6SBhyFhADGCgyEFswLTlhLXpfLV17Myw0MH1SCXByb2'
     'ZpbGVJZBI6Cgpjb250YWN0X2lkGAYgASgJQhu6SBhyFhADGCgyEFswLTlhLXpfLV17Myw0MH1S'
     'CWNvbnRhY3RJZBI6CgphZGRyZXNzX2lkGAcgASgJQhu6SBhyFhADGCgyEFswLTlhLXpfLV17My'
-    'w0MH1SCWFkZHJlc3NJZBIuCghzdWJ0b3RhbBgIIAEoCzISLmdvb2dsZS50eXBlLk1vbmV5Ughz'
-    'dWJ0b3RhbBIoCgV0b3RhbBgJIAEoCzISLmdvb2dsZS50eXBlLk1vbmV5UgV0b3RhbBIsCgVsaW'
-    '5lcxgKIAMoCzIWLmNvbW1lcmNlLnYxLk9yZGVyTGluZVIFbGluZXMSOQoKY3JlYXRlZF9hdBgL'
-    'IAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXBSCWNyZWF0ZWRBdA==');
+    'w0MH1SCWFkZHJlc3NJZBIsCghzdWJ0b3RhbBgIIAEoCzIQLmNvbW1vbi52MS5Nb25leVIIc3Vi'
+    'dG90YWwSJgoFdG90YWwYCSABKAsyEC5jb21tb24udjEuTW9uZXlSBXRvdGFsEiwKBWxpbmVzGA'
+    'ogAygLMhYuY29tbWVyY2UudjEuT3JkZXJMaW5lUgVsaW5lcxI5CgpjcmVhdGVkX2F0GAsgASgL'
+    'MhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcFIJY3JlYXRlZEF0');
 
 @$core.Deprecated('Use orderLineDescriptor instead')
 const OrderLine$json = {
@@ -789,9 +789,9 @@ const OrderLine$json = {
     {'1': 'product_variant_id', '3': 2, '4': 1, '5': 9, '8': {}, '10': 'productVariantId'},
     {'1': 'sku_snapshot', '3': 3, '4': 1, '5': 9, '10': 'skuSnapshot'},
     {'1': 'name_snapshot', '3': 4, '4': 1, '5': 9, '10': 'nameSnapshot'},
-    {'1': 'unit_price', '3': 5, '4': 1, '5': 11, '6': '.google.type.Money', '10': 'unitPrice'},
+    {'1': 'unit_price', '3': 5, '4': 1, '5': 11, '6': '.common.v1.Money', '10': 'unitPrice'},
     {'1': 'quantity', '3': 6, '4': 1, '5': 3, '10': 'quantity'},
-    {'1': 'total_price', '3': 7, '4': 1, '5': 11, '6': '.google.type.Money', '10': 'totalPrice'},
+    {'1': 'total_price', '3': 7, '4': 1, '5': 11, '6': '.common.v1.Money', '10': 'totalPrice'},
   ],
 };
 
@@ -800,10 +800,9 @@ final $typed_data.Uint8List orderLineDescriptor = $convert.base64Decode(
     'CglPcmRlckxpbmUSKwoCaWQYASABKAlCG7pIGHIWEAMYKDIQWzAtOWEtel8tXXszLDQwfVICaW'
     'QSSQoScHJvZHVjdF92YXJpYW50X2lkGAIgASgJQhu6SBhyFhADGCgyEFswLTlhLXpfLV17Myw0'
     'MH1SEHByb2R1Y3RWYXJpYW50SWQSIQoMc2t1X3NuYXBzaG90GAMgASgJUgtza3VTbmFwc2hvdB'
-    'IjCg1uYW1lX3NuYXBzaG90GAQgASgJUgxuYW1lU25hcHNob3QSMQoKdW5pdF9wcmljZRgFIAEo'
-    'CzISLmdvb2dsZS50eXBlLk1vbmV5Ugl1bml0UHJpY2USGgoIcXVhbnRpdHkYBiABKANSCHF1YW'
-    '50aXR5EjMKC3RvdGFsX3ByaWNlGAcgASgLMhIuZ29vZ2xlLnR5cGUuTW9uZXlSCnRvdGFsUHJp'
-    'Y2U=');
+    'IjCg1uYW1lX3NuYXBzaG90GAQgASgJUgxuYW1lU25hcHNob3QSLwoKdW5pdF9wcmljZRgFIAEo'
+    'CzIQLmNvbW1vbi52MS5Nb25leVIJdW5pdFByaWNlEhoKCHF1YW50aXR5GAYgASgDUghxdWFudG'
+    'l0eRIxCgt0b3RhbF9wcmljZRgHIAEoCzIQLmNvbW1vbi52MS5Nb25leVIKdG90YWxQcmljZQ==');
 
 @$core.Deprecated('Use createOrderRequestDescriptor instead')
 const CreateOrderRequest$json = {
@@ -1093,7 +1092,7 @@ const $core.Map<$core.String, $core.Map<$core.String, $core.dynamic>> CommerceSe
   '.common.v1.PageCursor': $8.PageCursor$json,
   '.commerce.v1.ListProductsResponse': ListProductsResponse$json,
   '.commerce.v1.CreateProductVariantRequest': CreateProductVariantRequest$json,
-  '.google.type.Money': $7.Money$json,
+  '.common.v1.Money': $7.Money$json,
   '.commerce.v1.CreateProductVariantRequest.AttributesEntry': CreateProductVariantRequest_AttributesEntry$json,
   '.commerce.v1.CreateProductVariantResponse': CreateProductVariantResponse$json,
   '.commerce.v1.ProductVariant': ProductVariant$json,

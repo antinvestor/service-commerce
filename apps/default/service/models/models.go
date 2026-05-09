@@ -20,8 +20,8 @@ import (
 	"fmt"
 
 	commercev1 "buf.build/gen/go/antinvestor/commerce/protocolbuffers/go/v1"
+	commonv1 "buf.build/gen/go/antinvestor/common/protocolbuffers/go/common/v1"
 	"github.com/pitabwire/frame/data"
-	money "google.golang.org/genproto/googleapis/type/money"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
@@ -328,11 +328,11 @@ func (fl *FulfilmentLine) ToAPI() *commercev1.FulfilmentLine {
 }
 
 // MoneyToProto converts currency/units/nanos to google.type.Money.
-func MoneyToProto(currencyCode string, units int64, nanos int32) *money.Money {
+func MoneyToProto(currencyCode string, units int64, nanos int32) *commonv1.Money {
 	if currencyCode == "" {
 		return nil
 	}
-	return &money.Money{
+	return &commonv1.Money{
 		CurrencyCode: currencyCode,
 		Units:        units,
 		Nanos:        nanos,
@@ -340,7 +340,7 @@ func MoneyToProto(currencyCode string, units int64, nanos int32) *money.Money {
 }
 
 // MoneyFromProto extracts currency/units/nanos from google.type.Money.
-func MoneyFromProto(m *money.Money) (string, int64, int32) {
+func MoneyFromProto(m *commonv1.Money) (string, int64, int32) {
 	if m == nil {
 		return "", 0, 0
 	}

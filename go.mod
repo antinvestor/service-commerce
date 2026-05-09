@@ -7,23 +7,23 @@ toolchain go1.26.1
 require (
 	buf.build/gen/go/antinvestor/commerce/connectrpc/go v1.19.2-20260509053930-e4a3dddd8ed7.1
 	buf.build/gen/go/antinvestor/commerce/protocolbuffers/go v1.36.11-20260509053930-e4a3dddd8ed7.1
+	buf.build/gen/go/antinvestor/common/protocolbuffers/go v1.36.11-20260509050709-3f270876dbf3.1
 	connectrpc.com/connect v1.19.2
 	github.com/antinvestor/common v1.4.5
 	github.com/pitabwire/frame v1.94.6
-	github.com/pitabwire/util v0.8.1-0.20260509051930-7bcc4e49f592
+	github.com/pitabwire/util v0.8.1-0.20260509193553-0acf358c18ed
 	github.com/stretchr/testify v1.11.1
 	github.com/testcontainers/testcontainers-go v0.42.0
-	google.golang.org/genproto v0.0.0-20260504160031-60b97b32f348
 	google.golang.org/protobuf v1.36.11
 	gorm.io/gorm v1.31.1
 )
 
 require (
-	buf.build/gen/go/antinvestor/common/protocolbuffers/go v1.36.11-20260509050709-3f270876dbf3.1 // indirect
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.11-20260415201107-50325440f8f2.1 // indirect
 	buf.build/gen/go/gnostic/gnostic/protocolbuffers/go v1.36.11-20230414000709-087bc8072ce4.1 // indirect
 	buf.build/go/protovalidate v1.2.0 // indirect
 	cel.dev/expr v0.25.1 // indirect
+	cloud.google.com/go/pubsub v1.50.2 // indirect
 	connectrpc.com/otelconnect v0.9.0 // indirect
 	dario.cat/mergo v1.0.2 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20250102033503-faa5f7b0171c // indirect
@@ -141,6 +141,7 @@ require (
 	golang.org/x/text v0.36.0 // indirect
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da // indirect
 	google.golang.org/api v0.276.0 // indirect
+	google.golang.org/genproto v0.0.0-20260504160031-60b97b32f348 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260427160629-7cedc36a6bc4 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260427160629-7cedc36a6bc4 // indirect
 	google.golang.org/grpc v1.80.0 // indirect

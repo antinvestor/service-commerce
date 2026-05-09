@@ -27,12 +27,12 @@ package commerce.v1;
 
 import "buf/validate/validate.proto";
 import "common/v1/common.proto";
+import "common/v1/money.proto";
 import "common/v1/permissions.proto";
 import "gnostic/openapi/v3/annotations.proto";
 import "google/protobuf/field_mask.proto";
 import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
-import "google/type/money.proto";
 
 option go_package = "github.com/antinvestor/apis/go/commerce/v1;commercev1";
 option java_multiple_files = true;
@@ -488,7 +488,7 @@ message ProductVariant {
   /*
      Price in minor units (for example cents).
   */
-  google.type.Money price = 5;
+  common.v1.Money price = 5;
 
   int64 stock_quantity = 7;
   map<string, string> attributes = 6; // Variant-specific attributes (e.g. "Size": "L", "Color": "Blue")
@@ -558,7 +558,7 @@ message CreateProductVariantRequest {
   ];
   string sku = 2;
   string name = 3;
-  google.type.Money price = 4;
+  common.v1.Money price = 4;
   int64 stock_quantity = 6;
   map<string, string> attributes = 5;
   repeated string media_ids = 7;
@@ -575,7 +575,7 @@ message UpdateProductVariantRequest {
 
   string sku = 3;
   string name = 4;
-  google.type.Money price = 5;
+  common.v1.Money price = 5;
   int64 stock_quantity = 7;
   ProductVariantStatus status = 8;
   map<string, string> attributes = 6;
@@ -754,8 +754,8 @@ message Order {
     (buf.validate.field).string.pattern = "[0-9a-z_-]{3,40}"
   ];
 
-  google.type.Money subtotal = 8;
-  google.type.Money total = 9;
+  common.v1.Money subtotal = 8;
+  common.v1.Money total = 9;
 
   repeated OrderLine lines = 10;
 
@@ -799,10 +799,10 @@ message OrderLine {
   string sku_snapshot = 3;
   string name_snapshot = 4;
 
-  google.type.Money unit_price = 5;
+  common.v1.Money unit_price = 5;
   int64 quantity = 6;
 
-  google.type.Money total_price = 7;
+  common.v1.Money total_price = 7;
 }
 
 message CreateOrderRequest {

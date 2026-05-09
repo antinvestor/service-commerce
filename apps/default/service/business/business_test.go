@@ -20,13 +20,13 @@ import (
 	"testing"
 
 	commercev1 "buf.build/gen/go/antinvestor/commerce/protocolbuffers/go/v1"
+	commonv1 "buf.build/gen/go/antinvestor/common/protocolbuffers/go/common/v1"
 	"github.com/pitabwire/frame"
 	"github.com/pitabwire/frame/datastore"
 	"github.com/pitabwire/frame/frametests/definition"
 	"github.com/pitabwire/util"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
-	money "google.golang.org/genproto/googleapis/type/money"
 
 	"github.com/antinvestor/service-commerce/apps/default/service/business"
 	"github.com/antinvestor/service-commerce/apps/default/service/repository"
@@ -113,7 +113,7 @@ func (bts *BusinessTestSuite) createTestProductWithVariant(
 		ProductId: product.GetId(),
 		Sku:       "SKU-" + util.RandomAlphaNumericString(8),
 		Name:      "Test Variant",
-		Price: &money.Money{
+		Price: &commonv1.Money{
 			CurrencyCode: "USD",
 			Units:        10,
 			Nanos:        500000000, // $10.50
@@ -340,7 +340,7 @@ func (bts *BusinessTestSuite) TestUpdateProductVariant() {
 		updated, err := biz.catalogBiz.UpdateProductVariant(ctx, &commercev1.UpdateProductVariantRequest{
 			VariantId: variant.GetId(),
 			Name:      "Updated Variant",
-			Price: &money.Money{
+			Price: &commonv1.Money{
 				CurrencyCode: "EUR",
 				Units:        20,
 			},
@@ -372,7 +372,7 @@ func (bts *BusinessTestSuite) TestListProductVariants() {
 				ProductId: product.GetId(),
 				Sku:       fmt.Sprintf("SKU-VAR-%d-%s", i, util.RandomAlphaNumericString(6)),
 				Name:      fmt.Sprintf("Variant %d", i),
-				Price: &money.Money{
+				Price: &commonv1.Money{
 					CurrencyCode: "USD",
 					Units:        int64(10 + i),
 				},

@@ -5,21 +5,21 @@ go 1.26
 toolchain go1.26.1
 
 require (
-	buf.build/gen/go/antinvestor/commerce/connectrpc/go v1.19.2-20260420185500-b908793a64d2.1
-	buf.build/gen/go/antinvestor/commerce/protocolbuffers/go v1.36.11-20260420185500-b908793a64d2.1
+	buf.build/gen/go/antinvestor/commerce/connectrpc/go v1.19.2-20260509053930-e4a3dddd8ed7.1
+	buf.build/gen/go/antinvestor/commerce/protocolbuffers/go v1.36.11-20260509053930-e4a3dddd8ed7.1
 	connectrpc.com/connect v1.19.2
 	github.com/antinvestor/common v1.4.5
 	github.com/pitabwire/frame v1.94.6
-	github.com/pitabwire/util v0.8.0
+	github.com/pitabwire/util v0.8.1-0.20260509051930-7bcc4e49f592
 	github.com/stretchr/testify v1.11.1
 	github.com/testcontainers/testcontainers-go v0.42.0
-	google.golang.org/genproto v0.0.0-20260427160629-7cedc36a6bc4
+	google.golang.org/genproto v0.0.0-20260504160031-60b97b32f348
 	google.golang.org/protobuf v1.36.11
 	gorm.io/gorm v1.31.1
 )
 
 require (
-	buf.build/gen/go/antinvestor/common/protocolbuffers/go v1.36.11-20260325040325-9771112f2289.1 // indirect
+	buf.build/gen/go/antinvestor/common/protocolbuffers/go v1.36.11-20260509050709-3f270876dbf3.1 // indirect
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.11-20260415201107-50325440f8f2.1 // indirect
 	buf.build/gen/go/gnostic/gnostic/protocolbuffers/go v1.36.11-20230414000709-087bc8072ce4.1 // indirect
 	buf.build/go/protovalidate v1.2.0 // indirect

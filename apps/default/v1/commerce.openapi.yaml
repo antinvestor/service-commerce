@@ -10,6 +10,19 @@ info:
     name: Apache License
     url: https://github.com/antinvestor/apis/blob/master/LICENSE
   version: v1.0.0
+x-service-namespace: service_commerce
+x-service-permissions:
+  - shop_view
+  - shop_create
+  - shop_update
+  - product_view
+  - product_manage
+  - cart_view
+  - cart_manage
+  - order_view
+  - order_manage
+  - fulfilment_view
+  - fulfilment_manage
 paths:
   /commerce.v1.CommerceService/AddCartLine:
     post:
@@ -46,6 +59,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/commerce.v1.AddCartLineResponse'
+      x-required-permissions:
+        - cart_manage
   /commerce.v1.CommerceService/CreateCart:
     post:
       tags:
@@ -81,6 +96,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/commerce.v1.CreateCartResponse'
+      x-required-permissions:
+        - cart_manage
   /commerce.v1.CommerceService/CreateFulfilment:
     post:
       tags:
@@ -119,6 +136,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/commerce.v1.CreateFulfilmentResponse'
+      x-required-permissions:
+        - fulfilment_manage
   /commerce.v1.CommerceService/CreateOrder:
     post:
       tags:
@@ -164,6 +183,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/commerce.v1.CreateOrderResponse'
+      x-required-permissions:
+        - order_manage
   /commerce.v1.CommerceService/CreateOrderFromCart:
     post:
       tags:
@@ -199,6 +220,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/commerce.v1.CreateOrderFromCartResponse'
+      x-required-permissions:
+        - order_manage
   /commerce.v1.CommerceService/CreateProduct:
     post:
       tags:
@@ -235,6 +258,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/commerce.v1.CreateProductResponse'
+      x-required-permissions:
+        - product_manage
   /commerce.v1.CommerceService/CreateProductVariant:
     post:
       tags:
@@ -271,6 +296,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/commerce.v1.CreateProductVariantResponse'
+      x-required-permissions:
+        - product_manage
   /commerce.v1.CommerceService/CreateShop:
     post:
       tags:
@@ -307,6 +334,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/commerce.v1.CreateShopResponse'
+      x-required-permissions:
+        - shop_create
   /commerce.v1.CommerceService/GetCart:
     post:
       tags:
@@ -342,6 +371,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/commerce.v1.GetCartResponse'
+      x-required-permissions:
+        - cart_view
   /commerce.v1.CommerceService/GetFulfilment:
     post:
       tags:
@@ -378,6 +409,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/commerce.v1.GetFulfilmentResponse'
+      x-required-permissions:
+        - fulfilment_view
   /commerce.v1.CommerceService/GetOrder:
     post:
       tags:
@@ -414,6 +447,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/commerce.v1.GetOrderResponse'
+      x-required-permissions:
+        - order_view
   /commerce.v1.CommerceService/GetProduct:
     post:
       tags:
@@ -450,6 +485,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/commerce.v1.GetProductResponse'
+      x-required-permissions:
+        - product_view
   /commerce.v1.CommerceService/GetShop:
     post:
       tags:
@@ -486,6 +523,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/commerce.v1.GetShopResponse'
+      x-required-permissions:
+        - shop_view
   /commerce.v1.CommerceService/ListOrders:
     post:
       tags:
@@ -522,6 +561,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/commerce.v1.ListOrdersResponse'
+      x-required-permissions:
+        - order_view
   /commerce.v1.CommerceService/ListProducts:
     post:
       tags:
@@ -558,6 +599,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/commerce.v1.ListProductsResponse'
+      x-required-permissions:
+        - product_view
   /commerce.v1.CommerceService/RemoveCartLine:
     post:
       tags:
@@ -593,6 +636,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/commerce.v1.RemoveCartLineResponse'
+      x-required-permissions:
+        - cart_manage
   /commerce.v1.CommerceService/UpdateFulfilment:
     post:
       tags:
@@ -629,6 +674,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/commerce.v1.UpdateFulfilmentResponse'
+      x-required-permissions:
+        - fulfilment_manage
   /commerce.v1.CommerceService/UpdateProductVariant:
     post:
       tags:
@@ -665,6 +712,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/commerce.v1.UpdateProductVariantResponse'
+      x-required-permissions:
+        - product_manage
   /commerce.v1.CommerceService/UpdateShop:
     post:
       tags:
@@ -701,6 +750,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/commerce.v1.UpdateShopResponse'
+      x-required-permissions:
+        - shop_update
 components:
   schemas:
     commerce.v1.AddCartLineRequest:
@@ -1008,7 +1059,7 @@ components:
           title: name
         price:
           title: price
-          $ref: '#/components/schemas/google.type.Money'
+          $ref: '#/components/schemas/common.v1.Money'
         stockQuantity:
           type:
             - integer
@@ -1351,10 +1402,10 @@ components:
           pattern: '[0-9a-z_-]{3,40}'
         subtotal:
           title: subtotal
-          $ref: '#/components/schemas/google.type.Money'
+          $ref: '#/components/schemas/common.v1.Money'
         total:
           title: total
-          $ref: '#/components/schemas/google.type.Money'
+          $ref: '#/components/schemas/common.v1.Money'
         lines:
           type: array
           items:
@@ -1389,7 +1440,7 @@ components:
           title: name_snapshot
         unitPrice:
           title: unit_price
-          $ref: '#/components/schemas/google.type.Money'
+          $ref: '#/components/schemas/common.v1.Money'
         quantity:
           type:
             - integer
@@ -1398,7 +1449,7 @@ components:
           format: int64
         totalPrice:
           title: total_price
-          $ref: '#/components/schemas/google.type.Money'
+          $ref: '#/components/schemas/common.v1.Money'
       title: OrderLine
       additionalProperties: false
     commerce.v1.OrderStatus:
@@ -1508,7 +1559,7 @@ components:
         price:
           title: price
           description: Price in minor units (for example cents).
-          $ref: '#/components/schemas/google.type.Money'
+          $ref: '#/components/schemas/common.v1.Money'
         stockQuantity:
           type:
             - integer
@@ -1674,7 +1725,7 @@ components:
           title: name
         price:
           title: price
-          $ref: '#/components/schemas/google.type.Money'
+          $ref: '#/components/schemas/common.v1.Money'
         stockQuantity:
           type:
             - integer
@@ -1755,6 +1806,45 @@ components:
           $ref: '#/components/schemas/commerce.v1.Shop'
       title: UpdateShopResponse
       additionalProperties: false
+    common.v1.Money:
+      type: object
+      properties:
+        currencyCode:
+          type: string
+          title: currency_code
+          description: The 3-letter ISO 4217 currency code (e.g. "KES", "USD", "EUR").
+        units:
+          type:
+            - integer
+            - string
+          title: units
+          format: int64
+          description: |-
+            The whole units of the amount. For example, if currency_code is "USD",
+             1 unit is one US dollar.
+        nanos:
+          type: integer
+          title: nanos
+          format: int32
+          description: |-
+            Number of nano (10^-9) units of the amount. The value must be between
+             -999,999,999 and +999,999,999 inclusive.
+
+             Sign rules:
+               - If units is positive, nanos must be positive or zero.
+               - If units is zero, nanos can be positive, zero, or negative.
+               - If units is negative, nanos must be negative or zero.
+
+             For example $-1.75 is represented as units=-1 and nanos=-750,000,000.
+      title: Money
+      additionalProperties: false
+      description: |-
+        Money represents an amount of money with its currency type.
+
+         Field numbers and types intentionally mirror google.type.Money so the
+         wire format is identical — services that previously embedded
+         google.type.Money can switch to common.v1.Money without coordinating
+         deploys with their callers.
     common.v1.PageCursor:
       type: object
       properties:
@@ -2234,36 +2324,6 @@ components:
          variants. Absence of any variant indicates an error.
 
          The JSON representation for `Value` is JSON value.
-    google.type.Money:
-      type: object
-      properties:
-        currencyCode:
-          type: string
-          title: currency_code
-          description: The three-letter currency code defined in ISO 4217.
-        units:
-          type:
-            - integer
-            - string
-          title: units
-          format: int64
-          description: |-
-            The whole units of the amount.
-             For example if `currencyCode` is `"USD"`, then 1 unit is one US dollar.
-        nanos:
-          type: integer
-          title: nanos
-          format: int32
-          description: |-
-            Number of nano (10^-9) units of the amount.
-             The value must be between -999,999,999 and +999,999,999 inclusive.
-             If `units` is positive, `nanos` must be positive or zero.
-             If `units` is zero, `nanos` can be positive, zero, or negative.
-             If `units` is negative, `nanos` must be negative or zero.
-             For example $-1.75 is represented as `units`=-1 and `nanos`=-750,000,000.
-      title: Money
-      additionalProperties: false
-      description: Represents an amount of money with its currency type.
   securitySchemes:
     BearerAuth:
       type: http

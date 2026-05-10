@@ -23,6 +23,12 @@ import (
 	"github.com/pitabwire/util"
 )
 
+// Structured-log keys reused across authz middleware decisions below.
+const (
+	logKeyShopID    = "shop_id"
+	logKeyProfileID = "profile_id"
+)
+
 // middleware implements the Middleware interface.
 // Tenant-level checks are handled by the FunctionAccessInterceptor.
 // Shop-level checks use the raw authorizer (commerce_shop namespace).
@@ -84,10 +90,10 @@ func (m *middleware) CanFulfilmentManage(ctx context.Context, shopID string) err
 func (m *middleware) AddShopMember(ctx context.Context, shopID, profileID, role string) error {
 	relation := RoleToRelation(role)
 	util.Log(ctx).WithFields(map[string]any{
-		"shop_id":    shopID,
-		"profile_id": profileID,
-		"role":       role,
-		"relation":   relation,
+		logKeyShopID:    shopID,
+		logKeyProfileID: profileID,
+		"role":          role,
+		"relation":      relation,
 	}).Debug("AddShopMember writing tuple")
 	return m.service.WriteTuple(ctx, security.RelationTuple{
 		Object:   security.ObjectRef{Namespace: NamespaceShop, ID: shopID},
@@ -99,8 +105,8 @@ func (m *middleware) AddShopMember(ctx context.Context, shopID, profileID, role 
 // RemoveShopMember removes all relations for a member from a shop.
 func (m *middleware) RemoveShopMember(ctx context.Context, shopID, profileID string) error {
 	util.Log(ctx).WithFields(map[string]any{
-		"shop_id":    shopID,
-		"profile_id": profileID,
+		logKeyShopID:    shopID,
+		logKeyProfileID: profileID,
 	}).Debug("RemoveShopMember deleting tuples")
 	tuples := make([]security.RelationTuple, len(ValidRoles()))
 	for i, role := range ValidRoles() {
@@ -116,10 +122,10 @@ func (m *middleware) RemoveShopMember(ctx context.Context, shopID, profileID str
 // UpdateShopMemberRole updates a member's role in a shop.
 func (m *middleware) UpdateShopMemberRole(ctx context.Context, shopID, profileID, oldRole, newRole string) error {
 	util.Log(ctx).WithFields(map[string]any{
-		"shop_id":    shopID,
-		"profile_id": profileID,
-		"old_role":   oldRole,
-		"new_role":   newRole,
+		logKeyShopID:    shopID,
+		logKeyProfileID: profileID,
+		"old_role":      oldRole,
+		"new_role":      newRole,
 	}).Debug("UpdateShopMemberRole")
 	// Remove old relation if specified
 	if oldRole != "" {
@@ -153,9 +159,9 @@ func (m *middleware) checkShopPermission(ctx context.Context, shopID, permission
 	}
 
 	util.Log(ctx).WithFields(map[string]any{
-		"shop_id":    shopID,
-		"profile_id": subjectID,
-		"permission": permission,
+		logKeyShopID:    shopID,
+		logKeyProfileID: subjectID,
+		"permission":    permission,
 	}).Debug("checkShopPermission")
 
 	req := security.CheckRequest{
@@ -170,7 +176,7 @@ func (m *middleware) checkShopPermission(ctx context.Context, shopID, permission
 	}
 
 	util.Log(ctx).WithFields(map[string]any{
-		"shop_id":    shopID,
+		logKeyShopID: shopID,
 		"permission": permission,
 		"allowed":    result.Allowed,
 	}).Debug("checkShopPermission result")

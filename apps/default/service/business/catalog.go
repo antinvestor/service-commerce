@@ -178,7 +178,7 @@ func (cb *catalogBusiness) UpdateProductVariant(
 
 	fields := req.GetUpdateMask().GetPaths()
 	if len(fields) == 0 {
-		fields = []string{"sku", "name", "price", "stock_quantity", "status", "attributes", "media_ids"}
+		fields = []string{"sku", fieldName, "price", "stock_quantity", "status", "attributes", fieldMediaIDs}
 	}
 
 	updateColumns := make([]string, 0, len(fields))
@@ -189,10 +189,10 @@ func (cb *catalogBusiness) UpdateProductVariant(
 				variant.SKU = req.GetSku()
 				updateColumns = append(updateColumns, "sku")
 			}
-		case "name":
+		case fieldName:
 			if req.GetName() != "" {
 				variant.Name = req.GetName()
-				updateColumns = append(updateColumns, "name")
+				updateColumns = append(updateColumns, fieldName)
 			}
 		case "price":
 			if req.GetPrice() != nil {
@@ -213,9 +213,9 @@ func (cb *catalogBusiness) UpdateProductVariant(
 		case "attributes":
 			variant.Attributes = models.MapToJSONMap(req.GetAttributes())
 			updateColumns = append(updateColumns, "attributes")
-		case "media_ids":
+		case fieldMediaIDs:
 			variant.MediaIDs = models.StringArray(req.GetMediaIds())
-			updateColumns = append(updateColumns, "media_ids")
+			updateColumns = append(updateColumns, fieldMediaIDs)
 		}
 	}
 

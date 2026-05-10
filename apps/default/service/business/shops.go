@@ -95,23 +95,23 @@ func (sb *shopBusiness) UpdateShop(ctx context.Context, req *commercev1.UpdateSh
 	fields := req.GetUpdateMask().GetPaths()
 	if len(fields) == 0 {
 		// Update all provided fields
-		fields = []string{"name", "description", "media_ids", "status", "extra"}
+		fields = []string{fieldName, "description", fieldMediaIDs, "status", "extra"}
 	}
 
 	updateColumns := make([]string, 0, len(fields))
 	for _, field := range fields {
 		switch field {
-		case "name":
+		case fieldName:
 			if req.GetName() != "" {
 				shop.Name = req.GetName()
-				updateColumns = append(updateColumns, "name")
+				updateColumns = append(updateColumns, fieldName)
 			}
 		case "description":
 			shop.Description = req.GetDescription()
 			updateColumns = append(updateColumns, "description")
-		case "media_ids":
+		case fieldMediaIDs:
 			shop.MediaIDs = models.StringArray(req.GetMediaIds())
-			updateColumns = append(updateColumns, "media_ids")
+			updateColumns = append(updateColumns, fieldMediaIDs)
 		case fieldStatus:
 			if req.GetStatus() != commercev1.ShopStatus_SHOP_STATUS_UNSPECIFIED {
 				shop.Status = int32(req.GetStatus())

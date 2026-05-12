@@ -10,8 +10,8 @@ require (
 	buf.build/gen/go/antinvestor/common/protocolbuffers/go v1.36.11-20260509050709-3f270876dbf3.1
 	connectrpc.com/connect v1.19.2
 	github.com/antinvestor/common v1.4.5
-	github.com/pitabwire/frame v1.95.0
-	github.com/pitabwire/util v0.8.1-0.20260509193553-0acf358c18ed
+	github.com/pitabwire/frame v1.96.0
+	github.com/pitabwire/util v0.9.0
 	github.com/stretchr/testify v1.11.1
 	github.com/testcontainers/testcontainers-go v0.42.0
 	google.golang.org/protobuf v1.36.11
@@ -84,7 +84,7 @@ require (
 	github.com/opencontainers/image-spec v1.1.1 // indirect
 	github.com/ory/keto/proto v0.13.0-alpha.0.0.20260420082854-eb334a7a5cf0 // indirect
 	github.com/panjf2000/ants/v2 v2.12.0 // indirect
-	github.com/pitabwire/natspubsub v0.8.3 // indirect
+	github.com/pitabwire/natspubsub v0.8.4 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/power-devops/perfstat v0.0.0-20240221224432-82ca36839d55 // indirect
 	github.com/prometheus/client_golang v1.23.2 // indirect

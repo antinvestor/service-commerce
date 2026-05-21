@@ -10,7 +10,7 @@ require (
 	buf.build/gen/go/antinvestor/common/protocolbuffers/go v1.36.11-20260509050709-3f270876dbf3.1
 	connectrpc.com/connect v1.19.2
 	github.com/antinvestor/common v1.5.0
-	github.com/pitabwire/frame v1.97.4
+	github.com/pitabwire/frame v1.97.5
 	github.com/pitabwire/util v0.9.0
 	github.com/stretchr/testify v1.11.1
 	github.com/testcontainers/testcontainers-go v0.42.0

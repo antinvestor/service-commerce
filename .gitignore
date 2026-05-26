@@ -2,3 +2,4 @@
 # Shared Makefile cache
 .tmp/
 .claude/
+WORK_STATE.md

@@ -1,11 +1,16 @@
-# Yoghurt Business Operations — Gap Coverage Design
+# Manufacturing Operations — Gap Coverage Design
 
 ## 1. Overview
 
-This spec defines the remaining operational capabilities needed to run a complete
-yoghurt business on the antinvestor platform. It extends the existing
-service-commerce and service-manufacturing architectures with ten domain areas
-that were identified as gaps in the original design.
+This spec defines the remaining operational capabilities needed to run a
+complete manufacturing and commerce business on the antinvestor platform. It
+extends the existing service-commerce and service-manufacturing architectures
+with ten domain areas that were identified as gaps in the original design.
+
+The models are industry-agnostic — they apply to dairy, bakery, beverages,
+cosmetics, or any discrete/process manufacturing operation. Yoghurt production
+is used as the running example throughout, but the entities, flows, and
+constraints are general-purpose.
 
 ### Scope
 
@@ -530,8 +535,8 @@ permissions:
 **Risk: trace is slow on large lot graphs.**
 
 Mitigation: trace queries are bounded by property and date range. The lot DAG is
-shallow for dairy (typically 2-3 levels: raw material → base → flavored →
-packed). Queries use indexed joins on source_batch_id and origin_lot_ids.
+shallow in practice (typically 2-3 levels: raw material → intermediate →
+finished good → packed). Queries use indexed joins on source_batch_id and origin_lot_ids.
 
 **Risk: recall misses lots.**
 
@@ -705,7 +710,7 @@ and products; label data is generated at batch completion.
 | `property_id` | string | FK |
 | `recipe_id` | string | nullable — if recipe-specific |
 | `inventory_item_id` | string | nullable — if product-specific |
-| `shelf_life_days` | int | e.g. 21 for plain yoghurt, 14 for flavored |
+| `shelf_life_days` | int | e.g. 21 for plain yoghurt, 14 for flavored, 365 for canned goods |
 | `expiry_type` | enum | USE_BY, BEST_BEFORE |
 | `storage_conditions` | string | e.g. "Store at 2-6°C" |
 | `priority` | int | higher priority overrides lower |

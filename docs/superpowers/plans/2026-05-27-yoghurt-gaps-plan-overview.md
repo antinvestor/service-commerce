@@ -1,4 +1,4 @@
-# Yoghurt Business Gaps — Plan Decomposition Overview
+# Manufacturing Operations Gaps — Plan Decomposition Overview
 
 > **Spec:** `docs/superpowers/specs/2026-05-27-yoghurt-business-gaps-design.md`
 

@@ -413,11 +413,15 @@ func (cs *CommerceServer) PriceListGet(
 	ctx context.Context,
 	req *connect.Request[commercev1.PriceListGetRequest],
 ) (*connect.Response[commercev1.PriceListGetResponse], error) {
-	// TODO: add shop-level CanPriceListView check once price list lookup provides shopID
 	pl, err := cs.pricingBusiness.GetPriceList(ctx, req.Msg.GetId())
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
+
+	if authzErr := cs.authz.CanPriceListView(ctx, pl.GetShopId()); authzErr != nil {
+		return nil, authorizer.ToConnectError(authzErr)
+	}
+
 	return connect.NewResponse(&commercev1.PriceListGetResponse{PriceList: pl}), nil
 }
 
@@ -440,7 +444,15 @@ func (cs *CommerceServer) PriceListEntryBatchSave(
 	ctx context.Context,
 	req *connect.Request[commercev1.PriceListEntryBatchSaveRequest],
 ) (*connect.Response[commercev1.PriceListEntryBatchSaveResponse], error) {
-	// TODO: add shop-level CanPriceListManage check once price list lookup provides shopID
+	pl, plErr := cs.pricingBusiness.GetPriceList(ctx, req.Msg.GetPriceListId())
+	if plErr != nil {
+		return nil, errorutil.CleanErr(plErr)
+	}
+
+	if err := cs.authz.CanPriceListManage(ctx, pl.GetShopId()); err != nil {
+		return nil, authorizer.ToConnectError(err)
+	}
+
 	entries, err := cs.pricingBusiness.BatchSavePriceListEntries(ctx, req.Msg)
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
@@ -452,7 +464,17 @@ func (cs *CommerceServer) CustomerPriceListAssignmentSave(
 	ctx context.Context,
 	req *connect.Request[commercev1.CustomerPriceListAssignmentSaveRequest],
 ) (*connect.Response[commercev1.CustomerPriceListAssignmentSaveResponse], error) {
-	// TODO: add shop-level CanPriceListManage check once assignment lookup provides shopID
+	if req.Msg.GetPriceListId() != "" {
+		pl, plErr := cs.pricingBusiness.GetPriceList(ctx, req.Msg.GetPriceListId())
+		if plErr != nil {
+			return nil, errorutil.CleanErr(plErr)
+		}
+
+		if err := cs.authz.CanPriceListManage(ctx, pl.GetShopId()); err != nil {
+			return nil, authorizer.ToConnectError(err)
+		}
+	}
+
 	assignment, err := cs.pricingBusiness.SaveCustomerPriceListAssignment(ctx, req.Msg)
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
@@ -480,7 +502,17 @@ func (cs *CommerceServer) CustomerPriceOverrideSave(
 	ctx context.Context,
 	req *connect.Request[commercev1.CustomerPriceOverrideSaveRequest],
 ) (*connect.Response[commercev1.CustomerPriceOverrideSaveResponse], error) {
-	// TODO: add shop-level CanCustomerPriceOverride check once override lookup provides shopID
+	if req.Msg.GetProductVariantId() != "" {
+		shopID, shopErr := cs.pricingBusiness.GetShopIDForVariant(ctx, req.Msg.GetProductVariantId())
+		if shopErr != nil {
+			return nil, errorutil.CleanErr(shopErr)
+		}
+
+		if err := cs.authz.CanCustomerPriceOverride(ctx, shopID); err != nil {
+			return nil, authorizer.ToConnectError(err)
+		}
+	}
+
 	override, err := cs.pricingBusiness.SaveCustomerPriceOverride(ctx, req.Msg)
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
@@ -538,7 +570,36 @@ func (cs *CommerceServer) ResolvePrice(
 	ctx context.Context,
 	req *connect.Request[commercev1.ResolvePriceRequest],
 ) (*connect.Response[commercev1.ResolvePriceResponse], error) {
-	// ResolvePrice is customer-facing, no shop-level authz needed
+	// Determine the effective customer ID. Non-privileged callers always use
+	// their own identity; privileged callers (shop staff with price_list_view)
+	// may specify an arbitrary customer_id.
+	callerID := ""
+	claims := security.ClaimsFromContext(ctx)
+	if claims != nil {
+		if sub, subErr := claims.GetSubject(); subErr == nil {
+			callerID = sub
+		}
+	}
+
+	requestedCustomer := req.Msg.GetCustomerId()
+	if requestedCustomer != "" && requestedCustomer != callerID {
+		// Caller is trying to resolve prices for a different customer.
+		// Require price_list_view on the variant's shop to allow this.
+		shopID, shopErr := cs.pricingBusiness.GetShopIDForVariant(
+			ctx, req.Msg.GetProductVariantId(),
+		)
+		if shopErr != nil {
+			return nil, errorutil.CleanErr(shopErr)
+		}
+
+		if err := cs.authz.CanPriceListView(ctx, shopID); err != nil {
+			return nil, authorizer.ToConnectError(err)
+		}
+	} else if requestedCustomer == "" && callerID != "" {
+		// Default to the caller's own identity for customer-specific pricing.
+		req.Msg.SetCustomerId(callerID)
+	}
+
 	resolved, err := cs.pricingBusiness.ResolvePrice(ctx, req.Msg)
 	if err != nil {
 		return nil, errorutil.CleanErr(err)

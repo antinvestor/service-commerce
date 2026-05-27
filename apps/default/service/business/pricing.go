@@ -25,6 +25,7 @@ import (
 	commonv1 "buf.build/gen/go/antinvestor/common/protocolbuffers/go/common/v1"
 	"connectrpc.com/connect"
 	"github.com/pitabwire/frame/data"
+	"github.com/pitabwire/frame/security"
 
 	"github.com/antinvestor/service-commerce/apps/default/service/models"
 	"github.com/antinvestor/service-commerce/apps/default/service/repository"
@@ -78,6 +79,10 @@ type PricingBusiness interface {
 		ctx context.Context,
 		req *commercev1.ResolvePriceRequest,
 	) (*commercev1.ResolvedPrice, error)
+
+	// GetShopIDForVariant resolves the shop ID for a product variant by
+	// following the variant -> product -> shop chain.
+	GetShopIDForVariant(ctx context.Context, variantID string) (string, error)
 }
 
 // NewPricingBusiness creates a new PricingBusiness.
@@ -113,6 +118,19 @@ type pricingBusiness struct {
 	variantRepo        repository.ProductVariantRepository
 	productRepo        repository.ProductRepository
 	shopRepo           repository.ShopRepository
+}
+
+// subjectFromContext extracts the caller's subject ID from the JWT claims in ctx.
+func subjectFromContext(ctx context.Context) string {
+	claims := security.ClaimsFromContext(ctx)
+	if claims == nil {
+		return ""
+	}
+	subjectID, err := claims.GetSubject()
+	if err != nil {
+		return ""
+	}
+	return subjectID
 }
 
 // --- PriceList ---
@@ -223,6 +241,25 @@ func (pb *pricingBusiness) GetPriceList(
 		return nil, data.ErrorConvertToAPI(err)
 	}
 	return pl.ToAPI(), nil
+}
+
+func (pb *pricingBusiness) GetShopIDForVariant(
+	ctx context.Context,
+	variantID string,
+) (string, error) {
+	variant, err := pb.variantRepo.GetByID(ctx, variantID)
+	if err != nil {
+		return "", connect.NewError(connect.CodeNotFound, errors.New("product variant not found"))
+	}
+
+	product, err := pb.productRepo.GetByID(ctx, variant.ProductID)
+	if err != nil {
+		return "", connect.NewError(
+			connect.CodeInternal,
+			errors.New("could not resolve product for variant"),
+		)
+	}
+	return product.ShopID, nil
 }
 
 func (pb *pricingBusiness) SearchPriceLists(
@@ -358,7 +395,7 @@ func (pb *pricingBusiness) createAssignment(
 	a := &models.CustomerPriceListAssignment{
 		CustomerID:  req.GetCustomerId(),
 		PriceListID: req.GetPriceListId(),
-		AssignedBy:  req.GetAssignedBy(),
+		AssignedBy:  subjectFromContext(ctx),
 		Status: int32(
 			commercev1.CustomerPriceListAssignmentStatus_CUSTOMER_PRICE_LIST_ASSIGNMENT_STATUS_ACTIVE,
 		),
@@ -458,7 +495,7 @@ func (pb *pricingBusiness) createOverride(
 		CurrencyCode:     currency,
 		PriceUnits:       units,
 		PriceNanos:       nanos,
-		ApprovedBy:       req.GetApprovedBy(),
+		ApprovedBy:       subjectFromContext(ctx),
 		Status: int32(
 			commercev1.CustomerPriceOverrideStatus_CUSTOMER_PRICE_OVERRIDE_STATUS_ACTIVE,
 		),
@@ -512,8 +549,9 @@ func (pb *pricingBusiness) updateOverride(
 		o.ValidUntil = &t
 		updateColumns = append(updateColumns, "valid_until")
 	}
-	if req.GetApprovedBy() != "" {
-		o.ApprovedBy = req.GetApprovedBy()
+	// Always record the current caller as the approver on updates.
+	if subject := subjectFromContext(ctx); subject != "" {
+		o.ApprovedBy = subject
 		updateColumns = append(updateColumns, "approved_by")
 	}
 

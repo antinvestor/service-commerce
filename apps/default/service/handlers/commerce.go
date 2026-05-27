@@ -488,7 +488,10 @@ func (cs *CommerceServer) CustomerPriceListAssignmentSearch(
 	ctx context.Context,
 	req *connect.Request[commercev1.CustomerPriceListAssignmentSearchRequest],
 ) (*connect.Response[commercev1.CustomerPriceListAssignmentSearchResponse], error) {
-	// TODO: add shop-level CanPriceListView check
+	if authzErr := cs.checkAssignmentSearchAuthz(ctx, req.Msg); authzErr != nil {
+		return nil, authzErr
+	}
+
 	assignments, err := cs.pricingBusiness.SearchCustomerPriceListAssignments(ctx, req.Msg)
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
@@ -526,7 +529,10 @@ func (cs *CommerceServer) CustomerPriceOverrideSearch(
 	ctx context.Context,
 	req *connect.Request[commercev1.CustomerPriceOverrideSearchRequest],
 ) (*connect.Response[commercev1.CustomerPriceOverrideSearchResponse], error) {
-	// TODO: add shop-level authz check
+	if authzErr := cs.checkOverrideSearchAuthz(ctx, req.Msg); authzErr != nil {
+		return nil, authzErr
+	}
+
 	overrides, err := cs.pricingBusiness.SearchCustomerPriceOverrides(ctx, req.Msg)
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
@@ -605,4 +611,50 @@ func (cs *CommerceServer) ResolvePrice(
 		return nil, errorutil.CleanErr(err)
 	}
 	return connect.NewResponse(&commercev1.ResolvePriceResponse{ResolvedPrice: resolved}), nil
+}
+
+func callerSubject(ctx context.Context) string {
+	claims := security.ClaimsFromContext(ctx)
+	if claims == nil {
+		return ""
+	}
+	sub, err := claims.GetSubject()
+	if err != nil {
+		return ""
+	}
+	return sub
+}
+
+func (cs *CommerceServer) checkAssignmentSearchAuthz(
+	ctx context.Context,
+	msg *commercev1.CustomerPriceListAssignmentSearchRequest,
+) error {
+	if msg.GetCustomerId() == callerSubject(ctx) {
+		return nil
+	}
+	if msg.GetPriceListId() == "" {
+		return nil
+	}
+	pl, plErr := cs.pricingBusiness.GetPriceList(ctx, msg.GetPriceListId())
+	if plErr != nil {
+		return errorutil.CleanErr(plErr)
+	}
+	return authorizer.ToConnectError(cs.authz.CanPriceListView(ctx, pl.GetShopId()))
+}
+
+func (cs *CommerceServer) checkOverrideSearchAuthz(
+	ctx context.Context,
+	msg *commercev1.CustomerPriceOverrideSearchRequest,
+) error {
+	if msg.GetCustomerId() == callerSubject(ctx) {
+		return nil
+	}
+	if msg.GetProductVariantId() == "" {
+		return nil
+	}
+	shopID, shopErr := cs.pricingBusiness.GetShopIDForVariant(ctx, msg.GetProductVariantId())
+	if shopErr != nil {
+		return errorutil.CleanErr(shopErr)
+	}
+	return authorizer.ToConnectError(cs.authz.CanCustomerPriceOverride(ctx, shopID))
 }

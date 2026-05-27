@@ -100,7 +100,10 @@ func (m *middleware) RemovePropertyMember(ctx context.Context, propertyID, profi
 	return m.service.DeleteTuples(ctx, tuples)
 }
 
-func (m *middleware) UpdatePropertyMemberRole(ctx context.Context, propertyID, profileID, oldRole, newRole string) error {
+func (m *middleware) UpdatePropertyMemberRole(
+	ctx context.Context,
+	propertyID, profileID, oldRole, newRole string,
+) error {
 	util.Log(ctx).WithFields(map[string]any{
 		logKeyPropertyID: propertyID,
 		logKeyProfileID:  profileID,

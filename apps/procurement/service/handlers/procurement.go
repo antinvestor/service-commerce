@@ -38,7 +38,11 @@ type ProcurementServer struct {
 	procurementv1connect.UnimplementedProcurementServiceHandler
 }
 
-func NewProcurementServer(ctx context.Context, svc *frame.Service, authzMiddleware authz.Middleware) *ProcurementServer {
+func NewProcurementServer(
+	ctx context.Context,
+	svc *frame.Service,
+	authzMiddleware authz.Middleware,
+) *ProcurementServer {
 	workMan := svc.WorkManager()
 	dbPool := svc.DatastoreManager().GetPool(ctx, datastore.DefaultPoolName)
 
@@ -63,57 +67,57 @@ func NewProcurementServer(ctx context.Context, svc *frame.Service, authzMiddlewa
 
 func (ps *ProcurementServer) SaveSupplier(
 	ctx context.Context,
-	req *connect.Request[procurementv1.SaveSupplierRequest],
-) (*connect.Response[procurementv1.SaveSupplierResponse], error) {
+	req *connect.Request[procurementv1.SupplierSaveRequest],
+) (*connect.Response[procurementv1.SupplierSaveResponse], error) {
 	supplier, err := ps.supplierBusiness.SaveSupplier(ctx, req.Msg)
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
-	return connect.NewResponse(&procurementv1.SaveSupplierResponse{Supplier: supplier}), nil
+	return connect.NewResponse(&procurementv1.SupplierSaveResponse{Supplier: supplier}), nil
 }
 
 func (ps *ProcurementServer) GetSupplier(
 	ctx context.Context,
-	req *connect.Request[procurementv1.GetSupplierRequest],
-) (*connect.Response[procurementv1.GetSupplierResponse], error) {
+	req *connect.Request[procurementv1.SupplierGetRequest],
+) (*connect.Response[procurementv1.SupplierGetResponse], error) {
 	supplier, err := ps.supplierBusiness.GetSupplier(ctx, req.Msg.GetId())
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
-	return connect.NewResponse(&procurementv1.GetSupplierResponse{Supplier: supplier}), nil
+	return connect.NewResponse(&procurementv1.SupplierGetResponse{Supplier: supplier}), nil
 }
 
 func (ps *ProcurementServer) SearchSuppliers(
 	ctx context.Context,
-	req *connect.Request[procurementv1.SearchSuppliersRequest],
-) (*connect.Response[procurementv1.SearchSuppliersResponse], error) {
+	req *connect.Request[procurementv1.SupplierSearchRequest],
+) (*connect.Response[procurementv1.SupplierSearchResponse], error) {
 	suppliers, err := ps.supplierBusiness.SearchSuppliers(ctx, req.Msg)
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
-	return connect.NewResponse(&procurementv1.SearchSuppliersResponse{Suppliers: suppliers}), nil
+	return connect.NewResponse(&procurementv1.SupplierSearchResponse{Suppliers: suppliers}), nil
 }
 
 func (ps *ProcurementServer) SaveSupplierItem(
 	ctx context.Context,
-	req *connect.Request[procurementv1.SaveSupplierItemRequest],
-) (*connect.Response[procurementv1.SaveSupplierItemResponse], error) {
+	req *connect.Request[procurementv1.SupplierItemSaveRequest],
+) (*connect.Response[procurementv1.SupplierItemSaveResponse], error) {
 	item, err := ps.supplierBusiness.SaveSupplierItem(ctx, req.Msg)
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
-	return connect.NewResponse(&procurementv1.SaveSupplierItemResponse{SupplierItem: item}), nil
+	return connect.NewResponse(&procurementv1.SupplierItemSaveResponse{SupplierItem: item}), nil
 }
 
 func (ps *ProcurementServer) SearchSupplierItems(
 	ctx context.Context,
-	req *connect.Request[procurementv1.SearchSupplierItemsRequest],
-) (*connect.Response[procurementv1.SearchSupplierItemsResponse], error) {
+	req *connect.Request[procurementv1.SupplierItemSearchRequest],
+) (*connect.Response[procurementv1.SupplierItemSearchResponse], error) {
 	items, err := ps.supplierBusiness.SearchSupplierItems(ctx, req.Msg)
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
-	return connect.NewResponse(&procurementv1.SearchSupplierItemsResponse{SupplierItems: items}), nil
+	return connect.NewResponse(&procurementv1.SupplierItemSearchResponse{SupplierItems: items}), nil
 }
 
 // ----------------------
@@ -122,66 +126,66 @@ func (ps *ProcurementServer) SearchSupplierItems(
 
 func (ps *ProcurementServer) CreatePurchaseOrder(
 	ctx context.Context,
-	req *connect.Request[procurementv1.CreatePurchaseOrderRequest],
-) (*connect.Response[procurementv1.CreatePurchaseOrderResponse], error) {
+	req *connect.Request[procurementv1.PurchaseOrderCreateRequest],
+) (*connect.Response[procurementv1.PurchaseOrderCreateResponse], error) {
 	po, err := ps.purchaseOrderBusiness.CreatePurchaseOrder(ctx, req.Msg)
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
-	return connect.NewResponse(&procurementv1.CreatePurchaseOrderResponse{PurchaseOrder: po}), nil
+	return connect.NewResponse(&procurementv1.PurchaseOrderCreateResponse{PurchaseOrder: po}), nil
 }
 
 func (ps *ProcurementServer) GetPurchaseOrder(
 	ctx context.Context,
-	req *connect.Request[procurementv1.GetPurchaseOrderRequest],
-) (*connect.Response[procurementv1.GetPurchaseOrderResponse], error) {
+	req *connect.Request[procurementv1.PurchaseOrderGetRequest],
+) (*connect.Response[procurementv1.PurchaseOrderGetResponse], error) {
 	po, err := ps.purchaseOrderBusiness.GetPurchaseOrder(ctx, req.Msg.GetId())
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
-	return connect.NewResponse(&procurementv1.GetPurchaseOrderResponse{PurchaseOrder: po}), nil
+	return connect.NewResponse(&procurementv1.PurchaseOrderGetResponse{PurchaseOrder: po}), nil
 }
 
 func (ps *ProcurementServer) SearchPurchaseOrders(
 	ctx context.Context,
-	req *connect.Request[procurementv1.SearchPurchaseOrdersRequest],
-) (*connect.Response[procurementv1.SearchPurchaseOrdersResponse], error) {
+	req *connect.Request[procurementv1.PurchaseOrderSearchRequest],
+) (*connect.Response[procurementv1.PurchaseOrderSearchResponse], error) {
 	orders, err := ps.purchaseOrderBusiness.SearchPurchaseOrders(ctx, req.Msg)
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
-	return connect.NewResponse(&procurementv1.SearchPurchaseOrdersResponse{PurchaseOrders: orders}), nil
+	return connect.NewResponse(&procurementv1.PurchaseOrderSearchResponse{PurchaseOrders: orders}), nil
 }
 
 func (ps *ProcurementServer) SubmitPurchaseOrder(
 	ctx context.Context,
-	req *connect.Request[procurementv1.SubmitPurchaseOrderRequest],
-) (*connect.Response[procurementv1.SubmitPurchaseOrderResponse], error) {
+	req *connect.Request[procurementv1.PurchaseOrderSubmitRequest],
+) (*connect.Response[procurementv1.PurchaseOrderSubmitResponse], error) {
 	po, err := ps.purchaseOrderBusiness.SubmitPurchaseOrder(ctx, req.Msg)
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
-	return connect.NewResponse(&procurementv1.SubmitPurchaseOrderResponse{PurchaseOrder: po}), nil
+	return connect.NewResponse(&procurementv1.PurchaseOrderSubmitResponse{PurchaseOrder: po}), nil
 }
 
 func (ps *ProcurementServer) CancelPurchaseOrder(
 	ctx context.Context,
-	req *connect.Request[procurementv1.CancelPurchaseOrderRequest],
-) (*connect.Response[procurementv1.CancelPurchaseOrderResponse], error) {
+	req *connect.Request[procurementv1.PurchaseOrderCancelRequest],
+) (*connect.Response[procurementv1.PurchaseOrderCancelResponse], error) {
 	po, err := ps.purchaseOrderBusiness.CancelPurchaseOrder(ctx, req.Msg)
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
-	return connect.NewResponse(&procurementv1.CancelPurchaseOrderResponse{PurchaseOrder: po}), nil
+	return connect.NewResponse(&procurementv1.PurchaseOrderCancelResponse{PurchaseOrder: po}), nil
 }
 
 func (ps *ProcurementServer) SuggestPurchaseOrders(
-	ctx context.Context,
+	_ context.Context,
 	_ *connect.Request[procurementv1.SuggestPurchaseOrdersRequest],
 ) (*connect.Response[procurementv1.SuggestPurchaseOrdersResponse], error) {
 	// Placeholder: returns empty suggestions for now
 	return connect.NewResponse(&procurementv1.SuggestPurchaseOrdersResponse{
-		PurchaseOrders: nil,
+		Suggestions: nil,
 	}), nil
 }
 
@@ -191,33 +195,33 @@ func (ps *ProcurementServer) SuggestPurchaseOrders(
 
 func (ps *ProcurementServer) CreateGoodsReceipt(
 	ctx context.Context,
-	req *connect.Request[procurementv1.CreateGoodsReceiptRequest],
-) (*connect.Response[procurementv1.CreateGoodsReceiptResponse], error) {
+	req *connect.Request[procurementv1.GoodsReceiptCreateRequest],
+) (*connect.Response[procurementv1.GoodsReceiptCreateResponse], error) {
 	gr, err := ps.goodsReceiptBusiness.CreateGoodsReceipt(ctx, req.Msg)
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
-	return connect.NewResponse(&procurementv1.CreateGoodsReceiptResponse{GoodsReceipt: gr}), nil
+	return connect.NewResponse(&procurementv1.GoodsReceiptCreateResponse{GoodsReceipt: gr}), nil
 }
 
 func (ps *ProcurementServer) GetGoodsReceipt(
 	ctx context.Context,
-	req *connect.Request[procurementv1.GetGoodsReceiptRequest],
-) (*connect.Response[procurementv1.GetGoodsReceiptResponse], error) {
+	req *connect.Request[procurementv1.GoodsReceiptGetRequest],
+) (*connect.Response[procurementv1.GoodsReceiptGetResponse], error) {
 	gr, err := ps.goodsReceiptBusiness.GetGoodsReceipt(ctx, req.Msg.GetId())
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
-	return connect.NewResponse(&procurementv1.GetGoodsReceiptResponse{GoodsReceipt: gr}), nil
+	return connect.NewResponse(&procurementv1.GoodsReceiptGetResponse{GoodsReceipt: gr}), nil
 }
 
 func (ps *ProcurementServer) SearchGoodsReceipts(
 	ctx context.Context,
-	req *connect.Request[procurementv1.SearchGoodsReceiptsRequest],
-) (*connect.Response[procurementv1.SearchGoodsReceiptsResponse], error) {
+	req *connect.Request[procurementv1.GoodsReceiptSearchRequest],
+) (*connect.Response[procurementv1.GoodsReceiptSearchResponse], error) {
 	receipts, err := ps.goodsReceiptBusiness.SearchGoodsReceipts(ctx, req.Msg)
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
-	return connect.NewResponse(&procurementv1.SearchGoodsReceiptsResponse{GoodsReceipts: receipts}), nil
+	return connect.NewResponse(&procurementv1.GoodsReceiptSearchResponse{GoodsReceipts: receipts}), nil
 }

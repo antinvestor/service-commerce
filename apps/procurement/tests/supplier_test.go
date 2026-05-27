@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package tests
+package tests_test
 
 import (
 	"context"
@@ -29,10 +29,11 @@ import (
 
 	"github.com/antinvestor/service-commerce/apps/procurement/service/business"
 	"github.com/antinvestor/service-commerce/apps/procurement/service/repository"
+	"github.com/antinvestor/service-commerce/apps/procurement/tests"
 )
 
 type SupplierTestSuite struct {
-	ProcurementBaseTestSuite
+	tests.ProcurementBaseTestSuite
 }
 
 func TestSupplierSuite(t *testing.T) {
@@ -49,9 +50,12 @@ func (sts *SupplierTestSuite) getBusiness(ctx context.Context, svc *frame.Servic
 	return business.NewSupplierBusiness(ctx, supplierRepo, supplierItemRepo)
 }
 
-func (sts *SupplierTestSuite) createTestSupplier(ctx context.Context, biz business.SupplierBusiness) *procurementv1.Supplier {
+func (sts *SupplierTestSuite) createTestSupplier(
+	ctx context.Context,
+	biz business.SupplierBusiness,
+) *procurementv1.Supplier {
 	t := sts.T()
-	supplier, err := biz.SaveSupplier(ctx, &procurementv1.SaveSupplierRequest{
+	supplier, err := biz.SaveSupplier(ctx, &procurementv1.SupplierSaveRequest{
 		Name:      "Test Supplier " + util.RandomAlphaNumericString(6),
 		ProfileId: "profile-" + util.RandomAlphaNumericString(6),
 		Currency:  "USD",
@@ -67,10 +71,10 @@ func (sts *SupplierTestSuite) TestCreateSupplier() {
 		ctx, svc := sts.CreateService(t, dep)
 		biz := sts.getBusiness(ctx, svc)
 
-		supplier, err := biz.SaveSupplier(ctx, &procurementv1.SaveSupplierRequest{
+		supplier, err := biz.SaveSupplier(ctx, &procurementv1.SupplierSaveRequest{
 			Name:             "Acme Supplies",
 			ProfileId:        "profile-123",
-			SupplierType:     procurementv1.SupplierType_SUPPLIER_TYPE_VENDOR,
+			SupplierType:     procurementv1.SupplierType_SUPPLIER_TYPE_RAW_MATERIAL,
 			Currency:         "USD",
 			PaymentTermsDays: 30,
 			LeadTimeDays:     7,
@@ -94,20 +98,20 @@ func (sts *SupplierTestSuite) TestUpdateSupplier() {
 
 		supplier := sts.createTestSupplier(ctx, biz)
 
-		updated, err := biz.SaveSupplier(ctx, &procurementv1.SaveSupplierRequest{
+		updated, err := biz.SaveSupplier(ctx, &procurementv1.SupplierSaveRequest{
 			Id:               supplier.GetId(),
 			Name:             "Updated Supplier Name",
 			ProfileId:        supplier.GetProfileId(),
 			Currency:         "EUR",
 			PaymentTermsDays: 45,
-			Rating:           procurementv1.SupplierRating_SUPPLIER_RATING_EXCELLENT,
+			Rating:           procurementv1.SupplierRating_SUPPLIER_RATING_PREFERRED,
 		})
 		require.NoError(t, err)
 		require.Equal(t, supplier.GetId(), updated.GetId())
 		require.Equal(t, "Updated Supplier Name", updated.GetName())
 		require.Equal(t, "EUR", updated.GetCurrency())
 		require.Equal(t, int32(45), updated.GetPaymentTermsDays())
-		require.Equal(t, procurementv1.SupplierRating_SUPPLIER_RATING_EXCELLENT, updated.GetRating())
+		require.Equal(t, procurementv1.SupplierRating_SUPPLIER_RATING_PREFERRED, updated.GetRating())
 	})
 }
 
@@ -120,11 +124,11 @@ func (sts *SupplierTestSuite) TestCreateSupplierItem() {
 
 		supplier := sts.createTestSupplier(ctx, biz)
 
-		item, err := biz.SaveSupplierItem(ctx, &procurementv1.SaveSupplierItemRequest{
+		item, err := biz.SaveSupplierItem(ctx, &procurementv1.SupplierItemSaveRequest{
 			SupplierId:      supplier.GetId(),
 			InventoryItemId: "inv-item-001",
 			SupplierSku:     "SUP-SKU-001",
-			Price: &commonv1.Money{
+			UnitPrice: &commonv1.Money{
 				CurrencyCode: "USD",
 				Units:        15,
 				Nanos:        500000000, // $15.50
@@ -138,9 +142,9 @@ func (sts *SupplierTestSuite) TestCreateSupplierItem() {
 		require.Equal(t, supplier.GetId(), item.GetSupplierId())
 		require.Equal(t, "inv-item-001", item.GetInventoryItemId())
 		require.Equal(t, "SUP-SKU-001", item.GetSupplierSku())
-		require.Equal(t, int64(15), item.GetPrice().GetUnits())
-		require.Equal(t, int32(500000000), item.GetPrice().GetNanos())
-		require.Equal(t, float64(10), item.GetMinOrderQuantity())
+		require.Equal(t, int64(15), item.GetUnitPrice().GetUnits())
+		require.Equal(t, int32(500000000), item.GetUnitPrice().GetNanos())
+		require.InDelta(t, 10, item.GetMinOrderQuantity(), 0.001)
 		require.Equal(t, procurementv1.SupplierItemStatus_SUPPLIER_ITEM_STATUS_ACTIVE, item.GetStatus())
 	})
 }
@@ -155,11 +159,11 @@ func (sts *SupplierTestSuite) TestSearchSupplierItems() {
 		supplier := sts.createTestSupplier(ctx, biz)
 
 		for i := range 3 {
-			_, err := biz.SaveSupplierItem(ctx, &procurementv1.SaveSupplierItemRequest{
+			_, err := biz.SaveSupplierItem(ctx, &procurementv1.SupplierItemSaveRequest{
 				SupplierId:      supplier.GetId(),
 				InventoryItemId: "inv-item-" + util.RandomAlphaNumericString(6),
 				SupplierSku:     "SKU-" + util.RandomAlphaNumericString(6),
-				Price: &commonv1.Money{
+				UnitPrice: &commonv1.Money{
 					CurrencyCode: "USD",
 					Units:        int64(10 + i),
 				},
@@ -168,7 +172,7 @@ func (sts *SupplierTestSuite) TestSearchSupplierItems() {
 			require.NoError(t, err)
 		}
 
-		items, err := biz.SearchSupplierItems(ctx, &procurementv1.SearchSupplierItemsRequest{
+		items, err := biz.SearchSupplierItems(ctx, &procurementv1.SupplierItemSearchRequest{
 			SupplierId: supplier.GetId(),
 		})
 		require.NoError(t, err)

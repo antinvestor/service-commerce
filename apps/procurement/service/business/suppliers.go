@@ -28,11 +28,17 @@ import (
 )
 
 type SupplierBusiness interface {
-	SaveSupplier(ctx context.Context, req *procurementv1.SaveSupplierRequest) (*procurementv1.Supplier, error)
+	SaveSupplier(ctx context.Context, req *procurementv1.SupplierSaveRequest) (*procurementv1.Supplier, error)
 	GetSupplier(ctx context.Context, id string) (*procurementv1.Supplier, error)
-	SearchSuppliers(ctx context.Context, req *procurementv1.SearchSuppliersRequest) ([]*procurementv1.Supplier, error)
-	SaveSupplierItem(ctx context.Context, req *procurementv1.SaveSupplierItemRequest) (*procurementv1.SupplierItem, error)
-	SearchSupplierItems(ctx context.Context, req *procurementv1.SearchSupplierItemsRequest) ([]*procurementv1.SupplierItem, error)
+	SearchSuppliers(ctx context.Context, req *procurementv1.SupplierSearchRequest) ([]*procurementv1.Supplier, error)
+	SaveSupplierItem(
+		ctx context.Context,
+		req *procurementv1.SupplierItemSaveRequest,
+	) (*procurementv1.SupplierItem, error)
+	SearchSupplierItems(
+		ctx context.Context,
+		req *procurementv1.SupplierItemSearchRequest,
+	) ([]*procurementv1.SupplierItem, error)
 }
 
 func NewSupplierBusiness(
@@ -51,7 +57,10 @@ type supplierBusiness struct {
 	supplierItemRepo repository.SupplierItemRepository
 }
 
-func (sb *supplierBusiness) SaveSupplier(ctx context.Context, req *procurementv1.SaveSupplierRequest) (*procurementv1.Supplier, error) {
+func (sb *supplierBusiness) SaveSupplier(
+	ctx context.Context,
+	req *procurementv1.SupplierSaveRequest,
+) (*procurementv1.Supplier, error) {
 	name := strings.TrimSpace(req.GetName())
 	if name == "" {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("supplier name is required"))
@@ -59,37 +68,7 @@ func (sb *supplierBusiness) SaveSupplier(ctx context.Context, req *procurementv1
 
 	// Update existing supplier
 	if req.GetId() != "" {
-		supplier, err := sb.supplierRepo.GetByID(ctx, req.GetId())
-		if err != nil {
-			return nil, data.ErrorConvertToAPI(err)
-		}
-
-		supplier.Name = name
-		supplier.ProfileID = req.GetProfileId()
-		if req.GetSupplierType() != procurementv1.SupplierType_SUPPLIER_TYPE_UNSPECIFIED {
-			supplier.SupplierType = int32(req.GetSupplierType())
-		}
-		if req.GetStatus() != procurementv1.SupplierStatus_SUPPLIER_STATUS_UNSPECIFIED {
-			supplier.Status = int32(req.GetStatus())
-		}
-		supplier.PaymentTermsDays = req.GetPaymentTermsDays()
-		supplier.Currency = req.GetCurrency()
-		supplier.LeadTimeDays = req.GetLeadTimeDays()
-		if req.GetRating() != procurementv1.SupplierRating_SUPPLIER_RATING_UNSPECIFIED {
-			supplier.Rating = int32(req.GetRating())
-		}
-		supplier.Notes = req.GetNotes()
-
-		_, updateErr := sb.supplierRepo.Update(ctx, supplier,
-			"name", "profile_id", "supplier_type", "status",
-			"payment_terms_days", "currency", "lead_time_days",
-			"rating", "notes",
-		)
-		if updateErr != nil {
-			return nil, data.ErrorConvertToAPI(updateErr)
-		}
-
-		return supplier.ToAPI(), nil
+		return sb.updateSupplier(ctx, req, name)
 	}
 
 	// Create new supplier
@@ -112,6 +91,44 @@ func (sb *supplierBusiness) SaveSupplier(ctx context.Context, req *procurementv1
 	return supplier.ToAPI(), nil
 }
 
+func (sb *supplierBusiness) updateSupplier(
+	ctx context.Context,
+	req *procurementv1.SupplierSaveRequest,
+	name string,
+) (*procurementv1.Supplier, error) {
+	supplier, err := sb.supplierRepo.GetByID(ctx, req.GetId())
+	if err != nil {
+		return nil, data.ErrorConvertToAPI(err)
+	}
+
+	supplier.Name = name
+	supplier.ProfileID = req.GetProfileId()
+	if req.GetSupplierType() != procurementv1.SupplierType_SUPPLIER_TYPE_UNSPECIFIED {
+		supplier.SupplierType = int32(req.GetSupplierType())
+	}
+	if req.GetStatus() != procurementv1.SupplierStatus_SUPPLIER_STATUS_UNSPECIFIED {
+		supplier.Status = int32(req.GetStatus())
+	}
+	supplier.PaymentTermsDays = req.GetPaymentTermsDays()
+	supplier.Currency = req.GetCurrency()
+	supplier.LeadTimeDays = req.GetLeadTimeDays()
+	if req.GetRating() != procurementv1.SupplierRating_SUPPLIER_RATING_UNSPECIFIED {
+		supplier.Rating = int32(req.GetRating())
+	}
+	supplier.Notes = req.GetNotes()
+
+	_, updateErr := sb.supplierRepo.Update(ctx, supplier,
+		"name", "profile_id", "supplier_type", "status",
+		"payment_terms_days", "currency", "lead_time_days",
+		"rating", "notes",
+	)
+	if updateErr != nil {
+		return nil, data.ErrorConvertToAPI(updateErr)
+	}
+
+	return supplier.ToAPI(), nil
+}
+
 func (sb *supplierBusiness) GetSupplier(ctx context.Context, id string) (*procurementv1.Supplier, error) {
 	supplier, err := sb.supplierRepo.GetByID(ctx, id)
 	if err != nil {
@@ -120,7 +137,10 @@ func (sb *supplierBusiness) GetSupplier(ctx context.Context, id string) (*procur
 	return supplier.ToAPI(), nil
 }
 
-func (sb *supplierBusiness) SearchSuppliers(ctx context.Context, req *procurementv1.SearchSuppliersRequest) ([]*procurementv1.Supplier, error) {
+func (sb *supplierBusiness) SearchSuppliers(
+	ctx context.Context,
+	req *procurementv1.SupplierSearchRequest,
+) ([]*procurementv1.Supplier, error) {
 	limit := 50
 	offset := 0
 	if req.GetSearch() != nil && req.GetSearch().GetCursor() != nil {
@@ -132,12 +152,18 @@ func (sb *supplierBusiness) SearchSuppliers(ctx context.Context, req *procuremen
 	var suppliers []*models.Supplier
 	var err error
 
-	if req.GetStatus() != procurementv1.SupplierStatus_SUPPLIER_STATUS_UNSPECIFIED {
+	switch {
+	case req.GetStatus() != procurementv1.SupplierStatus_SUPPLIER_STATUS_UNSPECIFIED:
 		suppliers, err = sb.supplierRepo.ListByStatus(ctx, int32(req.GetStatus()), limit, offset)
-	} else if req.GetSupplierType() != procurementv1.SupplierType_SUPPLIER_TYPE_UNSPECIFIED {
+	case req.GetSupplierType() != procurementv1.SupplierType_SUPPLIER_TYPE_UNSPECIFIED:
 		suppliers, err = sb.supplierRepo.ListByType(ctx, int32(req.GetSupplierType()), limit, offset)
-	} else {
-		suppliers, err = sb.supplierRepo.ListByStatus(ctx, int32(procurementv1.SupplierStatus_SUPPLIER_STATUS_ACTIVE), limit, offset)
+	default:
+		suppliers, err = sb.supplierRepo.ListByStatus(
+			ctx,
+			int32(procurementv1.SupplierStatus_SUPPLIER_STATUS_ACTIVE),
+			limit,
+			offset,
+		)
 	}
 
 	if err != nil {
@@ -151,7 +177,10 @@ func (sb *supplierBusiness) SearchSuppliers(ctx context.Context, req *procuremen
 	return result, nil
 }
 
-func (sb *supplierBusiness) SaveSupplierItem(ctx context.Context, req *procurementv1.SaveSupplierItemRequest) (*procurementv1.SupplierItem, error) {
+func (sb *supplierBusiness) SaveSupplierItem(
+	ctx context.Context,
+	req *procurementv1.SupplierItemSaveRequest,
+) (*procurementv1.SupplierItem, error) {
 	if req.GetSupplierId() == "" {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("supplier_id is required"))
 	}
@@ -165,7 +194,7 @@ func (sb *supplierBusiness) SaveSupplierItem(ctx context.Context, req *procureme
 		return nil, connect.NewError(connect.CodeNotFound, errors.New("supplier not found"))
 	}
 
-	currencyCode, priceUnits, priceNanos := models.MoneyFromProto(req.GetPrice())
+	currencyCode, priceUnits, priceNanos := models.MoneyFromProto(req.GetUnitPrice())
 
 	// Update existing supplier item
 	if req.GetId() != "" {
@@ -217,7 +246,10 @@ func (sb *supplierBusiness) SaveSupplierItem(ctx context.Context, req *procureme
 	return item.ToAPI(), nil
 }
 
-func (sb *supplierBusiness) SearchSupplierItems(ctx context.Context, req *procurementv1.SearchSupplierItemsRequest) ([]*procurementv1.SupplierItem, error) {
+func (sb *supplierBusiness) SearchSupplierItems(
+	ctx context.Context,
+	req *procurementv1.SupplierItemSearchRequest,
+) ([]*procurementv1.SupplierItem, error) {
 	limit := 50
 	offset := 0
 	if req.GetSearch() != nil && req.GetSearch().GetCursor() != nil {
@@ -229,12 +261,16 @@ func (sb *supplierBusiness) SearchSupplierItems(ctx context.Context, req *procur
 	var items []*models.SupplierItem
 	var err error
 
-	if req.GetSupplierId() != "" {
+	switch {
+	case req.GetSupplierId() != "":
 		items, err = sb.supplierItemRepo.ListBySupplierID(ctx, req.GetSupplierId(), limit, offset)
-	} else if req.GetInventoryItemId() != "" {
+	case req.GetInventoryItemId() != "":
 		items, err = sb.supplierItemRepo.ListByInventoryItemID(ctx, req.GetInventoryItemId())
-	} else {
-		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("supplier_id or inventory_item_id is required"))
+	default:
+		return nil, connect.NewError(
+			connect.CodeInvalidArgument,
+			errors.New("supplier_id or inventory_item_id is required"),
+		)
 	}
 
 	if err != nil {

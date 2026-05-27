@@ -31,11 +31,23 @@ import (
 )
 
 type PurchaseOrderBusiness interface {
-	CreatePurchaseOrder(ctx context.Context, req *procurementv1.CreatePurchaseOrderRequest) (*procurementv1.PurchaseOrder, error)
+	CreatePurchaseOrder(
+		ctx context.Context,
+		req *procurementv1.PurchaseOrderCreateRequest,
+	) (*procurementv1.PurchaseOrder, error)
 	GetPurchaseOrder(ctx context.Context, id string) (*procurementv1.PurchaseOrder, error)
-	SearchPurchaseOrders(ctx context.Context, req *procurementv1.SearchPurchaseOrdersRequest) ([]*procurementv1.PurchaseOrder, error)
-	SubmitPurchaseOrder(ctx context.Context, req *procurementv1.SubmitPurchaseOrderRequest) (*procurementv1.PurchaseOrder, error)
-	CancelPurchaseOrder(ctx context.Context, req *procurementv1.CancelPurchaseOrderRequest) (*procurementv1.PurchaseOrder, error)
+	SearchPurchaseOrders(
+		ctx context.Context,
+		req *procurementv1.PurchaseOrderSearchRequest,
+	) ([]*procurementv1.PurchaseOrder, error)
+	SubmitPurchaseOrder(
+		ctx context.Context,
+		req *procurementv1.PurchaseOrderSubmitRequest,
+	) (*procurementv1.PurchaseOrder, error)
+	CancelPurchaseOrder(
+		ctx context.Context,
+		req *procurementv1.PurchaseOrderCancelRequest,
+	) (*procurementv1.PurchaseOrder, error)
 }
 
 func NewPurchaseOrderBusiness(
@@ -59,7 +71,7 @@ type purchaseOrderBusiness struct {
 
 func (pob *purchaseOrderBusiness) CreatePurchaseOrder(
 	ctx context.Context,
-	req *procurementv1.CreatePurchaseOrderRequest,
+	req *procurementv1.PurchaseOrderCreateRequest,
 ) (*procurementv1.PurchaseOrder, error) {
 	// Idempotency check
 	if req.GetIdempotencyKey() != "" {
@@ -79,7 +91,10 @@ func (pob *purchaseOrderBusiness) CreatePurchaseOrder(
 		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("property_id is required"))
 	}
 	if len(req.GetLines()) == 0 {
-		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("purchase order must have at least one line"))
+		return nil, connect.NewError(
+			connect.CodeInvalidArgument,
+			errors.New("purchase order must have at least one line"),
+		)
 	}
 
 	// Build lines and compute total
@@ -130,7 +145,10 @@ func (pob *purchaseOrderBusiness) CreatePurchaseOrder(
 	return pob.GetPurchaseOrder(ctx, po.GetID())
 }
 
-func (pob *purchaseOrderBusiness) GetPurchaseOrder(ctx context.Context, id string) (*procurementv1.PurchaseOrder, error) {
+func (pob *purchaseOrderBusiness) GetPurchaseOrder(
+	ctx context.Context,
+	id string,
+) (*procurementv1.PurchaseOrder, error) {
 	po, err := pob.poRepo.GetWithLines(ctx, id)
 	if err != nil {
 		return nil, data.ErrorConvertToAPI(err)
@@ -140,7 +158,7 @@ func (pob *purchaseOrderBusiness) GetPurchaseOrder(ctx context.Context, id strin
 
 func (pob *purchaseOrderBusiness) SearchPurchaseOrders(
 	ctx context.Context,
-	req *procurementv1.SearchPurchaseOrdersRequest,
+	req *procurementv1.PurchaseOrderSearchRequest,
 ) ([]*procurementv1.PurchaseOrder, error) {
 	limit := 50
 	offset := 0
@@ -153,14 +171,18 @@ func (pob *purchaseOrderBusiness) SearchPurchaseOrders(
 	var orders []*models.PurchaseOrder
 	var err error
 
-	if req.GetPropertyId() != "" {
+	switch {
+	case req.GetPropertyId() != "":
 		orders, err = pob.poRepo.ListByPropertyID(ctx, req.GetPropertyId(), limit, offset)
-	} else if req.GetSupplierId() != "" {
+	case req.GetSupplierId() != "":
 		orders, err = pob.poRepo.ListBySupplierID(ctx, req.GetSupplierId(), limit, offset)
-	} else if req.GetStatus() != procurementv1.PurchaseOrderStatus_PURCHASE_ORDER_STATUS_UNSPECIFIED {
+	case req.GetStatus() != procurementv1.PurchaseOrderStatus_PURCHASE_ORDER_STATUS_UNSPECIFIED:
 		orders, err = pob.poRepo.ListByStatus(ctx, int32(req.GetStatus()), limit, offset)
-	} else {
-		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("property_id, supplier_id, or status filter is required"))
+	default:
+		return nil, connect.NewError(
+			connect.CodeInvalidArgument,
+			errors.New("property_id, supplier_id, or status filter is required"),
+		)
 	}
 
 	if err != nil {
@@ -176,7 +198,7 @@ func (pob *purchaseOrderBusiness) SearchPurchaseOrders(
 
 func (pob *purchaseOrderBusiness) SubmitPurchaseOrder(
 	ctx context.Context,
-	req *procurementv1.SubmitPurchaseOrderRequest,
+	req *procurementv1.PurchaseOrderSubmitRequest,
 ) (*procurementv1.PurchaseOrder, error) {
 	po, err := pob.poRepo.GetWithLines(ctx, req.GetId())
 	if err != nil {
@@ -210,7 +232,7 @@ func (pob *purchaseOrderBusiness) SubmitPurchaseOrder(
 
 func (pob *purchaseOrderBusiness) CancelPurchaseOrder(
 	ctx context.Context,
-	req *procurementv1.CancelPurchaseOrderRequest,
+	req *procurementv1.PurchaseOrderCancelRequest,
 ) (*procurementv1.PurchaseOrder, error) {
 	po, err := pob.poRepo.GetWithLines(ctx, req.GetId())
 	if err != nil {
@@ -243,7 +265,7 @@ func (pob *purchaseOrderBusiness) CancelPurchaseOrder(
 
 func (pob *purchaseOrderBusiness) buildPurchaseOrderLines(
 	ctx context.Context,
-	lines []*procurementv1.CreatePurchaseOrderLine,
+	lines []*procurementv1.PurchaseOrderLineInput,
 ) ([]*models.PurchaseOrderLine, string, int64, int32, error) {
 	const nanosPerUnit int64 = 1_000_000_000
 

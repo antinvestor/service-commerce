@@ -31,9 +31,15 @@ import (
 )
 
 type GoodsReceiptBusiness interface {
-	CreateGoodsReceipt(ctx context.Context, req *procurementv1.CreateGoodsReceiptRequest) (*procurementv1.GoodsReceipt, error)
+	CreateGoodsReceipt(
+		ctx context.Context,
+		req *procurementv1.GoodsReceiptCreateRequest,
+	) (*procurementv1.GoodsReceipt, error)
 	GetGoodsReceipt(ctx context.Context, id string) (*procurementv1.GoodsReceipt, error)
-	SearchGoodsReceipts(ctx context.Context, req *procurementv1.SearchGoodsReceiptsRequest) ([]*procurementv1.GoodsReceipt, error)
+	SearchGoodsReceipts(
+		ctx context.Context,
+		req *procurementv1.GoodsReceiptSearchRequest,
+	) ([]*procurementv1.GoodsReceipt, error)
 }
 
 func NewGoodsReceiptBusiness(
@@ -60,7 +66,7 @@ type goodsReceiptBusiness struct {
 
 func (grb *goodsReceiptBusiness) CreateGoodsReceipt(
 	ctx context.Context,
-	req *procurementv1.CreateGoodsReceiptRequest,
+	req *procurementv1.GoodsReceiptCreateRequest,
 ) (*procurementv1.GoodsReceipt, error) {
 	// Idempotency check
 	if req.GetIdempotencyKey() != "" {
@@ -73,52 +79,9 @@ func (grb *goodsReceiptBusiness) CreateGoodsReceipt(
 		}
 	}
 
-	// Validate purchase order exists and is in a receivable state
-	po, err := grb.poRepo.GetWithLines(ctx, req.GetPurchaseOrderId())
+	po, poLineMap, err := grb.validateGoodsReceipt(ctx, req)
 	if err != nil {
-		return nil, data.ErrorConvertToAPI(err)
-	}
-
-	if po.Status == int32(procurementv1.PurchaseOrderStatus_PURCHASE_ORDER_STATUS_CANCELLED) {
-		return nil, connect.NewError(connect.CodeFailedPrecondition, errors.New("cannot receive goods for a cancelled purchase order"))
-	}
-	if po.Status == int32(procurementv1.PurchaseOrderStatus_PURCHASE_ORDER_STATUS_RECEIVED) {
-		return nil, connect.NewError(connect.CodeFailedPrecondition, errors.New("purchase order is already fully received"))
-	}
-
-	if len(req.GetLines()) == 0 {
-		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("goods receipt must have at least one line"))
-	}
-
-	// Build PO line map for validation
-	poLineMap := make(map[string]*models.PurchaseOrderLine, len(po.Lines))
-	for _, pol := range po.Lines {
-		poLineMap[pol.GetID()] = pol
-	}
-
-	// Validate received quantities don't exceed remaining
-	for _, grLine := range req.GetLines() {
-		pol, ok := poLineMap[grLine.GetPurchaseOrderLineId()]
-		if !ok {
-			return nil, connect.NewError(connect.CodeInvalidArgument,
-				fmt.Errorf("purchase order line %s not found in purchase order", grLine.GetPurchaseOrderLineId()))
-		}
-
-		remaining := pol.OrderedQuantity - pol.ReceivedQuantity
-		if grLine.GetReceivedQuantity() > remaining {
-			return nil, connect.NewError(connect.CodeFailedPrecondition,
-				fmt.Errorf("received quantity %.2f exceeds remaining quantity %.2f for PO line %s",
-					grLine.GetReceivedQuantity(), remaining, grLine.GetPurchaseOrderLineId()))
-		}
-	}
-
-	// Determine receiver
-	receivedBy := ""
-	claims := security.ClaimsFromContext(ctx)
-	if claims != nil {
-		if subjectID, subErr := claims.GetSubject(); subErr == nil && subjectID != "" {
-			receivedBy = subjectID
-		}
+		return nil, err
 	}
 
 	now := time.Now()
@@ -130,9 +93,9 @@ func (grb *goodsReceiptBusiness) CreateGoodsReceipt(
 	gr := &models.GoodsReceipt{
 		PurchaseOrderID: req.GetPurchaseOrderId(),
 		PropertyID:      po.PropertyID,
-		ReceivedBy:      receivedBy,
+		ReceivedBy:      resolveReceivedBy(ctx),
 		ReceivedAt:      &now,
-		Status:          int32(procurementv1.GoodsReceiptStatus_GOODS_RECEIPT_STATUS_COMPLETED),
+		Status:          int32(procurementv1.GoodsReceiptStatus_GOODS_RECEIPT_STATUS_PENDING_INSPECTION),
 		Notes:           req.GetNotes(),
 		IdempotencyKey:  idempotencyKey,
 	}
@@ -141,8 +104,88 @@ func (grb *goodsReceiptBusiness) CreateGoodsReceipt(
 		return nil, data.ErrorConvertToAPI(createErr)
 	}
 
-	// Create receipt lines and update PO line received quantities
+	if err = grb.createReceiptLines(ctx, gr.GetID(), req.GetLines(), poLineMap); err != nil {
+		return nil, err
+	}
+
+	// Update PO status based on line statuses
+	grb.updatePurchaseOrderStatus(ctx, po)
+
+	return grb.GetGoodsReceipt(ctx, gr.GetID())
+}
+
+// validateGoodsReceipt checks the PO state and validates all requested receipt lines.
+func (grb *goodsReceiptBusiness) validateGoodsReceipt(
+	ctx context.Context,
+	req *procurementv1.GoodsReceiptCreateRequest,
+) (*models.PurchaseOrder, map[string]*models.PurchaseOrderLine, error) {
+	po, err := grb.poRepo.GetWithLines(ctx, req.GetPurchaseOrderId())
+	if err != nil {
+		return nil, nil, data.ErrorConvertToAPI(err)
+	}
+
+	if po.Status == int32(procurementv1.PurchaseOrderStatus_PURCHASE_ORDER_STATUS_CANCELLED) {
+		return nil, nil, connect.NewError(
+			connect.CodeFailedPrecondition,
+			errors.New("cannot receive goods for a cancelled purchase order"),
+		)
+	}
+	if po.Status == int32(procurementv1.PurchaseOrderStatus_PURCHASE_ORDER_STATUS_RECEIVED) {
+		return nil, nil, connect.NewError(
+			connect.CodeFailedPrecondition,
+			errors.New("purchase order is already fully received"),
+		)
+	}
+	if len(req.GetLines()) == 0 {
+		return nil, nil, connect.NewError(
+			connect.CodeInvalidArgument,
+			errors.New("goods receipt must have at least one line"),
+		)
+	}
+
+	poLineMap := make(map[string]*models.PurchaseOrderLine, len(po.Lines))
+	for _, pol := range po.Lines {
+		poLineMap[pol.GetID()] = pol
+	}
+
 	for _, grLine := range req.GetLines() {
+		pol, ok := poLineMap[grLine.GetPurchaseOrderLineId()]
+		if !ok {
+			return nil, nil, connect.NewError(connect.CodeInvalidArgument,
+				fmt.Errorf("purchase order line %s not found in purchase order", grLine.GetPurchaseOrderLineId()))
+		}
+		remaining := pol.OrderedQuantity - pol.ReceivedQuantity
+		if grLine.GetReceivedQuantity() > remaining {
+			return nil, nil, connect.NewError(connect.CodeFailedPrecondition,
+				fmt.Errorf("received quantity %.2f exceeds remaining quantity %.2f for PO line %s",
+					grLine.GetReceivedQuantity(), remaining, grLine.GetPurchaseOrderLineId()))
+		}
+	}
+
+	return po, poLineMap, nil
+}
+
+// resolveReceivedBy extracts the subject ID from the context claims.
+func resolveReceivedBy(ctx context.Context) string {
+	claims := security.ClaimsFromContext(ctx)
+	if claims == nil {
+		return ""
+	}
+	subjectID, err := claims.GetSubject()
+	if err != nil || subjectID == "" {
+		return ""
+	}
+	return subjectID
+}
+
+// createReceiptLines persists a GoodsReceiptLine for each input line and updates PO line statuses.
+func (grb *goodsReceiptBusiness) createReceiptLines(
+	ctx context.Context,
+	grID string,
+	lines []*procurementv1.GoodsReceiptLineInput,
+	poLineMap map[string]*models.PurchaseOrderLine,
+) error {
+	for _, grLine := range lines {
 		pol := poLineMap[grLine.GetPurchaseOrderLineId()]
 
 		var expiryDate *time.Time
@@ -151,29 +194,22 @@ func (grb *goodsReceiptBusiness) CreateGoodsReceipt(
 			expiryDate = &t
 		}
 
-		acceptedQty := grLine.GetAcceptedQuantity()
-		if acceptedQty == 0 {
-			acceptedQty = grLine.GetReceivedQuantity()
-		}
-
 		grlModel := &models.GoodsReceiptLine{
-			GoodsReceiptID:      gr.GetID(),
+			GoodsReceiptID:      grID,
 			PurchaseOrderLineID: grLine.GetPurchaseOrderLineId(),
 			InventoryItemID:     pol.InventoryItemID,
 			ReceivedQuantity:    grLine.GetReceivedQuantity(),
-			AcceptedQuantity:    acceptedQty,
-			RejectedQuantity:    grLine.GetRejectedQuantity(),
-			RejectionReason:     grLine.GetRejectionReason(),
+			AcceptedQuantity:    0,
+			RejectedQuantity:    0,
 			LotNumber:           grLine.GetLotNumber(),
 			ExpiryDate:          expiryDate,
 			Unit:                pol.Unit,
 		}
 
 		if lineErr := grb.grlRepo.Create(ctx, grlModel); lineErr != nil {
-			return nil, data.ErrorConvertToAPI(lineErr)
+			return data.ErrorConvertToAPI(lineErr)
 		}
 
-		// Update PO line received quantity
 		pol.ReceivedQuantity += grLine.GetReceivedQuantity()
 		if pol.ReceivedQuantity >= pol.OrderedQuantity {
 			pol.Status = int32(procurementv1.PurchaseOrderLineStatus_PURCHASE_ORDER_LINE_STATUS_RECEIVED)
@@ -181,16 +217,11 @@ func (grb *goodsReceiptBusiness) CreateGoodsReceipt(
 			pol.Status = int32(procurementv1.PurchaseOrderLineStatus_PURCHASE_ORDER_LINE_STATUS_PARTIALLY_RECEIVED)
 		}
 
-		_, polErr := grb.polRepo.Update(ctx, pol, "received_quantity", "status")
-		if polErr != nil {
-			return nil, data.ErrorConvertToAPI(polErr)
+		if _, polErr := grb.polRepo.Update(ctx, pol, "received_quantity", "status"); polErr != nil {
+			return data.ErrorConvertToAPI(polErr)
 		}
 	}
-
-	// Update PO status based on line statuses
-	grb.updatePurchaseOrderStatus(ctx, po)
-
-	return grb.GetGoodsReceipt(ctx, gr.GetID())
+	return nil
 }
 
 func (grb *goodsReceiptBusiness) GetGoodsReceipt(ctx context.Context, id string) (*procurementv1.GoodsReceipt, error) {
@@ -203,7 +234,7 @@ func (grb *goodsReceiptBusiness) GetGoodsReceipt(ctx context.Context, id string)
 
 func (grb *goodsReceiptBusiness) SearchGoodsReceipts(
 	ctx context.Context,
-	req *procurementv1.SearchGoodsReceiptsRequest,
+	req *procurementv1.GoodsReceiptSearchRequest,
 ) ([]*procurementv1.GoodsReceipt, error) {
 	limit := 50
 	offset := 0
@@ -216,12 +247,16 @@ func (grb *goodsReceiptBusiness) SearchGoodsReceipts(
 	var receipts []*models.GoodsReceipt
 	var err error
 
-	if req.GetPurchaseOrderId() != "" {
+	switch {
+	case req.GetPurchaseOrderId() != "":
 		receipts, err = grb.grRepo.ListByPurchaseOrderID(ctx, req.GetPurchaseOrderId())
-	} else if req.GetPropertyId() != "" {
+	case req.GetPropertyId() != "":
 		receipts, err = grb.grRepo.ListByPropertyID(ctx, req.GetPropertyId(), limit, offset)
-	} else {
-		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("purchase_order_id or property_id is required"))
+	default:
+		return nil, connect.NewError(
+			connect.CodeInvalidArgument,
+			errors.New("purchase_order_id or property_id is required"),
+		)
 	}
 
 	if err != nil {

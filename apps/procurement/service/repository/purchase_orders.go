@@ -28,7 +28,11 @@ type purchaseOrderRepository struct {
 	datastore.BaseRepository[*models.PurchaseOrder]
 }
 
-func NewPurchaseOrderRepository(ctx context.Context, dbPool pool.Pool, workMan workerpool.Manager) PurchaseOrderRepository {
+func NewPurchaseOrderRepository(
+	ctx context.Context,
+	dbPool pool.Pool,
+	workMan workerpool.Manager,
+) PurchaseOrderRepository {
 	return &purchaseOrderRepository{
 		BaseRepository: datastore.NewBaseRepository[*models.PurchaseOrder](
 			ctx, dbPool, workMan, func() *models.PurchaseOrder { return &models.PurchaseOrder{} },
@@ -52,7 +56,11 @@ func (r *purchaseOrderRepository) GetByIdempotencyKey(ctx context.Context, key s
 	return po, err
 }
 
-func (r *purchaseOrderRepository) ListByPropertyID(ctx context.Context, propertyID string, limit, offset int) ([]*models.PurchaseOrder, error) {
+func (r *purchaseOrderRepository) ListByPropertyID(
+	ctx context.Context,
+	propertyID string,
+	limit, offset int,
+) ([]*models.PurchaseOrder, error) {
 	var orders []*models.PurchaseOrder
 	query := r.Pool().DB(ctx, true).
 		Preload("Lines").
@@ -68,7 +76,11 @@ func (r *purchaseOrderRepository) ListByPropertyID(ctx context.Context, property
 	return orders, err
 }
 
-func (r *purchaseOrderRepository) ListBySupplierID(ctx context.Context, supplierID string, limit, offset int) ([]*models.PurchaseOrder, error) {
+func (r *purchaseOrderRepository) ListBySupplierID(
+	ctx context.Context,
+	supplierID string,
+	limit, offset int,
+) ([]*models.PurchaseOrder, error) {
 	var orders []*models.PurchaseOrder
 	query := r.Pool().DB(ctx, true).
 		Preload("Lines").
@@ -84,7 +96,11 @@ func (r *purchaseOrderRepository) ListBySupplierID(ctx context.Context, supplier
 	return orders, err
 }
 
-func (r *purchaseOrderRepository) ListByStatus(ctx context.Context, status int32, limit, offset int) ([]*models.PurchaseOrder, error) {
+func (r *purchaseOrderRepository) ListByStatus(
+	ctx context.Context,
+	status int32,
+	limit, offset int,
+) ([]*models.PurchaseOrder, error) {
 	var orders []*models.PurchaseOrder
 	query := r.Pool().DB(ctx, true).
 		Preload("Lines").
@@ -104,7 +120,11 @@ type purchaseOrderLineRepository struct {
 	datastore.BaseRepository[*models.PurchaseOrderLine]
 }
 
-func NewPurchaseOrderLineRepository(ctx context.Context, dbPool pool.Pool, workMan workerpool.Manager) PurchaseOrderLineRepository {
+func NewPurchaseOrderLineRepository(
+	ctx context.Context,
+	dbPool pool.Pool,
+	workMan workerpool.Manager,
+) PurchaseOrderLineRepository {
 	return &purchaseOrderLineRepository{
 		BaseRepository: datastore.NewBaseRepository[*models.PurchaseOrderLine](
 			ctx, dbPool, workMan, func() *models.PurchaseOrderLine { return &models.PurchaseOrderLine{} },
@@ -112,7 +132,10 @@ func NewPurchaseOrderLineRepository(ctx context.Context, dbPool pool.Pool, workM
 	}
 }
 
-func (r *purchaseOrderLineRepository) ListByPurchaseOrderID(ctx context.Context, purchaseOrderID string) ([]*models.PurchaseOrderLine, error) {
+func (r *purchaseOrderLineRepository) ListByPurchaseOrderID(
+	ctx context.Context,
+	purchaseOrderID string,
+) ([]*models.PurchaseOrderLine, error) {
 	var lines []*models.PurchaseOrderLine
 	err := r.Pool().DB(ctx, true).Where("purchase_order_id = ?", purchaseOrderID).Find(&lines).Error
 	return lines, err

@@ -36,7 +36,11 @@ func NewSupplierRepository(ctx context.Context, dbPool pool.Pool, workMan worker
 	}
 }
 
-func (r *supplierRepository) ListByStatus(ctx context.Context, status int32, limit, offset int) ([]*models.Supplier, error) {
+func (r *supplierRepository) ListByStatus(
+	ctx context.Context,
+	status int32,
+	limit, offset int,
+) ([]*models.Supplier, error) {
 	var suppliers []*models.Supplier
 	query := r.Pool().DB(ctx, true).
 		Where("status = ?", status).
@@ -51,7 +55,11 @@ func (r *supplierRepository) ListByStatus(ctx context.Context, status int32, lim
 	return suppliers, err
 }
 
-func (r *supplierRepository) ListByType(ctx context.Context, supplierType int32, limit, offset int) ([]*models.Supplier, error) {
+func (r *supplierRepository) ListByType(
+	ctx context.Context,
+	supplierType int32,
+	limit, offset int,
+) ([]*models.Supplier, error) {
 	var suppliers []*models.Supplier
 	query := r.Pool().DB(ctx, true).
 		Where("supplier_type = ?", supplierType).
@@ -70,7 +78,11 @@ type supplierItemRepository struct {
 	datastore.BaseRepository[*models.SupplierItem]
 }
 
-func NewSupplierItemRepository(ctx context.Context, dbPool pool.Pool, workMan workerpool.Manager) SupplierItemRepository {
+func NewSupplierItemRepository(
+	ctx context.Context,
+	dbPool pool.Pool,
+	workMan workerpool.Manager,
+) SupplierItemRepository {
 	return &supplierItemRepository{
 		BaseRepository: datastore.NewBaseRepository[*models.SupplierItem](
 			ctx, dbPool, workMan, func() *models.SupplierItem { return &models.SupplierItem{} },
@@ -78,7 +90,11 @@ func NewSupplierItemRepository(ctx context.Context, dbPool pool.Pool, workMan wo
 	}
 }
 
-func (r *supplierItemRepository) ListBySupplierID(ctx context.Context, supplierID string, limit, offset int) ([]*models.SupplierItem, error) {
+func (r *supplierItemRepository) ListBySupplierID(
+	ctx context.Context,
+	supplierID string,
+	limit, offset int,
+) ([]*models.SupplierItem, error) {
 	var items []*models.SupplierItem
 	query := r.Pool().DB(ctx, true).
 		Where("supplier_id = ?", supplierID).
@@ -93,7 +109,10 @@ func (r *supplierItemRepository) ListBySupplierID(ctx context.Context, supplierI
 	return items, err
 }
 
-func (r *supplierItemRepository) ListByInventoryItemID(ctx context.Context, inventoryItemID string) ([]*models.SupplierItem, error) {
+func (r *supplierItemRepository) ListByInventoryItemID(
+	ctx context.Context,
+	inventoryItemID string,
+) ([]*models.SupplierItem, error) {
 	var items []*models.SupplierItem
 	err := r.Pool().DB(ctx, true).
 		Where("inventory_item_id = ?", inventoryItemID).
@@ -101,7 +120,10 @@ func (r *supplierItemRepository) ListByInventoryItemID(ctx context.Context, inve
 	return items, err
 }
 
-func (r *supplierItemRepository) GetBySupplierAndItem(ctx context.Context, supplierID, inventoryItemID string) (*models.SupplierItem, error) {
+func (r *supplierItemRepository) GetBySupplierAndItem(
+	ctx context.Context,
+	supplierID, inventoryItemID string,
+) (*models.SupplierItem, error) {
 	item := &models.SupplierItem{}
 	err := r.Pool().DB(ctx, true).
 		First(item, "supplier_id = ? AND inventory_item_id = ?", supplierID, inventoryItemID).Error

@@ -28,7 +28,11 @@ type goodsReceiptRepository struct {
 	datastore.BaseRepository[*models.GoodsReceipt]
 }
 
-func NewGoodsReceiptRepository(ctx context.Context, dbPool pool.Pool, workMan workerpool.Manager) GoodsReceiptRepository {
+func NewGoodsReceiptRepository(
+	ctx context.Context,
+	dbPool pool.Pool,
+	workMan workerpool.Manager,
+) GoodsReceiptRepository {
 	return &goodsReceiptRepository{
 		BaseRepository: datastore.NewBaseRepository[*models.GoodsReceipt](
 			ctx, dbPool, workMan, func() *models.GoodsReceipt { return &models.GoodsReceipt{} },
@@ -52,7 +56,10 @@ func (r *goodsReceiptRepository) GetByIdempotencyKey(ctx context.Context, key st
 	return gr, err
 }
 
-func (r *goodsReceiptRepository) ListByPurchaseOrderID(ctx context.Context, purchaseOrderID string) ([]*models.GoodsReceipt, error) {
+func (r *goodsReceiptRepository) ListByPurchaseOrderID(
+	ctx context.Context,
+	purchaseOrderID string,
+) ([]*models.GoodsReceipt, error) {
 	var receipts []*models.GoodsReceipt
 	err := r.Pool().DB(ctx, true).
 		Preload("Lines").
@@ -62,7 +69,11 @@ func (r *goodsReceiptRepository) ListByPurchaseOrderID(ctx context.Context, purc
 	return receipts, err
 }
 
-func (r *goodsReceiptRepository) ListByPropertyID(ctx context.Context, propertyID string, limit, offset int) ([]*models.GoodsReceipt, error) {
+func (r *goodsReceiptRepository) ListByPropertyID(
+	ctx context.Context,
+	propertyID string,
+	limit, offset int,
+) ([]*models.GoodsReceipt, error) {
 	var receipts []*models.GoodsReceipt
 	query := r.Pool().DB(ctx, true).
 		Preload("Lines").
@@ -82,7 +93,11 @@ type goodsReceiptLineRepository struct {
 	datastore.BaseRepository[*models.GoodsReceiptLine]
 }
 
-func NewGoodsReceiptLineRepository(ctx context.Context, dbPool pool.Pool, workMan workerpool.Manager) GoodsReceiptLineRepository {
+func NewGoodsReceiptLineRepository(
+	ctx context.Context,
+	dbPool pool.Pool,
+	workMan workerpool.Manager,
+) GoodsReceiptLineRepository {
 	return &goodsReceiptLineRepository{
 		BaseRepository: datastore.NewBaseRepository[*models.GoodsReceiptLine](
 			ctx, dbPool, workMan, func() *models.GoodsReceiptLine { return &models.GoodsReceiptLine{} },
@@ -90,13 +105,19 @@ func NewGoodsReceiptLineRepository(ctx context.Context, dbPool pool.Pool, workMa
 	}
 }
 
-func (r *goodsReceiptLineRepository) ListByGoodsReceiptID(ctx context.Context, goodsReceiptID string) ([]*models.GoodsReceiptLine, error) {
+func (r *goodsReceiptLineRepository) ListByGoodsReceiptID(
+	ctx context.Context,
+	goodsReceiptID string,
+) ([]*models.GoodsReceiptLine, error) {
 	var lines []*models.GoodsReceiptLine
 	err := r.Pool().DB(ctx, true).Where("goods_receipt_id = ?", goodsReceiptID).Find(&lines).Error
 	return lines, err
 }
 
-func (r *goodsReceiptLineRepository) ListByPurchaseOrderLineID(ctx context.Context, purchaseOrderLineID string) ([]*models.GoodsReceiptLine, error) {
+func (r *goodsReceiptLineRepository) ListByPurchaseOrderLineID(
+	ctx context.Context,
+	purchaseOrderLineID string,
+) ([]*models.GoodsReceiptLine, error) {
 	var lines []*models.GoodsReceiptLine
 	err := r.Pool().DB(ctx, true).Where("purchase_order_line_id = ?", purchaseOrderLineID).Find(&lines).Error
 	return lines, err

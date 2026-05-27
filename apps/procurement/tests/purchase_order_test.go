@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package tests
+package tests_test
 
 import (
 	"context"
@@ -29,10 +29,11 @@ import (
 
 	"github.com/antinvestor/service-commerce/apps/procurement/service/business"
 	"github.com/antinvestor/service-commerce/apps/procurement/service/repository"
+	"github.com/antinvestor/service-commerce/apps/procurement/tests"
 )
 
 type PurchaseOrderTestSuite struct {
-	ProcurementBaseTestSuite
+	tests.ProcurementBaseTestSuite
 }
 
 func TestPurchaseOrderSuite(t *testing.T) {
@@ -65,17 +66,17 @@ func (pts *PurchaseOrderTestSuite) createSupplierWithItem(
 ) (*procurementv1.Supplier, *procurementv1.SupplierItem) {
 	t := pts.T()
 
-	supplier, err := biz.supplierBiz.SaveSupplier(ctx, &procurementv1.SaveSupplierRequest{
+	supplier, err := biz.supplierBiz.SaveSupplier(ctx, &procurementv1.SupplierSaveRequest{
 		Name:     "PO Test Supplier " + util.RandomAlphaNumericString(6),
 		Currency: "USD",
 	})
 	require.NoError(t, err)
 
-	item, err := biz.supplierBiz.SaveSupplierItem(ctx, &procurementv1.SaveSupplierItemRequest{
+	item, err := biz.supplierBiz.SaveSupplierItem(ctx, &procurementv1.SupplierItemSaveRequest{
 		SupplierId:      supplier.GetId(),
 		InventoryItemId: "inv-" + util.RandomAlphaNumericString(6),
 		SupplierSku:     "SKU-" + util.RandomAlphaNumericString(6),
-		Price: &commonv1.Money{
+		UnitPrice: &commonv1.Money{
 			CurrencyCode: "USD",
 			Units:        25,
 			Nanos:        0,
@@ -96,11 +97,11 @@ func (pts *PurchaseOrderTestSuite) TestCreatePurchaseOrder() {
 
 		supplier, supplierItem := pts.createSupplierWithItem(ctx, biz)
 
-		po, err := biz.poBiz.CreatePurchaseOrder(ctx, &procurementv1.CreatePurchaseOrderRequest{
+		po, err := biz.poBiz.CreatePurchaseOrder(ctx, &procurementv1.PurchaseOrderCreateRequest{
 			PropertyId: "property-001",
 			SupplierId: supplier.GetId(),
 			Notes:      "Test purchase order",
-			Lines: []*procurementv1.CreatePurchaseOrderLine{
+			Lines: []*procurementv1.PurchaseOrderLineInput{
 				{
 					SupplierItemId:  supplierItem.GetId(),
 					OrderedQuantity: 10,
@@ -112,10 +113,10 @@ func (pts *PurchaseOrderTestSuite) TestCreatePurchaseOrder() {
 		require.NotEmpty(t, po.GetOrderNumber())
 		require.Equal(t, procurementv1.PurchaseOrderStatus_PURCHASE_ORDER_STATUS_DRAFT, po.GetStatus())
 		require.Len(t, po.GetLines(), 1)
-		require.Equal(t, float64(10), po.GetLines()[0].GetOrderedQuantity())
+		require.InDelta(t, 10, po.GetLines()[0].GetOrderedQuantity(), 0.001)
 		// Total should be 10 * $25 = $250
-		require.Equal(t, int64(250), po.GetTotal().GetUnits())
-		require.Equal(t, int32(0), po.GetTotal().GetNanos())
+		require.Equal(t, int64(250), po.GetTotalAmount().GetUnits())
+		require.Equal(t, int32(0), po.GetTotalAmount().GetNanos())
 	})
 }
 
@@ -129,11 +130,11 @@ func (pts *PurchaseOrderTestSuite) TestIdempotentCreate() {
 		supplier, supplierItem := pts.createSupplierWithItem(ctx, biz)
 
 		idemKey := "po-idem-" + util.RandomAlphaNumericString(10)
-		req := &procurementv1.CreatePurchaseOrderRequest{
+		req := &procurementv1.PurchaseOrderCreateRequest{
 			PropertyId:     "property-001",
 			SupplierId:     supplier.GetId(),
 			IdempotencyKey: idemKey,
-			Lines: []*procurementv1.CreatePurchaseOrderLine{
+			Lines: []*procurementv1.PurchaseOrderLineInput{
 				{
 					SupplierItemId:  supplierItem.GetId(),
 					OrderedQuantity: 5,
@@ -162,10 +163,10 @@ func (pts *PurchaseOrderTestSuite) TestSubmitAndCancel() {
 		// Add auth claims for submit
 		ctx = pts.WithAuthClaims(ctx, "tenant-1", "partition-1", "profile-submitter")
 
-		po, err := biz.poBiz.CreatePurchaseOrder(ctx, &procurementv1.CreatePurchaseOrderRequest{
+		po, err := biz.poBiz.CreatePurchaseOrder(ctx, &procurementv1.PurchaseOrderCreateRequest{
 			PropertyId: "property-001",
 			SupplierId: supplier.GetId(),
-			Lines: []*procurementv1.CreatePurchaseOrderLine{
+			Lines: []*procurementv1.PurchaseOrderLineInput{
 				{
 					SupplierItemId:  supplierItem.GetId(),
 					OrderedQuantity: 10,
@@ -176,7 +177,7 @@ func (pts *PurchaseOrderTestSuite) TestSubmitAndCancel() {
 		require.Equal(t, procurementv1.PurchaseOrderStatus_PURCHASE_ORDER_STATUS_DRAFT, po.GetStatus())
 
 		// Submit the PO
-		submitted, err := biz.poBiz.SubmitPurchaseOrder(ctx, &procurementv1.SubmitPurchaseOrderRequest{
+		submitted, err := biz.poBiz.SubmitPurchaseOrder(ctx, &procurementv1.PurchaseOrderSubmitRequest{
 			Id: po.GetId(),
 		})
 		require.NoError(t, err)
@@ -185,13 +186,13 @@ func (pts *PurchaseOrderTestSuite) TestSubmitAndCancel() {
 		require.Equal(t, "profile-submitter", submitted.GetSubmittedBy())
 
 		// Cannot submit again
-		_, err = biz.poBiz.SubmitPurchaseOrder(ctx, &procurementv1.SubmitPurchaseOrderRequest{
+		_, err = biz.poBiz.SubmitPurchaseOrder(ctx, &procurementv1.PurchaseOrderSubmitRequest{
 			Id: po.GetId(),
 		})
 		require.Error(t, err)
 
 		// Cancel the PO
-		cancelled, err := biz.poBiz.CancelPurchaseOrder(ctx, &procurementv1.CancelPurchaseOrderRequest{
+		cancelled, err := biz.poBiz.CancelPurchaseOrder(ctx, &procurementv1.PurchaseOrderCancelRequest{
 			Id: po.GetId(),
 		})
 		require.NoError(t, err)
@@ -199,7 +200,11 @@ func (pts *PurchaseOrderTestSuite) TestSubmitAndCancel() {
 
 		// Verify lines are cancelled
 		for _, line := range cancelled.GetLines() {
-			require.Equal(t, procurementv1.PurchaseOrderLineStatus_PURCHASE_ORDER_LINE_STATUS_CANCELLED, line.GetStatus())
+			require.Equal(
+				t,
+				procurementv1.PurchaseOrderLineStatus_PURCHASE_ORDER_LINE_STATUS_CANCELLED,
+				line.GetStatus(),
+			)
 		}
 	})
 }

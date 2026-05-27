@@ -50,7 +50,6 @@ func (s *Supplier) ToAPI() *procurementv1.Supplier {
 		Rating:           procurementv1.SupplierRating(s.Rating),
 		Notes:            s.Notes,
 		CreatedAt:        timestamppb.New(s.CreatedAt),
-		UpdatedAt:        timestamppb.New(s.ModifiedAt),
 	}
 }
 
@@ -77,13 +76,12 @@ func (si *SupplierItem) ToAPI() *procurementv1.SupplierItem {
 		SupplierId:       si.SupplierID,
 		InventoryItemId:  si.InventoryItemID,
 		SupplierSku:      si.SupplierSKU,
-		Price:            MoneyToProto(si.CurrencyCode, si.PriceUnits, si.PriceNanos),
+		UnitPrice:        MoneyToProto(si.CurrencyCode, si.PriceUnits, si.PriceNanos),
 		MinOrderQuantity: si.MinOrderQuantity,
 		Unit:             si.Unit,
 		LeadTimeDays:     si.LeadTimeDays,
 		Status:           procurementv1.SupplierItemStatus(si.Status),
 		CreatedAt:        timestamppb.New(si.CreatedAt),
-		UpdatedAt:        timestamppb.New(si.ModifiedAt),
 	}
 }
 
@@ -121,12 +119,11 @@ func (po *PurchaseOrder) ToAPI() *procurementv1.PurchaseOrder {
 		OrderNumber: po.OrderNumber,
 		Status:      procurementv1.PurchaseOrderStatus(po.Status),
 		SubmittedBy: po.SubmittedBy,
-		Total:       MoneyToProto(po.TotalCurrencyCode, po.TotalUnits, po.TotalNanos),
+		TotalAmount: MoneyToProto(po.TotalCurrencyCode, po.TotalUnits, po.TotalNanos),
 		Notes:       po.Notes,
 		PlanId:      po.PlanID,
 		Lines:       lines,
 		CreatedAt:   timestamppb.New(po.CreatedAt),
-		UpdatedAt:   timestamppb.New(po.ModifiedAt),
 	}
 
 	if po.ExpectedDeliveryDate != nil {
@@ -164,7 +161,7 @@ func (pol *PurchaseOrderLine) ToAPI() *procurementv1.PurchaseOrderLine {
 		InventoryItemId:  pol.InventoryItemID,
 		OrderedQuantity:  pol.OrderedQuantity,
 		ReceivedQuantity: pol.ReceivedQuantity,
-		Price:            MoneyToProto(pol.CurrencyCode, pol.PriceUnits, pol.PriceNanos),
+		UnitPrice:        MoneyToProto(pol.CurrencyCode, pol.PriceUnits, pol.PriceNanos),
 		Unit:             pol.Unit,
 		Status:           procurementv1.PurchaseOrderLineStatus(pol.Status),
 	}

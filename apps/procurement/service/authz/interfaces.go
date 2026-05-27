@@ -32,5 +32,11 @@ type Middleware interface {
 	// Tuple management
 	AddPropertyMember(ctx context.Context, propertyID string, profileID string, role string) error
 	RemovePropertyMember(ctx context.Context, propertyID string, profileID string) error
-	UpdatePropertyMemberRole(ctx context.Context, propertyID string, profileID string, oldRole string, newRole string) error
+	UpdatePropertyMemberRole(
+		ctx context.Context,
+		propertyID string,
+		profileID string,
+		oldRole string,
+		newRole string,
+	) error
 }

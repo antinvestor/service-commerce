@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package tests
+package tests_test
 
 import (
 	"context"
@@ -29,10 +29,11 @@ import (
 
 	"github.com/antinvestor/service-commerce/apps/procurement/service/business"
 	"github.com/antinvestor/service-commerce/apps/procurement/service/repository"
+	"github.com/antinvestor/service-commerce/apps/procurement/tests"
 )
 
 type GoodsReceiptTestSuite struct {
-	ProcurementBaseTestSuite
+	tests.ProcurementBaseTestSuite
 }
 
 func TestGoodsReceiptSuite(t *testing.T) {
@@ -70,17 +71,17 @@ func (gts *GoodsReceiptTestSuite) createPOWithLines(
 ) *procurementv1.PurchaseOrder {
 	t := gts.T()
 
-	supplier, err := biz.supplierBiz.SaveSupplier(ctx, &procurementv1.SaveSupplierRequest{
+	supplier, err := biz.supplierBiz.SaveSupplier(ctx, &procurementv1.SupplierSaveRequest{
 		Name:     "GR Test Supplier " + util.RandomAlphaNumericString(6),
 		Currency: "USD",
 	})
 	require.NoError(t, err)
 
-	item, err := biz.supplierBiz.SaveSupplierItem(ctx, &procurementv1.SaveSupplierItemRequest{
+	item, err := biz.supplierBiz.SaveSupplierItem(ctx, &procurementv1.SupplierItemSaveRequest{
 		SupplierId:      supplier.GetId(),
 		InventoryItemId: "inv-" + util.RandomAlphaNumericString(6),
 		SupplierSku:     "SKU-" + util.RandomAlphaNumericString(6),
-		Price: &commonv1.Money{
+		UnitPrice: &commonv1.Money{
 			CurrencyCode: "USD",
 			Units:        10,
 		},
@@ -88,10 +89,10 @@ func (gts *GoodsReceiptTestSuite) createPOWithLines(
 	})
 	require.NoError(t, err)
 
-	po, err := biz.poBiz.CreatePurchaseOrder(ctx, &procurementv1.CreatePurchaseOrderRequest{
+	po, err := biz.poBiz.CreatePurchaseOrder(ctx, &procurementv1.PurchaseOrderCreateRequest{
 		PropertyId: "property-001",
 		SupplierId: supplier.GetId(),
-		Lines: []*procurementv1.CreatePurchaseOrderLine{
+		Lines: []*procurementv1.PurchaseOrderLineInput{
 			{
 				SupplierItemId:  item.GetId(),
 				OrderedQuantity: orderedQty,
@@ -101,7 +102,7 @@ func (gts *GoodsReceiptTestSuite) createPOWithLines(
 	require.NoError(t, err)
 
 	// Submit the PO so it can receive goods
-	submitted, err := biz.poBiz.SubmitPurchaseOrder(ctx, &procurementv1.SubmitPurchaseOrderRequest{
+	submitted, err := biz.poBiz.SubmitPurchaseOrder(ctx, &procurementv1.PurchaseOrderSubmitRequest{
 		Id: po.GetId(),
 	})
 	require.NoError(t, err)
@@ -121,28 +122,31 @@ func (gts *GoodsReceiptTestSuite) TestCreateGoodsReceipt() {
 		po := gts.createPOWithLines(ctx, biz, 20)
 		poLineID := po.GetLines()[0].GetId()
 
-		gr, err := biz.grBiz.CreateGoodsReceipt(ctx, &procurementv1.CreateGoodsReceiptRequest{
+		gr, err := biz.grBiz.CreateGoodsReceipt(ctx, &procurementv1.GoodsReceiptCreateRequest{
 			PurchaseOrderId: po.GetId(),
 			Notes:           "Partial delivery",
-			Lines: []*procurementv1.CreateGoodsReceiptLine{
+			Lines: []*procurementv1.GoodsReceiptLineInput{
 				{
 					PurchaseOrderLineId: poLineID,
 					ReceivedQuantity:    10,
-					AcceptedQuantity:    10,
 				},
 			},
 		})
 		require.NoError(t, err)
 		require.NotEmpty(t, gr.GetId())
 		require.Len(t, gr.GetLines(), 1)
-		require.Equal(t, float64(10), gr.GetLines()[0].GetReceivedQuantity())
-		require.Equal(t, float64(10), gr.GetLines()[0].GetAcceptedQuantity())
+		require.InDelta(t, 10, gr.GetLines()[0].GetReceivedQuantity(), 0.001)
+		require.InDelta(t, 10, gr.GetLines()[0].GetAcceptedQuantity(), 0.001)
 		require.NotNil(t, gr.GetReceivedAt())
 
 		// PO should be partially received
 		updatedPO, err := biz.poBiz.GetPurchaseOrder(ctx, po.GetId())
 		require.NoError(t, err)
-		require.Equal(t, procurementv1.PurchaseOrderStatus_PURCHASE_ORDER_STATUS_PARTIALLY_RECEIVED, updatedPO.GetStatus())
+		require.Equal(
+			t,
+			procurementv1.PurchaseOrderStatus_PURCHASE_ORDER_STATUS_PARTIALLY_RECEIVED,
+			updatedPO.GetStatus(),
+		)
 	})
 }
 
@@ -159,13 +163,12 @@ func (gts *GoodsReceiptTestSuite) TestFullReceive() {
 		poLineID := po.GetLines()[0].GetId()
 
 		// Receive all items
-		_, err := biz.grBiz.CreateGoodsReceipt(ctx, &procurementv1.CreateGoodsReceiptRequest{
+		_, err := biz.grBiz.CreateGoodsReceipt(ctx, &procurementv1.GoodsReceiptCreateRequest{
 			PurchaseOrderId: po.GetId(),
-			Lines: []*procurementv1.CreateGoodsReceiptLine{
+			Lines: []*procurementv1.GoodsReceiptLineInput{
 				{
 					PurchaseOrderLineId: poLineID,
 					ReceivedQuantity:    10,
-					AcceptedQuantity:    10,
 				},
 			},
 		})
@@ -177,7 +180,11 @@ func (gts *GoodsReceiptTestSuite) TestFullReceive() {
 		require.Equal(t, procurementv1.PurchaseOrderStatus_PURCHASE_ORDER_STATUS_RECEIVED, updatedPO.GetStatus())
 
 		// PO line should be received
-		require.Equal(t, procurementv1.PurchaseOrderLineStatus_PURCHASE_ORDER_LINE_STATUS_RECEIVED, updatedPO.GetLines()[0].GetStatus())
+		require.Equal(
+			t,
+			procurementv1.PurchaseOrderLineStatus_PURCHASE_ORDER_LINE_STATUS_RECEIVED,
+			updatedPO.GetLines()[0].GetStatus(),
+		)
 	})
 }
 
@@ -194,22 +201,21 @@ func (gts *GoodsReceiptTestSuite) TestOverReceiveBlocked() {
 		poLineID := po.GetLines()[0].GetId()
 
 		// Receive 7 items
-		_, err := biz.grBiz.CreateGoodsReceipt(ctx, &procurementv1.CreateGoodsReceiptRequest{
+		_, err := biz.grBiz.CreateGoodsReceipt(ctx, &procurementv1.GoodsReceiptCreateRequest{
 			PurchaseOrderId: po.GetId(),
-			Lines: []*procurementv1.CreateGoodsReceiptLine{
+			Lines: []*procurementv1.GoodsReceiptLineInput{
 				{
 					PurchaseOrderLineId: poLineID,
 					ReceivedQuantity:    7,
-					AcceptedQuantity:    7,
 				},
 			},
 		})
 		require.NoError(t, err)
 
 		// Try to receive 5 more (only 3 remaining) - should fail
-		_, err = biz.grBiz.CreateGoodsReceipt(ctx, &procurementv1.CreateGoodsReceiptRequest{
+		_, err = biz.grBiz.CreateGoodsReceipt(ctx, &procurementv1.GoodsReceiptCreateRequest{
 			PurchaseOrderId: po.GetId(),
-			Lines: []*procurementv1.CreateGoodsReceiptLine{
+			Lines: []*procurementv1.GoodsReceiptLineInput{
 				{
 					PurchaseOrderLineId: poLineID,
 					ReceivedQuantity:    5,
@@ -219,13 +225,12 @@ func (gts *GoodsReceiptTestSuite) TestOverReceiveBlocked() {
 		require.Error(t, err)
 
 		// Receive exactly remaining 3 - should succeed
-		_, err = biz.grBiz.CreateGoodsReceipt(ctx, &procurementv1.CreateGoodsReceiptRequest{
+		_, err = biz.grBiz.CreateGoodsReceipt(ctx, &procurementv1.GoodsReceiptCreateRequest{
 			PurchaseOrderId: po.GetId(),
-			Lines: []*procurementv1.CreateGoodsReceiptLine{
+			Lines: []*procurementv1.GoodsReceiptLineInput{
 				{
 					PurchaseOrderLineId: poLineID,
 					ReceivedQuantity:    3,
-					AcceptedQuantity:    3,
 				},
 			},
 		})

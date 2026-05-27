@@ -4,6 +4,8 @@ modules:
     name: buf.build/antinvestor/commerce
   - path: property
     name: buf.build/antinvestor/property
+  - path: procurement
+    name: buf.build/antinvestor/procurement
 deps:
   - buf.build/antinvestor/common
   - buf.build/bufbuild/protovalidate

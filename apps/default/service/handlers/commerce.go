@@ -16,6 +16,7 @@ package handlers
 
 import (
 	"context"
+	"errors"
 
 	"buf.build/gen/go/antinvestor/commerce/connectrpc/go/v1/commercev1connect"
 	commercev1 "buf.build/gen/go/antinvestor/commerce/protocolbuffers/go/v1"
@@ -629,11 +630,13 @@ func (cs *CommerceServer) checkAssignmentSearchAuthz(
 	ctx context.Context,
 	msg *commercev1.CustomerPriceListAssignmentSearchRequest,
 ) error {
-	if msg.GetCustomerId() == callerSubject(ctx) {
+	caller := callerSubject(ctx)
+	if caller != "" && msg.GetCustomerId() == caller {
 		return nil
 	}
 	if msg.GetPriceListId() == "" {
-		return nil
+		return connect.NewError(connect.CodePermissionDenied,
+			errors.New("price_list_id required for cross-customer search"))
 	}
 	pl, plErr := cs.pricingBusiness.GetPriceList(ctx, msg.GetPriceListId())
 	if plErr != nil {
@@ -646,11 +649,13 @@ func (cs *CommerceServer) checkOverrideSearchAuthz(
 	ctx context.Context,
 	msg *commercev1.CustomerPriceOverrideSearchRequest,
 ) error {
-	if msg.GetCustomerId() == callerSubject(ctx) {
+	caller := callerSubject(ctx)
+	if caller != "" && msg.GetCustomerId() == caller {
 		return nil
 	}
 	if msg.GetProductVariantId() == "" {
-		return nil
+		return connect.NewError(connect.CodePermissionDenied,
+			errors.New("product_variant_id required for cross-customer search"))
 	}
 	shopID, shopErr := cs.pricingBusiness.GetShopIDForVariant(ctx, msg.GetProductVariantId())
 	if shopErr != nil {

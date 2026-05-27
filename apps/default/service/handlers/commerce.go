@@ -38,11 +38,16 @@ type CommerceServer struct {
 	cartBusiness       business.CartBusiness
 	orderBusiness      business.OrderBusiness
 	fulfilmentBusiness business.FulfilmentBusiness
+	pricingBusiness    business.PricingBusiness
 
 	commercev1connect.UnimplementedCommerceServiceHandler
 }
 
-func NewCommerceServer(ctx context.Context, svc *frame.Service, authzMiddleware authz.Middleware) *CommerceServer {
+func NewCommerceServer(
+	ctx context.Context,
+	svc *frame.Service,
+	authzMiddleware authz.Middleware,
+) *CommerceServer {
 	workMan := svc.WorkManager()
 	dbPool := svc.DatastoreManager().GetPool(ctx, datastore.DefaultPoolName)
 
@@ -55,6 +60,11 @@ func NewCommerceServer(ctx context.Context, svc *frame.Service, authzMiddleware 
 	orderLineRepo := repository.NewOrderLineRepository(ctx, dbPool, workMan)
 	fulfilmentRepo := repository.NewFulfilmentRepository(ctx, dbPool, workMan)
 	fulfilmentLineRepo := repository.NewFulfilmentLineRepository(ctx, dbPool, workMan)
+	priceListRepo := repository.NewPriceListRepository(ctx, dbPool, workMan)
+	priceListEntryRepo := repository.NewPriceListEntryRepository(ctx, dbPool, workMan)
+	assignmentRepo := repository.NewCustomerPriceListAssignmentRepository(ctx, dbPool, workMan)
+	overrideRepo := repository.NewCustomerPriceOverrideRepository(ctx, dbPool, workMan)
+	discountRuleRepo := repository.NewDiscountRuleRepository(ctx, dbPool, workMan)
 
 	return &CommerceServer{
 		authz:           authzMiddleware,
@@ -76,6 +86,17 @@ func NewCommerceServer(ctx context.Context, svc *frame.Service, authzMiddleware 
 			fulfilmentLineRepo,
 			orderRepo,
 			orderLineRepo,
+		),
+		pricingBusiness: business.NewPricingBusiness(
+			ctx,
+			priceListRepo,
+			priceListEntryRepo,
+			assignmentRepo,
+			overrideRepo,
+			discountRuleRepo,
+			variantRepo,
+			productRepo,
+			shopRepo,
 		),
 	}
 }
@@ -196,7 +217,9 @@ func (cs *CommerceServer) CreateProductVariant(
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
-	return connect.NewResponse(&commercev1.CreateProductVariantResponse{ProductVariant: variant}), nil
+	return connect.NewResponse(
+		&commercev1.CreateProductVariantResponse{ProductVariant: variant},
+	), nil
 }
 
 func (cs *CommerceServer) UpdateProductVariant(
@@ -208,7 +231,9 @@ func (cs *CommerceServer) UpdateProductVariant(
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
-	return connect.NewResponse(&commercev1.UpdateProductVariantResponse{ProductVariant: variant}), nil
+	return connect.NewResponse(
+		&commercev1.UpdateProductVariantResponse{ProductVariant: variant},
+	), nil
 }
 
 // ----------------------
@@ -363,4 +388,160 @@ func (cs *CommerceServer) GetFulfilment(
 		return nil, errorutil.CleanErr(err)
 	}
 	return connect.NewResponse(&commercev1.GetFulfilmentResponse{Fulfilment: fulfilment}), nil
+}
+
+// ----------------------
+// Pricing
+// ----------------------
+
+func (cs *CommerceServer) PriceListSave(
+	ctx context.Context,
+	req *connect.Request[commercev1.PriceListSaveRequest],
+) (*connect.Response[commercev1.PriceListSaveResponse], error) {
+	if err := cs.authz.CanPriceListManage(ctx, req.Msg.GetShopId()); err != nil {
+		return nil, authorizer.ToConnectError(err)
+	}
+
+	pl, err := cs.pricingBusiness.SavePriceList(ctx, req.Msg)
+	if err != nil {
+		return nil, errorutil.CleanErr(err)
+	}
+	return connect.NewResponse(&commercev1.PriceListSaveResponse{PriceList: pl}), nil
+}
+
+func (cs *CommerceServer) PriceListGet(
+	ctx context.Context,
+	req *connect.Request[commercev1.PriceListGetRequest],
+) (*connect.Response[commercev1.PriceListGetResponse], error) {
+	// TODO: add shop-level CanPriceListView check once price list lookup provides shopID
+	pl, err := cs.pricingBusiness.GetPriceList(ctx, req.Msg.GetId())
+	if err != nil {
+		return nil, errorutil.CleanErr(err)
+	}
+	return connect.NewResponse(&commercev1.PriceListGetResponse{PriceList: pl}), nil
+}
+
+func (cs *CommerceServer) PriceListSearch(
+	ctx context.Context,
+	req *connect.Request[commercev1.PriceListSearchRequest],
+) (*connect.Response[commercev1.PriceListSearchResponse], error) {
+	if err := cs.authz.CanPriceListView(ctx, req.Msg.GetShopId()); err != nil {
+		return nil, authorizer.ToConnectError(err)
+	}
+
+	priceLists, err := cs.pricingBusiness.SearchPriceLists(ctx, req.Msg)
+	if err != nil {
+		return nil, errorutil.CleanErr(err)
+	}
+	return connect.NewResponse(&commercev1.PriceListSearchResponse{PriceLists: priceLists}), nil
+}
+
+func (cs *CommerceServer) PriceListEntryBatchSave(
+	ctx context.Context,
+	req *connect.Request[commercev1.PriceListEntryBatchSaveRequest],
+) (*connect.Response[commercev1.PriceListEntryBatchSaveResponse], error) {
+	// TODO: add shop-level CanPriceListManage check once price list lookup provides shopID
+	entries, err := cs.pricingBusiness.BatchSavePriceListEntries(ctx, req.Msg)
+	if err != nil {
+		return nil, errorutil.CleanErr(err)
+	}
+	return connect.NewResponse(&commercev1.PriceListEntryBatchSaveResponse{Entries: entries}), nil
+}
+
+func (cs *CommerceServer) CustomerPriceListAssignmentSave(
+	ctx context.Context,
+	req *connect.Request[commercev1.CustomerPriceListAssignmentSaveRequest],
+) (*connect.Response[commercev1.CustomerPriceListAssignmentSaveResponse], error) {
+	// TODO: add shop-level CanPriceListManage check once assignment lookup provides shopID
+	assignment, err := cs.pricingBusiness.SaveCustomerPriceListAssignment(ctx, req.Msg)
+	if err != nil {
+		return nil, errorutil.CleanErr(err)
+	}
+	return connect.NewResponse(
+		&commercev1.CustomerPriceListAssignmentSaveResponse{Assignment: assignment},
+	), nil
+}
+
+func (cs *CommerceServer) CustomerPriceListAssignmentSearch(
+	ctx context.Context,
+	req *connect.Request[commercev1.CustomerPriceListAssignmentSearchRequest],
+) (*connect.Response[commercev1.CustomerPriceListAssignmentSearchResponse], error) {
+	// TODO: add shop-level CanPriceListView check
+	assignments, err := cs.pricingBusiness.SearchCustomerPriceListAssignments(ctx, req.Msg)
+	if err != nil {
+		return nil, errorutil.CleanErr(err)
+	}
+	return connect.NewResponse(
+		&commercev1.CustomerPriceListAssignmentSearchResponse{Assignments: assignments},
+	), nil
+}
+
+func (cs *CommerceServer) CustomerPriceOverrideSave(
+	ctx context.Context,
+	req *connect.Request[commercev1.CustomerPriceOverrideSaveRequest],
+) (*connect.Response[commercev1.CustomerPriceOverrideSaveResponse], error) {
+	// TODO: add shop-level CanCustomerPriceOverride check once override lookup provides shopID
+	override, err := cs.pricingBusiness.SaveCustomerPriceOverride(ctx, req.Msg)
+	if err != nil {
+		return nil, errorutil.CleanErr(err)
+	}
+	return connect.NewResponse(
+		&commercev1.CustomerPriceOverrideSaveResponse{Override: override},
+	), nil
+}
+
+func (cs *CommerceServer) CustomerPriceOverrideSearch(
+	ctx context.Context,
+	req *connect.Request[commercev1.CustomerPriceOverrideSearchRequest],
+) (*connect.Response[commercev1.CustomerPriceOverrideSearchResponse], error) {
+	// TODO: add shop-level authz check
+	overrides, err := cs.pricingBusiness.SearchCustomerPriceOverrides(ctx, req.Msg)
+	if err != nil {
+		return nil, errorutil.CleanErr(err)
+	}
+	return connect.NewResponse(
+		&commercev1.CustomerPriceOverrideSearchResponse{Overrides: overrides},
+	), nil
+}
+
+func (cs *CommerceServer) DiscountRuleSave(
+	ctx context.Context,
+	req *connect.Request[commercev1.DiscountRuleSaveRequest],
+) (*connect.Response[commercev1.DiscountRuleSaveResponse], error) {
+	if err := cs.authz.CanDiscountManage(ctx, req.Msg.GetShopId()); err != nil {
+		return nil, authorizer.ToConnectError(err)
+	}
+
+	rule, err := cs.pricingBusiness.SaveDiscountRule(ctx, req.Msg)
+	if err != nil {
+		return nil, errorutil.CleanErr(err)
+	}
+	return connect.NewResponse(&commercev1.DiscountRuleSaveResponse{DiscountRule: rule}), nil
+}
+
+func (cs *CommerceServer) DiscountRuleSearch(
+	ctx context.Context,
+	req *connect.Request[commercev1.DiscountRuleSearchRequest],
+) (*connect.Response[commercev1.DiscountRuleSearchResponse], error) {
+	if err := cs.authz.CanPriceListView(ctx, req.Msg.GetShopId()); err != nil {
+		return nil, authorizer.ToConnectError(err)
+	}
+
+	rules, err := cs.pricingBusiness.SearchDiscountRules(ctx, req.Msg)
+	if err != nil {
+		return nil, errorutil.CleanErr(err)
+	}
+	return connect.NewResponse(&commercev1.DiscountRuleSearchResponse{DiscountRules: rules}), nil
+}
+
+func (cs *CommerceServer) ResolvePrice(
+	ctx context.Context,
+	req *connect.Request[commercev1.ResolvePriceRequest],
+) (*connect.Response[commercev1.ResolvePriceResponse], error) {
+	// ResolvePrice is customer-facing, no shop-level authz needed
+	resolved, err := cs.pricingBusiness.ResolvePrice(ctx, req.Msg)
+	if err != nil {
+		return nil, errorutil.CleanErr(err)
+	}
+	return connect.NewResponse(&commercev1.ResolvePriceResponse{ResolvedPrice: resolved}), nil
 }

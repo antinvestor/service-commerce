@@ -84,6 +84,26 @@ func (m *middleware) CanFulfilmentManage(ctx context.Context, shopID string) err
 	return m.checkShopPermission(ctx, shopID, PermissionFulfilmentManage)
 }
 
+// CanPriceListView checks if the caller can view price lists for a shop.
+func (m *middleware) CanPriceListView(ctx context.Context, shopID string) error {
+	return m.checkShopPermission(ctx, shopID, PermissionPriceListView)
+}
+
+// CanPriceListManage checks if the caller can manage price lists for a shop.
+func (m *middleware) CanPriceListManage(ctx context.Context, shopID string) error {
+	return m.checkShopPermission(ctx, shopID, PermissionPriceListManage)
+}
+
+// CanCustomerPriceOverride checks if the caller can manage customer price overrides for a shop.
+func (m *middleware) CanCustomerPriceOverride(ctx context.Context, shopID string) error {
+	return m.checkShopPermission(ctx, shopID, PermissionCustomerPriceOverride)
+}
+
+// CanDiscountManage checks if the caller can manage discount rules for a shop.
+func (m *middleware) CanDiscountManage(ctx context.Context, shopID string) error {
+	return m.checkShopPermission(ctx, shopID, PermissionDiscountManage)
+}
+
 // --- Tuple management ---
 
 // AddShopMember adds a member to a shop with the specified role.
@@ -120,7 +140,10 @@ func (m *middleware) RemoveShopMember(ctx context.Context, shopID, profileID str
 }
 
 // UpdateShopMemberRole updates a member's role in a shop.
-func (m *middleware) UpdateShopMemberRole(ctx context.Context, shopID, profileID, oldRole, newRole string) error {
+func (m *middleware) UpdateShopMemberRole(
+	ctx context.Context,
+	shopID, profileID, oldRole, newRole string,
+) error {
 	util.Log(ctx).WithFields(map[string]any{
 		logKeyShopID:    shopID,
 		logKeyProfileID: profileID,
@@ -182,7 +205,12 @@ func (m *middleware) checkShopPermission(ctx context.Context, shopID, permission
 	}).Debug("checkShopPermission result")
 
 	if !result.Allowed {
-		return authorizer.NewPermissionDeniedError(req.Object, permission, req.Subject, result.Reason)
+		return authorizer.NewPermissionDeniedError(
+			req.Object,
+			permission,
+			req.Subject,
+			result.Reason,
+		)
 	}
 
 	return nil

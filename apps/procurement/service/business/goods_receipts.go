@@ -199,7 +199,7 @@ func (grb *goodsReceiptBusiness) createReceiptLines(
 			PurchaseOrderLineID: grLine.GetPurchaseOrderLineId(),
 			InventoryItemID:     pol.InventoryItemID,
 			ReceivedQuantity:    grLine.GetReceivedQuantity(),
-			AcceptedQuantity:    0,
+			AcceptedQuantity:    grLine.GetReceivedQuantity(),
 			RejectedQuantity:    0,
 			LotNumber:           grLine.GetLotNumber(),
 			ExpiryDate:          expiryDate,

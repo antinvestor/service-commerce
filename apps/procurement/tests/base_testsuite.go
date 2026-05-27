@@ -67,7 +67,7 @@ func (bs *ProcurementBaseTestSuite) CreateService(
 	cfg.ServerPort = ""
 	cfg.DatabaseMigrate = true
 	cfg.DatabaseTraceQueries = true
-	cfg.DatabaseMaxOpenConnections = 1
+	cfg.DatabaseMaxOpenConnections = 2
 	cfg.DatabaseMaxIdleConnections = 0
 
 	res := depOpts.ByIsDatabase(t.Context())
@@ -88,7 +88,7 @@ func (bs *ProcurementBaseTestSuite) CreateService(
 
 	svc.Init(ctx)
 
-	err = repository.Migrate(ctx, svc.DatastoreManager(), "../../migrations/0001")
+	err = repository.Migrate(ctx, svc.DatastoreManager(), "../migrations/0001")
 	require.NoError(t, err)
 	svc.DatastoreManager().RemovePool(ctx, datastore.DefaultMigrationPoolName)
 

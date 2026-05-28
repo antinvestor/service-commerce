@@ -1,0 +1,118 @@
+name: console
+description: Back-office application for commerce and manufacturing operations.
+publish_to: none
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.11.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.9
+
+  # Core infrastructure
+  antinvestor_ui_core:
+    path: ../../../common/ui_core
+  antinvestor_auth_runtime: ^0.4.0
+
+  # Commerce UI packages (this repo)
+  antinvestor_ui_catalog:
+    path: ../catalog
+  antinvestor_ui_customers:
+    path: ../customers
+  antinvestor_ui_orders:
+    path: ../orders
+  antinvestor_ui_pricing:
+    path: ../pricing
+  antinvestor_ui_procurement:
+    path: ../procurement
+
+  # Manufacturing UI packages (sibling repo)
+  antinvestor_ui_coldchain:
+    path: ../../../service-manufacturing/ui/coldchain
+  antinvestor_ui_costing:
+    path: ../../../service-manufacturing/ui/costing
+  antinvestor_ui_demand:
+    path: ../../../service-manufacturing/ui/demand
+  antinvestor_ui_equipment:
+    path: ../../../service-manufacturing/ui/equipment
+  antinvestor_ui_inventory:
+    path: ../../../service-manufacturing/ui/inventory
+  antinvestor_ui_production:
+    path: ../../../service-manufacturing/ui/production
+  antinvestor_ui_quality:
+    path: ../../../service-manufacturing/ui/quality
+  antinvestor_ui_recipes:
+    path: ../../../service-manufacturing/ui/recipes
+  antinvestor_ui_shelflife:
+    path: ../../../service-manufacturing/ui/shelflife
+  antinvestor_ui_traceability:
+    path: ../../../service-manufacturing/ui/traceability
+  antinvestor_ui_waste:
+    path: ../../../service-manufacturing/ui/waste
+
+  # Cross-cutting concerns
+  antinvestor_ui_auth:
+    path: ../../../service-authentication/ui/auth
+  antinvestor_ui_identity:
+    path: ../../../service-fintech/ui/identity
+  antinvestor_ui_notification:
+    path: ../../../service-notification/ui
+  antinvestor_ui_payment:
+    path: ../../../service-payment/ui/payment
+  antinvestor_ui_profile:
+    path: ../../../service-profile/ui/profile
+
+  # State management & navigation
+  flutter_riverpod: ^3.3.1
+  go_router: ^17.2.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+# Force every transitive antinvestor_ui_* and antinvestor_api_* dep to
+# its path version so the console builds against the local source tree
+# (and not a hosted release that may not exist yet on pub.dev).
+dependency_overrides:
+  antinvestor_ui_core:
+    path: ../../../common/ui_core
+  antinvestor_ui_profile:
+    path: ../../../service-profile/ui/profile
+  antinvestor_ui_auth:
+    path: ../../../service-authentication/ui/auth
+  antinvestor_ui_notification:
+    path: ../../../service-notification/ui
+  antinvestor_ui_payment:
+    path: ../../../service-payment/ui/payment
+  antinvestor_ui_identity:
+    path: ../../../service-fintech/ui/identity
+  antinvestor_api_common:
+    path: ../../../common/sdk/dart/common
+  antinvestor_api_commerce:
+    path: ../../sdk/dart/commerce
+  antinvestor_api_manufacturing:
+    path: ../../../service-manufacturing/sdk/dart/manufacturing
+  antinvestor_api_profile:
+    path: ../../../service-profile/sdk/dart/profile
+  antinvestor_api_payment:
+    path: ../../../service-payment/sdk/dart/payment
+  antinvestor_api_ledger:
+    path: ../../../service-payment/sdk/dart/ledger
+  antinvestor_api_notification:
+    path: ../../../service-notification/sdk/dart/notification
+  antinvestor_api_identity:
+    path: ../../../service-fintech/sdk/dart/identity
+  antinvestor_api_authentication:
+    path: ../../../service-authentication/sdk/dart/authentication
+  antinvestor_api_audit:
+    path: ../../../service-authentication/sdk/dart/audit
+  antinvestor_api_tenancy:
+    path: ../../../service-authentication/sdk/dart/tenancy
+  antinvestor_api_files:
+    path: ../../../service-files/sdk/dart/files
+
+flutter:
+  uses-material-design: true

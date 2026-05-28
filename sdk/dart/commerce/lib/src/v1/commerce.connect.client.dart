@@ -354,4 +354,202 @@ extension type CommerceServiceClient (connect.Transport _transport) {
       onTrailer: onTrailer,
     );
   }
+
+  /// Creates or updates a price list.
+  Future<v1commerce.PriceListSaveResponse> priceListSave(
+    v1commerce.PriceListSaveRequest input, {
+    connect.Headers? headers,
+    connect.AbortSignal? signal,
+    Function(connect.Headers)? onHeader,
+    Function(connect.Headers)? onTrailer,
+  }) {
+    return connect.Client(_transport).unary(
+      specs.CommerceService.priceListSave,
+      input,
+      signal: signal,
+      headers: headers,
+      onHeader: onHeader,
+      onTrailer: onTrailer,
+    );
+  }
+
+  /// Retrieves a price list by ID.
+  Future<v1commerce.PriceListGetResponse> priceListGet(
+    v1commerce.PriceListGetRequest input, {
+    connect.Headers? headers,
+    connect.AbortSignal? signal,
+    Function(connect.Headers)? onHeader,
+    Function(connect.Headers)? onTrailer,
+  }) {
+    return connect.Client(_transport).unary(
+      specs.CommerceService.priceListGet,
+      input,
+      signal: signal,
+      headers: headers,
+      onHeader: onHeader,
+      onTrailer: onTrailer,
+    );
+  }
+
+  /// Searches price lists for a shop.
+  Future<v1commerce.PriceListSearchResponse> priceListSearch(
+    v1commerce.PriceListSearchRequest input, {
+    connect.Headers? headers,
+    connect.AbortSignal? signal,
+    Function(connect.Headers)? onHeader,
+    Function(connect.Headers)? onTrailer,
+  }) {
+    return connect.Client(_transport).unary(
+      specs.CommerceService.priceListSearch,
+      input,
+      signal: signal,
+      headers: headers,
+      onHeader: onHeader,
+      onTrailer: onTrailer,
+    );
+  }
+
+  /// Replaces all entries for the given variants in a price list.
+  Future<v1commerce.PriceListEntryBatchSaveResponse> priceListEntryBatchSave(
+    v1commerce.PriceListEntryBatchSaveRequest input, {
+    connect.Headers? headers,
+    connect.AbortSignal? signal,
+    Function(connect.Headers)? onHeader,
+    Function(connect.Headers)? onTrailer,
+  }) {
+    return connect.Client(_transport).unary(
+      specs.CommerceService.priceListEntryBatchSave,
+      input,
+      signal: signal,
+      headers: headers,
+      onHeader: onHeader,
+      onTrailer: onTrailer,
+    );
+  }
+
+  /// Creates or updates a customer-to-price-list assignment.
+  Future<v1commerce.CustomerPriceListAssignmentSaveResponse> customerPriceListAssignmentSave(
+    v1commerce.CustomerPriceListAssignmentSaveRequest input, {
+    connect.Headers? headers,
+    connect.AbortSignal? signal,
+    Function(connect.Headers)? onHeader,
+    Function(connect.Headers)? onTrailer,
+  }) {
+    return connect.Client(_transport).unary(
+      specs.CommerceService.customerPriceListAssignmentSave,
+      input,
+      signal: signal,
+      headers: headers,
+      onHeader: onHeader,
+      onTrailer: onTrailer,
+    );
+  }
+
+  /// Searches customer price list assignments.
+  Future<v1commerce.CustomerPriceListAssignmentSearchResponse> customerPriceListAssignmentSearch(
+    v1commerce.CustomerPriceListAssignmentSearchRequest input, {
+    connect.Headers? headers,
+    connect.AbortSignal? signal,
+    Function(connect.Headers)? onHeader,
+    Function(connect.Headers)? onTrailer,
+  }) {
+    return connect.Client(_transport).unary(
+      specs.CommerceService.customerPriceListAssignmentSearch,
+      input,
+      signal: signal,
+      headers: headers,
+      onHeader: onHeader,
+      onTrailer: onTrailer,
+    );
+  }
+
+  /// Creates or updates a customer price override for a specific variant.
+  Future<v1commerce.CustomerPriceOverrideSaveResponse> customerPriceOverrideSave(
+    v1commerce.CustomerPriceOverrideSaveRequest input, {
+    connect.Headers? headers,
+    connect.AbortSignal? signal,
+    Function(connect.Headers)? onHeader,
+    Function(connect.Headers)? onTrailer,
+  }) {
+    return connect.Client(_transport).unary(
+      specs.CommerceService.customerPriceOverrideSave,
+      input,
+      signal: signal,
+      headers: headers,
+      onHeader: onHeader,
+      onTrailer: onTrailer,
+    );
+  }
+
+  /// Searches customer price overrides.
+  Future<v1commerce.CustomerPriceOverrideSearchResponse> customerPriceOverrideSearch(
+    v1commerce.CustomerPriceOverrideSearchRequest input, {
+    connect.Headers? headers,
+    connect.AbortSignal? signal,
+    Function(connect.Headers)? onHeader,
+    Function(connect.Headers)? onTrailer,
+  }) {
+    return connect.Client(_transport).unary(
+      specs.CommerceService.customerPriceOverrideSearch,
+      input,
+      signal: signal,
+      headers: headers,
+      onHeader: onHeader,
+      onTrailer: onTrailer,
+    );
+  }
+
+  /// Creates or updates a discount rule.
+  Future<v1commerce.DiscountRuleSaveResponse> discountRuleSave(
+    v1commerce.DiscountRuleSaveRequest input, {
+    connect.Headers? headers,
+    connect.AbortSignal? signal,
+    Function(connect.Headers)? onHeader,
+    Function(connect.Headers)? onTrailer,
+  }) {
+    return connect.Client(_transport).unary(
+      specs.CommerceService.discountRuleSave,
+      input,
+      signal: signal,
+      headers: headers,
+      onHeader: onHeader,
+      onTrailer: onTrailer,
+    );
+  }
+
+  /// Searches discount rules for a shop.
+  Future<v1commerce.DiscountRuleSearchResponse> discountRuleSearch(
+    v1commerce.DiscountRuleSearchRequest input, {
+    connect.Headers? headers,
+    connect.AbortSignal? signal,
+    Function(connect.Headers)? onHeader,
+    Function(connect.Headers)? onTrailer,
+  }) {
+    return connect.Client(_transport).unary(
+      specs.CommerceService.discountRuleSearch,
+      input,
+      signal: signal,
+      headers: headers,
+      onHeader: onHeader,
+      onTrailer: onTrailer,
+    );
+  }
+
+  /// Resolves the effective price for a variant given customer and quantity context.
+  Future<v1commerce.ResolvePriceResponse> resolvePrice(
+    v1commerce.ResolvePriceRequest input, {
+    connect.Headers? headers,
+    connect.AbortSignal? signal,
+    Function(connect.Headers)? onHeader,
+    Function(connect.Headers)? onTrailer,
+  }) {
+    return connect.Client(_transport).unary(
+      specs.CommerceService.resolvePrice,
+      input,
+      signal: signal,
+      headers: headers,
+      onHeader: onHeader,
+      onTrailer: onTrailer,
+    );
+  }
 }

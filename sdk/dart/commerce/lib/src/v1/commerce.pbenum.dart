@@ -171,5 +171,128 @@ class FulfilmentStatus extends $pb.ProtobufEnum {
   const FulfilmentStatus._($core.int v, $core.String n) : super(v, n);
 }
 
+class PriceListStatus extends $pb.ProtobufEnum {
+  static const PriceListStatus PRICE_LIST_STATUS_UNSPECIFIED = PriceListStatus._(0, _omitEnumNames ? '' : 'PRICE_LIST_STATUS_UNSPECIFIED');
+  static const PriceListStatus PRICE_LIST_STATUS_ACTIVE = PriceListStatus._(1, _omitEnumNames ? '' : 'PRICE_LIST_STATUS_ACTIVE');
+  static const PriceListStatus PRICE_LIST_STATUS_DRAFT = PriceListStatus._(2, _omitEnumNames ? '' : 'PRICE_LIST_STATUS_DRAFT');
+  static const PriceListStatus PRICE_LIST_STATUS_EXPIRED = PriceListStatus._(3, _omitEnumNames ? '' : 'PRICE_LIST_STATUS_EXPIRED');
+
+  static const $core.List<PriceListStatus> values = <PriceListStatus> [
+    PRICE_LIST_STATUS_UNSPECIFIED,
+    PRICE_LIST_STATUS_ACTIVE,
+    PRICE_LIST_STATUS_DRAFT,
+    PRICE_LIST_STATUS_EXPIRED,
+  ];
+
+  static final $core.Map<$core.int, PriceListStatus> _byValue = $pb.ProtobufEnum.initByValue(values);
+  static PriceListStatus? valueOf($core.int value) => _byValue[value];
+
+  const PriceListStatus._($core.int v, $core.String n) : super(v, n);
+}
+
+class PriceSource extends $pb.ProtobufEnum {
+  static const PriceSource PRICE_SOURCE_UNSPECIFIED = PriceSource._(0, _omitEnumNames ? '' : 'PRICE_SOURCE_UNSPECIFIED');
+  static const PriceSource PRICE_SOURCE_CATALOG = PriceSource._(1, _omitEnumNames ? '' : 'PRICE_SOURCE_CATALOG');
+  static const PriceSource PRICE_SOURCE_PRICE_LIST = PriceSource._(2, _omitEnumNames ? '' : 'PRICE_SOURCE_PRICE_LIST');
+  static const PriceSource PRICE_SOURCE_CUSTOMER_OVERRIDE = PriceSource._(3, _omitEnumNames ? '' : 'PRICE_SOURCE_CUSTOMER_OVERRIDE');
+
+  static const $core.List<PriceSource> values = <PriceSource> [
+    PRICE_SOURCE_UNSPECIFIED,
+    PRICE_SOURCE_CATALOG,
+    PRICE_SOURCE_PRICE_LIST,
+    PRICE_SOURCE_CUSTOMER_OVERRIDE,
+  ];
+
+  static final $core.Map<$core.int, PriceSource> _byValue = $pb.ProtobufEnum.initByValue(values);
+  static PriceSource? valueOf($core.int value) => _byValue[value];
+
+  const PriceSource._($core.int v, $core.String n) : super(v, n);
+}
+
+class DiscountType extends $pb.ProtobufEnum {
+  static const DiscountType DISCOUNT_TYPE_UNSPECIFIED = DiscountType._(0, _omitEnumNames ? '' : 'DISCOUNT_TYPE_UNSPECIFIED');
+  static const DiscountType DISCOUNT_TYPE_PERCENTAGE = DiscountType._(1, _omitEnumNames ? '' : 'DISCOUNT_TYPE_PERCENTAGE');
+  static const DiscountType DISCOUNT_TYPE_FIXED_AMOUNT = DiscountType._(2, _omitEnumNames ? '' : 'DISCOUNT_TYPE_FIXED_AMOUNT');
+
+  static const $core.List<DiscountType> values = <DiscountType> [
+    DISCOUNT_TYPE_UNSPECIFIED,
+    DISCOUNT_TYPE_PERCENTAGE,
+    DISCOUNT_TYPE_FIXED_AMOUNT,
+  ];
+
+  static final $core.Map<$core.int, DiscountType> _byValue = $pb.ProtobufEnum.initByValue(values);
+  static DiscountType? valueOf($core.int value) => _byValue[value];
+
+  const DiscountType._($core.int v, $core.String n) : super(v, n);
+}
+
+class DiscountAppliesTo extends $pb.ProtobufEnum {
+  static const DiscountAppliesTo DISCOUNT_APPLIES_TO_UNSPECIFIED = DiscountAppliesTo._(0, _omitEnumNames ? '' : 'DISCOUNT_APPLIES_TO_UNSPECIFIED');
+  static const DiscountAppliesTo DISCOUNT_APPLIES_TO_ORDER = DiscountAppliesTo._(1, _omitEnumNames ? '' : 'DISCOUNT_APPLIES_TO_ORDER');
+  static const DiscountAppliesTo DISCOUNT_APPLIES_TO_LINE_ITEM = DiscountAppliesTo._(2, _omitEnumNames ? '' : 'DISCOUNT_APPLIES_TO_LINE_ITEM');
+
+  static const $core.List<DiscountAppliesTo> values = <DiscountAppliesTo> [
+    DISCOUNT_APPLIES_TO_UNSPECIFIED,
+    DISCOUNT_APPLIES_TO_ORDER,
+    DISCOUNT_APPLIES_TO_LINE_ITEM,
+  ];
+
+  static final $core.Map<$core.int, DiscountAppliesTo> _byValue = $pb.ProtobufEnum.initByValue(values);
+  static DiscountAppliesTo? valueOf($core.int value) => _byValue[value];
+
+  const DiscountAppliesTo._($core.int v, $core.String n) : super(v, n);
+}
+
+class DiscountRuleStatus extends $pb.ProtobufEnum {
+  static const DiscountRuleStatus DISCOUNT_RULE_STATUS_UNSPECIFIED = DiscountRuleStatus._(0, _omitEnumNames ? '' : 'DISCOUNT_RULE_STATUS_UNSPECIFIED');
+  static const DiscountRuleStatus DISCOUNT_RULE_STATUS_ACTIVE = DiscountRuleStatus._(1, _omitEnumNames ? '' : 'DISCOUNT_RULE_STATUS_ACTIVE');
+  static const DiscountRuleStatus DISCOUNT_RULE_STATUS_INACTIVE = DiscountRuleStatus._(2, _omitEnumNames ? '' : 'DISCOUNT_RULE_STATUS_INACTIVE');
+
+  static const $core.List<DiscountRuleStatus> values = <DiscountRuleStatus> [
+    DISCOUNT_RULE_STATUS_UNSPECIFIED,
+    DISCOUNT_RULE_STATUS_ACTIVE,
+    DISCOUNT_RULE_STATUS_INACTIVE,
+  ];
+
+  static final $core.Map<$core.int, DiscountRuleStatus> _byValue = $pb.ProtobufEnum.initByValue(values);
+  static DiscountRuleStatus? valueOf($core.int value) => _byValue[value];
+
+  const DiscountRuleStatus._($core.int v, $core.String n) : super(v, n);
+}
+
+class CustomerPriceOverrideStatus extends $pb.ProtobufEnum {
+  static const CustomerPriceOverrideStatus CUSTOMER_PRICE_OVERRIDE_STATUS_UNSPECIFIED = CustomerPriceOverrideStatus._(0, _omitEnumNames ? '' : 'CUSTOMER_PRICE_OVERRIDE_STATUS_UNSPECIFIED');
+  static const CustomerPriceOverrideStatus CUSTOMER_PRICE_OVERRIDE_STATUS_ACTIVE = CustomerPriceOverrideStatus._(1, _omitEnumNames ? '' : 'CUSTOMER_PRICE_OVERRIDE_STATUS_ACTIVE');
+  static const CustomerPriceOverrideStatus CUSTOMER_PRICE_OVERRIDE_STATUS_EXPIRED = CustomerPriceOverrideStatus._(2, _omitEnumNames ? '' : 'CUSTOMER_PRICE_OVERRIDE_STATUS_EXPIRED');
+
+  static const $core.List<CustomerPriceOverrideStatus> values = <CustomerPriceOverrideStatus> [
+    CUSTOMER_PRICE_OVERRIDE_STATUS_UNSPECIFIED,
+    CUSTOMER_PRICE_OVERRIDE_STATUS_ACTIVE,
+    CUSTOMER_PRICE_OVERRIDE_STATUS_EXPIRED,
+  ];
+
+  static final $core.Map<$core.int, CustomerPriceOverrideStatus> _byValue = $pb.ProtobufEnum.initByValue(values);
+  static CustomerPriceOverrideStatus? valueOf($core.int value) => _byValue[value];
+
+  const CustomerPriceOverrideStatus._($core.int v, $core.String n) : super(v, n);
+}
+
+class CustomerPriceListAssignmentStatus extends $pb.ProtobufEnum {
+  static const CustomerPriceListAssignmentStatus CUSTOMER_PRICE_LIST_ASSIGNMENT_STATUS_UNSPECIFIED = CustomerPriceListAssignmentStatus._(0, _omitEnumNames ? '' : 'CUSTOMER_PRICE_LIST_ASSIGNMENT_STATUS_UNSPECIFIED');
+  static const CustomerPriceListAssignmentStatus CUSTOMER_PRICE_LIST_ASSIGNMENT_STATUS_ACTIVE = CustomerPriceListAssignmentStatus._(1, _omitEnumNames ? '' : 'CUSTOMER_PRICE_LIST_ASSIGNMENT_STATUS_ACTIVE');
+  static const CustomerPriceListAssignmentStatus CUSTOMER_PRICE_LIST_ASSIGNMENT_STATUS_INACTIVE = CustomerPriceListAssignmentStatus._(2, _omitEnumNames ? '' : 'CUSTOMER_PRICE_LIST_ASSIGNMENT_STATUS_INACTIVE');
+
+  static const $core.List<CustomerPriceListAssignmentStatus> values = <CustomerPriceListAssignmentStatus> [
+    CUSTOMER_PRICE_LIST_ASSIGNMENT_STATUS_UNSPECIFIED,
+    CUSTOMER_PRICE_LIST_ASSIGNMENT_STATUS_ACTIVE,
+    CUSTOMER_PRICE_LIST_ASSIGNMENT_STATUS_INACTIVE,
+  ];
+
+  static final $core.Map<$core.int, CustomerPriceListAssignmentStatus> _byValue = $pb.ProtobufEnum.initByValue(values);
+  static CustomerPriceListAssignmentStatus? valueOf($core.int value) => _byValue[value];
+
+  const CustomerPriceListAssignmentStatus._($core.int v, $core.String n) : super(v, n);
+}
+
 
 const _omitEnumNames = $core.bool.fromEnvironment('protobuf.omit_enum_names');

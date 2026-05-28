@@ -1,0 +1,5 @@
+{"type":"server-started","port":50424,"host":"127.0.0.1","url_host":"localhost","url":"http://localhost:50424","screen_dir":"/home/j/code/antinvestor/service-commerce/.superpowers/brainstorm/969778-1779897951/content","state_dir":"/home/j/code/antinvestor/service-commerce/.superpowers/brainstorm/969778-1779897951/state"}
+{"type":"screen-added","file":"/home/j/code/antinvestor/service-commerce/.superpowers/brainstorm/969778-1779897951/content/architecture-granular.html"}
+{"type":"screen-added","file":"/home/j/code/antinvestor/service-commerce/.superpowers/brainstorm/969778-1779897951/content/ux-dashboard-nav.html"}
+{"type":"screen-added","file":"/home/j/code/antinvestor/service-commerce/.superpowers/brainstorm/969778-1779897951/content/dual-app-architecture.html"}
+{"type":"server-stopped","reason":"idle timeout"}

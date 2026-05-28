@@ -1,0 +1,173 @@
+<h2>Granular Service UI Packages</h2>
+<p class="subtitle">Each domain area is its own Flutter package — apps depend only on what they need</p>
+
+<div class="section">
+  <h3>System Architecture</h3>
+  <div class="mockup">
+    <div class="mockup-header">Two-Layer Composable Architecture</div>
+    <div class="mockup-body" style="font-family: monospace; font-size: 12px; line-height: 1.5; padding: 16px;">
+<pre style="margin:0;">
+┌──────────────────────────────────────────────────────────────┐
+│                      APP LAYER                                │
+│              app-biashara (Flutter App)                        │
+│  Dashboard │ Sales │ Produce │ Stock │ Customers              │
+│  Role routing · Guided wizards · Offline sync · Drift DB      │
+│                                                               │
+│  Depends on only the packages it needs:                       │
+│  ┌──────────┬──────────┬──────────┬──────────┬──────────┐    │
+│  │ui_recipes│ui_produc │ui_invent │ui_catalog│ui_custom │    │
+│  │          │tion      │ory       │          │ers       │    │
+│  ├──────────┼──────────┼──────────┼──────────┼──────────┤    │
+│  │ui_equipm │ui_shelf  │ui_orders │ui_procur │ui_pricin │    │
+│  │ent       │life      │          │ement     │g         │    │
+│  └──────────┴──────────┴──────────┴──────────┴──────────┘    │
+│                         │                                     │
+│              ┌──────────▼──────────┐                          │
+│              │  antinvestor_ui_core │                          │
+│              │  Theme · Auth · Nav  │                          │
+│              └──────────┬──────────┘                          │
+└─────────────────────────┼────────────────────────────────────┘
+                          │ Connect RPC
+              ┌───────────▼───────────┐
+              │   Backend Services     │
+              │  service-commerce      │
+              │  service-manufacturing │
+              └───────────────────────┘
+</pre>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>service-manufacturing/ui/ — 11 packages</h3>
+  <div class="mockup">
+    <div class="mockup-header">Manufacturing UI Packages</div>
+    <div class="mockup-body" style="font-family: monospace; font-size: 12px; padding: 16px; line-height: 1.6;">
+<pre style="margin:0;">
+service-manufacturing/ui/
+│
+├── recipes/        antinvestor_ui_recipes
+│   recipe_card · recipe_detail · template_browser · version_history
+│
+├── production/     antinvestor_ui_production
+│   plan_wizard · batch_wizard · batch_step_tracker · packing_execution
+│
+├── inventory/      antinvestor_ui_inventory
+│   stock_level_card · stock_in_wizard · expiry_warning · low_stock_alert
+│
+├── equipment/      antinvestor_ui_equipment
+│   equipment_card · cleaning_workflow · maintenance_record
+│
+├── coldchain/      antinvestor_ui_coldchain
+│   monitoring_point_card · reading_recorder · alarm_list · compliance_report
+│
+├── quality/        antinvestor_ui_quality
+│   inspection_wizard · reading_entry · supplier_quality_report
+│
+├── waste/          antinvestor_ui_waste
+│   waste_record_form · disposition_update · waste_summary
+│
+├── costing/        antinvestor_ui_costing
+│   batch_cost_detail · margin_report · cost_variance
+│
+├── demand/         antinvestor_ui_demand
+│   demand_chart · suggestion_list · forecast_config · demand_overview
+│
+├── traceability/   antinvestor_ui_traceability
+│   trace_tree_view · recall_wizard · lot_provenance_card
+│
+└── shelflife/      antinvestor_ui_shelflife
+    shelf_life_rule_editor · label_data_view
+</pre>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>service-commerce/ui/ — 5 packages</h3>
+  <div class="mockup">
+    <div class="mockup-header">Commerce UI Packages</div>
+    <div class="mockup-body" style="font-family: monospace; font-size: 12px; padding: 16px; line-height: 1.6;">
+<pre style="margin:0;">
+service-commerce/ui/
+│
+├── catalog/        antinvestor_ui_catalog
+│   product_card · product_grid · variant_selector · shop_switcher
+│
+├── orders/         antinvestor_ui_orders
+│   cart_builder · order_checkout · order_list · fulfilment_tracker
+│
+├── customers/      antinvestor_ui_customers
+│   customer_list · customer_profile · balance_card · payment_history
+│
+├── procurement/    antinvestor_ui_procurement
+│   supplier_list · po_wizard · goods_receipt_wizard · po_suggestions
+│
+└── pricing/        antinvestor_ui_pricing
+    price_list_editor · discount_rules · price_resolver_preview
+</pre>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Each Package Internals (same pattern as ui_profile)</h3>
+  <div class="mockup">
+    <div class="mockup-header">antinvestor_ui_production/ example</div>
+    <div class="mockup-body" style="font-family: monospace; font-size: 12px; padding: 16px; line-height: 1.6;">
+<pre style="margin:0;">
+lib/
+├── antinvestor_ui_production.dart    ← barrel export
+└── src/
+    ├── providers/                     ← Riverpod state
+    │   ├── plan_providers.dart
+    │   ├── batch_providers.dart
+    │   └── packing_providers.dart
+    ├── screens/                       ← Full screens
+    │   ├── plan_list_screen.dart
+    │   ├── batch_wizard_screen.dart   ← step-by-step guided
+    │   └── batch_detail_screen.dart
+    ├── widgets/                       ← Composable widgets
+    │   ├── plan_card.dart
+    │   ├── batch_status_badge.dart
+    │   ├── step_progress_bar.dart
+    │   └── material_usage_form.dart
+    └── routing/
+        └── production_route_module.dart
+</pre>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>MVP App Dependencies</h3>
+  <div class="mockup">
+    <div class="mockup-header">app-biashara picks only what it needs</div>
+    <div class="mockup-body" style="font-family: monospace; font-size: 12px; padding: 16px; line-height: 1.6;">
+<pre style="margin:0;">
+# MVP (yoghurt business)
+antinvestor_ui_recipes       ✓  recipes for production
+antinvestor_ui_production    ✓  batch wizard, plans
+antinvestor_ui_inventory     ✓  stock cards, add stock
+antinvestor_ui_shelflife     ✓  expiry dates, labels
+antinvestor_ui_catalog       ✓  product display
+antinvestor_ui_orders        ✓  sales checkout
+antinvestor_ui_customers     ✓  customer list, payments
+antinvestor_ui_procurement   ✓  buy raw materials
+antinvestor_ui_pricing       ✓  price lists
+
+# Add later
+antinvestor_ui_equipment     ○  cleaning schedules
+antinvestor_ui_coldchain     ○  temperature monitoring
+antinvestor_ui_quality       ○  receiving inspection
+antinvestor_ui_waste         ○  waste tracking
+antinvestor_ui_costing       ○  cost analysis
+antinvestor_ui_demand        ○  demand forecasting
+antinvestor_ui_traceability  ○  lot tracing, recalls
+
+# A bakery app would use same core packages
+# A cosmetics factory might add quality + traceability
+</pre>
+    </div>
+  </div>
+</div>

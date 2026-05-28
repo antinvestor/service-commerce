@@ -40,6 +40,17 @@ abstract class CommerceServiceBase extends $pb.GeneratedService {
   $async.Future<$9.CreateFulfilmentResponse> createFulfilment($pb.ServerContext ctx, $9.CreateFulfilmentRequest request);
   $async.Future<$9.UpdateFulfilmentResponse> updateFulfilment($pb.ServerContext ctx, $9.UpdateFulfilmentRequest request);
   $async.Future<$9.GetFulfilmentResponse> getFulfilment($pb.ServerContext ctx, $9.GetFulfilmentRequest request);
+  $async.Future<$9.PriceListSaveResponse> priceListSave($pb.ServerContext ctx, $9.PriceListSaveRequest request);
+  $async.Future<$9.PriceListGetResponse> priceListGet($pb.ServerContext ctx, $9.PriceListGetRequest request);
+  $async.Future<$9.PriceListSearchResponse> priceListSearch($pb.ServerContext ctx, $9.PriceListSearchRequest request);
+  $async.Future<$9.PriceListEntryBatchSaveResponse> priceListEntryBatchSave($pb.ServerContext ctx, $9.PriceListEntryBatchSaveRequest request);
+  $async.Future<$9.CustomerPriceListAssignmentSaveResponse> customerPriceListAssignmentSave($pb.ServerContext ctx, $9.CustomerPriceListAssignmentSaveRequest request);
+  $async.Future<$9.CustomerPriceListAssignmentSearchResponse> customerPriceListAssignmentSearch($pb.ServerContext ctx, $9.CustomerPriceListAssignmentSearchRequest request);
+  $async.Future<$9.CustomerPriceOverrideSaveResponse> customerPriceOverrideSave($pb.ServerContext ctx, $9.CustomerPriceOverrideSaveRequest request);
+  $async.Future<$9.CustomerPriceOverrideSearchResponse> customerPriceOverrideSearch($pb.ServerContext ctx, $9.CustomerPriceOverrideSearchRequest request);
+  $async.Future<$9.DiscountRuleSaveResponse> discountRuleSave($pb.ServerContext ctx, $9.DiscountRuleSaveRequest request);
+  $async.Future<$9.DiscountRuleSearchResponse> discountRuleSearch($pb.ServerContext ctx, $9.DiscountRuleSearchRequest request);
+  $async.Future<$9.ResolvePriceResponse> resolvePrice($pb.ServerContext ctx, $9.ResolvePriceRequest request);
 
   $pb.GeneratedMessage createRequest($core.String methodName) {
     switch (methodName) {
@@ -62,6 +73,17 @@ abstract class CommerceServiceBase extends $pb.GeneratedService {
       case 'CreateFulfilment': return $9.CreateFulfilmentRequest();
       case 'UpdateFulfilment': return $9.UpdateFulfilmentRequest();
       case 'GetFulfilment': return $9.GetFulfilmentRequest();
+      case 'PriceListSave': return $9.PriceListSaveRequest();
+      case 'PriceListGet': return $9.PriceListGetRequest();
+      case 'PriceListSearch': return $9.PriceListSearchRequest();
+      case 'PriceListEntryBatchSave': return $9.PriceListEntryBatchSaveRequest();
+      case 'CustomerPriceListAssignmentSave': return $9.CustomerPriceListAssignmentSaveRequest();
+      case 'CustomerPriceListAssignmentSearch': return $9.CustomerPriceListAssignmentSearchRequest();
+      case 'CustomerPriceOverrideSave': return $9.CustomerPriceOverrideSaveRequest();
+      case 'CustomerPriceOverrideSearch': return $9.CustomerPriceOverrideSearchRequest();
+      case 'DiscountRuleSave': return $9.DiscountRuleSaveRequest();
+      case 'DiscountRuleSearch': return $9.DiscountRuleSearchRequest();
+      case 'ResolvePrice': return $9.ResolvePriceRequest();
       default: throw $core.ArgumentError('Unknown method: $methodName');
     }
   }
@@ -87,6 +109,17 @@ abstract class CommerceServiceBase extends $pb.GeneratedService {
       case 'CreateFulfilment': return this.createFulfilment(ctx, request as $9.CreateFulfilmentRequest);
       case 'UpdateFulfilment': return this.updateFulfilment(ctx, request as $9.UpdateFulfilmentRequest);
       case 'GetFulfilment': return this.getFulfilment(ctx, request as $9.GetFulfilmentRequest);
+      case 'PriceListSave': return this.priceListSave(ctx, request as $9.PriceListSaveRequest);
+      case 'PriceListGet': return this.priceListGet(ctx, request as $9.PriceListGetRequest);
+      case 'PriceListSearch': return this.priceListSearch(ctx, request as $9.PriceListSearchRequest);
+      case 'PriceListEntryBatchSave': return this.priceListEntryBatchSave(ctx, request as $9.PriceListEntryBatchSaveRequest);
+      case 'CustomerPriceListAssignmentSave': return this.customerPriceListAssignmentSave(ctx, request as $9.CustomerPriceListAssignmentSaveRequest);
+      case 'CustomerPriceListAssignmentSearch': return this.customerPriceListAssignmentSearch(ctx, request as $9.CustomerPriceListAssignmentSearchRequest);
+      case 'CustomerPriceOverrideSave': return this.customerPriceOverrideSave(ctx, request as $9.CustomerPriceOverrideSaveRequest);
+      case 'CustomerPriceOverrideSearch': return this.customerPriceOverrideSearch(ctx, request as $9.CustomerPriceOverrideSearchRequest);
+      case 'DiscountRuleSave': return this.discountRuleSave(ctx, request as $9.DiscountRuleSaveRequest);
+      case 'DiscountRuleSearch': return this.discountRuleSearch(ctx, request as $9.DiscountRuleSearchRequest);
+      case 'ResolvePrice': return this.resolvePrice(ctx, request as $9.ResolvePriceRequest);
       default: throw $core.ArgumentError('Unknown method: $methodName');
     }
   }

@@ -1,0 +1,181 @@
+<h2>Granular Service UI Packages</h2>
+<p class="subtitle">Each domain area is its own package — apps depend only on what they need</p>
+
+<div class="section">
+  <h3>service-manufacturing/ui/ packages</h3>
+  <div class="mockup">
+    <div class="mockup-header">Manufacturing UI Packages (one per domain)</div>
+    <div class="mockup-body" style="font-family: monospace; font-size: 13px; padding: 16px; line-height: 1.5;">
+<pre style="margin:0;">
+service-manufacturing/ui/
+├── recipes/           antinvestor_ui_recipes
+│   ├── recipe_card, recipe_detail, template_browser
+│   └── recipe_editor, version_history
+│
+├── production/        antinvestor_ui_production
+│   ├── plan_wizard, plan_list, plan_validation
+│   ├── batch_wizard, batch_list, batch_step_tracker
+│   └── packing_execution, batch_completion
+│
+├── inventory/         antinvestor_ui_inventory
+│   ├── stock_level_card, stock_overview
+│   ├── stock_in_wizard, stock_adjust, stock_transfer
+│   ├── lot_list, movement_history
+│   └── expiry_warning_card, low_stock_alert
+│
+├── equipment/         antinvestor_ui_equipment
+│   ├── equipment_card, equipment_list
+│   ├── cleaning_workflow, cleaning_history
+│   └── maintenance_record, availability_check
+│
+├── coldchain/         antinvestor_ui_coldchain
+│   ├── monitoring_point_card, reading_recorder
+│   ├── alarm_list, alarm_acknowledge
+│   └── compliance_report
+│
+├── quality/           antinvestor_ui_quality
+│   ├── inspection_template_editor
+│   ├── inspection_wizard, reading_entry
+│   └── supplier_quality_report
+│
+├── waste/             antinvestor_ui_waste
+│   ├── waste_record_form, disposition_update
+│   ├── byproduct_recorder
+│   └── waste_summary, expired_stock_list
+│
+├── costing/           antinvestor_ui_costing
+│   ├── cost_component_editor
+│   ├── batch_cost_detail, cost_variance
+│   └── margin_report, product_cost_report
+│
+├── demand/            antinvestor_ui_demand
+│   ├── demand_signal_chart, forecast_view
+│   ├── suggestion_list, suggestion_accept
+│   └── forecast_config, demand_overview
+│
+├── traceability/      antinvestor_ui_traceability
+│   ├── trace_tree_view (forward/reverse)
+│   ├── recall_wizard, recall_status
+│   └── lot_provenance_card
+│
+└── shelflife/         antinvestor_ui_shelflife
+    ├── shelf_life_rule_editor
+    └── label_data_view, label_print
+</pre>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>service-commerce/ui/ packages</h3>
+  <div class="mockup">
+    <div class="mockup-header">Commerce UI Packages (one per domain)</div>
+    <div class="mockup-body" style="font-family: monospace; font-size: 13px; padding: 16px; line-height: 1.5;">
+<pre style="margin:0;">
+service-commerce/ui/
+├── catalog/           antinvestor_ui_catalog
+│   ├── product_card, product_grid, product_detail
+│   ├── variant_selector, variant_editor
+│   └── shop_switcher, shop_settings
+│
+├── orders/            antinvestor_ui_orders
+│   ├── cart_builder, cart_summary
+│   ├── order_checkout, order_detail, order_list
+│   └── fulfilment_tracker, fulfilment_update
+│
+├── customers/         antinvestor_ui_customers
+│   ├── customer_list (contact-list style)
+│   ├── customer_profile, customer_notes
+│   ├── customer_locations, location_picker
+│   └── balance_card, payment_history
+│
+├── procurement/       antinvestor_ui_procurement
+│   ├── supplier_list, supplier_detail
+│   ├── po_wizard, po_list, po_submit
+│   ├── goods_receipt_wizard, receipt_list
+│   └── po_suggestion_list
+│
+└── pricing/           antinvestor_ui_pricing
+    ├── price_list_editor, entry_batch_editor
+    ├── customer_price_override
+    ├── discount_rule_editor
+    └── price_resolver_preview
+</pre>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>How the App Composes Them</h3>
+  <div class="mockup">
+    <div class="mockup-header">app-biashara pubspec.yaml dependencies</div>
+    <div class="mockup-body" style="font-family: monospace; font-size: 13px; padding: 16px; line-height: 1.5;">
+<pre style="margin:0;">
+# The app picks only the packages it needs:
+
+dependencies:
+  antinvestor_ui_core: ^0.4.0
+
+  # Manufacturing (the yoghurt-specific ones)
+  antinvestor_ui_recipes: ^0.1.0
+  antinvestor_ui_production: ^0.1.0
+  antinvestor_ui_inventory: ^0.1.0
+  antinvestor_ui_equipment: ^0.1.0       # optional
+  antinvestor_ui_shelflife: ^0.1.0
+
+  # Commerce
+  antinvestor_ui_catalog: ^0.1.0
+  antinvestor_ui_orders: ^0.1.0
+  antinvestor_ui_customers: ^0.1.0
+  antinvestor_ui_procurement: ^0.1.0
+  antinvestor_ui_pricing: ^0.1.0
+
+  # Skip these for MVP — add later
+  # antinvestor_ui_coldchain
+  # antinvestor_ui_quality
+  # antinvestor_ui_waste
+  # antinvestor_ui_costing
+  # antinvestor_ui_demand
+  # antinvestor_ui_traceability
+</pre>
+    </div>
+  </div>
+
+  <p style="margin-top: 16px; color: #666;">
+    A bakery app would use the same packages but skip equipment/coldchain.
+    A cosmetics factory app might add quality/traceability but skip demand.
+    Each app composes only what it needs.
+  </p>
+</div>
+
+<div class="section">
+  <h3>Each Package Internals (same pattern)</h3>
+  <div class="mockup">
+    <div class="mockup-header">antinvestor_ui_production/ example</div>
+    <div class="mockup-body" style="font-family: monospace; font-size: 13px; padding: 16px; line-height: 1.5;">
+<pre style="margin:0;">
+lib/
+├── antinvestor_ui_production.dart    ← barrel export
+└── src/
+    ├── providers/
+    │   ├── plan_providers.dart        ← Riverpod: plans CRUD
+    │   ├── batch_providers.dart       ← Riverpod: batch lifecycle
+    │   └── packing_providers.dart
+    ├── screens/
+    │   ├── plan_list_screen.dart
+    │   ├── plan_wizard_screen.dart
+    │   ├── batch_list_screen.dart
+    │   ├── batch_wizard_screen.dart   ← step-by-step guided
+    │   └── batch_detail_screen.dart
+    ├── widgets/
+    │   ├── plan_card.dart
+    │   ├── batch_status_badge.dart
+    │   ├── step_progress_bar.dart
+    │   ├── material_usage_form.dart
+    │   └── packing_result_form.dart
+    └── routing/
+        └── production_route_module.dart
+</pre>
+    </div>
+  </div>
+</div>

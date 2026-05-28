@@ -1,0 +1,238 @@
+<h2>Dual-App Architecture</h2>
+<p class="subtitle">Production gets a standalone app · Sales overlays into Stawi chat</p>
+
+<div class="section">
+  <h3>Two Apps, Same Widget Packages</h3>
+  <div class="mockup">
+    <div class="mockup-header">Architecture</div>
+    <div class="mockup-body" style="font-family: monospace; font-size: 12px; line-height: 1.5; padding: 16px;">
+<pre style="margin:0;">
+┌─────────────────────────┐    ┌──────────────────────────────┐
+│    app-biashara          │    │      Stawi (service-chat/ui)  │
+│  Production / Operations │    │   Communication + Sales       │
+│                          │    │                               │
+│  Roles:                  │    │  Roles:                       │
+│  · Owner (full view)     │    │  · Salesperson                │
+│  · Production worker     │    │  · Cashier                    │
+│  · Inventory clerk       │    │  · Owner (sales view)         │
+│                          │    │                               │
+│  Tabs:                   │    │  Tabs:                        │
+│  Dashboard│Produce│Stock │    │  Chats│Sales│Customers│More   │
+│                          │    │                               │
+│  ┌──────────────────┐    │    │  ┌────────────────────────┐   │
+│  │ Depends on:       │    │    │  │ Depends on:            │   │
+│  │                   │    │    │  │                        │   │
+│  │ ui_recipes      ✓ │    │    │  │ ui_orders           ✓ │   │
+│  │ ui_production   ✓ │    │    │  │ ui_customers        ✓ │   │
+│  │ ui_inventory    ✓ │    │    │  │ ui_pricing          ✓ │   │
+│  │ ui_equipment    ✓ │    │    │  │ ui_inventory        ✓ │   │
+│  │ ui_shelflife    ✓ │    │    │  │ ui_catalog          ✓ │   │
+│  │ ui_procurement  ✓ │    │    │  │ ui_procurement      ○ │   │
+│  │ ui_catalog      ✓ │    │    │  │                        │   │
+│  │ ui_coldchain    ○ │    │    │  │ + existing chat/calls  │   │
+│  │ ui_quality      ○ │    │    │  │ + existing contacts    │   │
+│  │ ui_waste        ○ │    │    │  │ + existing groups      │   │
+│  │ ui_costing      ○ │    │    │  └────────────────────────┘   │
+│  │ ui_demand       ○ │    │    │                               │
+│  │ ui_traceability ○ │    │    │                               │
+│  └──────────────────┘    │    └──────────────────────────────┘
+│                          │                  │
+│           │              │                  │
+└───────────┼──────────────┘                  │
+            │                                 │
+  ┌─────────▼─────────────────────────────────▼──────┐
+  │              Shared Widget Packages                │
+  │  antinvestor_ui_core · ui_orders · ui_customers   │
+  │  ui_inventory · ui_catalog · ui_pricing · etc.    │
+  └──────────────────────┬───────────────────────────┘
+                         │ Connect RPC
+              ┌──────────▼──────────┐
+              │  Backend Services    │
+              └─────────────────────┘
+</pre>
+    </div>
+  </div>
+</div>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">app-biashara — Production Focus</div>
+    <div class="mockup-body" style="background: #f8f9fa; padding: 0;">
+      <div style="background: #1B5E20; color: white; padding: 14px 16px;">
+        <div style="font-size: 13px;">Sarah · Owner</div>
+        <div style="font-size: 11px; opacity: 0.7;">Ntinda Dairy Plant</div>
+      </div>
+      <div style="padding: 12px 16px;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+          <div style="background: white; border-radius: 8px; padding: 10px; box-shadow: 0 1px 2px rgba(0,0,0,0.08);">
+            <div style="font-size: 10px; color: #666;">Produced Today</div>
+            <div style="font-size: 18px; font-weight: 700; color: #1565C0;">700 cups</div>
+          </div>
+          <div style="background: white; border-radius: 8px; padding: 10px; box-shadow: 0 1px 2px rgba(0,0,0,0.08);">
+            <div style="font-size: 10px; color: #666;">Active Batches</div>
+            <div style="font-size: 18px; font-weight: 700; color: #6A1B9A;">2</div>
+          </div>
+        </div>
+
+        <div style="margin-top: 10px; background: #FFF3E0; border-radius: 8px; padding: 8px 12px; font-size: 11px;">
+          ⚠️ <b>Low stock:</b> Milk (50L), Cups (200)
+        </div>
+
+        <div style="margin-top: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+          <button style="background: #1565C0; color: white; border: none; border-radius: 8px; padding: 12px; font-size: 12px; font-weight: 600;">🏭 Make Yoghurt</button>
+          <button style="background: #6A1B9A; color: white; border: none; border-radius: 8px; padding: 12px; font-size: 12px; font-weight: 600;">📦 Add Stock</button>
+          <button style="background: #00695C; color: white; border: none; border-radius: 8px; padding: 12px; font-size: 12px; font-weight: 600;">📋 Recipes</button>
+          <button style="background: #333; color: white; border: none; border-radius: 8px; padding: 12px; font-size: 12px; font-weight: 600;">📊 Reports</button>
+        </div>
+      </div>
+      <div style="background: white; border-top: 1px solid #e0e0e0; display: flex; justify-content: space-around; padding: 8px 0;">
+        <div style="text-align: center; color: #1B5E20;"><div style="font-size: 16px;">🏠</div><div style="font-size: 9px; font-weight: 600;">Home</div></div>
+        <div style="text-align: center; color: #999;"><div style="font-size: 16px;">🏭</div><div style="font-size: 9px;">Produce</div></div>
+        <div style="text-align: center; color: #999;"><div style="font-size: 16px;">📦</div><div style="font-size: 9px;">Stock</div></div>
+        <div style="text-align: center; color: #999;"><div style="font-size: 16px;">📋</div><div style="font-size: 9px;">Recipes</div></div>
+        <div style="text-align: center; color: #999;"><div style="font-size: 16px;">⋯</div><div style="font-size: 9px;">More</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mockup">
+    <div class="mockup-header">Stawi Chat — Sales Overlay</div>
+    <div class="mockup-body" style="background: #f8f9fa; padding: 0;">
+      <div style="background: #1B5E20; color: white; padding: 14px 16px;">
+        <div style="font-size: 13px;">John · Salesperson</div>
+        <div style="font-size: 11px; opacity: 0.7;">Field Sales Team</div>
+      </div>
+      <div style="padding: 12px 16px;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+          <div style="background: white; border-radius: 8px; padding: 10px; box-shadow: 0 1px 2px rgba(0,0,0,0.08);">
+            <div style="font-size: 10px; color: #666;">My Sales</div>
+            <div style="font-size: 18px; font-weight: 700; color: #1B5E20;">UGX 220K</div>
+          </div>
+          <div style="background: white; border-radius: 8px; padding: 10px; box-shadow: 0 1px 2px rgba(0,0,0,0.08);">
+            <div style="font-size: 10px; color: #666;">Collected</div>
+            <div style="font-size: 18px; font-weight: 700; color: #2E7D32;">UGX 180K</div>
+          </div>
+        </div>
+
+        <div style="margin-top: 10px; background: white; border-radius: 8px; padding: 10px; box-shadow: 0 1px 2px rgba(0,0,0,0.08);">
+          <div style="font-size: 11px; color: #666; margin-bottom: 6px;">Recent Chats</div>
+          <div style="display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid #f5f5f5;">
+            <div style="width: 32px; height: 32px; border-radius: 50%; background: #E8F5E9; display: flex; align-items: center; justify-content: center; font-size: 14px;">🏪</div>
+            <div style="flex: 1;">
+              <div style="font-size: 12px; font-weight: 600;">ABC Supermarket</div>
+              <div style="font-size: 10px; color: #999;">Delivery confirmed for tomorrow</div>
+            </div>
+            <div style="font-size: 10px; color: #E65100; font-weight: 600;">Owes 120K</div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px; padding: 6px 0;">
+            <div style="width: 32px; height: 32px; border-radius: 50%; background: #E3F2FD; display: flex; align-items: center; justify-content: center; font-size: 14px;">🏪</div>
+            <div style="flex: 1;">
+              <div style="font-size: 12px; font-weight: 600;">Kisaasi Shop</div>
+              <div style="font-size: 10px; color: #999;">Thanks, received the delivery</div>
+            </div>
+            <div style="font-size: 10px; color: #2E7D32;">Paid ✓</div>
+          </div>
+        </div>
+
+        <div style="margin-top: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+          <button style="background: #1B5E20; color: white; border: none; border-radius: 8px; padding: 12px; font-size: 12px; font-weight: 600;">🛒 New Sale</button>
+          <button style="background: #00695C; color: white; border: none; border-radius: 8px; padding: 12px; font-size: 12px; font-weight: 600;">💰 Payment</button>
+        </div>
+      </div>
+      <div style="background: white; border-top: 1px solid #e0e0e0; display: flex; justify-content: space-around; padding: 8px 0;">
+        <div style="text-align: center; color: #999;"><div style="font-size: 16px;">💬</div><div style="font-size: 9px;">Chats</div></div>
+        <div style="text-align: center; color: #1B5E20;"><div style="font-size: 16px;">🛒</div><div style="font-size: 9px; font-weight: 600;">Sales</div></div>
+        <div style="text-align: center; color: #999;"><div style="font-size: 16px;">👥</div><div style="font-size: 9px;">Customers</div></div>
+        <div style="text-align: center; color: #999;"><div style="font-size: 16px;">📊</div><div style="font-size: 9px;">My Stats</div></div>
+        <div style="text-align: center; color: #999;"><div style="font-size: 16px;">⋯</div><div style="font-size: 9px;">More</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top: 24px;">
+  <h3>Sales in Chat — Integration Points</h3>
+  <div class="mockup">
+    <div class="mockup-header">How sales actions integrate with conversations</div>
+    <div class="mockup-body" style="padding: 16px; font-size: 12px; line-height: 1.7;">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+        <div>
+          <div style="font-weight: 700; color: #1B5E20; margin-bottom: 6px;">From a customer chat:</div>
+          <div style="background: #f5f5f5; border-radius: 8px; padding: 10px;">
+            <div>💬 Customer says "I need 50 cups vanilla"</div>
+            <div style="margin-top: 6px;">→ Tap <b>[Quick Sale]</b> button in chat</div>
+            <div style="margin-top: 6px;">→ Sale wizard opens with customer pre-filled</div>
+            <div style="margin-top: 6px;">→ On completion, receipt sent as chat message</div>
+            <div style="margin-top: 6px;">→ Stock updated, balance updated</div>
+          </div>
+        </div>
+        <div>
+          <div style="font-weight: 700; color: #1B5E20; margin-bottom: 6px;">From the Sales tab:</div>
+          <div style="background: #f5f5f5; border-radius: 8px; padding: 10px;">
+            <div>🛒 Tap <b>[New Sale]</b></div>
+            <div style="margin-top: 6px;">→ Pick customer from contacts/chat list</div>
+            <div style="margin-top: 6px;">→ Same guided wizard flow</div>
+            <div style="margin-top: 6px;">→ Option to share receipt via chat</div>
+            <div style="margin-top: 6px;">→ Payment reminder via chat later</div>
+          </div>
+        </div>
+        <div>
+          <div style="font-weight: 700; color: #00695C; margin-bottom: 6px;">Payment follow-up:</div>
+          <div style="background: #f5f5f5; border-radius: 8px; padding: 10px;">
+            <div>👥 View customer balance card</div>
+            <div style="margin-top: 6px;">→ Tap <b>[Send Reminder]</b></div>
+            <div style="margin-top: 6px;">→ Pre-composed message sent in chat</div>
+            <div style="margin-top: 6px;">→ "Hi ABC, you owe UGX 120K. Kindly pay."</div>
+          </div>
+        </div>
+        <div>
+          <div style="font-weight: 700; color: #6A1B9A; margin-bottom: 6px;">Stock request to office:</div>
+          <div style="background: #f5f5f5; border-radius: 8px; padding: 10px;">
+            <div>📦 Van stock running low</div>
+            <div style="margin-top: 6px;">→ Tap <b>[Request Stock]</b></div>
+            <div style="margin-top: 6px;">→ Structured message to office chat room</div>
+            <div style="margin-top: 6px;">→ "Need 200 cups vanilla for tomorrow's route"</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top: 16px;">
+  <h3>Summary</h3>
+  <div style="font-size: 13px; line-height: 1.8;">
+    <table style="width: 100%; border-collapse: collapse;">
+      <tr style="border-bottom: 2px solid #e0e0e0;">
+        <th style="text-align: left; padding: 8px;">Concern</th>
+        <th style="text-align: left; padding: 8px;">app-biashara</th>
+        <th style="text-align: left; padding: 8px;">Stawi (chat)</th>
+      </tr>
+      <tr style="border-bottom: 1px solid #f0f0f0;">
+        <td style="padding: 8px;">Primary users</td>
+        <td style="padding: 8px;">Owner, Production, Inventory</td>
+        <td style="padding: 8px;">Salesperson, Cashier, Owner</td>
+      </tr>
+      <tr style="border-bottom: 1px solid #f0f0f0;">
+        <td style="padding: 8px;">Core function</td>
+        <td style="padding: 8px;">Make products, manage stock</td>
+        <td style="padding: 8px;">Sell, collect, communicate</td>
+      </tr>
+      <tr style="border-bottom: 1px solid #f0f0f0;">
+        <td style="padding: 8px;">Offline need</td>
+        <td style="padding: 8px;">High (production floor)</td>
+        <td style="padding: 8px;">High (field sales)</td>
+      </tr>
+      <tr style="border-bottom: 1px solid #f0f0f0;">
+        <td style="padding: 8px;">Chat integration</td>
+        <td style="padding: 8px;">Notification only</td>
+        <td style="padding: 8px;">Native — sales in chat</td>
+      </tr>
+      <tr>
+        <td style="padding: 8px;">Shared packages</td>
+        <td style="padding: 8px;">ui_inventory, ui_catalog</td>
+        <td style="padding: 8px;">ui_orders, ui_customers, ui_pricing, ui_inventory</td>
+      </tr>
+    </table>
+  </div>
+</div>

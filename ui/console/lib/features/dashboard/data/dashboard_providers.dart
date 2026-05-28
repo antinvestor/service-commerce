@@ -1,21 +1,20 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Snapshot of the KPIs surfaced on the dashboard.
-///
-/// Backed by placeholder data today. A production version will wire
-/// each field to the relevant service's reporting RPC.
+/// Snapshot of commerce + manufacturing KPIs surfaced on the dashboard.
 class DashboardKpis {
   const DashboardKpis({
     required this.todaysSales,
     required this.openPurchaseOrders,
     required this.activeBatches,
     required this.lowStockItems,
+    required this.expiringStockItems,
   });
 
   final String todaysSales;
   final int openPurchaseOrders;
   final int activeBatches;
   final int lowStockItems;
+  final int expiringStockItems;
 }
 
 class RecentActivityEntry {
@@ -38,6 +37,7 @@ final dashboardKpisProvider = Provider<DashboardKpis>((ref) {
     openPurchaseOrders: 7,
     activeBatches: 3,
     lowStockItems: 12,
+    expiringStockItems: 4,
   );
 });
 

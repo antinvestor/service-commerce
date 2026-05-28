@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/theme/app_colors.dart';
+
 class ModuleTile {
   const ModuleTile({
     required this.label,
@@ -15,10 +17,7 @@ class ModuleTile {
   final Color color;
 }
 
-/// 4×N grid of large module tiles for the dashboard.
-///
-/// Wrap in a SizedBox / Expanded to constrain height; the grid is
-/// non-scrolling so it composes inside a ListView/CustomScrollView.
+/// Grid of large module tiles for the dashboard.
 class ModuleGrid extends StatelessWidget {
   const ModuleGrid({required this.tiles, super.key});
 
@@ -66,8 +65,8 @@ class _Tile extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
-          color: theme.colorScheme.surfaceContainerLow,
-          border: Border.all(color: theme.colorScheme.outlineVariant),
+          color: AppColors.surface,
+          border: Border.all(color: AppColors.border),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -91,7 +90,7 @@ class _Tile extends StatelessWidget {
             Text(
               'Open →',
               style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+                color: AppColors.onSurfaceMuted,
               ),
             ),
           ],

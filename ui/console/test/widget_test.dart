@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:console/src/dashboard/widgets/kpi_card.dart';
+import 'package:console/features/dashboard/widgets/kpi_card.dart';
 
 void main() {
-  testWidgets('KpiCard renders label and value', (tester) async {
+  testWidgets('KpiCard renders label, value, and change', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
         home: Scaffold(
@@ -12,7 +12,7 @@ void main() {
             label: "Today's sales",
             value: 'KSh 1,234',
             icon: Icons.attach_money,
-            trend: '+5%',
+            change: '+5%',
           ),
         ),
       ),

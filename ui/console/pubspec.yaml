@@ -68,6 +68,16 @@ dependencies:
   flutter_riverpod: ^3.3.1
   go_router: ^17.2.0
 
+  # Web URL strategy + design system (matches the thesa shell).
+  flutter_web_plugins:
+    sdk: flutter
+  google_fonts: ^8.0.2
+  intl: ^0.20.2
+
+  # Persistence used by the auth migration shim and the theme switcher.
+  flutter_secure_storage: ^10.0.0
+  shared_preferences: ^2.3.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

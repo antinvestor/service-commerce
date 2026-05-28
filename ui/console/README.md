@@ -8,7 +8,11 @@ module composition.
 ## Composition
 
 The app pulls `RouteModule` implementations from each domain package and merges
-their routes under a single `GoRouter`. See `lib/src/app.dart`.
+their routes under a single `GoRouter`. See `lib/app.dart` and
+`lib/core/router/app_router.dart`. The app shell follows the thesa pattern:
+`lib/core/{auth,router,theme,widgets,services,config}` for cross-cutting
+infrastructure and `lib/features/{auth,dashboard,settings}` for top-level
+screens.
 
 | Domain          | Package                       | Route prefix              |
 | --------------- | ----------------------------- | ------------------------- |

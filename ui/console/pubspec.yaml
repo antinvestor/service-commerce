@@ -52,6 +52,14 @@ dependencies:
   antinvestor_ui_waste:
     path: ../../../service-manufacturing/ui/waste
 
+  # API SDKs used directly by dashboard aggregation (protobuf types).
+  antinvestor_api_commerce:
+    path: ../../sdk/dart/commerce
+  antinvestor_api_manufacturing:
+    path: ../../../service-manufacturing/sdk/dart/manufacturing
+  antinvestor_api_procurement:
+    path: ../../sdk/dart/procurement
+
   # Cross-cutting concerns
   antinvestor_ui_auth:
     path: ../../../service-authentication/ui/auth

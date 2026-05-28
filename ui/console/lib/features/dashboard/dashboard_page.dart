@@ -24,9 +24,18 @@ class DashboardPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final claimsAsync = ref.watch(userClaimsProvider);
-    final kpis = ref.watch(dashboardKpisProvider);
+    final kpisAsync = ref.watch(dashboardKpisProvider);
     final activity = ref.watch(recentActivityProvider);
     final screenSize = screenSizeOf(context);
+
+    // Render whatever data we have (including the empty sentinel before
+    // the tenant scope resolves); error and loading states fall back to
+    // the empty snapshot so the strip never disappears.
+    final kpis = kpisAsync.when(
+      data: (data) => data,
+      loading: () => DashboardKpis.empty(),
+      error: (_, _) => DashboardKpis.empty(),
+    );
 
     final displayName = claimsAsync.maybeWhen(
       data: (claims) =>

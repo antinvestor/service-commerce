@@ -166,4 +166,92 @@ abstract final class CommerceService {
     v1commerce.GetFulfilmentRequest.new,
     v1commerce.GetFulfilmentResponse.new,
   );
+
+  /// Creates or updates a price list.
+  static const priceListSave = connect.Spec(
+    '/$name/PriceListSave',
+    connect.StreamType.unary,
+    v1commerce.PriceListSaveRequest.new,
+    v1commerce.PriceListSaveResponse.new,
+  );
+
+  /// Retrieves a price list by ID.
+  static const priceListGet = connect.Spec(
+    '/$name/PriceListGet',
+    connect.StreamType.unary,
+    v1commerce.PriceListGetRequest.new,
+    v1commerce.PriceListGetResponse.new,
+  );
+
+  /// Searches price lists for a shop.
+  static const priceListSearch = connect.Spec(
+    '/$name/PriceListSearch',
+    connect.StreamType.unary,
+    v1commerce.PriceListSearchRequest.new,
+    v1commerce.PriceListSearchResponse.new,
+  );
+
+  /// Replaces all entries for the given variants in a price list.
+  static const priceListEntryBatchSave = connect.Spec(
+    '/$name/PriceListEntryBatchSave',
+    connect.StreamType.unary,
+    v1commerce.PriceListEntryBatchSaveRequest.new,
+    v1commerce.PriceListEntryBatchSaveResponse.new,
+  );
+
+  /// Creates or updates a customer-to-price-list assignment.
+  static const customerPriceListAssignmentSave = connect.Spec(
+    '/$name/CustomerPriceListAssignmentSave',
+    connect.StreamType.unary,
+    v1commerce.CustomerPriceListAssignmentSaveRequest.new,
+    v1commerce.CustomerPriceListAssignmentSaveResponse.new,
+  );
+
+  /// Searches customer price list assignments.
+  static const customerPriceListAssignmentSearch = connect.Spec(
+    '/$name/CustomerPriceListAssignmentSearch',
+    connect.StreamType.unary,
+    v1commerce.CustomerPriceListAssignmentSearchRequest.new,
+    v1commerce.CustomerPriceListAssignmentSearchResponse.new,
+  );
+
+  /// Creates or updates a customer price override for a specific variant.
+  static const customerPriceOverrideSave = connect.Spec(
+    '/$name/CustomerPriceOverrideSave',
+    connect.StreamType.unary,
+    v1commerce.CustomerPriceOverrideSaveRequest.new,
+    v1commerce.CustomerPriceOverrideSaveResponse.new,
+  );
+
+  /// Searches customer price overrides.
+  static const customerPriceOverrideSearch = connect.Spec(
+    '/$name/CustomerPriceOverrideSearch',
+    connect.StreamType.unary,
+    v1commerce.CustomerPriceOverrideSearchRequest.new,
+    v1commerce.CustomerPriceOverrideSearchResponse.new,
+  );
+
+  /// Creates or updates a discount rule.
+  static const discountRuleSave = connect.Spec(
+    '/$name/DiscountRuleSave',
+    connect.StreamType.unary,
+    v1commerce.DiscountRuleSaveRequest.new,
+    v1commerce.DiscountRuleSaveResponse.new,
+  );
+
+  /// Searches discount rules for a shop.
+  static const discountRuleSearch = connect.Spec(
+    '/$name/DiscountRuleSearch',
+    connect.StreamType.unary,
+    v1commerce.DiscountRuleSearchRequest.new,
+    v1commerce.DiscountRuleSearchResponse.new,
+  );
+
+  /// Resolves the effective price for a variant given customer and quantity context.
+  static const resolvePrice = connect.Spec(
+    '/$name/ResolvePrice',
+    connect.StreamType.unary,
+    v1commerce.ResolvePriceRequest.new,
+    v1commerce.ResolvePriceResponse.new,
+  );
 }

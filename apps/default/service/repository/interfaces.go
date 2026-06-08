@@ -73,3 +73,52 @@ type FulfilmentLineRepository interface {
 	GetByFulfilmentID(ctx context.Context, fulfilmentID string) ([]*models.FulfilmentLine, error)
 	GetFulfilledQuantityByOrderLineID(ctx context.Context, orderLineID string) (int64, error)
 }
+
+type PriceListRepository interface {
+	datastore.BaseRepository[*models.PriceList]
+	ListByShopID(
+		ctx context.Context, shopID string, limit, offset int,
+	) ([]*models.PriceList, error)
+	ListActive(ctx context.Context, shopID string) ([]*models.PriceList, error)
+}
+
+type PriceListEntryRepository interface {
+	datastore.BaseRepository[*models.PriceListEntry]
+	ListByPriceListID(
+		ctx context.Context, priceListID string,
+	) ([]*models.PriceListEntry, error)
+	DeleteByPriceListAndVariant(
+		ctx context.Context, priceListID, variantID string,
+	) error
+	GetByPriceListAndVariant(
+		ctx context.Context, priceListID, variantID string,
+	) ([]*models.PriceListEntry, error)
+}
+
+type CustomerPriceListAssignmentRepository interface {
+	datastore.BaseRepository[*models.CustomerPriceListAssignment]
+	ListByCustomerID(
+		ctx context.Context, customerID string, limit, offset int,
+	) ([]*models.CustomerPriceListAssignment, error)
+	GetByCustomerAndPriceList(
+		ctx context.Context, customerID, priceListID string,
+	) (*models.CustomerPriceListAssignment, error)
+}
+
+type CustomerPriceOverrideRepository interface {
+	datastore.BaseRepository[*models.CustomerPriceOverride]
+	ListByCustomerID(
+		ctx context.Context, customerID string, limit, offset int,
+	) ([]*models.CustomerPriceOverride, error)
+	GetByCustomerAndVariant(
+		ctx context.Context, customerID, variantID string,
+	) (*models.CustomerPriceOverride, error)
+}
+
+type DiscountRuleRepository interface {
+	datastore.BaseRepository[*models.DiscountRule]
+	ListByShopID(
+		ctx context.Context, shopID string, limit, offset int,
+	) ([]*models.DiscountRule, error)
+	ListActive(ctx context.Context, shopID string) ([]*models.DiscountRule, error)
+}

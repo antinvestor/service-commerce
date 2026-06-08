@@ -1,0 +1,19 @@
+import 'package:antinvestor_api_commerce/antinvestor_api_commerce.dart';
+import 'package:antinvestor_ui_core/api/api_base.dart';
+import 'package:connectrpc/connect.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+const _commerceUrl = String.fromEnvironment(
+  'COMMERCE_URL',
+  defaultValue: 'https://api.antinvestor.com/commerce',
+);
+
+final catalogTransportProvider = Provider<Transport>((ref) {
+  final tokenProvider = ref.watch(authTokenProviderProvider);
+  return createTransport(tokenProvider, baseUrl: _commerceUrl);
+});
+
+final catalogServiceClientProvider = Provider<CommerceServiceClient>((ref) {
+  final transport = ref.watch(catalogTransportProvider);
+  return CommerceServiceClient(transport);
+});

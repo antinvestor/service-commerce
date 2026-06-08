@@ -1,0 +1,158 @@
+<h2>Widget Package Dependency Graph</h2>
+<p class="subtitle">16 packages across 2 services — each independently usable, internally composing where it makes sense</p>
+
+<div class="section">
+  <h3>Full Dependency Graph</h3>
+  <div class="mockup">
+    <div class="mockup-header">Package Dependencies (→ means "depends on")</div>
+    <div class="mockup-body" style="font-family: monospace; font-size: 11px; line-height: 1.6; padding: 16px;">
+<pre style="margin:0;">
+                        ┌──────────────┐
+                        │antinvestor   │
+                        │  _ui_core    │  Theme · Auth · API · Nav · Drift base
+                        └──────┬───────┘  Sync · Responsive · Permissions
+                               │
+          ┌────────────────────┼─────────────────────────────┐
+          │                    │                              │
+  ┌───────▼──────┐    ┌───────▼──────┐              ┌───────▼───────┐
+  │  ui_profile  │    │ ui_inventory │              │  ui_catalog   │
+  │  (existing)  │    │              │              │               │
+  │              │    │ Stock cards  │              │ Product cards │
+  │ Profile card │    │ Lot picker   │              │ Variant select│
+  │ Contact list │    │ Add stock wiz│              │ Shop switcher │
+  │ Address tile │    │ Expiry alerts│              │               │
+  └───────┬──────┘    └──┬──────┬───┘              └───┬───────┬───┘
+          │              │      │                       │       │
+          │         ┌────┘   ┌──┼───────────────────────┘       │
+          │         │        │  │                               │
+  ┌───────▼─────────▼──┐  ┌─▼──▼──────┐  ┌────────────────┐   │
+  │   ui_customers     │  │ui_recipes  │  │  ui_equipment  │   │
+  │                    │  │            │  │                │   │
+  │ Reuses ui_profile: │  │Recipe card │  │ Equipment card │   │
+  │  · profile_card    │  │Step editor │  │ Cleaning flow  │   │
+  │  · contact_list    │  │BOM editor  │  │ Maintenance    │   │
+  │  · address_tile    │  │Template lib│  │                │   │
+  │                    │  │            │  └────────────────┘   │
+  │ Adds commerce:     │  │Uses ui_inv:│                       │
+  │  · balance_card    │  │ · item pick│  ┌────────────────┐   │
+  │  · payment_history │  │ · material │  │ ui_coldchain   │   │
+  │  · credit_badge    │  │   selector │  │                │   │
+  │  · location_picker │  │            │  │ Point config   │   │
+  │  · note_list       │  └─────┬──────┘  │ Reading entry  │   │
+  └───────┬────────────┘        │         │ Alarm list     │   │
+          │                     │         │ Compliance rpt │   │
+          │              ┌──────▼──────┐  └────────────────┘   │
+          │              │ui_production│                        │
+          │              │             │  ┌────────────────┐   │
+          │              │Plan wizard  │  │  ui_quality    │   │
+          │              │Batch wizard │  │                │   │
+          │              │Step tracker │  │ Template editor│   │
+          │              │Packing exec │  │ Inspection wiz │   │
+          │              │             │  │ Reading entry  │   │
+          │              │Uses:        │  │ Uses ui_inv:   │   │
+          │              │ · ui_recipes│  │ · item picker  │   │
+          │              │ · ui_invent │  └────────────────┘   │
+          │              └─────────────┘                       │
+  ┌───────▼────────────────────────────────────────────────────▼──┐
+  │                                                               │
+  │  ┌──────────────┐  ┌──────────────┐  ┌───────────────────┐  │
+  │  │  ui_orders   │  │  ui_pricing  │  │ ui_procurement    │  │
+  │  │              │  │              │  │                   │  │
+  │  │ Cart builder │  │ Price list   │  │ Supplier list     │  │
+  │  │ Checkout flow│  │ Discount rule│  │ PO wizard         │  │
+  │  │ Order list   │  │ Override mgr │  │ Goods receipt wiz │  │
+  │  │ Fulfilment   │  │ Price resolve│  │ PO suggestions    │  │
+  │  │              │  │              │  │                   │  │
+  │  │Uses:         │  │Uses:         │  │Uses:              │  │
+  │  │ · ui_catalog │  │ · ui_catalog │  │ · ui_inventory    │  │
+  │  │ · ui_customer│  │ · ui_customer│  │                   │  │
+  │  └──────────────┘  └──────────────┘  └───────────────────┘  │
+  │                                                               │
+  │  ┌──────────────┐  ┌──────────────┐  ┌───────────────────┐  │
+  │  │  ui_waste    │  │  ui_costing  │  │ ui_shelflife      │  │
+  │  │              │  │              │  │                   │  │
+  │  │ Waste form   │  │ Cost config  │  │ Rule editor       │  │
+  │  │ Disposition  │  │ Batch cost   │  │ Label preview     │  │
+  │  │ Summary rpt  │  │ Margin rpt   │  │ Uses ui_recipes   │  │
+  │  │ Uses ui_inv  │  │ Variance rpt │  │                   │  │
+  │  └──────────────┘  └──────────────┘  └───────────────────┘  │
+  │                                                               │
+  │  ┌──────────────┐  ┌──────────────┐                          │
+  │  │  ui_demand   │  │ui_traceabilit│                          │
+  │  │              │  │y             │                          │
+  │  │ Signal chart │  │ Trace tree   │                          │
+  │  │ Suggestion   │  │ Recall wizard│                          │
+  │  │ Forecast cfg │  │ Lot card     │                          │
+  │  │ Uses ui_inv  │  │ Uses ui_inv  │                          │
+  │  └──────────────┘  └──────────────┘                          │
+  └───────────────────────────────────────────────────────────────┘
+</pre>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Key Reuse Relationships</h3>
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 12px;">
+
+    <div style="background: #E8F5E9; border-radius: 8px; padding: 12px;">
+      <div style="font-weight: 700; color: #1B5E20; margin-bottom: 6px;">ui_customers reuses ui_profile</div>
+      <div style="line-height: 1.6;">
+        <code>ProfileCard</code> → customer header display<br>
+        <code>ContactListTile</code> → customer list items<br>
+        <code>AddressTile</code> → customer locations<br>
+        <code>ProfileSearchSelect</code> → customer picker<br>
+        <code>ProfileBadgeById</code> → assigned salesperson
+      </div>
+    </div>
+
+    <div style="background: #E3F2FD; border-radius: 8px; padding: 12px;">
+      <div style="font-weight: 700; color: #1565C0; margin-bottom: 6px;">ui_recipes reuses ui_inventory</div>
+      <div style="line-height: 1.6;">
+        <code>InventoryItemPicker</code> → BOM material selection<br>
+        <code>StockLevelCard</code> → material availability<br>
+        <code>UnitSelector</code> → unit-of-measure picker
+      </div>
+    </div>
+
+    <div style="background: #F3E5F5; border-radius: 8px; padding: 12px;">
+      <div style="font-weight: 700; color: #6A1B9A; margin-bottom: 6px;">ui_orders reuses ui_catalog + ui_customers</div>
+      <div style="line-height: 1.6;">
+        <code>ProductGrid</code> → product selection in cart<br>
+        <code>VariantSelector</code> → variant picking<br>
+        <code>CustomerSearchSelect</code> → buyer selection<br>
+        <code>BalanceCard</code> → credit limit check
+      </div>
+    </div>
+
+    <div style="background: #FFF3E0; border-radius: 8px; padding: 12px;">
+      <div style="font-weight: 700; color: #E65100; margin-bottom: 6px;">ui_production reuses ui_recipes + ui_inventory</div>
+      <div style="line-height: 1.6;">
+        <code>RecipeCard</code> → recipe selection in plan<br>
+        <code>RecipeStepList</code> → batch step guidance<br>
+        <code>StockLevelCard</code> → material validation<br>
+        <code>ExpiryWarningCard</code> → output shelf life
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Build Order (respecting dependencies)</h3>
+  <div class="mockup">
+    <div class="mockup-header">Implementation phases</div>
+    <div class="mockup-body" style="padding: 16px; font-size: 12px; line-height: 1.8;">
+      <b>Phase A — Foundation (no cross-package deps):</b><br>
+      &nbsp;&nbsp;ui_inventory · ui_catalog · ui_equipment · ui_coldchain · ui_costing<br><br>
+
+      <b>Phase B — Tier 2 (depends on Phase A + ui_profile):</b><br>
+      &nbsp;&nbsp;ui_customers · ui_recipes · ui_quality · ui_waste · ui_shelflife<br><br>
+
+      <b>Phase C — Tier 3 (depends on Phase B):</b><br>
+      &nbsp;&nbsp;ui_production · ui_orders · ui_procurement · ui_pricing · ui_demand · ui_traceability<br><br>
+
+      <span style="color: #666;">Each phase can be built in parallel within itself.<br>
+      Dart SDK generation (proto → dart) is a prerequisite for all packages.</span>
+    </div>
+  </div>
+</div>

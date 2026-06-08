@@ -3980,6 +3980,2724 @@ class GetFulfilmentResponse extends $pb.GeneratedMessage {
   Fulfilment ensureFulfilment() => $_ensure(0);
 }
 
+/// A named collection of prices for product variants, scoped to a shop and currency.
+class PriceList extends $pb.GeneratedMessage {
+  factory PriceList({
+    $core.String? id,
+    $core.String? shopId,
+    $core.String? name,
+    $core.String? currency,
+    $core.int? priority,
+    $2.Timestamp? validFrom,
+    $2.Timestamp? validUntil,
+    PriceListStatus? status,
+    $2.Timestamp? createdAt,
+  }) {
+    final $result = create();
+    if (id != null) {
+      $result.id = id;
+    }
+    if (shopId != null) {
+      $result.shopId = shopId;
+    }
+    if (name != null) {
+      $result.name = name;
+    }
+    if (currency != null) {
+      $result.currency = currency;
+    }
+    if (priority != null) {
+      $result.priority = priority;
+    }
+    if (validFrom != null) {
+      $result.validFrom = validFrom;
+    }
+    if (validUntil != null) {
+      $result.validUntil = validUntil;
+    }
+    if (status != null) {
+      $result.status = status;
+    }
+    if (createdAt != null) {
+      $result.createdAt = createdAt;
+    }
+    return $result;
+  }
+  PriceList._() : super();
+  factory PriceList.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory PriceList.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'PriceList', package: const $pb.PackageName(_omitMessageNames ? '' : 'commerce.v1'), createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'id')
+    ..aOS(2, _omitFieldNames ? '' : 'shopId')
+    ..aOS(3, _omitFieldNames ? '' : 'name')
+    ..aOS(4, _omitFieldNames ? '' : 'currency')
+    ..a<$core.int>(5, _omitFieldNames ? '' : 'priority', $pb.PbFieldType.O3)
+    ..aOM<$2.Timestamp>(6, _omitFieldNames ? '' : 'validFrom', subBuilder: $2.Timestamp.create)
+    ..aOM<$2.Timestamp>(7, _omitFieldNames ? '' : 'validUntil', subBuilder: $2.Timestamp.create)
+    ..e<PriceListStatus>(8, _omitFieldNames ? '' : 'status', $pb.PbFieldType.OE, defaultOrMaker: PriceListStatus.PRICE_LIST_STATUS_UNSPECIFIED, valueOf: PriceListStatus.valueOf, enumValues: PriceListStatus.values)
+    ..aOM<$2.Timestamp>(10, _omitFieldNames ? '' : 'createdAt', subBuilder: $2.Timestamp.create)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  PriceList clone() => PriceList()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  PriceList copyWith(void Function(PriceList) updates) => super.copyWith((message) => updates(message as PriceList)) as PriceList;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static PriceList create() => PriceList._();
+  PriceList createEmptyInstance() => create();
+  static $pb.PbList<PriceList> createRepeated() => $pb.PbList<PriceList>();
+  @$core.pragma('dart2js:noInline')
+  static PriceList getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<PriceList>(create);
+  static PriceList? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get id => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set id($core.String v) { $_setString(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearId() => clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get shopId => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set shopId($core.String v) { $_setString(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasShopId() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearShopId() => clearField(2);
+
+  @$pb.TagNumber(3)
+  $core.String get name => $_getSZ(2);
+  @$pb.TagNumber(3)
+  set name($core.String v) { $_setString(2, v); }
+  @$pb.TagNumber(3)
+  $core.bool hasName() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearName() => clearField(3);
+
+  @$pb.TagNumber(4)
+  $core.String get currency => $_getSZ(3);
+  @$pb.TagNumber(4)
+  set currency($core.String v) { $_setString(3, v); }
+  @$pb.TagNumber(4)
+  $core.bool hasCurrency() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearCurrency() => clearField(4);
+
+  @$pb.TagNumber(5)
+  $core.int get priority => $_getIZ(4);
+  @$pb.TagNumber(5)
+  set priority($core.int v) { $_setSignedInt32(4, v); }
+  @$pb.TagNumber(5)
+  $core.bool hasPriority() => $_has(4);
+  @$pb.TagNumber(5)
+  void clearPriority() => clearField(5);
+
+  @$pb.TagNumber(6)
+  $2.Timestamp get validFrom => $_getN(5);
+  @$pb.TagNumber(6)
+  set validFrom($2.Timestamp v) { setField(6, v); }
+  @$pb.TagNumber(6)
+  $core.bool hasValidFrom() => $_has(5);
+  @$pb.TagNumber(6)
+  void clearValidFrom() => clearField(6);
+  @$pb.TagNumber(6)
+  $2.Timestamp ensureValidFrom() => $_ensure(5);
+
+  @$pb.TagNumber(7)
+  $2.Timestamp get validUntil => $_getN(6);
+  @$pb.TagNumber(7)
+  set validUntil($2.Timestamp v) { setField(7, v); }
+  @$pb.TagNumber(7)
+  $core.bool hasValidUntil() => $_has(6);
+  @$pb.TagNumber(7)
+  void clearValidUntil() => clearField(7);
+  @$pb.TagNumber(7)
+  $2.Timestamp ensureValidUntil() => $_ensure(6);
+
+  @$pb.TagNumber(8)
+  PriceListStatus get status => $_getN(7);
+  @$pb.TagNumber(8)
+  set status(PriceListStatus v) { setField(8, v); }
+  @$pb.TagNumber(8)
+  $core.bool hasStatus() => $_has(7);
+  @$pb.TagNumber(8)
+  void clearStatus() => clearField(8);
+
+  @$pb.TagNumber(10)
+  $2.Timestamp get createdAt => $_getN(8);
+  @$pb.TagNumber(10)
+  set createdAt($2.Timestamp v) { setField(10, v); }
+  @$pb.TagNumber(10)
+  $core.bool hasCreatedAt() => $_has(8);
+  @$pb.TagNumber(10)
+  void clearCreatedAt() => clearField(10);
+  @$pb.TagNumber(10)
+  $2.Timestamp ensureCreatedAt() => $_ensure(8);
+}
+
+/// A single price entry within a price list, optionally quantity-tiered.
+class PriceListEntry extends $pb.GeneratedMessage {
+  factory PriceListEntry({
+    $core.String? id,
+    $core.String? priceListId,
+    $core.String? productVariantId,
+    $7.Money? unitPrice,
+    $core.int? minQuantity,
+    $core.int? maxQuantity,
+  }) {
+    final $result = create();
+    if (id != null) {
+      $result.id = id;
+    }
+    if (priceListId != null) {
+      $result.priceListId = priceListId;
+    }
+    if (productVariantId != null) {
+      $result.productVariantId = productVariantId;
+    }
+    if (unitPrice != null) {
+      $result.unitPrice = unitPrice;
+    }
+    if (minQuantity != null) {
+      $result.minQuantity = minQuantity;
+    }
+    if (maxQuantity != null) {
+      $result.maxQuantity = maxQuantity;
+    }
+    return $result;
+  }
+  PriceListEntry._() : super();
+  factory PriceListEntry.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory PriceListEntry.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'PriceListEntry', package: const $pb.PackageName(_omitMessageNames ? '' : 'commerce.v1'), createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'id')
+    ..aOS(2, _omitFieldNames ? '' : 'priceListId')
+    ..aOS(3, _omitFieldNames ? '' : 'productVariantId')
+    ..aOM<$7.Money>(4, _omitFieldNames ? '' : 'unitPrice', subBuilder: $7.Money.create)
+    ..a<$core.int>(5, _omitFieldNames ? '' : 'minQuantity', $pb.PbFieldType.O3)
+    ..a<$core.int>(6, _omitFieldNames ? '' : 'maxQuantity', $pb.PbFieldType.O3)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  PriceListEntry clone() => PriceListEntry()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  PriceListEntry copyWith(void Function(PriceListEntry) updates) => super.copyWith((message) => updates(message as PriceListEntry)) as PriceListEntry;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static PriceListEntry create() => PriceListEntry._();
+  PriceListEntry createEmptyInstance() => create();
+  static $pb.PbList<PriceListEntry> createRepeated() => $pb.PbList<PriceListEntry>();
+  @$core.pragma('dart2js:noInline')
+  static PriceListEntry getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<PriceListEntry>(create);
+  static PriceListEntry? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get id => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set id($core.String v) { $_setString(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearId() => clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get priceListId => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set priceListId($core.String v) { $_setString(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasPriceListId() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearPriceListId() => clearField(2);
+
+  @$pb.TagNumber(3)
+  $core.String get productVariantId => $_getSZ(2);
+  @$pb.TagNumber(3)
+  set productVariantId($core.String v) { $_setString(2, v); }
+  @$pb.TagNumber(3)
+  $core.bool hasProductVariantId() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearProductVariantId() => clearField(3);
+
+  @$pb.TagNumber(4)
+  $7.Money get unitPrice => $_getN(3);
+  @$pb.TagNumber(4)
+  set unitPrice($7.Money v) { setField(4, v); }
+  @$pb.TagNumber(4)
+  $core.bool hasUnitPrice() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearUnitPrice() => clearField(4);
+  @$pb.TagNumber(4)
+  $7.Money ensureUnitPrice() => $_ensure(3);
+
+  @$pb.TagNumber(5)
+  $core.int get minQuantity => $_getIZ(4);
+  @$pb.TagNumber(5)
+  set minQuantity($core.int v) { $_setSignedInt32(4, v); }
+  @$pb.TagNumber(5)
+  $core.bool hasMinQuantity() => $_has(4);
+  @$pb.TagNumber(5)
+  void clearMinQuantity() => clearField(5);
+
+  @$pb.TagNumber(6)
+  $core.int get maxQuantity => $_getIZ(5);
+  @$pb.TagNumber(6)
+  set maxQuantity($core.int v) { $_setSignedInt32(5, v); }
+  @$pb.TagNumber(6)
+  $core.bool hasMaxQuantity() => $_has(5);
+  @$pb.TagNumber(6)
+  void clearMaxQuantity() => clearField(6);
+}
+
+/// Links a customer to a price list.
+class CustomerPriceListAssignment extends $pb.GeneratedMessage {
+  factory CustomerPriceListAssignment({
+    $core.String? id,
+    $core.String? customerId,
+    $core.String? priceListId,
+    $core.String? assignedBy,
+    CustomerPriceListAssignmentStatus? status,
+    $2.Timestamp? createdAt,
+  }) {
+    final $result = create();
+    if (id != null) {
+      $result.id = id;
+    }
+    if (customerId != null) {
+      $result.customerId = customerId;
+    }
+    if (priceListId != null) {
+      $result.priceListId = priceListId;
+    }
+    if (assignedBy != null) {
+      $result.assignedBy = assignedBy;
+    }
+    if (status != null) {
+      $result.status = status;
+    }
+    if (createdAt != null) {
+      $result.createdAt = createdAt;
+    }
+    return $result;
+  }
+  CustomerPriceListAssignment._() : super();
+  factory CustomerPriceListAssignment.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory CustomerPriceListAssignment.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'CustomerPriceListAssignment', package: const $pb.PackageName(_omitMessageNames ? '' : 'commerce.v1'), createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'id')
+    ..aOS(2, _omitFieldNames ? '' : 'customerId')
+    ..aOS(3, _omitFieldNames ? '' : 'priceListId')
+    ..aOS(4, _omitFieldNames ? '' : 'assignedBy')
+    ..e<CustomerPriceListAssignmentStatus>(5, _omitFieldNames ? '' : 'status', $pb.PbFieldType.OE, defaultOrMaker: CustomerPriceListAssignmentStatus.CUSTOMER_PRICE_LIST_ASSIGNMENT_STATUS_UNSPECIFIED, valueOf: CustomerPriceListAssignmentStatus.valueOf, enumValues: CustomerPriceListAssignmentStatus.values)
+    ..aOM<$2.Timestamp>(10, _omitFieldNames ? '' : 'createdAt', subBuilder: $2.Timestamp.create)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  CustomerPriceListAssignment clone() => CustomerPriceListAssignment()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  CustomerPriceListAssignment copyWith(void Function(CustomerPriceListAssignment) updates) => super.copyWith((message) => updates(message as CustomerPriceListAssignment)) as CustomerPriceListAssignment;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static CustomerPriceListAssignment create() => CustomerPriceListAssignment._();
+  CustomerPriceListAssignment createEmptyInstance() => create();
+  static $pb.PbList<CustomerPriceListAssignment> createRepeated() => $pb.PbList<CustomerPriceListAssignment>();
+  @$core.pragma('dart2js:noInline')
+  static CustomerPriceListAssignment getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<CustomerPriceListAssignment>(create);
+  static CustomerPriceListAssignment? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get id => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set id($core.String v) { $_setString(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearId() => clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get customerId => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set customerId($core.String v) { $_setString(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasCustomerId() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearCustomerId() => clearField(2);
+
+  @$pb.TagNumber(3)
+  $core.String get priceListId => $_getSZ(2);
+  @$pb.TagNumber(3)
+  set priceListId($core.String v) { $_setString(2, v); }
+  @$pb.TagNumber(3)
+  $core.bool hasPriceListId() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearPriceListId() => clearField(3);
+
+  @$pb.TagNumber(4)
+  $core.String get assignedBy => $_getSZ(3);
+  @$pb.TagNumber(4)
+  set assignedBy($core.String v) { $_setString(3, v); }
+  @$pb.TagNumber(4)
+  $core.bool hasAssignedBy() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearAssignedBy() => clearField(4);
+
+  @$pb.TagNumber(5)
+  CustomerPriceListAssignmentStatus get status => $_getN(4);
+  @$pb.TagNumber(5)
+  set status(CustomerPriceListAssignmentStatus v) { setField(5, v); }
+  @$pb.TagNumber(5)
+  $core.bool hasStatus() => $_has(4);
+  @$pb.TagNumber(5)
+  void clearStatus() => clearField(5);
+
+  @$pb.TagNumber(10)
+  $2.Timestamp get createdAt => $_getN(5);
+  @$pb.TagNumber(10)
+  set createdAt($2.Timestamp v) { setField(10, v); }
+  @$pb.TagNumber(10)
+  $core.bool hasCreatedAt() => $_has(5);
+  @$pb.TagNumber(10)
+  void clearCreatedAt() => clearField(10);
+  @$pb.TagNumber(10)
+  $2.Timestamp ensureCreatedAt() => $_ensure(5);
+}
+
+/// A per-customer, per-variant price override that takes precedence over price lists.
+class CustomerPriceOverride extends $pb.GeneratedMessage {
+  factory CustomerPriceOverride({
+    $core.String? id,
+    $core.String? customerId,
+    $core.String? productVariantId,
+    $7.Money? unitPrice,
+    $2.Timestamp? validFrom,
+    $2.Timestamp? validUntil,
+    $core.String? approvedBy,
+    CustomerPriceOverrideStatus? status,
+    $2.Timestamp? createdAt,
+  }) {
+    final $result = create();
+    if (id != null) {
+      $result.id = id;
+    }
+    if (customerId != null) {
+      $result.customerId = customerId;
+    }
+    if (productVariantId != null) {
+      $result.productVariantId = productVariantId;
+    }
+    if (unitPrice != null) {
+      $result.unitPrice = unitPrice;
+    }
+    if (validFrom != null) {
+      $result.validFrom = validFrom;
+    }
+    if (validUntil != null) {
+      $result.validUntil = validUntil;
+    }
+    if (approvedBy != null) {
+      $result.approvedBy = approvedBy;
+    }
+    if (status != null) {
+      $result.status = status;
+    }
+    if (createdAt != null) {
+      $result.createdAt = createdAt;
+    }
+    return $result;
+  }
+  CustomerPriceOverride._() : super();
+  factory CustomerPriceOverride.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory CustomerPriceOverride.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'CustomerPriceOverride', package: const $pb.PackageName(_omitMessageNames ? '' : 'commerce.v1'), createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'id')
+    ..aOS(2, _omitFieldNames ? '' : 'customerId')
+    ..aOS(3, _omitFieldNames ? '' : 'productVariantId')
+    ..aOM<$7.Money>(4, _omitFieldNames ? '' : 'unitPrice', subBuilder: $7.Money.create)
+    ..aOM<$2.Timestamp>(5, _omitFieldNames ? '' : 'validFrom', subBuilder: $2.Timestamp.create)
+    ..aOM<$2.Timestamp>(6, _omitFieldNames ? '' : 'validUntil', subBuilder: $2.Timestamp.create)
+    ..aOS(7, _omitFieldNames ? '' : 'approvedBy')
+    ..e<CustomerPriceOverrideStatus>(8, _omitFieldNames ? '' : 'status', $pb.PbFieldType.OE, defaultOrMaker: CustomerPriceOverrideStatus.CUSTOMER_PRICE_OVERRIDE_STATUS_UNSPECIFIED, valueOf: CustomerPriceOverrideStatus.valueOf, enumValues: CustomerPriceOverrideStatus.values)
+    ..aOM<$2.Timestamp>(10, _omitFieldNames ? '' : 'createdAt', subBuilder: $2.Timestamp.create)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  CustomerPriceOverride clone() => CustomerPriceOverride()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  CustomerPriceOverride copyWith(void Function(CustomerPriceOverride) updates) => super.copyWith((message) => updates(message as CustomerPriceOverride)) as CustomerPriceOverride;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static CustomerPriceOverride create() => CustomerPriceOverride._();
+  CustomerPriceOverride createEmptyInstance() => create();
+  static $pb.PbList<CustomerPriceOverride> createRepeated() => $pb.PbList<CustomerPriceOverride>();
+  @$core.pragma('dart2js:noInline')
+  static CustomerPriceOverride getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<CustomerPriceOverride>(create);
+  static CustomerPriceOverride? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get id => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set id($core.String v) { $_setString(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearId() => clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get customerId => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set customerId($core.String v) { $_setString(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasCustomerId() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearCustomerId() => clearField(2);
+
+  @$pb.TagNumber(3)
+  $core.String get productVariantId => $_getSZ(2);
+  @$pb.TagNumber(3)
+  set productVariantId($core.String v) { $_setString(2, v); }
+  @$pb.TagNumber(3)
+  $core.bool hasProductVariantId() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearProductVariantId() => clearField(3);
+
+  @$pb.TagNumber(4)
+  $7.Money get unitPrice => $_getN(3);
+  @$pb.TagNumber(4)
+  set unitPrice($7.Money v) { setField(4, v); }
+  @$pb.TagNumber(4)
+  $core.bool hasUnitPrice() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearUnitPrice() => clearField(4);
+  @$pb.TagNumber(4)
+  $7.Money ensureUnitPrice() => $_ensure(3);
+
+  @$pb.TagNumber(5)
+  $2.Timestamp get validFrom => $_getN(4);
+  @$pb.TagNumber(5)
+  set validFrom($2.Timestamp v) { setField(5, v); }
+  @$pb.TagNumber(5)
+  $core.bool hasValidFrom() => $_has(4);
+  @$pb.TagNumber(5)
+  void clearValidFrom() => clearField(5);
+  @$pb.TagNumber(5)
+  $2.Timestamp ensureValidFrom() => $_ensure(4);
+
+  @$pb.TagNumber(6)
+  $2.Timestamp get validUntil => $_getN(5);
+  @$pb.TagNumber(6)
+  set validUntil($2.Timestamp v) { setField(6, v); }
+  @$pb.TagNumber(6)
+  $core.bool hasValidUntil() => $_has(5);
+  @$pb.TagNumber(6)
+  void clearValidUntil() => clearField(6);
+  @$pb.TagNumber(6)
+  $2.Timestamp ensureValidUntil() => $_ensure(5);
+
+  @$pb.TagNumber(7)
+  $core.String get approvedBy => $_getSZ(6);
+  @$pb.TagNumber(7)
+  set approvedBy($core.String v) { $_setString(6, v); }
+  @$pb.TagNumber(7)
+  $core.bool hasApprovedBy() => $_has(6);
+  @$pb.TagNumber(7)
+  void clearApprovedBy() => clearField(7);
+
+  @$pb.TagNumber(8)
+  CustomerPriceOverrideStatus get status => $_getN(7);
+  @$pb.TagNumber(8)
+  set status(CustomerPriceOverrideStatus v) { setField(8, v); }
+  @$pb.TagNumber(8)
+  $core.bool hasStatus() => $_has(7);
+  @$pb.TagNumber(8)
+  void clearStatus() => clearField(8);
+
+  @$pb.TagNumber(10)
+  $2.Timestamp get createdAt => $_getN(8);
+  @$pb.TagNumber(10)
+  set createdAt($2.Timestamp v) { setField(10, v); }
+  @$pb.TagNumber(10)
+  $core.bool hasCreatedAt() => $_has(8);
+  @$pb.TagNumber(10)
+  void clearCreatedAt() => clearField(10);
+  @$pb.TagNumber(10)
+  $2.Timestamp ensureCreatedAt() => $_ensure(8);
+}
+
+/// A rule that applies discounts to orders or line items based on conditions.
+class DiscountRule extends $pb.GeneratedMessage {
+  factory DiscountRule({
+    $core.String? id,
+    $core.String? shopId,
+    $core.String? name,
+    DiscountType? discountType,
+    $core.double? value,
+    DiscountAppliesTo? appliesTo,
+    $6.Struct? conditions,
+    $core.bool? requiresApproval,
+    $core.double? maxDiscountPercent,
+    $2.Timestamp? validFrom,
+    $2.Timestamp? validUntil,
+    DiscountRuleStatus? status,
+    $2.Timestamp? createdAt,
+  }) {
+    final $result = create();
+    if (id != null) {
+      $result.id = id;
+    }
+    if (shopId != null) {
+      $result.shopId = shopId;
+    }
+    if (name != null) {
+      $result.name = name;
+    }
+    if (discountType != null) {
+      $result.discountType = discountType;
+    }
+    if (value != null) {
+      $result.value = value;
+    }
+    if (appliesTo != null) {
+      $result.appliesTo = appliesTo;
+    }
+    if (conditions != null) {
+      $result.conditions = conditions;
+    }
+    if (requiresApproval != null) {
+      $result.requiresApproval = requiresApproval;
+    }
+    if (maxDiscountPercent != null) {
+      $result.maxDiscountPercent = maxDiscountPercent;
+    }
+    if (validFrom != null) {
+      $result.validFrom = validFrom;
+    }
+    if (validUntil != null) {
+      $result.validUntil = validUntil;
+    }
+    if (status != null) {
+      $result.status = status;
+    }
+    if (createdAt != null) {
+      $result.createdAt = createdAt;
+    }
+    return $result;
+  }
+  DiscountRule._() : super();
+  factory DiscountRule.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory DiscountRule.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'DiscountRule', package: const $pb.PackageName(_omitMessageNames ? '' : 'commerce.v1'), createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'id')
+    ..aOS(2, _omitFieldNames ? '' : 'shopId')
+    ..aOS(3, _omitFieldNames ? '' : 'name')
+    ..e<DiscountType>(4, _omitFieldNames ? '' : 'discountType', $pb.PbFieldType.OE, defaultOrMaker: DiscountType.DISCOUNT_TYPE_UNSPECIFIED, valueOf: DiscountType.valueOf, enumValues: DiscountType.values)
+    ..a<$core.double>(5, _omitFieldNames ? '' : 'value', $pb.PbFieldType.OD)
+    ..e<DiscountAppliesTo>(6, _omitFieldNames ? '' : 'appliesTo', $pb.PbFieldType.OE, defaultOrMaker: DiscountAppliesTo.DISCOUNT_APPLIES_TO_UNSPECIFIED, valueOf: DiscountAppliesTo.valueOf, enumValues: DiscountAppliesTo.values)
+    ..aOM<$6.Struct>(7, _omitFieldNames ? '' : 'conditions', subBuilder: $6.Struct.create)
+    ..aOB(8, _omitFieldNames ? '' : 'requiresApproval')
+    ..a<$core.double>(9, _omitFieldNames ? '' : 'maxDiscountPercent', $pb.PbFieldType.OD)
+    ..aOM<$2.Timestamp>(10, _omitFieldNames ? '' : 'validFrom', subBuilder: $2.Timestamp.create)
+    ..aOM<$2.Timestamp>(11, _omitFieldNames ? '' : 'validUntil', subBuilder: $2.Timestamp.create)
+    ..e<DiscountRuleStatus>(12, _omitFieldNames ? '' : 'status', $pb.PbFieldType.OE, defaultOrMaker: DiscountRuleStatus.DISCOUNT_RULE_STATUS_UNSPECIFIED, valueOf: DiscountRuleStatus.valueOf, enumValues: DiscountRuleStatus.values)
+    ..aOM<$2.Timestamp>(15, _omitFieldNames ? '' : 'createdAt', subBuilder: $2.Timestamp.create)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  DiscountRule clone() => DiscountRule()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  DiscountRule copyWith(void Function(DiscountRule) updates) => super.copyWith((message) => updates(message as DiscountRule)) as DiscountRule;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static DiscountRule create() => DiscountRule._();
+  DiscountRule createEmptyInstance() => create();
+  static $pb.PbList<DiscountRule> createRepeated() => $pb.PbList<DiscountRule>();
+  @$core.pragma('dart2js:noInline')
+  static DiscountRule getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<DiscountRule>(create);
+  static DiscountRule? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get id => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set id($core.String v) { $_setString(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearId() => clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get shopId => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set shopId($core.String v) { $_setString(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasShopId() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearShopId() => clearField(2);
+
+  @$pb.TagNumber(3)
+  $core.String get name => $_getSZ(2);
+  @$pb.TagNumber(3)
+  set name($core.String v) { $_setString(2, v); }
+  @$pb.TagNumber(3)
+  $core.bool hasName() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearName() => clearField(3);
+
+  @$pb.TagNumber(4)
+  DiscountType get discountType => $_getN(3);
+  @$pb.TagNumber(4)
+  set discountType(DiscountType v) { setField(4, v); }
+  @$pb.TagNumber(4)
+  $core.bool hasDiscountType() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearDiscountType() => clearField(4);
+
+  @$pb.TagNumber(5)
+  $core.double get value => $_getN(4);
+  @$pb.TagNumber(5)
+  set value($core.double v) { $_setDouble(4, v); }
+  @$pb.TagNumber(5)
+  $core.bool hasValue() => $_has(4);
+  @$pb.TagNumber(5)
+  void clearValue() => clearField(5);
+
+  @$pb.TagNumber(6)
+  DiscountAppliesTo get appliesTo => $_getN(5);
+  @$pb.TagNumber(6)
+  set appliesTo(DiscountAppliesTo v) { setField(6, v); }
+  @$pb.TagNumber(6)
+  $core.bool hasAppliesTo() => $_has(5);
+  @$pb.TagNumber(6)
+  void clearAppliesTo() => clearField(6);
+
+  @$pb.TagNumber(7)
+  $6.Struct get conditions => $_getN(6);
+  @$pb.TagNumber(7)
+  set conditions($6.Struct v) { setField(7, v); }
+  @$pb.TagNumber(7)
+  $core.bool hasConditions() => $_has(6);
+  @$pb.TagNumber(7)
+  void clearConditions() => clearField(7);
+  @$pb.TagNumber(7)
+  $6.Struct ensureConditions() => $_ensure(6);
+
+  @$pb.TagNumber(8)
+  $core.bool get requiresApproval => $_getBF(7);
+  @$pb.TagNumber(8)
+  set requiresApproval($core.bool v) { $_setBool(7, v); }
+  @$pb.TagNumber(8)
+  $core.bool hasRequiresApproval() => $_has(7);
+  @$pb.TagNumber(8)
+  void clearRequiresApproval() => clearField(8);
+
+  @$pb.TagNumber(9)
+  $core.double get maxDiscountPercent => $_getN(8);
+  @$pb.TagNumber(9)
+  set maxDiscountPercent($core.double v) { $_setDouble(8, v); }
+  @$pb.TagNumber(9)
+  $core.bool hasMaxDiscountPercent() => $_has(8);
+  @$pb.TagNumber(9)
+  void clearMaxDiscountPercent() => clearField(9);
+
+  @$pb.TagNumber(10)
+  $2.Timestamp get validFrom => $_getN(9);
+  @$pb.TagNumber(10)
+  set validFrom($2.Timestamp v) { setField(10, v); }
+  @$pb.TagNumber(10)
+  $core.bool hasValidFrom() => $_has(9);
+  @$pb.TagNumber(10)
+  void clearValidFrom() => clearField(10);
+  @$pb.TagNumber(10)
+  $2.Timestamp ensureValidFrom() => $_ensure(9);
+
+  @$pb.TagNumber(11)
+  $2.Timestamp get validUntil => $_getN(10);
+  @$pb.TagNumber(11)
+  set validUntil($2.Timestamp v) { setField(11, v); }
+  @$pb.TagNumber(11)
+  $core.bool hasValidUntil() => $_has(10);
+  @$pb.TagNumber(11)
+  void clearValidUntil() => clearField(11);
+  @$pb.TagNumber(11)
+  $2.Timestamp ensureValidUntil() => $_ensure(10);
+
+  @$pb.TagNumber(12)
+  DiscountRuleStatus get status => $_getN(11);
+  @$pb.TagNumber(12)
+  set status(DiscountRuleStatus v) { setField(12, v); }
+  @$pb.TagNumber(12)
+  $core.bool hasStatus() => $_has(11);
+  @$pb.TagNumber(12)
+  void clearStatus() => clearField(12);
+
+  @$pb.TagNumber(15)
+  $2.Timestamp get createdAt => $_getN(12);
+  @$pb.TagNumber(15)
+  set createdAt($2.Timestamp v) { setField(15, v); }
+  @$pb.TagNumber(15)
+  $core.bool hasCreatedAt() => $_has(12);
+  @$pb.TagNumber(15)
+  void clearCreatedAt() => clearField(15);
+  @$pb.TagNumber(15)
+  $2.Timestamp ensureCreatedAt() => $_ensure(12);
+}
+
+/// The fully resolved price for a variant, showing which source and discounts apply.
+class ResolvedPrice extends $pb.GeneratedMessage {
+  factory ResolvedPrice({
+    $core.String? variantId,
+    $7.Money? unitPrice,
+    PriceSource? priceSource,
+    $core.String? priceListId,
+    $core.String? overrideId,
+    $7.Money? discountAmount,
+    $core.String? discountRuleId,
+    $7.Money? preDiscountPrice,
+  }) {
+    final $result = create();
+    if (variantId != null) {
+      $result.variantId = variantId;
+    }
+    if (unitPrice != null) {
+      $result.unitPrice = unitPrice;
+    }
+    if (priceSource != null) {
+      $result.priceSource = priceSource;
+    }
+    if (priceListId != null) {
+      $result.priceListId = priceListId;
+    }
+    if (overrideId != null) {
+      $result.overrideId = overrideId;
+    }
+    if (discountAmount != null) {
+      $result.discountAmount = discountAmount;
+    }
+    if (discountRuleId != null) {
+      $result.discountRuleId = discountRuleId;
+    }
+    if (preDiscountPrice != null) {
+      $result.preDiscountPrice = preDiscountPrice;
+    }
+    return $result;
+  }
+  ResolvedPrice._() : super();
+  factory ResolvedPrice.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory ResolvedPrice.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'ResolvedPrice', package: const $pb.PackageName(_omitMessageNames ? '' : 'commerce.v1'), createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'variantId')
+    ..aOM<$7.Money>(2, _omitFieldNames ? '' : 'unitPrice', subBuilder: $7.Money.create)
+    ..e<PriceSource>(3, _omitFieldNames ? '' : 'priceSource', $pb.PbFieldType.OE, defaultOrMaker: PriceSource.PRICE_SOURCE_UNSPECIFIED, valueOf: PriceSource.valueOf, enumValues: PriceSource.values)
+    ..aOS(4, _omitFieldNames ? '' : 'priceListId')
+    ..aOS(5, _omitFieldNames ? '' : 'overrideId')
+    ..aOM<$7.Money>(6, _omitFieldNames ? '' : 'discountAmount', subBuilder: $7.Money.create)
+    ..aOS(7, _omitFieldNames ? '' : 'discountRuleId')
+    ..aOM<$7.Money>(8, _omitFieldNames ? '' : 'preDiscountPrice', subBuilder: $7.Money.create)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  ResolvedPrice clone() => ResolvedPrice()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  ResolvedPrice copyWith(void Function(ResolvedPrice) updates) => super.copyWith((message) => updates(message as ResolvedPrice)) as ResolvedPrice;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static ResolvedPrice create() => ResolvedPrice._();
+  ResolvedPrice createEmptyInstance() => create();
+  static $pb.PbList<ResolvedPrice> createRepeated() => $pb.PbList<ResolvedPrice>();
+  @$core.pragma('dart2js:noInline')
+  static ResolvedPrice getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<ResolvedPrice>(create);
+  static ResolvedPrice? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get variantId => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set variantId($core.String v) { $_setString(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasVariantId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearVariantId() => clearField(1);
+
+  @$pb.TagNumber(2)
+  $7.Money get unitPrice => $_getN(1);
+  @$pb.TagNumber(2)
+  set unitPrice($7.Money v) { setField(2, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasUnitPrice() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearUnitPrice() => clearField(2);
+  @$pb.TagNumber(2)
+  $7.Money ensureUnitPrice() => $_ensure(1);
+
+  @$pb.TagNumber(3)
+  PriceSource get priceSource => $_getN(2);
+  @$pb.TagNumber(3)
+  set priceSource(PriceSource v) { setField(3, v); }
+  @$pb.TagNumber(3)
+  $core.bool hasPriceSource() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearPriceSource() => clearField(3);
+
+  @$pb.TagNumber(4)
+  $core.String get priceListId => $_getSZ(3);
+  @$pb.TagNumber(4)
+  set priceListId($core.String v) { $_setString(3, v); }
+  @$pb.TagNumber(4)
+  $core.bool hasPriceListId() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearPriceListId() => clearField(4);
+
+  @$pb.TagNumber(5)
+  $core.String get overrideId => $_getSZ(4);
+  @$pb.TagNumber(5)
+  set overrideId($core.String v) { $_setString(4, v); }
+  @$pb.TagNumber(5)
+  $core.bool hasOverrideId() => $_has(4);
+  @$pb.TagNumber(5)
+  void clearOverrideId() => clearField(5);
+
+  @$pb.TagNumber(6)
+  $7.Money get discountAmount => $_getN(5);
+  @$pb.TagNumber(6)
+  set discountAmount($7.Money v) { setField(6, v); }
+  @$pb.TagNumber(6)
+  $core.bool hasDiscountAmount() => $_has(5);
+  @$pb.TagNumber(6)
+  void clearDiscountAmount() => clearField(6);
+  @$pb.TagNumber(6)
+  $7.Money ensureDiscountAmount() => $_ensure(5);
+
+  @$pb.TagNumber(7)
+  $core.String get discountRuleId => $_getSZ(6);
+  @$pb.TagNumber(7)
+  set discountRuleId($core.String v) { $_setString(6, v); }
+  @$pb.TagNumber(7)
+  $core.bool hasDiscountRuleId() => $_has(6);
+  @$pb.TagNumber(7)
+  void clearDiscountRuleId() => clearField(7);
+
+  @$pb.TagNumber(8)
+  $7.Money get preDiscountPrice => $_getN(7);
+  @$pb.TagNumber(8)
+  set preDiscountPrice($7.Money v) { setField(8, v); }
+  @$pb.TagNumber(8)
+  $core.bool hasPreDiscountPrice() => $_has(7);
+  @$pb.TagNumber(8)
+  void clearPreDiscountPrice() => clearField(8);
+  @$pb.TagNumber(8)
+  $7.Money ensurePreDiscountPrice() => $_ensure(7);
+}
+
+class PriceListSaveRequest extends $pb.GeneratedMessage {
+  factory PriceListSaveRequest({
+    $core.String? id,
+    $core.String? shopId,
+    $core.String? name,
+    $core.String? currency,
+    $core.int? priority,
+    $2.Timestamp? validFrom,
+    $2.Timestamp? validUntil,
+    PriceListStatus? status,
+  }) {
+    final $result = create();
+    if (id != null) {
+      $result.id = id;
+    }
+    if (shopId != null) {
+      $result.shopId = shopId;
+    }
+    if (name != null) {
+      $result.name = name;
+    }
+    if (currency != null) {
+      $result.currency = currency;
+    }
+    if (priority != null) {
+      $result.priority = priority;
+    }
+    if (validFrom != null) {
+      $result.validFrom = validFrom;
+    }
+    if (validUntil != null) {
+      $result.validUntil = validUntil;
+    }
+    if (status != null) {
+      $result.status = status;
+    }
+    return $result;
+  }
+  PriceListSaveRequest._() : super();
+  factory PriceListSaveRequest.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory PriceListSaveRequest.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'PriceListSaveRequest', package: const $pb.PackageName(_omitMessageNames ? '' : 'commerce.v1'), createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'id')
+    ..aOS(2, _omitFieldNames ? '' : 'shopId')
+    ..aOS(3, _omitFieldNames ? '' : 'name')
+    ..aOS(4, _omitFieldNames ? '' : 'currency')
+    ..a<$core.int>(5, _omitFieldNames ? '' : 'priority', $pb.PbFieldType.O3)
+    ..aOM<$2.Timestamp>(6, _omitFieldNames ? '' : 'validFrom', subBuilder: $2.Timestamp.create)
+    ..aOM<$2.Timestamp>(7, _omitFieldNames ? '' : 'validUntil', subBuilder: $2.Timestamp.create)
+    ..e<PriceListStatus>(8, _omitFieldNames ? '' : 'status', $pb.PbFieldType.OE, defaultOrMaker: PriceListStatus.PRICE_LIST_STATUS_UNSPECIFIED, valueOf: PriceListStatus.valueOf, enumValues: PriceListStatus.values)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  PriceListSaveRequest clone() => PriceListSaveRequest()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  PriceListSaveRequest copyWith(void Function(PriceListSaveRequest) updates) => super.copyWith((message) => updates(message as PriceListSaveRequest)) as PriceListSaveRequest;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static PriceListSaveRequest create() => PriceListSaveRequest._();
+  PriceListSaveRequest createEmptyInstance() => create();
+  static $pb.PbList<PriceListSaveRequest> createRepeated() => $pb.PbList<PriceListSaveRequest>();
+  @$core.pragma('dart2js:noInline')
+  static PriceListSaveRequest getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<PriceListSaveRequest>(create);
+  static PriceListSaveRequest? _defaultInstance;
+
+  /// Empty for create; set for update.
+  @$pb.TagNumber(1)
+  $core.String get id => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set id($core.String v) { $_setString(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearId() => clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get shopId => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set shopId($core.String v) { $_setString(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasShopId() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearShopId() => clearField(2);
+
+  @$pb.TagNumber(3)
+  $core.String get name => $_getSZ(2);
+  @$pb.TagNumber(3)
+  set name($core.String v) { $_setString(2, v); }
+  @$pb.TagNumber(3)
+  $core.bool hasName() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearName() => clearField(3);
+
+  @$pb.TagNumber(4)
+  $core.String get currency => $_getSZ(3);
+  @$pb.TagNumber(4)
+  set currency($core.String v) { $_setString(3, v); }
+  @$pb.TagNumber(4)
+  $core.bool hasCurrency() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearCurrency() => clearField(4);
+
+  @$pb.TagNumber(5)
+  $core.int get priority => $_getIZ(4);
+  @$pb.TagNumber(5)
+  set priority($core.int v) { $_setSignedInt32(4, v); }
+  @$pb.TagNumber(5)
+  $core.bool hasPriority() => $_has(4);
+  @$pb.TagNumber(5)
+  void clearPriority() => clearField(5);
+
+  @$pb.TagNumber(6)
+  $2.Timestamp get validFrom => $_getN(5);
+  @$pb.TagNumber(6)
+  set validFrom($2.Timestamp v) { setField(6, v); }
+  @$pb.TagNumber(6)
+  $core.bool hasValidFrom() => $_has(5);
+  @$pb.TagNumber(6)
+  void clearValidFrom() => clearField(6);
+  @$pb.TagNumber(6)
+  $2.Timestamp ensureValidFrom() => $_ensure(5);
+
+  @$pb.TagNumber(7)
+  $2.Timestamp get validUntil => $_getN(6);
+  @$pb.TagNumber(7)
+  set validUntil($2.Timestamp v) { setField(7, v); }
+  @$pb.TagNumber(7)
+  $core.bool hasValidUntil() => $_has(6);
+  @$pb.TagNumber(7)
+  void clearValidUntil() => clearField(7);
+  @$pb.TagNumber(7)
+  $2.Timestamp ensureValidUntil() => $_ensure(6);
+
+  @$pb.TagNumber(8)
+  PriceListStatus get status => $_getN(7);
+  @$pb.TagNumber(8)
+  set status(PriceListStatus v) { setField(8, v); }
+  @$pb.TagNumber(8)
+  $core.bool hasStatus() => $_has(7);
+  @$pb.TagNumber(8)
+  void clearStatus() => clearField(8);
+}
+
+class PriceListSaveResponse extends $pb.GeneratedMessage {
+  factory PriceListSaveResponse({
+    PriceList? priceList,
+  }) {
+    final $result = create();
+    if (priceList != null) {
+      $result.priceList = priceList;
+    }
+    return $result;
+  }
+  PriceListSaveResponse._() : super();
+  factory PriceListSaveResponse.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory PriceListSaveResponse.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'PriceListSaveResponse', package: const $pb.PackageName(_omitMessageNames ? '' : 'commerce.v1'), createEmptyInstance: create)
+    ..aOM<PriceList>(1, _omitFieldNames ? '' : 'priceList', subBuilder: PriceList.create)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  PriceListSaveResponse clone() => PriceListSaveResponse()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  PriceListSaveResponse copyWith(void Function(PriceListSaveResponse) updates) => super.copyWith((message) => updates(message as PriceListSaveResponse)) as PriceListSaveResponse;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static PriceListSaveResponse create() => PriceListSaveResponse._();
+  PriceListSaveResponse createEmptyInstance() => create();
+  static $pb.PbList<PriceListSaveResponse> createRepeated() => $pb.PbList<PriceListSaveResponse>();
+  @$core.pragma('dart2js:noInline')
+  static PriceListSaveResponse getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<PriceListSaveResponse>(create);
+  static PriceListSaveResponse? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  PriceList get priceList => $_getN(0);
+  @$pb.TagNumber(1)
+  set priceList(PriceList v) { setField(1, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasPriceList() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearPriceList() => clearField(1);
+  @$pb.TagNumber(1)
+  PriceList ensurePriceList() => $_ensure(0);
+}
+
+class PriceListGetRequest extends $pb.GeneratedMessage {
+  factory PriceListGetRequest({
+    $core.String? id,
+  }) {
+    final $result = create();
+    if (id != null) {
+      $result.id = id;
+    }
+    return $result;
+  }
+  PriceListGetRequest._() : super();
+  factory PriceListGetRequest.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory PriceListGetRequest.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'PriceListGetRequest', package: const $pb.PackageName(_omitMessageNames ? '' : 'commerce.v1'), createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'id')
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  PriceListGetRequest clone() => PriceListGetRequest()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  PriceListGetRequest copyWith(void Function(PriceListGetRequest) updates) => super.copyWith((message) => updates(message as PriceListGetRequest)) as PriceListGetRequest;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static PriceListGetRequest create() => PriceListGetRequest._();
+  PriceListGetRequest createEmptyInstance() => create();
+  static $pb.PbList<PriceListGetRequest> createRepeated() => $pb.PbList<PriceListGetRequest>();
+  @$core.pragma('dart2js:noInline')
+  static PriceListGetRequest getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<PriceListGetRequest>(create);
+  static PriceListGetRequest? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get id => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set id($core.String v) { $_setString(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearId() => clearField(1);
+}
+
+class PriceListGetResponse extends $pb.GeneratedMessage {
+  factory PriceListGetResponse({
+    PriceList? priceList,
+  }) {
+    final $result = create();
+    if (priceList != null) {
+      $result.priceList = priceList;
+    }
+    return $result;
+  }
+  PriceListGetResponse._() : super();
+  factory PriceListGetResponse.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory PriceListGetResponse.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'PriceListGetResponse', package: const $pb.PackageName(_omitMessageNames ? '' : 'commerce.v1'), createEmptyInstance: create)
+    ..aOM<PriceList>(1, _omitFieldNames ? '' : 'priceList', subBuilder: PriceList.create)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  PriceListGetResponse clone() => PriceListGetResponse()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  PriceListGetResponse copyWith(void Function(PriceListGetResponse) updates) => super.copyWith((message) => updates(message as PriceListGetResponse)) as PriceListGetResponse;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static PriceListGetResponse create() => PriceListGetResponse._();
+  PriceListGetResponse createEmptyInstance() => create();
+  static $pb.PbList<PriceListGetResponse> createRepeated() => $pb.PbList<PriceListGetResponse>();
+  @$core.pragma('dart2js:noInline')
+  static PriceListGetResponse getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<PriceListGetResponse>(create);
+  static PriceListGetResponse? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  PriceList get priceList => $_getN(0);
+  @$pb.TagNumber(1)
+  set priceList(PriceList v) { setField(1, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasPriceList() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearPriceList() => clearField(1);
+  @$pb.TagNumber(1)
+  PriceList ensurePriceList() => $_ensure(0);
+}
+
+class PriceListSearchRequest extends $pb.GeneratedMessage {
+  factory PriceListSearchRequest({
+    $core.String? shopId,
+    $8.SearchRequest? search,
+  }) {
+    final $result = create();
+    if (shopId != null) {
+      $result.shopId = shopId;
+    }
+    if (search != null) {
+      $result.search = search;
+    }
+    return $result;
+  }
+  PriceListSearchRequest._() : super();
+  factory PriceListSearchRequest.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory PriceListSearchRequest.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'PriceListSearchRequest', package: const $pb.PackageName(_omitMessageNames ? '' : 'commerce.v1'), createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'shopId')
+    ..aOM<$8.SearchRequest>(2, _omitFieldNames ? '' : 'search', subBuilder: $8.SearchRequest.create)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  PriceListSearchRequest clone() => PriceListSearchRequest()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  PriceListSearchRequest copyWith(void Function(PriceListSearchRequest) updates) => super.copyWith((message) => updates(message as PriceListSearchRequest)) as PriceListSearchRequest;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static PriceListSearchRequest create() => PriceListSearchRequest._();
+  PriceListSearchRequest createEmptyInstance() => create();
+  static $pb.PbList<PriceListSearchRequest> createRepeated() => $pb.PbList<PriceListSearchRequest>();
+  @$core.pragma('dart2js:noInline')
+  static PriceListSearchRequest getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<PriceListSearchRequest>(create);
+  static PriceListSearchRequest? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get shopId => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set shopId($core.String v) { $_setString(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasShopId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearShopId() => clearField(1);
+
+  @$pb.TagNumber(2)
+  $8.SearchRequest get search => $_getN(1);
+  @$pb.TagNumber(2)
+  set search($8.SearchRequest v) { setField(2, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasSearch() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearSearch() => clearField(2);
+  @$pb.TagNumber(2)
+  $8.SearchRequest ensureSearch() => $_ensure(1);
+}
+
+class PriceListSearchResponse extends $pb.GeneratedMessage {
+  factory PriceListSearchResponse({
+    $core.Iterable<PriceList>? priceLists,
+    $core.String? nextPage,
+    $core.String? prevCursor,
+  }) {
+    final $result = create();
+    if (priceLists != null) {
+      $result.priceLists.addAll(priceLists);
+    }
+    if (nextPage != null) {
+      $result.nextPage = nextPage;
+    }
+    if (prevCursor != null) {
+      $result.prevCursor = prevCursor;
+    }
+    return $result;
+  }
+  PriceListSearchResponse._() : super();
+  factory PriceListSearchResponse.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory PriceListSearchResponse.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'PriceListSearchResponse', package: const $pb.PackageName(_omitMessageNames ? '' : 'commerce.v1'), createEmptyInstance: create)
+    ..pc<PriceList>(1, _omitFieldNames ? '' : 'priceLists', $pb.PbFieldType.PM, subBuilder: PriceList.create)
+    ..aOS(2, _omitFieldNames ? '' : 'nextPage')
+    ..aOS(3, _omitFieldNames ? '' : 'prevCursor')
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  PriceListSearchResponse clone() => PriceListSearchResponse()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  PriceListSearchResponse copyWith(void Function(PriceListSearchResponse) updates) => super.copyWith((message) => updates(message as PriceListSearchResponse)) as PriceListSearchResponse;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static PriceListSearchResponse create() => PriceListSearchResponse._();
+  PriceListSearchResponse createEmptyInstance() => create();
+  static $pb.PbList<PriceListSearchResponse> createRepeated() => $pb.PbList<PriceListSearchResponse>();
+  @$core.pragma('dart2js:noInline')
+  static PriceListSearchResponse getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<PriceListSearchResponse>(create);
+  static PriceListSearchResponse? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.List<PriceList> get priceLists => $_getList(0);
+
+  @$pb.TagNumber(2)
+  $core.String get nextPage => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set nextPage($core.String v) { $_setString(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasNextPage() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearNextPage() => clearField(2);
+
+  @$pb.TagNumber(3)
+  $core.String get prevCursor => $_getSZ(2);
+  @$pb.TagNumber(3)
+  set prevCursor($core.String v) { $_setString(2, v); }
+  @$pb.TagNumber(3)
+  $core.bool hasPrevCursor() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearPrevCursor() => clearField(3);
+}
+
+class PriceListEntryBatchSaveRequest extends $pb.GeneratedMessage {
+  factory PriceListEntryBatchSaveRequest({
+    $core.String? priceListId,
+    $core.Iterable<PriceListEntry>? entries,
+  }) {
+    final $result = create();
+    if (priceListId != null) {
+      $result.priceListId = priceListId;
+    }
+    if (entries != null) {
+      $result.entries.addAll(entries);
+    }
+    return $result;
+  }
+  PriceListEntryBatchSaveRequest._() : super();
+  factory PriceListEntryBatchSaveRequest.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory PriceListEntryBatchSaveRequest.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'PriceListEntryBatchSaveRequest', package: const $pb.PackageName(_omitMessageNames ? '' : 'commerce.v1'), createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'priceListId')
+    ..pc<PriceListEntry>(2, _omitFieldNames ? '' : 'entries', $pb.PbFieldType.PM, subBuilder: PriceListEntry.create)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  PriceListEntryBatchSaveRequest clone() => PriceListEntryBatchSaveRequest()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  PriceListEntryBatchSaveRequest copyWith(void Function(PriceListEntryBatchSaveRequest) updates) => super.copyWith((message) => updates(message as PriceListEntryBatchSaveRequest)) as PriceListEntryBatchSaveRequest;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static PriceListEntryBatchSaveRequest create() => PriceListEntryBatchSaveRequest._();
+  PriceListEntryBatchSaveRequest createEmptyInstance() => create();
+  static $pb.PbList<PriceListEntryBatchSaveRequest> createRepeated() => $pb.PbList<PriceListEntryBatchSaveRequest>();
+  @$core.pragma('dart2js:noInline')
+  static PriceListEntryBatchSaveRequest getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<PriceListEntryBatchSaveRequest>(create);
+  static PriceListEntryBatchSaveRequest? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get priceListId => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set priceListId($core.String v) { $_setString(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasPriceListId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearPriceListId() => clearField(1);
+
+  /// Entries to save. For each product_variant_id present, all existing entries
+  /// in this price list for that variant are replaced.
+  @$pb.TagNumber(2)
+  $core.List<PriceListEntry> get entries => $_getList(1);
+}
+
+class PriceListEntryBatchSaveResponse extends $pb.GeneratedMessage {
+  factory PriceListEntryBatchSaveResponse({
+    $core.Iterable<PriceListEntry>? entries,
+  }) {
+    final $result = create();
+    if (entries != null) {
+      $result.entries.addAll(entries);
+    }
+    return $result;
+  }
+  PriceListEntryBatchSaveResponse._() : super();
+  factory PriceListEntryBatchSaveResponse.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory PriceListEntryBatchSaveResponse.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'PriceListEntryBatchSaveResponse', package: const $pb.PackageName(_omitMessageNames ? '' : 'commerce.v1'), createEmptyInstance: create)
+    ..pc<PriceListEntry>(1, _omitFieldNames ? '' : 'entries', $pb.PbFieldType.PM, subBuilder: PriceListEntry.create)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  PriceListEntryBatchSaveResponse clone() => PriceListEntryBatchSaveResponse()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  PriceListEntryBatchSaveResponse copyWith(void Function(PriceListEntryBatchSaveResponse) updates) => super.copyWith((message) => updates(message as PriceListEntryBatchSaveResponse)) as PriceListEntryBatchSaveResponse;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static PriceListEntryBatchSaveResponse create() => PriceListEntryBatchSaveResponse._();
+  PriceListEntryBatchSaveResponse createEmptyInstance() => create();
+  static $pb.PbList<PriceListEntryBatchSaveResponse> createRepeated() => $pb.PbList<PriceListEntryBatchSaveResponse>();
+  @$core.pragma('dart2js:noInline')
+  static PriceListEntryBatchSaveResponse getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<PriceListEntryBatchSaveResponse>(create);
+  static PriceListEntryBatchSaveResponse? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.List<PriceListEntry> get entries => $_getList(0);
+}
+
+class CustomerPriceListAssignmentSaveRequest extends $pb.GeneratedMessage {
+  factory CustomerPriceListAssignmentSaveRequest({
+    $core.String? id,
+    $core.String? customerId,
+    $core.String? priceListId,
+    $core.String? assignedBy,
+    CustomerPriceListAssignmentStatus? status,
+  }) {
+    final $result = create();
+    if (id != null) {
+      $result.id = id;
+    }
+    if (customerId != null) {
+      $result.customerId = customerId;
+    }
+    if (priceListId != null) {
+      $result.priceListId = priceListId;
+    }
+    if (assignedBy != null) {
+      $result.assignedBy = assignedBy;
+    }
+    if (status != null) {
+      $result.status = status;
+    }
+    return $result;
+  }
+  CustomerPriceListAssignmentSaveRequest._() : super();
+  factory CustomerPriceListAssignmentSaveRequest.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory CustomerPriceListAssignmentSaveRequest.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'CustomerPriceListAssignmentSaveRequest', package: const $pb.PackageName(_omitMessageNames ? '' : 'commerce.v1'), createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'id')
+    ..aOS(2, _omitFieldNames ? '' : 'customerId')
+    ..aOS(3, _omitFieldNames ? '' : 'priceListId')
+    ..aOS(4, _omitFieldNames ? '' : 'assignedBy')
+    ..e<CustomerPriceListAssignmentStatus>(5, _omitFieldNames ? '' : 'status', $pb.PbFieldType.OE, defaultOrMaker: CustomerPriceListAssignmentStatus.CUSTOMER_PRICE_LIST_ASSIGNMENT_STATUS_UNSPECIFIED, valueOf: CustomerPriceListAssignmentStatus.valueOf, enumValues: CustomerPriceListAssignmentStatus.values)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  CustomerPriceListAssignmentSaveRequest clone() => CustomerPriceListAssignmentSaveRequest()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  CustomerPriceListAssignmentSaveRequest copyWith(void Function(CustomerPriceListAssignmentSaveRequest) updates) => super.copyWith((message) => updates(message as CustomerPriceListAssignmentSaveRequest)) as CustomerPriceListAssignmentSaveRequest;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static CustomerPriceListAssignmentSaveRequest create() => CustomerPriceListAssignmentSaveRequest._();
+  CustomerPriceListAssignmentSaveRequest createEmptyInstance() => create();
+  static $pb.PbList<CustomerPriceListAssignmentSaveRequest> createRepeated() => $pb.PbList<CustomerPriceListAssignmentSaveRequest>();
+  @$core.pragma('dart2js:noInline')
+  static CustomerPriceListAssignmentSaveRequest getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<CustomerPriceListAssignmentSaveRequest>(create);
+  static CustomerPriceListAssignmentSaveRequest? _defaultInstance;
+
+  /// Empty for create; set for update.
+  @$pb.TagNumber(1)
+  $core.String get id => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set id($core.String v) { $_setString(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearId() => clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get customerId => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set customerId($core.String v) { $_setString(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasCustomerId() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearCustomerId() => clearField(2);
+
+  @$pb.TagNumber(3)
+  $core.String get priceListId => $_getSZ(2);
+  @$pb.TagNumber(3)
+  set priceListId($core.String v) { $_setString(2, v); }
+  @$pb.TagNumber(3)
+  $core.bool hasPriceListId() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearPriceListId() => clearField(3);
+
+  @$pb.TagNumber(4)
+  $core.String get assignedBy => $_getSZ(3);
+  @$pb.TagNumber(4)
+  set assignedBy($core.String v) { $_setString(3, v); }
+  @$pb.TagNumber(4)
+  $core.bool hasAssignedBy() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearAssignedBy() => clearField(4);
+
+  @$pb.TagNumber(5)
+  CustomerPriceListAssignmentStatus get status => $_getN(4);
+  @$pb.TagNumber(5)
+  set status(CustomerPriceListAssignmentStatus v) { setField(5, v); }
+  @$pb.TagNumber(5)
+  $core.bool hasStatus() => $_has(4);
+  @$pb.TagNumber(5)
+  void clearStatus() => clearField(5);
+}
+
+class CustomerPriceListAssignmentSaveResponse extends $pb.GeneratedMessage {
+  factory CustomerPriceListAssignmentSaveResponse({
+    CustomerPriceListAssignment? assignment,
+  }) {
+    final $result = create();
+    if (assignment != null) {
+      $result.assignment = assignment;
+    }
+    return $result;
+  }
+  CustomerPriceListAssignmentSaveResponse._() : super();
+  factory CustomerPriceListAssignmentSaveResponse.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory CustomerPriceListAssignmentSaveResponse.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'CustomerPriceListAssignmentSaveResponse', package: const $pb.PackageName(_omitMessageNames ? '' : 'commerce.v1'), createEmptyInstance: create)
+    ..aOM<CustomerPriceListAssignment>(1, _omitFieldNames ? '' : 'assignment', subBuilder: CustomerPriceListAssignment.create)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  CustomerPriceListAssignmentSaveResponse clone() => CustomerPriceListAssignmentSaveResponse()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  CustomerPriceListAssignmentSaveResponse copyWith(void Function(CustomerPriceListAssignmentSaveResponse) updates) => super.copyWith((message) => updates(message as CustomerPriceListAssignmentSaveResponse)) as CustomerPriceListAssignmentSaveResponse;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static CustomerPriceListAssignmentSaveResponse create() => CustomerPriceListAssignmentSaveResponse._();
+  CustomerPriceListAssignmentSaveResponse createEmptyInstance() => create();
+  static $pb.PbList<CustomerPriceListAssignmentSaveResponse> createRepeated() => $pb.PbList<CustomerPriceListAssignmentSaveResponse>();
+  @$core.pragma('dart2js:noInline')
+  static CustomerPriceListAssignmentSaveResponse getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<CustomerPriceListAssignmentSaveResponse>(create);
+  static CustomerPriceListAssignmentSaveResponse? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  CustomerPriceListAssignment get assignment => $_getN(0);
+  @$pb.TagNumber(1)
+  set assignment(CustomerPriceListAssignment v) { setField(1, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasAssignment() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearAssignment() => clearField(1);
+  @$pb.TagNumber(1)
+  CustomerPriceListAssignment ensureAssignment() => $_ensure(0);
+}
+
+class CustomerPriceListAssignmentSearchRequest extends $pb.GeneratedMessage {
+  factory CustomerPriceListAssignmentSearchRequest({
+    $core.String? customerId,
+    $core.String? priceListId,
+    $8.SearchRequest? search,
+  }) {
+    final $result = create();
+    if (customerId != null) {
+      $result.customerId = customerId;
+    }
+    if (priceListId != null) {
+      $result.priceListId = priceListId;
+    }
+    if (search != null) {
+      $result.search = search;
+    }
+    return $result;
+  }
+  CustomerPriceListAssignmentSearchRequest._() : super();
+  factory CustomerPriceListAssignmentSearchRequest.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory CustomerPriceListAssignmentSearchRequest.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'CustomerPriceListAssignmentSearchRequest', package: const $pb.PackageName(_omitMessageNames ? '' : 'commerce.v1'), createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'customerId')
+    ..aOS(2, _omitFieldNames ? '' : 'priceListId')
+    ..aOM<$8.SearchRequest>(3, _omitFieldNames ? '' : 'search', subBuilder: $8.SearchRequest.create)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  CustomerPriceListAssignmentSearchRequest clone() => CustomerPriceListAssignmentSearchRequest()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  CustomerPriceListAssignmentSearchRequest copyWith(void Function(CustomerPriceListAssignmentSearchRequest) updates) => super.copyWith((message) => updates(message as CustomerPriceListAssignmentSearchRequest)) as CustomerPriceListAssignmentSearchRequest;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static CustomerPriceListAssignmentSearchRequest create() => CustomerPriceListAssignmentSearchRequest._();
+  CustomerPriceListAssignmentSearchRequest createEmptyInstance() => create();
+  static $pb.PbList<CustomerPriceListAssignmentSearchRequest> createRepeated() => $pb.PbList<CustomerPriceListAssignmentSearchRequest>();
+  @$core.pragma('dart2js:noInline')
+  static CustomerPriceListAssignmentSearchRequest getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<CustomerPriceListAssignmentSearchRequest>(create);
+  static CustomerPriceListAssignmentSearchRequest? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get customerId => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set customerId($core.String v) { $_setString(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasCustomerId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearCustomerId() => clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get priceListId => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set priceListId($core.String v) { $_setString(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasPriceListId() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearPriceListId() => clearField(2);
+
+  @$pb.TagNumber(3)
+  $8.SearchRequest get search => $_getN(2);
+  @$pb.TagNumber(3)
+  set search($8.SearchRequest v) { setField(3, v); }
+  @$pb.TagNumber(3)
+  $core.bool hasSearch() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearSearch() => clearField(3);
+  @$pb.TagNumber(3)
+  $8.SearchRequest ensureSearch() => $_ensure(2);
+}
+
+class CustomerPriceListAssignmentSearchResponse extends $pb.GeneratedMessage {
+  factory CustomerPriceListAssignmentSearchResponse({
+    $core.Iterable<CustomerPriceListAssignment>? assignments,
+    $core.String? nextPage,
+    $core.String? prevCursor,
+  }) {
+    final $result = create();
+    if (assignments != null) {
+      $result.assignments.addAll(assignments);
+    }
+    if (nextPage != null) {
+      $result.nextPage = nextPage;
+    }
+    if (prevCursor != null) {
+      $result.prevCursor = prevCursor;
+    }
+    return $result;
+  }
+  CustomerPriceListAssignmentSearchResponse._() : super();
+  factory CustomerPriceListAssignmentSearchResponse.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory CustomerPriceListAssignmentSearchResponse.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'CustomerPriceListAssignmentSearchResponse', package: const $pb.PackageName(_omitMessageNames ? '' : 'commerce.v1'), createEmptyInstance: create)
+    ..pc<CustomerPriceListAssignment>(1, _omitFieldNames ? '' : 'assignments', $pb.PbFieldType.PM, subBuilder: CustomerPriceListAssignment.create)
+    ..aOS(2, _omitFieldNames ? '' : 'nextPage')
+    ..aOS(3, _omitFieldNames ? '' : 'prevCursor')
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  CustomerPriceListAssignmentSearchResponse clone() => CustomerPriceListAssignmentSearchResponse()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  CustomerPriceListAssignmentSearchResponse copyWith(void Function(CustomerPriceListAssignmentSearchResponse) updates) => super.copyWith((message) => updates(message as CustomerPriceListAssignmentSearchResponse)) as CustomerPriceListAssignmentSearchResponse;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static CustomerPriceListAssignmentSearchResponse create() => CustomerPriceListAssignmentSearchResponse._();
+  CustomerPriceListAssignmentSearchResponse createEmptyInstance() => create();
+  static $pb.PbList<CustomerPriceListAssignmentSearchResponse> createRepeated() => $pb.PbList<CustomerPriceListAssignmentSearchResponse>();
+  @$core.pragma('dart2js:noInline')
+  static CustomerPriceListAssignmentSearchResponse getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<CustomerPriceListAssignmentSearchResponse>(create);
+  static CustomerPriceListAssignmentSearchResponse? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.List<CustomerPriceListAssignment> get assignments => $_getList(0);
+
+  @$pb.TagNumber(2)
+  $core.String get nextPage => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set nextPage($core.String v) { $_setString(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasNextPage() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearNextPage() => clearField(2);
+
+  @$pb.TagNumber(3)
+  $core.String get prevCursor => $_getSZ(2);
+  @$pb.TagNumber(3)
+  set prevCursor($core.String v) { $_setString(2, v); }
+  @$pb.TagNumber(3)
+  $core.bool hasPrevCursor() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearPrevCursor() => clearField(3);
+}
+
+class CustomerPriceOverrideSaveRequest extends $pb.GeneratedMessage {
+  factory CustomerPriceOverrideSaveRequest({
+    $core.String? id,
+    $core.String? customerId,
+    $core.String? productVariantId,
+    $7.Money? unitPrice,
+    $2.Timestamp? validFrom,
+    $2.Timestamp? validUntil,
+    $core.String? approvedBy,
+    CustomerPriceOverrideStatus? status,
+  }) {
+    final $result = create();
+    if (id != null) {
+      $result.id = id;
+    }
+    if (customerId != null) {
+      $result.customerId = customerId;
+    }
+    if (productVariantId != null) {
+      $result.productVariantId = productVariantId;
+    }
+    if (unitPrice != null) {
+      $result.unitPrice = unitPrice;
+    }
+    if (validFrom != null) {
+      $result.validFrom = validFrom;
+    }
+    if (validUntil != null) {
+      $result.validUntil = validUntil;
+    }
+    if (approvedBy != null) {
+      $result.approvedBy = approvedBy;
+    }
+    if (status != null) {
+      $result.status = status;
+    }
+    return $result;
+  }
+  CustomerPriceOverrideSaveRequest._() : super();
+  factory CustomerPriceOverrideSaveRequest.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory CustomerPriceOverrideSaveRequest.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'CustomerPriceOverrideSaveRequest', package: const $pb.PackageName(_omitMessageNames ? '' : 'commerce.v1'), createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'id')
+    ..aOS(2, _omitFieldNames ? '' : 'customerId')
+    ..aOS(3, _omitFieldNames ? '' : 'productVariantId')
+    ..aOM<$7.Money>(4, _omitFieldNames ? '' : 'unitPrice', subBuilder: $7.Money.create)
+    ..aOM<$2.Timestamp>(5, _omitFieldNames ? '' : 'validFrom', subBuilder: $2.Timestamp.create)
+    ..aOM<$2.Timestamp>(6, _omitFieldNames ? '' : 'validUntil', subBuilder: $2.Timestamp.create)
+    ..aOS(7, _omitFieldNames ? '' : 'approvedBy')
+    ..e<CustomerPriceOverrideStatus>(8, _omitFieldNames ? '' : 'status', $pb.PbFieldType.OE, defaultOrMaker: CustomerPriceOverrideStatus.CUSTOMER_PRICE_OVERRIDE_STATUS_UNSPECIFIED, valueOf: CustomerPriceOverrideStatus.valueOf, enumValues: CustomerPriceOverrideStatus.values)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  CustomerPriceOverrideSaveRequest clone() => CustomerPriceOverrideSaveRequest()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  CustomerPriceOverrideSaveRequest copyWith(void Function(CustomerPriceOverrideSaveRequest) updates) => super.copyWith((message) => updates(message as CustomerPriceOverrideSaveRequest)) as CustomerPriceOverrideSaveRequest;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static CustomerPriceOverrideSaveRequest create() => CustomerPriceOverrideSaveRequest._();
+  CustomerPriceOverrideSaveRequest createEmptyInstance() => create();
+  static $pb.PbList<CustomerPriceOverrideSaveRequest> createRepeated() => $pb.PbList<CustomerPriceOverrideSaveRequest>();
+  @$core.pragma('dart2js:noInline')
+  static CustomerPriceOverrideSaveRequest getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<CustomerPriceOverrideSaveRequest>(create);
+  static CustomerPriceOverrideSaveRequest? _defaultInstance;
+
+  /// Empty for create; set for update.
+  @$pb.TagNumber(1)
+  $core.String get id => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set id($core.String v) { $_setString(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearId() => clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get customerId => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set customerId($core.String v) { $_setString(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasCustomerId() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearCustomerId() => clearField(2);
+
+  @$pb.TagNumber(3)
+  $core.String get productVariantId => $_getSZ(2);
+  @$pb.TagNumber(3)
+  set productVariantId($core.String v) { $_setString(2, v); }
+  @$pb.TagNumber(3)
+  $core.bool hasProductVariantId() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearProductVariantId() => clearField(3);
+
+  @$pb.TagNumber(4)
+  $7.Money get unitPrice => $_getN(3);
+  @$pb.TagNumber(4)
+  set unitPrice($7.Money v) { setField(4, v); }
+  @$pb.TagNumber(4)
+  $core.bool hasUnitPrice() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearUnitPrice() => clearField(4);
+  @$pb.TagNumber(4)
+  $7.Money ensureUnitPrice() => $_ensure(3);
+
+  @$pb.TagNumber(5)
+  $2.Timestamp get validFrom => $_getN(4);
+  @$pb.TagNumber(5)
+  set validFrom($2.Timestamp v) { setField(5, v); }
+  @$pb.TagNumber(5)
+  $core.bool hasValidFrom() => $_has(4);
+  @$pb.TagNumber(5)
+  void clearValidFrom() => clearField(5);
+  @$pb.TagNumber(5)
+  $2.Timestamp ensureValidFrom() => $_ensure(4);
+
+  @$pb.TagNumber(6)
+  $2.Timestamp get validUntil => $_getN(5);
+  @$pb.TagNumber(6)
+  set validUntil($2.Timestamp v) { setField(6, v); }
+  @$pb.TagNumber(6)
+  $core.bool hasValidUntil() => $_has(5);
+  @$pb.TagNumber(6)
+  void clearValidUntil() => clearField(6);
+  @$pb.TagNumber(6)
+  $2.Timestamp ensureValidUntil() => $_ensure(5);
+
+  @$pb.TagNumber(7)
+  $core.String get approvedBy => $_getSZ(6);
+  @$pb.TagNumber(7)
+  set approvedBy($core.String v) { $_setString(6, v); }
+  @$pb.TagNumber(7)
+  $core.bool hasApprovedBy() => $_has(6);
+  @$pb.TagNumber(7)
+  void clearApprovedBy() => clearField(7);
+
+  @$pb.TagNumber(8)
+  CustomerPriceOverrideStatus get status => $_getN(7);
+  @$pb.TagNumber(8)
+  set status(CustomerPriceOverrideStatus v) { setField(8, v); }
+  @$pb.TagNumber(8)
+  $core.bool hasStatus() => $_has(7);
+  @$pb.TagNumber(8)
+  void clearStatus() => clearField(8);
+}
+
+class CustomerPriceOverrideSaveResponse extends $pb.GeneratedMessage {
+  factory CustomerPriceOverrideSaveResponse({
+    CustomerPriceOverride? override,
+  }) {
+    final $result = create();
+    if (override != null) {
+      $result.override = override;
+    }
+    return $result;
+  }
+  CustomerPriceOverrideSaveResponse._() : super();
+  factory CustomerPriceOverrideSaveResponse.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory CustomerPriceOverrideSaveResponse.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'CustomerPriceOverrideSaveResponse', package: const $pb.PackageName(_omitMessageNames ? '' : 'commerce.v1'), createEmptyInstance: create)
+    ..aOM<CustomerPriceOverride>(1, _omitFieldNames ? '' : 'override', subBuilder: CustomerPriceOverride.create)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  CustomerPriceOverrideSaveResponse clone() => CustomerPriceOverrideSaveResponse()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  CustomerPriceOverrideSaveResponse copyWith(void Function(CustomerPriceOverrideSaveResponse) updates) => super.copyWith((message) => updates(message as CustomerPriceOverrideSaveResponse)) as CustomerPriceOverrideSaveResponse;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static CustomerPriceOverrideSaveResponse create() => CustomerPriceOverrideSaveResponse._();
+  CustomerPriceOverrideSaveResponse createEmptyInstance() => create();
+  static $pb.PbList<CustomerPriceOverrideSaveResponse> createRepeated() => $pb.PbList<CustomerPriceOverrideSaveResponse>();
+  @$core.pragma('dart2js:noInline')
+  static CustomerPriceOverrideSaveResponse getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<CustomerPriceOverrideSaveResponse>(create);
+  static CustomerPriceOverrideSaveResponse? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  CustomerPriceOverride get override => $_getN(0);
+  @$pb.TagNumber(1)
+  set override(CustomerPriceOverride v) { setField(1, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasOverride() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearOverride() => clearField(1);
+  @$pb.TagNumber(1)
+  CustomerPriceOverride ensureOverride() => $_ensure(0);
+}
+
+class CustomerPriceOverrideSearchRequest extends $pb.GeneratedMessage {
+  factory CustomerPriceOverrideSearchRequest({
+    $core.String? customerId,
+    $core.String? productVariantId,
+    $8.SearchRequest? search,
+  }) {
+    final $result = create();
+    if (customerId != null) {
+      $result.customerId = customerId;
+    }
+    if (productVariantId != null) {
+      $result.productVariantId = productVariantId;
+    }
+    if (search != null) {
+      $result.search = search;
+    }
+    return $result;
+  }
+  CustomerPriceOverrideSearchRequest._() : super();
+  factory CustomerPriceOverrideSearchRequest.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory CustomerPriceOverrideSearchRequest.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'CustomerPriceOverrideSearchRequest', package: const $pb.PackageName(_omitMessageNames ? '' : 'commerce.v1'), createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'customerId')
+    ..aOS(2, _omitFieldNames ? '' : 'productVariantId')
+    ..aOM<$8.SearchRequest>(3, _omitFieldNames ? '' : 'search', subBuilder: $8.SearchRequest.create)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  CustomerPriceOverrideSearchRequest clone() => CustomerPriceOverrideSearchRequest()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  CustomerPriceOverrideSearchRequest copyWith(void Function(CustomerPriceOverrideSearchRequest) updates) => super.copyWith((message) => updates(message as CustomerPriceOverrideSearchRequest)) as CustomerPriceOverrideSearchRequest;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static CustomerPriceOverrideSearchRequest create() => CustomerPriceOverrideSearchRequest._();
+  CustomerPriceOverrideSearchRequest createEmptyInstance() => create();
+  static $pb.PbList<CustomerPriceOverrideSearchRequest> createRepeated() => $pb.PbList<CustomerPriceOverrideSearchRequest>();
+  @$core.pragma('dart2js:noInline')
+  static CustomerPriceOverrideSearchRequest getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<CustomerPriceOverrideSearchRequest>(create);
+  static CustomerPriceOverrideSearchRequest? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get customerId => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set customerId($core.String v) { $_setString(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasCustomerId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearCustomerId() => clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get productVariantId => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set productVariantId($core.String v) { $_setString(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasProductVariantId() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearProductVariantId() => clearField(2);
+
+  @$pb.TagNumber(3)
+  $8.SearchRequest get search => $_getN(2);
+  @$pb.TagNumber(3)
+  set search($8.SearchRequest v) { setField(3, v); }
+  @$pb.TagNumber(3)
+  $core.bool hasSearch() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearSearch() => clearField(3);
+  @$pb.TagNumber(3)
+  $8.SearchRequest ensureSearch() => $_ensure(2);
+}
+
+class CustomerPriceOverrideSearchResponse extends $pb.GeneratedMessage {
+  factory CustomerPriceOverrideSearchResponse({
+    $core.Iterable<CustomerPriceOverride>? overrides,
+    $core.String? nextPage,
+    $core.String? prevCursor,
+  }) {
+    final $result = create();
+    if (overrides != null) {
+      $result.overrides.addAll(overrides);
+    }
+    if (nextPage != null) {
+      $result.nextPage = nextPage;
+    }
+    if (prevCursor != null) {
+      $result.prevCursor = prevCursor;
+    }
+    return $result;
+  }
+  CustomerPriceOverrideSearchResponse._() : super();
+  factory CustomerPriceOverrideSearchResponse.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory CustomerPriceOverrideSearchResponse.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'CustomerPriceOverrideSearchResponse', package: const $pb.PackageName(_omitMessageNames ? '' : 'commerce.v1'), createEmptyInstance: create)
+    ..pc<CustomerPriceOverride>(1, _omitFieldNames ? '' : 'overrides', $pb.PbFieldType.PM, subBuilder: CustomerPriceOverride.create)
+    ..aOS(2, _omitFieldNames ? '' : 'nextPage')
+    ..aOS(3, _omitFieldNames ? '' : 'prevCursor')
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  CustomerPriceOverrideSearchResponse clone() => CustomerPriceOverrideSearchResponse()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  CustomerPriceOverrideSearchResponse copyWith(void Function(CustomerPriceOverrideSearchResponse) updates) => super.copyWith((message) => updates(message as CustomerPriceOverrideSearchResponse)) as CustomerPriceOverrideSearchResponse;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static CustomerPriceOverrideSearchResponse create() => CustomerPriceOverrideSearchResponse._();
+  CustomerPriceOverrideSearchResponse createEmptyInstance() => create();
+  static $pb.PbList<CustomerPriceOverrideSearchResponse> createRepeated() => $pb.PbList<CustomerPriceOverrideSearchResponse>();
+  @$core.pragma('dart2js:noInline')
+  static CustomerPriceOverrideSearchResponse getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<CustomerPriceOverrideSearchResponse>(create);
+  static CustomerPriceOverrideSearchResponse? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.List<CustomerPriceOverride> get overrides => $_getList(0);
+
+  @$pb.TagNumber(2)
+  $core.String get nextPage => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set nextPage($core.String v) { $_setString(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasNextPage() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearNextPage() => clearField(2);
+
+  @$pb.TagNumber(3)
+  $core.String get prevCursor => $_getSZ(2);
+  @$pb.TagNumber(3)
+  set prevCursor($core.String v) { $_setString(2, v); }
+  @$pb.TagNumber(3)
+  $core.bool hasPrevCursor() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearPrevCursor() => clearField(3);
+}
+
+class DiscountRuleSaveRequest extends $pb.GeneratedMessage {
+  factory DiscountRuleSaveRequest({
+    $core.String? id,
+    $core.String? shopId,
+    $core.String? name,
+    DiscountType? discountType,
+    $core.double? value,
+    DiscountAppliesTo? appliesTo,
+    $6.Struct? conditions,
+    $core.bool? requiresApproval,
+    $core.double? maxDiscountPercent,
+    $2.Timestamp? validFrom,
+    $2.Timestamp? validUntil,
+    DiscountRuleStatus? status,
+  }) {
+    final $result = create();
+    if (id != null) {
+      $result.id = id;
+    }
+    if (shopId != null) {
+      $result.shopId = shopId;
+    }
+    if (name != null) {
+      $result.name = name;
+    }
+    if (discountType != null) {
+      $result.discountType = discountType;
+    }
+    if (value != null) {
+      $result.value = value;
+    }
+    if (appliesTo != null) {
+      $result.appliesTo = appliesTo;
+    }
+    if (conditions != null) {
+      $result.conditions = conditions;
+    }
+    if (requiresApproval != null) {
+      $result.requiresApproval = requiresApproval;
+    }
+    if (maxDiscountPercent != null) {
+      $result.maxDiscountPercent = maxDiscountPercent;
+    }
+    if (validFrom != null) {
+      $result.validFrom = validFrom;
+    }
+    if (validUntil != null) {
+      $result.validUntil = validUntil;
+    }
+    if (status != null) {
+      $result.status = status;
+    }
+    return $result;
+  }
+  DiscountRuleSaveRequest._() : super();
+  factory DiscountRuleSaveRequest.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory DiscountRuleSaveRequest.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'DiscountRuleSaveRequest', package: const $pb.PackageName(_omitMessageNames ? '' : 'commerce.v1'), createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'id')
+    ..aOS(2, _omitFieldNames ? '' : 'shopId')
+    ..aOS(3, _omitFieldNames ? '' : 'name')
+    ..e<DiscountType>(4, _omitFieldNames ? '' : 'discountType', $pb.PbFieldType.OE, defaultOrMaker: DiscountType.DISCOUNT_TYPE_UNSPECIFIED, valueOf: DiscountType.valueOf, enumValues: DiscountType.values)
+    ..a<$core.double>(5, _omitFieldNames ? '' : 'value', $pb.PbFieldType.OD)
+    ..e<DiscountAppliesTo>(6, _omitFieldNames ? '' : 'appliesTo', $pb.PbFieldType.OE, defaultOrMaker: DiscountAppliesTo.DISCOUNT_APPLIES_TO_UNSPECIFIED, valueOf: DiscountAppliesTo.valueOf, enumValues: DiscountAppliesTo.values)
+    ..aOM<$6.Struct>(7, _omitFieldNames ? '' : 'conditions', subBuilder: $6.Struct.create)
+    ..aOB(8, _omitFieldNames ? '' : 'requiresApproval')
+    ..a<$core.double>(9, _omitFieldNames ? '' : 'maxDiscountPercent', $pb.PbFieldType.OD)
+    ..aOM<$2.Timestamp>(10, _omitFieldNames ? '' : 'validFrom', subBuilder: $2.Timestamp.create)
+    ..aOM<$2.Timestamp>(11, _omitFieldNames ? '' : 'validUntil', subBuilder: $2.Timestamp.create)
+    ..e<DiscountRuleStatus>(12, _omitFieldNames ? '' : 'status', $pb.PbFieldType.OE, defaultOrMaker: DiscountRuleStatus.DISCOUNT_RULE_STATUS_UNSPECIFIED, valueOf: DiscountRuleStatus.valueOf, enumValues: DiscountRuleStatus.values)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  DiscountRuleSaveRequest clone() => DiscountRuleSaveRequest()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  DiscountRuleSaveRequest copyWith(void Function(DiscountRuleSaveRequest) updates) => super.copyWith((message) => updates(message as DiscountRuleSaveRequest)) as DiscountRuleSaveRequest;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static DiscountRuleSaveRequest create() => DiscountRuleSaveRequest._();
+  DiscountRuleSaveRequest createEmptyInstance() => create();
+  static $pb.PbList<DiscountRuleSaveRequest> createRepeated() => $pb.PbList<DiscountRuleSaveRequest>();
+  @$core.pragma('dart2js:noInline')
+  static DiscountRuleSaveRequest getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<DiscountRuleSaveRequest>(create);
+  static DiscountRuleSaveRequest? _defaultInstance;
+
+  /// Empty for create; set for update.
+  @$pb.TagNumber(1)
+  $core.String get id => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set id($core.String v) { $_setString(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearId() => clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get shopId => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set shopId($core.String v) { $_setString(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasShopId() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearShopId() => clearField(2);
+
+  @$pb.TagNumber(3)
+  $core.String get name => $_getSZ(2);
+  @$pb.TagNumber(3)
+  set name($core.String v) { $_setString(2, v); }
+  @$pb.TagNumber(3)
+  $core.bool hasName() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearName() => clearField(3);
+
+  @$pb.TagNumber(4)
+  DiscountType get discountType => $_getN(3);
+  @$pb.TagNumber(4)
+  set discountType(DiscountType v) { setField(4, v); }
+  @$pb.TagNumber(4)
+  $core.bool hasDiscountType() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearDiscountType() => clearField(4);
+
+  @$pb.TagNumber(5)
+  $core.double get value => $_getN(4);
+  @$pb.TagNumber(5)
+  set value($core.double v) { $_setDouble(4, v); }
+  @$pb.TagNumber(5)
+  $core.bool hasValue() => $_has(4);
+  @$pb.TagNumber(5)
+  void clearValue() => clearField(5);
+
+  @$pb.TagNumber(6)
+  DiscountAppliesTo get appliesTo => $_getN(5);
+  @$pb.TagNumber(6)
+  set appliesTo(DiscountAppliesTo v) { setField(6, v); }
+  @$pb.TagNumber(6)
+  $core.bool hasAppliesTo() => $_has(5);
+  @$pb.TagNumber(6)
+  void clearAppliesTo() => clearField(6);
+
+  @$pb.TagNumber(7)
+  $6.Struct get conditions => $_getN(6);
+  @$pb.TagNumber(7)
+  set conditions($6.Struct v) { setField(7, v); }
+  @$pb.TagNumber(7)
+  $core.bool hasConditions() => $_has(6);
+  @$pb.TagNumber(7)
+  void clearConditions() => clearField(7);
+  @$pb.TagNumber(7)
+  $6.Struct ensureConditions() => $_ensure(6);
+
+  @$pb.TagNumber(8)
+  $core.bool get requiresApproval => $_getBF(7);
+  @$pb.TagNumber(8)
+  set requiresApproval($core.bool v) { $_setBool(7, v); }
+  @$pb.TagNumber(8)
+  $core.bool hasRequiresApproval() => $_has(7);
+  @$pb.TagNumber(8)
+  void clearRequiresApproval() => clearField(8);
+
+  @$pb.TagNumber(9)
+  $core.double get maxDiscountPercent => $_getN(8);
+  @$pb.TagNumber(9)
+  set maxDiscountPercent($core.double v) { $_setDouble(8, v); }
+  @$pb.TagNumber(9)
+  $core.bool hasMaxDiscountPercent() => $_has(8);
+  @$pb.TagNumber(9)
+  void clearMaxDiscountPercent() => clearField(9);
+
+  @$pb.TagNumber(10)
+  $2.Timestamp get validFrom => $_getN(9);
+  @$pb.TagNumber(10)
+  set validFrom($2.Timestamp v) { setField(10, v); }
+  @$pb.TagNumber(10)
+  $core.bool hasValidFrom() => $_has(9);
+  @$pb.TagNumber(10)
+  void clearValidFrom() => clearField(10);
+  @$pb.TagNumber(10)
+  $2.Timestamp ensureValidFrom() => $_ensure(9);
+
+  @$pb.TagNumber(11)
+  $2.Timestamp get validUntil => $_getN(10);
+  @$pb.TagNumber(11)
+  set validUntil($2.Timestamp v) { setField(11, v); }
+  @$pb.TagNumber(11)
+  $core.bool hasValidUntil() => $_has(10);
+  @$pb.TagNumber(11)
+  void clearValidUntil() => clearField(11);
+  @$pb.TagNumber(11)
+  $2.Timestamp ensureValidUntil() => $_ensure(10);
+
+  @$pb.TagNumber(12)
+  DiscountRuleStatus get status => $_getN(11);
+  @$pb.TagNumber(12)
+  set status(DiscountRuleStatus v) { setField(12, v); }
+  @$pb.TagNumber(12)
+  $core.bool hasStatus() => $_has(11);
+  @$pb.TagNumber(12)
+  void clearStatus() => clearField(12);
+}
+
+class DiscountRuleSaveResponse extends $pb.GeneratedMessage {
+  factory DiscountRuleSaveResponse({
+    DiscountRule? discountRule,
+  }) {
+    final $result = create();
+    if (discountRule != null) {
+      $result.discountRule = discountRule;
+    }
+    return $result;
+  }
+  DiscountRuleSaveResponse._() : super();
+  factory DiscountRuleSaveResponse.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory DiscountRuleSaveResponse.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'DiscountRuleSaveResponse', package: const $pb.PackageName(_omitMessageNames ? '' : 'commerce.v1'), createEmptyInstance: create)
+    ..aOM<DiscountRule>(1, _omitFieldNames ? '' : 'discountRule', subBuilder: DiscountRule.create)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  DiscountRuleSaveResponse clone() => DiscountRuleSaveResponse()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  DiscountRuleSaveResponse copyWith(void Function(DiscountRuleSaveResponse) updates) => super.copyWith((message) => updates(message as DiscountRuleSaveResponse)) as DiscountRuleSaveResponse;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static DiscountRuleSaveResponse create() => DiscountRuleSaveResponse._();
+  DiscountRuleSaveResponse createEmptyInstance() => create();
+  static $pb.PbList<DiscountRuleSaveResponse> createRepeated() => $pb.PbList<DiscountRuleSaveResponse>();
+  @$core.pragma('dart2js:noInline')
+  static DiscountRuleSaveResponse getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<DiscountRuleSaveResponse>(create);
+  static DiscountRuleSaveResponse? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  DiscountRule get discountRule => $_getN(0);
+  @$pb.TagNumber(1)
+  set discountRule(DiscountRule v) { setField(1, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasDiscountRule() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearDiscountRule() => clearField(1);
+  @$pb.TagNumber(1)
+  DiscountRule ensureDiscountRule() => $_ensure(0);
+}
+
+class DiscountRuleSearchRequest extends $pb.GeneratedMessage {
+  factory DiscountRuleSearchRequest({
+    $core.String? shopId,
+    $8.SearchRequest? search,
+  }) {
+    final $result = create();
+    if (shopId != null) {
+      $result.shopId = shopId;
+    }
+    if (search != null) {
+      $result.search = search;
+    }
+    return $result;
+  }
+  DiscountRuleSearchRequest._() : super();
+  factory DiscountRuleSearchRequest.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory DiscountRuleSearchRequest.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'DiscountRuleSearchRequest', package: const $pb.PackageName(_omitMessageNames ? '' : 'commerce.v1'), createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'shopId')
+    ..aOM<$8.SearchRequest>(2, _omitFieldNames ? '' : 'search', subBuilder: $8.SearchRequest.create)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  DiscountRuleSearchRequest clone() => DiscountRuleSearchRequest()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  DiscountRuleSearchRequest copyWith(void Function(DiscountRuleSearchRequest) updates) => super.copyWith((message) => updates(message as DiscountRuleSearchRequest)) as DiscountRuleSearchRequest;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static DiscountRuleSearchRequest create() => DiscountRuleSearchRequest._();
+  DiscountRuleSearchRequest createEmptyInstance() => create();
+  static $pb.PbList<DiscountRuleSearchRequest> createRepeated() => $pb.PbList<DiscountRuleSearchRequest>();
+  @$core.pragma('dart2js:noInline')
+  static DiscountRuleSearchRequest getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<DiscountRuleSearchRequest>(create);
+  static DiscountRuleSearchRequest? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get shopId => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set shopId($core.String v) { $_setString(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasShopId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearShopId() => clearField(1);
+
+  @$pb.TagNumber(2)
+  $8.SearchRequest get search => $_getN(1);
+  @$pb.TagNumber(2)
+  set search($8.SearchRequest v) { setField(2, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasSearch() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearSearch() => clearField(2);
+  @$pb.TagNumber(2)
+  $8.SearchRequest ensureSearch() => $_ensure(1);
+}
+
+class DiscountRuleSearchResponse extends $pb.GeneratedMessage {
+  factory DiscountRuleSearchResponse({
+    $core.Iterable<DiscountRule>? discountRules,
+    $core.String? nextPage,
+    $core.String? prevCursor,
+  }) {
+    final $result = create();
+    if (discountRules != null) {
+      $result.discountRules.addAll(discountRules);
+    }
+    if (nextPage != null) {
+      $result.nextPage = nextPage;
+    }
+    if (prevCursor != null) {
+      $result.prevCursor = prevCursor;
+    }
+    return $result;
+  }
+  DiscountRuleSearchResponse._() : super();
+  factory DiscountRuleSearchResponse.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory DiscountRuleSearchResponse.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'DiscountRuleSearchResponse', package: const $pb.PackageName(_omitMessageNames ? '' : 'commerce.v1'), createEmptyInstance: create)
+    ..pc<DiscountRule>(1, _omitFieldNames ? '' : 'discountRules', $pb.PbFieldType.PM, subBuilder: DiscountRule.create)
+    ..aOS(2, _omitFieldNames ? '' : 'nextPage')
+    ..aOS(3, _omitFieldNames ? '' : 'prevCursor')
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  DiscountRuleSearchResponse clone() => DiscountRuleSearchResponse()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  DiscountRuleSearchResponse copyWith(void Function(DiscountRuleSearchResponse) updates) => super.copyWith((message) => updates(message as DiscountRuleSearchResponse)) as DiscountRuleSearchResponse;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static DiscountRuleSearchResponse create() => DiscountRuleSearchResponse._();
+  DiscountRuleSearchResponse createEmptyInstance() => create();
+  static $pb.PbList<DiscountRuleSearchResponse> createRepeated() => $pb.PbList<DiscountRuleSearchResponse>();
+  @$core.pragma('dart2js:noInline')
+  static DiscountRuleSearchResponse getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<DiscountRuleSearchResponse>(create);
+  static DiscountRuleSearchResponse? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.List<DiscountRule> get discountRules => $_getList(0);
+
+  @$pb.TagNumber(2)
+  $core.String get nextPage => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set nextPage($core.String v) { $_setString(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasNextPage() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearNextPage() => clearField(2);
+
+  @$pb.TagNumber(3)
+  $core.String get prevCursor => $_getSZ(2);
+  @$pb.TagNumber(3)
+  set prevCursor($core.String v) { $_setString(2, v); }
+  @$pb.TagNumber(3)
+  $core.bool hasPrevCursor() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearPrevCursor() => clearField(3);
+}
+
+class ResolvePriceRequest extends $pb.GeneratedMessage {
+  factory ResolvePriceRequest({
+    $core.String? customerId,
+    $core.String? productVariantId,
+    $core.int? quantity,
+  }) {
+    final $result = create();
+    if (customerId != null) {
+      $result.customerId = customerId;
+    }
+    if (productVariantId != null) {
+      $result.productVariantId = productVariantId;
+    }
+    if (quantity != null) {
+      $result.quantity = quantity;
+    }
+    return $result;
+  }
+  ResolvePriceRequest._() : super();
+  factory ResolvePriceRequest.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory ResolvePriceRequest.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'ResolvePriceRequest', package: const $pb.PackageName(_omitMessageNames ? '' : 'commerce.v1'), createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'customerId')
+    ..aOS(2, _omitFieldNames ? '' : 'productVariantId')
+    ..a<$core.int>(3, _omitFieldNames ? '' : 'quantity', $pb.PbFieldType.O3)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  ResolvePriceRequest clone() => ResolvePriceRequest()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  ResolvePriceRequest copyWith(void Function(ResolvePriceRequest) updates) => super.copyWith((message) => updates(message as ResolvePriceRequest)) as ResolvePriceRequest;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static ResolvePriceRequest create() => ResolvePriceRequest._();
+  ResolvePriceRequest createEmptyInstance() => create();
+  static $pb.PbList<ResolvePriceRequest> createRepeated() => $pb.PbList<ResolvePriceRequest>();
+  @$core.pragma('dart2js:noInline')
+  static ResolvePriceRequest getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<ResolvePriceRequest>(create);
+  static ResolvePriceRequest? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get customerId => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set customerId($core.String v) { $_setString(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasCustomerId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearCustomerId() => clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get productVariantId => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set productVariantId($core.String v) { $_setString(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasProductVariantId() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearProductVariantId() => clearField(2);
+
+  @$pb.TagNumber(3)
+  $core.int get quantity => $_getIZ(2);
+  @$pb.TagNumber(3)
+  set quantity($core.int v) { $_setSignedInt32(2, v); }
+  @$pb.TagNumber(3)
+  $core.bool hasQuantity() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearQuantity() => clearField(3);
+}
+
+class ResolvePriceResponse extends $pb.GeneratedMessage {
+  factory ResolvePriceResponse({
+    ResolvedPrice? resolvedPrice,
+  }) {
+    final $result = create();
+    if (resolvedPrice != null) {
+      $result.resolvedPrice = resolvedPrice;
+    }
+    return $result;
+  }
+  ResolvePriceResponse._() : super();
+  factory ResolvePriceResponse.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory ResolvePriceResponse.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'ResolvePriceResponse', package: const $pb.PackageName(_omitMessageNames ? '' : 'commerce.v1'), createEmptyInstance: create)
+    ..aOM<ResolvedPrice>(1, _omitFieldNames ? '' : 'resolvedPrice', subBuilder: ResolvedPrice.create)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  ResolvePriceResponse clone() => ResolvePriceResponse()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  ResolvePriceResponse copyWith(void Function(ResolvePriceResponse) updates) => super.copyWith((message) => updates(message as ResolvePriceResponse)) as ResolvePriceResponse;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static ResolvePriceResponse create() => ResolvePriceResponse._();
+  ResolvePriceResponse createEmptyInstance() => create();
+  static $pb.PbList<ResolvePriceResponse> createRepeated() => $pb.PbList<ResolvePriceResponse>();
+  @$core.pragma('dart2js:noInline')
+  static ResolvePriceResponse getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<ResolvePriceResponse>(create);
+  static ResolvePriceResponse? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  ResolvedPrice get resolvedPrice => $_getN(0);
+  @$pb.TagNumber(1)
+  set resolvedPrice(ResolvedPrice v) { setField(1, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasResolvedPrice() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearResolvedPrice() => clearField(1);
+  @$pb.TagNumber(1)
+  ResolvedPrice ensureResolvedPrice() => $_ensure(0);
+}
+
 class CommerceServiceApi {
   $pb.RpcClient _client;
   CommerceServiceApi(this._client);
@@ -4040,6 +6758,39 @@ class CommerceServiceApi {
   ;
   $async.Future<GetFulfilmentResponse> getFulfilment($pb.ClientContext? ctx, GetFulfilmentRequest request) =>
     _client.invoke<GetFulfilmentResponse>(ctx, 'CommerceService', 'GetFulfilment', request, GetFulfilmentResponse())
+  ;
+  $async.Future<PriceListSaveResponse> priceListSave($pb.ClientContext? ctx, PriceListSaveRequest request) =>
+    _client.invoke<PriceListSaveResponse>(ctx, 'CommerceService', 'PriceListSave', request, PriceListSaveResponse())
+  ;
+  $async.Future<PriceListGetResponse> priceListGet($pb.ClientContext? ctx, PriceListGetRequest request) =>
+    _client.invoke<PriceListGetResponse>(ctx, 'CommerceService', 'PriceListGet', request, PriceListGetResponse())
+  ;
+  $async.Future<PriceListSearchResponse> priceListSearch($pb.ClientContext? ctx, PriceListSearchRequest request) =>
+    _client.invoke<PriceListSearchResponse>(ctx, 'CommerceService', 'PriceListSearch', request, PriceListSearchResponse())
+  ;
+  $async.Future<PriceListEntryBatchSaveResponse> priceListEntryBatchSave($pb.ClientContext? ctx, PriceListEntryBatchSaveRequest request) =>
+    _client.invoke<PriceListEntryBatchSaveResponse>(ctx, 'CommerceService', 'PriceListEntryBatchSave', request, PriceListEntryBatchSaveResponse())
+  ;
+  $async.Future<CustomerPriceListAssignmentSaveResponse> customerPriceListAssignmentSave($pb.ClientContext? ctx, CustomerPriceListAssignmentSaveRequest request) =>
+    _client.invoke<CustomerPriceListAssignmentSaveResponse>(ctx, 'CommerceService', 'CustomerPriceListAssignmentSave', request, CustomerPriceListAssignmentSaveResponse())
+  ;
+  $async.Future<CustomerPriceListAssignmentSearchResponse> customerPriceListAssignmentSearch($pb.ClientContext? ctx, CustomerPriceListAssignmentSearchRequest request) =>
+    _client.invoke<CustomerPriceListAssignmentSearchResponse>(ctx, 'CommerceService', 'CustomerPriceListAssignmentSearch', request, CustomerPriceListAssignmentSearchResponse())
+  ;
+  $async.Future<CustomerPriceOverrideSaveResponse> customerPriceOverrideSave($pb.ClientContext? ctx, CustomerPriceOverrideSaveRequest request) =>
+    _client.invoke<CustomerPriceOverrideSaveResponse>(ctx, 'CommerceService', 'CustomerPriceOverrideSave', request, CustomerPriceOverrideSaveResponse())
+  ;
+  $async.Future<CustomerPriceOverrideSearchResponse> customerPriceOverrideSearch($pb.ClientContext? ctx, CustomerPriceOverrideSearchRequest request) =>
+    _client.invoke<CustomerPriceOverrideSearchResponse>(ctx, 'CommerceService', 'CustomerPriceOverrideSearch', request, CustomerPriceOverrideSearchResponse())
+  ;
+  $async.Future<DiscountRuleSaveResponse> discountRuleSave($pb.ClientContext? ctx, DiscountRuleSaveRequest request) =>
+    _client.invoke<DiscountRuleSaveResponse>(ctx, 'CommerceService', 'DiscountRuleSave', request, DiscountRuleSaveResponse())
+  ;
+  $async.Future<DiscountRuleSearchResponse> discountRuleSearch($pb.ClientContext? ctx, DiscountRuleSearchRequest request) =>
+    _client.invoke<DiscountRuleSearchResponse>(ctx, 'CommerceService', 'DiscountRuleSearch', request, DiscountRuleSearchResponse())
+  ;
+  $async.Future<ResolvePriceResponse> resolvePrice($pb.ClientContext? ctx, ResolvePriceRequest request) =>
+    _client.invoke<ResolvePriceResponse>(ctx, 'CommerceService', 'ResolvePrice', request, ResolvePriceResponse())
   ;
 }
 

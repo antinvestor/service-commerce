@@ -1,0 +1,157 @@
+<h2>Manufacturing Business App — Architecture</h2>
+<p class="subtitle">Two-layer composable architecture following antinvestor patterns</p>
+
+<div class="section">
+  <h3>System Architecture</h3>
+  <div class="mockup">
+    <div class="mockup-header">Layer Architecture</div>
+    <div class="mockup-body" style="font-family: monospace; font-size: 13px; line-height: 1.6; padding: 20px;">
+<pre style="margin:0;">
+┌─────────────────────────────────────────────────────────┐
+│                    APP LAYER                             │
+│              app-biashara (Flutter App)                  │
+│                                                         │
+│  ┌─────────────────────────────────────────────────┐   │
+│  │           Action-Oriented Shell                  │   │
+│  │  Dashboard │ Sales │ Produce │ Stock │ Customers │   │
+│  │  Role-based routing · Guided wizards             │   │
+│  │  Offline sync engine · Drift local DB            │   │
+│  └─────────────┬───────────────────┬───────────────┘   │
+│                │                   │                     │
+│  ┌─────────────▼──────┐  ┌───────▼────────────────┐   │
+│  │ Commerce UI Pkgs   │  │ Manufacturing UI Pkgs  │   │
+│  │                    │  │                        │   │
+│  │ ui_commerce        │  │ ui_manufacturing      │   │
+│  │  · Shop widgets    │  │  · Recipe widgets     │   │
+│  │  · Product cards   │  │  · Batch wizard       │   │
+│  │  · Order flow      │  │  · Inventory cards    │   │
+│  │  · Cart checkout   │  │  · Equipment mgmt     │   │
+│  │                    │  │  · Cold chain          │   │
+│  │ ui_procurement     │  │  · QC inspection      │   │
+│  │  · Supplier list   │  │  · Waste tracking     │   │
+│  │  · PO wizard       │  │  · Costing views      │   │
+│  │  · Goods receipt   │  │  · Demand planning    │   │
+│  │                    │  │  · Traceability       │   │
+│  │ ui_pricing         │  │                        │   │
+│  │  · Price resolver  │  │                        │   │
+│  │  · Discount rules  │  │                        │   │
+│  └────────┬───────────┘  └────────┬───────────────┘   │
+│           │                       │                     │
+│  ┌────────▼───────────────────────▼───────────────┐    │
+│  │            antinvestor_ui_core                  │    │
+│  │  Theme · Auth · Navigation · API helpers        │    │
+│  │  Responsive · Drift base · Sync infrastructure  │    │
+│  └────────────────────┬───────────────────────────┘    │
+└───────────────────────┼─────────────────────────────────┘
+                        │ Connect RPC (HTTP/2)
+                        ▼
+┌───────────────────────────────────────────────────────┐
+│                  BACKEND SERVICES                       │
+│  service-commerce    service-manufacturing             │
+│  (Go/Frame)          (Go/Frame)                        │
+│  · Catalog           · Recipes + Versions              │
+│  · Orders            · Plans + Batches                 │
+│  · Customers         · Inventory + Stock               │
+│  · Procurement       · Equipment + CIP                 │
+│  · Pricing           · Cold Chain + QC                 │
+│  · Fulfilment        · Waste + Costing + Demand        │
+└───────────────────────────────────────────────────────┘
+</pre>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Service UI Package Pattern</h3>
+  <p class="subtitle">Each package follows the same structure (matching service-profile/ui/)</p>
+  <div class="mockup">
+    <div class="mockup-header">Package Structure</div>
+    <div class="mockup-body" style="font-family: monospace; font-size: 13px; padding: 16px;">
+<pre style="margin:0;">
+service-manufacturing/ui/manufacturing/
+├── lib/
+│   ├── antinvestor_ui_manufacturing.dart  ← barrel export
+│   └── src/
+│       ├── providers/                     ← Riverpod providers
+│       │   ├── recipe_providers.dart
+│       │   ├── batch_providers.dart
+│       │   ├── inventory_providers.dart
+│       │   ├── equipment_providers.dart
+│       │   └── ...
+│       ├── screens/                       ← Full screens
+│       │   ├── recipe_list_screen.dart
+│       │   ├── batch_wizard_screen.dart
+│       │   ├── inventory_screen.dart
+│       │   └── ...
+│       ├── widgets/                       ← Composable widgets
+│       │   ├── recipe_card.dart
+│       │   ├── stock_level_card.dart
+│       │   ├── batch_status_badge.dart
+│       │   ├── expiry_warning_card.dart
+│       │   └── ...
+│       └── routing/
+│           └── manufacturing_route_module.dart
+├── pubspec.yaml
+└── test/
+</pre>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>App Shell — What Composes the Widgets</h3>
+  <div class="mockup">
+    <div class="mockup-header">app-biashara structure</div>
+    <div class="mockup-body" style="font-family: monospace; font-size: 13px; padding: 16px;">
+<pre style="margin:0;">
+app-biashara/
+├── lib/
+│   ├── main.dart
+│   ├── app.dart                     ← GoRouter + theme + providers
+│   ├── core/
+│   │   ├── sync/                    ← Offline sync engine
+│   │   │   ├── sync_engine.dart
+│   │   │   └── conflict_resolver.dart
+│   │   ├── db/                      ← Drift database (all tables)
+│   │   │   ├── app_database.dart
+│   │   │   └── tables/
+│   │   └── auth/                    ← Auth + role detection
+│   ├── features/
+│   │   ├── dashboard/               ← "Today" home screen
+│   │   │   ├── dashboard_screen.dart
+│   │   │   ├── widgets/
+│   │   │   │   ├── sales_summary_card.dart
+│   │   │   │   ├── stock_warnings_card.dart
+│   │   │   │   ├── expiry_alerts_card.dart
+│   │   │   │   └── quick_actions_grid.dart
+│   │   │   └── providers/
+│   │   ├── sales/                   ← "Sell" flow
+│   │   │   ├── sell_wizard.dart     ← Guided sale wizard
+│   │   │   ├── payment_screen.dart
+│   │   │   └── sales_history.dart
+│   │   ├── production/              ← "Produce" flow
+│   │   │   ├── produce_wizard.dart  ← Guided batch wizard
+│   │   │   ├── active_batches.dart
+│   │   │   └── spoilage_screen.dart
+│   │   ├── stock/                   ← "Stock" views
+│   │   │   ├── stock_overview.dart
+│   │   │   ├── add_stock_wizard.dart
+│   │   │   └── stock_history.dart
+│   │   ├── customers/               ← "Customers" contact-list
+│   │   │   ├── customer_list.dart
+│   │   │   ├── customer_profile.dart
+│   │   │   └── receive_payment.dart
+│   │   └── reports/                 ← Plain-language reports
+│   │       ├── reports_menu.dart
+│   │       ├── daily_summary.dart
+│   │       ├── customer_balances.dart
+│   │       └── expiring_stock.dart
+│   └── shell/
+│       ├── bottom_nav_shell.dart    ← 5-tab navigation
+│       └── role_router.dart         ← Owner/Worker/Sales/Cashier views
+├── pubspec.yaml
+└── test/
+</pre>
+    </div>
+  </div>
+</div>

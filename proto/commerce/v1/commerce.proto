@@ -95,7 +95,12 @@ service CommerceService {
       "order_view",
       "order_manage",
       "fulfilment_view",
-      "fulfilment_manage"
+      "fulfilment_manage",
+      "price_list_view",
+      "price_list_manage",
+      "customer_price_override",
+      "discount_manage",
+      "discount_approve"
     ]
     role_bindings: [
       {
@@ -111,7 +116,12 @@ service CommerceService {
           "order_view",
           "order_manage",
           "fulfilment_view",
-          "fulfilment_manage"
+          "fulfilment_manage",
+          "price_list_view",
+          "price_list_manage",
+          "customer_price_override",
+          "discount_manage",
+          "discount_approve"
         ]
       },
       {
@@ -127,7 +137,12 @@ service CommerceService {
           "order_view",
           "order_manage",
           "fulfilment_view",
-          "fulfilment_manage"
+          "fulfilment_manage",
+          "price_list_view",
+          "price_list_manage",
+          "customer_price_override",
+          "discount_manage",
+          "discount_approve"
         ]
       },
       {
@@ -140,7 +155,9 @@ service CommerceService {
           "order_view",
           "order_manage",
           "fulfilment_view",
-          "fulfilment_manage"
+          "fulfilment_manage",
+          "price_list_view",
+          "discount_manage"
         ]
       },
       {
@@ -150,7 +167,8 @@ service CommerceService {
           "product_view",
           "cart_view",
           "order_view",
-          "fulfilment_view"
+          "fulfilment_view",
+          "price_list_view"
         ]
       },
       {
@@ -159,7 +177,8 @@ service CommerceService {
           "shop_view",
           "product_view",
           "cart_view",
-          "order_view"
+          "order_view",
+          "price_list_view"
         ]
       },
       {
@@ -175,7 +194,12 @@ service CommerceService {
           "order_view",
           "order_manage",
           "fulfilment_view",
-          "fulfilment_manage"
+          "fulfilment_manage",
+          "price_list_view",
+          "price_list_manage",
+          "customer_price_override",
+          "discount_manage",
+          "discount_approve"
         ]
       }
     ]
@@ -334,6 +358,82 @@ service CommerceService {
   rpc GetFulfilment(GetFulfilmentRequest) returns (GetFulfilmentResponse) {
     option (common.v1.method_permissions) = {
       permissions: ["fulfilment_view"]
+    };
+  }
+
+  // ----------------------
+  // Pricing
+  // ----------------------
+
+  // Creates or updates a price list.
+  rpc PriceListSave(PriceListSaveRequest) returns (PriceListSaveResponse) {
+    option (common.v1.method_permissions) = {
+      permissions: ["price_list_manage"]
+    };
+  }
+  // Retrieves a price list by ID.
+  rpc PriceListGet(PriceListGetRequest) returns (PriceListGetResponse) {
+    option (common.v1.method_permissions) = {
+      permissions: ["price_list_view"]
+    };
+  }
+  // Searches price lists for a shop.
+  rpc PriceListSearch(PriceListSearchRequest) returns (PriceListSearchResponse) {
+    option (common.v1.method_permissions) = {
+      permissions: ["price_list_view"]
+    };
+  }
+
+  // Replaces all entries for the given variants in a price list.
+  rpc PriceListEntryBatchSave(PriceListEntryBatchSaveRequest) returns (PriceListEntryBatchSaveResponse) {
+    option (common.v1.method_permissions) = {
+      permissions: ["price_list_manage"]
+    };
+  }
+
+  // Creates or updates a customer-to-price-list assignment.
+  rpc CustomerPriceListAssignmentSave(CustomerPriceListAssignmentSaveRequest) returns (CustomerPriceListAssignmentSaveResponse) {
+    option (common.v1.method_permissions) = {
+      permissions: ["customer_price_override"]
+    };
+  }
+  // Searches customer price list assignments.
+  rpc CustomerPriceListAssignmentSearch(CustomerPriceListAssignmentSearchRequest) returns (CustomerPriceListAssignmentSearchResponse) {
+    option (common.v1.method_permissions) = {
+      permissions: ["price_list_view"]
+    };
+  }
+
+  // Creates or updates a customer price override for a specific variant.
+  rpc CustomerPriceOverrideSave(CustomerPriceOverrideSaveRequest) returns (CustomerPriceOverrideSaveResponse) {
+    option (common.v1.method_permissions) = {
+      permissions: ["customer_price_override"]
+    };
+  }
+  // Searches customer price overrides.
+  rpc CustomerPriceOverrideSearch(CustomerPriceOverrideSearchRequest) returns (CustomerPriceOverrideSearchResponse) {
+    option (common.v1.method_permissions) = {
+      permissions: ["price_list_view"]
+    };
+  }
+
+  // Creates or updates a discount rule.
+  rpc DiscountRuleSave(DiscountRuleSaveRequest) returns (DiscountRuleSaveResponse) {
+    option (common.v1.method_permissions) = {
+      permissions: ["discount_manage"]
+    };
+  }
+  // Searches discount rules for a shop.
+  rpc DiscountRuleSearch(DiscountRuleSearchRequest) returns (DiscountRuleSearchResponse) {
+    option (common.v1.method_permissions) = {
+      permissions: ["price_list_view"]
+    };
+  }
+
+  // Resolves the effective price for a variant given customer and quantity context.
+  rpc ResolvePrice(ResolvePriceRequest) returns (ResolvePriceResponse) {
+    option (common.v1.method_permissions) = {
+      permissions: ["price_list_view"]
     };
   }
 }
@@ -962,4 +1062,384 @@ message GetFulfilmentRequest {
 
 message GetFulfilmentResponse {
   Fulfilment fulfilment = 1;
+}
+
+//
+// ----------------------
+// Pricing
+// ----------------------
+
+enum PriceListStatus {
+  PRICE_LIST_STATUS_UNSPECIFIED = 0;
+  PRICE_LIST_STATUS_ACTIVE = 1;
+  PRICE_LIST_STATUS_DRAFT = 2;
+  PRICE_LIST_STATUS_EXPIRED = 3;
+}
+
+enum PriceSource {
+  PRICE_SOURCE_UNSPECIFIED = 0;
+  PRICE_SOURCE_CATALOG = 1;
+  PRICE_SOURCE_PRICE_LIST = 2;
+  PRICE_SOURCE_CUSTOMER_OVERRIDE = 3;
+}
+
+enum DiscountType {
+  DISCOUNT_TYPE_UNSPECIFIED = 0;
+  DISCOUNT_TYPE_PERCENTAGE = 1;
+  DISCOUNT_TYPE_FIXED_AMOUNT = 2;
+}
+
+enum DiscountAppliesTo {
+  DISCOUNT_APPLIES_TO_UNSPECIFIED = 0;
+  DISCOUNT_APPLIES_TO_ORDER = 1;
+  DISCOUNT_APPLIES_TO_LINE_ITEM = 2;
+}
+
+enum DiscountRuleStatus {
+  DISCOUNT_RULE_STATUS_UNSPECIFIED = 0;
+  DISCOUNT_RULE_STATUS_ACTIVE = 1;
+  DISCOUNT_RULE_STATUS_INACTIVE = 2;
+}
+
+enum CustomerPriceOverrideStatus {
+  CUSTOMER_PRICE_OVERRIDE_STATUS_UNSPECIFIED = 0;
+  CUSTOMER_PRICE_OVERRIDE_STATUS_ACTIVE = 1;
+  CUSTOMER_PRICE_OVERRIDE_STATUS_EXPIRED = 2;
+}
+
+enum CustomerPriceListAssignmentStatus {
+  CUSTOMER_PRICE_LIST_ASSIGNMENT_STATUS_UNSPECIFIED = 0;
+  CUSTOMER_PRICE_LIST_ASSIGNMENT_STATUS_ACTIVE = 1;
+  CUSTOMER_PRICE_LIST_ASSIGNMENT_STATUS_INACTIVE = 2;
+}
+
+// A named collection of prices for product variants, scoped to a shop and currency.
+message PriceList {
+  string id = 1 [
+    (buf.validate.field).string.min_len = 3,
+    (buf.validate.field).string.max_len = 40,
+    (buf.validate.field).string.pattern = "[0-9a-z_-]{3,40}"
+  ];
+  string shop_id = 2 [
+    (buf.validate.field).string.min_len = 3,
+    (buf.validate.field).string.max_len = 40,
+    (buf.validate.field).string.pattern = "[0-9a-z_-]{3,40}"
+  ];
+  string name = 3;
+  string currency = 4;
+  int32 priority = 5;
+  google.protobuf.Timestamp valid_from = 6;
+  google.protobuf.Timestamp valid_until = 7;
+  PriceListStatus status = 8;
+  google.protobuf.Timestamp created_at = 10;
+}
+
+// A single price entry within a price list, optionally quantity-tiered.
+message PriceListEntry {
+  string id = 1 [
+    (buf.validate.field).string.min_len = 3,
+    (buf.validate.field).string.max_len = 40,
+    (buf.validate.field).string.pattern = "[0-9a-z_-]{3,40}"
+  ];
+  string price_list_id = 2 [
+    (buf.validate.field).string.min_len = 3,
+    (buf.validate.field).string.max_len = 40,
+    (buf.validate.field).string.pattern = "[0-9a-z_-]{3,40}"
+  ];
+  string product_variant_id = 3 [
+    (buf.validate.field).string.min_len = 3,
+    (buf.validate.field).string.max_len = 40,
+    (buf.validate.field).string.pattern = "[0-9a-z_-]{3,40}"
+  ];
+  common.v1.Money unit_price = 4;
+  int32 min_quantity = 5;
+  int32 max_quantity = 6;
+}
+
+// Links a customer to a price list.
+message CustomerPriceListAssignment {
+  string id = 1 [
+    (buf.validate.field).string.min_len = 3,
+    (buf.validate.field).string.max_len = 40,
+    (buf.validate.field).string.pattern = "[0-9a-z_-]{3,40}"
+  ];
+  string customer_id = 2 [
+    (buf.validate.field).string.min_len = 3,
+    (buf.validate.field).string.max_len = 40,
+    (buf.validate.field).string.pattern = "[0-9a-z_-]{3,40}"
+  ];
+  string price_list_id = 3 [
+    (buf.validate.field).string.min_len = 3,
+    (buf.validate.field).string.max_len = 40,
+    (buf.validate.field).string.pattern = "[0-9a-z_-]{3,40}"
+  ];
+  string assigned_by = 4;
+  CustomerPriceListAssignmentStatus status = 5;
+  google.protobuf.Timestamp created_at = 10;
+}
+
+// A per-customer, per-variant price override that takes precedence over price lists.
+message CustomerPriceOverride {
+  string id = 1 [
+    (buf.validate.field).string.min_len = 3,
+    (buf.validate.field).string.max_len = 40,
+    (buf.validate.field).string.pattern = "[0-9a-z_-]{3,40}"
+  ];
+  string customer_id = 2 [
+    (buf.validate.field).string.min_len = 3,
+    (buf.validate.field).string.max_len = 40,
+    (buf.validate.field).string.pattern = "[0-9a-z_-]{3,40}"
+  ];
+  string product_variant_id = 3 [
+    (buf.validate.field).string.min_len = 3,
+    (buf.validate.field).string.max_len = 40,
+    (buf.validate.field).string.pattern = "[0-9a-z_-]{3,40}"
+  ];
+  common.v1.Money unit_price = 4;
+  google.protobuf.Timestamp valid_from = 5;
+  google.protobuf.Timestamp valid_until = 6;
+  string approved_by = 7;
+  CustomerPriceOverrideStatus status = 8;
+  google.protobuf.Timestamp created_at = 10;
+}
+
+// A rule that applies discounts to orders or line items based on conditions.
+message DiscountRule {
+  string id = 1 [
+    (buf.validate.field).string.min_len = 3,
+    (buf.validate.field).string.max_len = 40,
+    (buf.validate.field).string.pattern = "[0-9a-z_-]{3,40}"
+  ];
+  string shop_id = 2 [
+    (buf.validate.field).string.min_len = 3,
+    (buf.validate.field).string.max_len = 40,
+    (buf.validate.field).string.pattern = "[0-9a-z_-]{3,40}"
+  ];
+  string name = 3;
+  DiscountType discount_type = 4;
+  double value = 5;
+  DiscountAppliesTo applies_to = 6;
+  google.protobuf.Struct conditions = 7;
+  bool requires_approval = 8;
+  double max_discount_percent = 9;
+  google.protobuf.Timestamp valid_from = 10;
+  google.protobuf.Timestamp valid_until = 11;
+  DiscountRuleStatus status = 12;
+  google.protobuf.Timestamp created_at = 15;
+}
+
+// The fully resolved price for a variant, showing which source and discounts apply.
+message ResolvedPrice {
+  string variant_id = 1 [
+    (buf.validate.field).string.min_len = 3,
+    (buf.validate.field).string.max_len = 40,
+    (buf.validate.field).string.pattern = "[0-9a-z_-]{3,40}"
+  ];
+  common.v1.Money unit_price = 2;
+  PriceSource price_source = 3;
+  string price_list_id = 4;
+  string override_id = 5;
+  common.v1.Money discount_amount = 6;
+  string discount_rule_id = 7;
+  common.v1.Money pre_discount_price = 8;
+}
+
+// ---- PriceList RPCs ----
+
+message PriceListSaveRequest {
+  // Empty for create; set for update.
+  string id = 1;
+  string shop_id = 2 [
+    (buf.validate.field).string.min_len = 3,
+    (buf.validate.field).string.max_len = 40,
+    (buf.validate.field).string.pattern = "[0-9a-z_-]{3,40}"
+  ];
+  string name = 3;
+  string currency = 4;
+  int32 priority = 5;
+  google.protobuf.Timestamp valid_from = 6;
+  google.protobuf.Timestamp valid_until = 7;
+  PriceListStatus status = 8;
+}
+
+message PriceListSaveResponse {
+  PriceList price_list = 1;
+}
+
+message PriceListGetRequest {
+  string id = 1 [
+    (buf.validate.field).string.min_len = 3,
+    (buf.validate.field).string.max_len = 40,
+    (buf.validate.field).string.pattern = "[0-9a-z_-]{3,40}"
+  ];
+}
+
+message PriceListGetResponse {
+  PriceList price_list = 1;
+}
+
+message PriceListSearchRequest {
+  string shop_id = 1 [
+    (buf.validate.field).string.min_len = 3,
+    (buf.validate.field).string.max_len = 40,
+    (buf.validate.field).string.pattern = "[0-9a-z_-]{3,40}"
+  ];
+  common.v1.SearchRequest search = 2;
+}
+
+message PriceListSearchResponse {
+  repeated PriceList price_lists = 1;
+  string next_page = 2;
+  string prev_cursor = 3;
+}
+
+// ---- PriceListEntry RPCs ----
+
+message PriceListEntryBatchSaveRequest {
+  string price_list_id = 1 [
+    (buf.validate.field).string.min_len = 3,
+    (buf.validate.field).string.max_len = 40,
+    (buf.validate.field).string.pattern = "[0-9a-z_-]{3,40}"
+  ];
+  // Entries to save. For each product_variant_id present, all existing entries
+  // in this price list for that variant are replaced.
+  repeated PriceListEntry entries = 2;
+}
+
+message PriceListEntryBatchSaveResponse {
+  repeated PriceListEntry entries = 1;
+}
+
+// ---- CustomerPriceListAssignment RPCs ----
+
+message CustomerPriceListAssignmentSaveRequest {
+  // Empty for create; set for update.
+  string id = 1;
+  string customer_id = 2 [
+    (buf.validate.field).string.min_len = 3,
+    (buf.validate.field).string.max_len = 40,
+    (buf.validate.field).string.pattern = "[0-9a-z_-]{3,40}"
+  ];
+  string price_list_id = 3 [
+    (buf.validate.field).string.min_len = 3,
+    (buf.validate.field).string.max_len = 40,
+    (buf.validate.field).string.pattern = "[0-9a-z_-]{3,40}"
+  ];
+  string assigned_by = 4;
+  CustomerPriceListAssignmentStatus status = 5;
+}
+
+message CustomerPriceListAssignmentSaveResponse {
+  CustomerPriceListAssignment assignment = 1;
+}
+
+message CustomerPriceListAssignmentSearchRequest {
+  string customer_id = 1;
+  string price_list_id = 2;
+  common.v1.SearchRequest search = 3;
+}
+
+message CustomerPriceListAssignmentSearchResponse {
+  repeated CustomerPriceListAssignment assignments = 1;
+  string next_page = 2;
+  string prev_cursor = 3;
+}
+
+// ---- CustomerPriceOverride RPCs ----
+
+message CustomerPriceOverrideSaveRequest {
+  // Empty for create; set for update.
+  string id = 1;
+  string customer_id = 2 [
+    (buf.validate.field).string.min_len = 3,
+    (buf.validate.field).string.max_len = 40,
+    (buf.validate.field).string.pattern = "[0-9a-z_-]{3,40}"
+  ];
+  string product_variant_id = 3 [
+    (buf.validate.field).string.min_len = 3,
+    (buf.validate.field).string.max_len = 40,
+    (buf.validate.field).string.pattern = "[0-9a-z_-]{3,40}"
+  ];
+  common.v1.Money unit_price = 4;
+  google.protobuf.Timestamp valid_from = 5;
+  google.protobuf.Timestamp valid_until = 6;
+  string approved_by = 7;
+  CustomerPriceOverrideStatus status = 8;
+}
+
+message CustomerPriceOverrideSaveResponse {
+  CustomerPriceOverride override = 1;
+}
+
+message CustomerPriceOverrideSearchRequest {
+  string customer_id = 1;
+  string product_variant_id = 2;
+  common.v1.SearchRequest search = 3;
+}
+
+message CustomerPriceOverrideSearchResponse {
+  repeated CustomerPriceOverride overrides = 1;
+  string next_page = 2;
+  string prev_cursor = 3;
+}
+
+// ---- DiscountRule RPCs ----
+
+message DiscountRuleSaveRequest {
+  // Empty for create; set for update.
+  string id = 1;
+  string shop_id = 2 [
+    (buf.validate.field).string.min_len = 3,
+    (buf.validate.field).string.max_len = 40,
+    (buf.validate.field).string.pattern = "[0-9a-z_-]{3,40}"
+  ];
+  string name = 3;
+  DiscountType discount_type = 4;
+  double value = 5;
+  DiscountAppliesTo applies_to = 6;
+  google.protobuf.Struct conditions = 7;
+  bool requires_approval = 8;
+  double max_discount_percent = 9;
+  google.protobuf.Timestamp valid_from = 10;
+  google.protobuf.Timestamp valid_until = 11;
+  DiscountRuleStatus status = 12;
+}
+
+message DiscountRuleSaveResponse {
+  DiscountRule discount_rule = 1;
+}
+
+message DiscountRuleSearchRequest {
+  string shop_id = 1 [
+    (buf.validate.field).string.min_len = 3,
+    (buf.validate.field).string.max_len = 40,
+    (buf.validate.field).string.pattern = "[0-9a-z_-]{3,40}"
+  ];
+  common.v1.SearchRequest search = 2;
+}
+
+message DiscountRuleSearchResponse {
+  repeated DiscountRule discount_rules = 1;
+  string next_page = 2;
+  string prev_cursor = 3;
+}
+
+// ---- ResolvePrice RPC ----
+
+message ResolvePriceRequest {
+  string customer_id = 1 [
+    (buf.validate.field).string.min_len = 3,
+    (buf.validate.field).string.max_len = 40,
+    (buf.validate.field).string.pattern = "[0-9a-z_-]{3,40}"
+  ];
+  string product_variant_id = 2 [
+    (buf.validate.field).string.min_len = 3,
+    (buf.validate.field).string.max_len = 40,
+    (buf.validate.field).string.pattern = "[0-9a-z_-]{3,40}"
+  ];
+  int32 quantity = 3;
+}
+
+message ResolvePriceResponse {
+  ResolvedPrice resolved_price = 1;
 }

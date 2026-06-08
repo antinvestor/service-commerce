@@ -159,6 +159,120 @@ final $typed_data.Uint8List fulfilmentStatusDescriptor = $convert.base64Decode(
     'VTX1NISVBQRUQQBBIfChtGVUxGSUxNRU5UX1NUQVRVU19ERUxJVkVSRUQQBRIfChtGVUxGSUxN'
     'RU5UX1NUQVRVU19DQU5DRUxMRUQQBg==');
 
+@$core.Deprecated('Use priceListStatusDescriptor instead')
+const PriceListStatus$json = {
+  '1': 'PriceListStatus',
+  '2': [
+    {'1': 'PRICE_LIST_STATUS_UNSPECIFIED', '2': 0},
+    {'1': 'PRICE_LIST_STATUS_ACTIVE', '2': 1},
+    {'1': 'PRICE_LIST_STATUS_DRAFT', '2': 2},
+    {'1': 'PRICE_LIST_STATUS_EXPIRED', '2': 3},
+  ],
+};
+
+/// Descriptor for `PriceListStatus`. Decode as a `google.protobuf.EnumDescriptorProto`.
+final $typed_data.Uint8List priceListStatusDescriptor = $convert.base64Decode(
+    'Cg9QcmljZUxpc3RTdGF0dXMSIQodUFJJQ0VfTElTVF9TVEFUVVNfVU5TUEVDSUZJRUQQABIcCh'
+    'hQUklDRV9MSVNUX1NUQVRVU19BQ1RJVkUQARIbChdQUklDRV9MSVNUX1NUQVRVU19EUkFGVBAC'
+    'Eh0KGVBSSUNFX0xJU1RfU1RBVFVTX0VYUElSRUQQAw==');
+
+@$core.Deprecated('Use priceSourceDescriptor instead')
+const PriceSource$json = {
+  '1': 'PriceSource',
+  '2': [
+    {'1': 'PRICE_SOURCE_UNSPECIFIED', '2': 0},
+    {'1': 'PRICE_SOURCE_CATALOG', '2': 1},
+    {'1': 'PRICE_SOURCE_PRICE_LIST', '2': 2},
+    {'1': 'PRICE_SOURCE_CUSTOMER_OVERRIDE', '2': 3},
+  ],
+};
+
+/// Descriptor for `PriceSource`. Decode as a `google.protobuf.EnumDescriptorProto`.
+final $typed_data.Uint8List priceSourceDescriptor = $convert.base64Decode(
+    'CgtQcmljZVNvdXJjZRIcChhQUklDRV9TT1VSQ0VfVU5TUEVDSUZJRUQQABIYChRQUklDRV9TT1'
+    'VSQ0VfQ0FUQUxPRxABEhsKF1BSSUNFX1NPVVJDRV9QUklDRV9MSVNUEAISIgoeUFJJQ0VfU09V'
+    'UkNFX0NVU1RPTUVSX09WRVJSSURFEAM=');
+
+@$core.Deprecated('Use discountTypeDescriptor instead')
+const DiscountType$json = {
+  '1': 'DiscountType',
+  '2': [
+    {'1': 'DISCOUNT_TYPE_UNSPECIFIED', '2': 0},
+    {'1': 'DISCOUNT_TYPE_PERCENTAGE', '2': 1},
+    {'1': 'DISCOUNT_TYPE_FIXED_AMOUNT', '2': 2},
+  ],
+};
+
+/// Descriptor for `DiscountType`. Decode as a `google.protobuf.EnumDescriptorProto`.
+final $typed_data.Uint8List discountTypeDescriptor = $convert.base64Decode(
+    'CgxEaXNjb3VudFR5cGUSHQoZRElTQ09VTlRfVFlQRV9VTlNQRUNJRklFRBAAEhwKGERJU0NPVU'
+    '5UX1RZUEVfUEVSQ0VOVEFHRRABEh4KGkRJU0NPVU5UX1RZUEVfRklYRURfQU1PVU5UEAI=');
+
+@$core.Deprecated('Use discountAppliesToDescriptor instead')
+const DiscountAppliesTo$json = {
+  '1': 'DiscountAppliesTo',
+  '2': [
+    {'1': 'DISCOUNT_APPLIES_TO_UNSPECIFIED', '2': 0},
+    {'1': 'DISCOUNT_APPLIES_TO_ORDER', '2': 1},
+    {'1': 'DISCOUNT_APPLIES_TO_LINE_ITEM', '2': 2},
+  ],
+};
+
+/// Descriptor for `DiscountAppliesTo`. Decode as a `google.protobuf.EnumDescriptorProto`.
+final $typed_data.Uint8List discountAppliesToDescriptor = $convert.base64Decode(
+    'ChFEaXNjb3VudEFwcGxpZXNUbxIjCh9ESVNDT1VOVF9BUFBMSUVTX1RPX1VOU1BFQ0lGSUVEEA'
+    'ASHQoZRElTQ09VTlRfQVBQTElFU19UT19PUkRFUhABEiEKHURJU0NPVU5UX0FQUExJRVNfVE9f'
+    'TElORV9JVEVNEAI=');
+
+@$core.Deprecated('Use discountRuleStatusDescriptor instead')
+const DiscountRuleStatus$json = {
+  '1': 'DiscountRuleStatus',
+  '2': [
+    {'1': 'DISCOUNT_RULE_STATUS_UNSPECIFIED', '2': 0},
+    {'1': 'DISCOUNT_RULE_STATUS_ACTIVE', '2': 1},
+    {'1': 'DISCOUNT_RULE_STATUS_INACTIVE', '2': 2},
+  ],
+};
+
+/// Descriptor for `DiscountRuleStatus`. Decode as a `google.protobuf.EnumDescriptorProto`.
+final $typed_data.Uint8List discountRuleStatusDescriptor = $convert.base64Decode(
+    'ChJEaXNjb3VudFJ1bGVTdGF0dXMSJAogRElTQ09VTlRfUlVMRV9TVEFUVVNfVU5TUEVDSUZJRU'
+    'QQABIfChtESVNDT1VOVF9SVUxFX1NUQVRVU19BQ1RJVkUQARIhCh1ESVNDT1VOVF9SVUxFX1NU'
+    'QVRVU19JTkFDVElWRRAC');
+
+@$core.Deprecated('Use customerPriceOverrideStatusDescriptor instead')
+const CustomerPriceOverrideStatus$json = {
+  '1': 'CustomerPriceOverrideStatus',
+  '2': [
+    {'1': 'CUSTOMER_PRICE_OVERRIDE_STATUS_UNSPECIFIED', '2': 0},
+    {'1': 'CUSTOMER_PRICE_OVERRIDE_STATUS_ACTIVE', '2': 1},
+    {'1': 'CUSTOMER_PRICE_OVERRIDE_STATUS_EXPIRED', '2': 2},
+  ],
+};
+
+/// Descriptor for `CustomerPriceOverrideStatus`. Decode as a `google.protobuf.EnumDescriptorProto`.
+final $typed_data.Uint8List customerPriceOverrideStatusDescriptor = $convert.base64Decode(
+    'ChtDdXN0b21lclByaWNlT3ZlcnJpZGVTdGF0dXMSLgoqQ1VTVE9NRVJfUFJJQ0VfT1ZFUlJJRE'
+    'VfU1RBVFVTX1VOU1BFQ0lGSUVEEAASKQolQ1VTVE9NRVJfUFJJQ0VfT1ZFUlJJREVfU1RBVFVT'
+    'X0FDVElWRRABEioKJkNVU1RPTUVSX1BSSUNFX09WRVJSSURFX1NUQVRVU19FWFBJUkVEEAI=');
+
+@$core.Deprecated('Use customerPriceListAssignmentStatusDescriptor instead')
+const CustomerPriceListAssignmentStatus$json = {
+  '1': 'CustomerPriceListAssignmentStatus',
+  '2': [
+    {'1': 'CUSTOMER_PRICE_LIST_ASSIGNMENT_STATUS_UNSPECIFIED', '2': 0},
+    {'1': 'CUSTOMER_PRICE_LIST_ASSIGNMENT_STATUS_ACTIVE', '2': 1},
+    {'1': 'CUSTOMER_PRICE_LIST_ASSIGNMENT_STATUS_INACTIVE', '2': 2},
+  ],
+};
+
+/// Descriptor for `CustomerPriceListAssignmentStatus`. Decode as a `google.protobuf.EnumDescriptorProto`.
+final $typed_data.Uint8List customerPriceListAssignmentStatusDescriptor = $convert.base64Decode(
+    'CiFDdXN0b21lclByaWNlTGlzdEFzc2lnbm1lbnRTdGF0dXMSNQoxQ1VTVE9NRVJfUFJJQ0VfTE'
+    'lTVF9BU1NJR05NRU5UX1NUQVRVU19VTlNQRUNJRklFRBAAEjAKLENVU1RPTUVSX1BSSUNFX0xJ'
+    'U1RfQVNTSUdOTUVOVF9TVEFUVVNfQUNUSVZFEAESMgouQ1VTVE9NRVJfUFJJQ0VfTElTVF9BU1'
+    'NJR05NRU5UX1NUQVRVU19JTkFDVElWRRAC');
+
 @$core.Deprecated('Use shopDescriptor instead')
 const Shop$json = {
   '1': 'Shop',
@@ -1039,6 +1153,539 @@ final $typed_data.Uint8List getFulfilmentResponseDescriptor = $convert.base64Dec
     'ChVHZXRGdWxmaWxtZW50UmVzcG9uc2USNwoKZnVsZmlsbWVudBgBIAEoCzIXLmNvbW1lcmNlLn'
     'YxLkZ1bGZpbG1lbnRSCmZ1bGZpbG1lbnQ=');
 
+@$core.Deprecated('Use priceListDescriptor instead')
+const PriceList$json = {
+  '1': 'PriceList',
+  '2': [
+    {'1': 'id', '3': 1, '4': 1, '5': 9, '8': {}, '10': 'id'},
+    {'1': 'shop_id', '3': 2, '4': 1, '5': 9, '8': {}, '10': 'shopId'},
+    {'1': 'name', '3': 3, '4': 1, '5': 9, '10': 'name'},
+    {'1': 'currency', '3': 4, '4': 1, '5': 9, '10': 'currency'},
+    {'1': 'priority', '3': 5, '4': 1, '5': 5, '10': 'priority'},
+    {'1': 'valid_from', '3': 6, '4': 1, '5': 11, '6': '.google.protobuf.Timestamp', '10': 'validFrom'},
+    {'1': 'valid_until', '3': 7, '4': 1, '5': 11, '6': '.google.protobuf.Timestamp', '10': 'validUntil'},
+    {'1': 'status', '3': 8, '4': 1, '5': 14, '6': '.commerce.v1.PriceListStatus', '10': 'status'},
+    {'1': 'created_at', '3': 10, '4': 1, '5': 11, '6': '.google.protobuf.Timestamp', '10': 'createdAt'},
+  ],
+};
+
+/// Descriptor for `PriceList`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List priceListDescriptor = $convert.base64Decode(
+    'CglQcmljZUxpc3QSKwoCaWQYASABKAlCG7pIGHIWEAMYKDIQWzAtOWEtel8tXXszLDQwfVICaW'
+    'QSNAoHc2hvcF9pZBgCIAEoCUIbukgYchYQAxgoMhBbMC05YS16Xy1dezMsNDB9UgZzaG9wSWQS'
+    'EgoEbmFtZRgDIAEoCVIEbmFtZRIaCghjdXJyZW5jeRgEIAEoCVIIY3VycmVuY3kSGgoIcHJpb3'
+    'JpdHkYBSABKAVSCHByaW9yaXR5EjkKCnZhbGlkX2Zyb20YBiABKAsyGi5nb29nbGUucHJvdG9i'
+    'dWYuVGltZXN0YW1wUgl2YWxpZEZyb20SOwoLdmFsaWRfdW50aWwYByABKAsyGi5nb29nbGUucH'
+    'JvdG9idWYuVGltZXN0YW1wUgp2YWxpZFVudGlsEjQKBnN0YXR1cxgIIAEoDjIcLmNvbW1lcmNl'
+    'LnYxLlByaWNlTGlzdFN0YXR1c1IGc3RhdHVzEjkKCmNyZWF0ZWRfYXQYCiABKAsyGi5nb29nbG'
+    'UucHJvdG9idWYuVGltZXN0YW1wUgljcmVhdGVkQXQ=');
+
+@$core.Deprecated('Use priceListEntryDescriptor instead')
+const PriceListEntry$json = {
+  '1': 'PriceListEntry',
+  '2': [
+    {'1': 'id', '3': 1, '4': 1, '5': 9, '8': {}, '10': 'id'},
+    {'1': 'price_list_id', '3': 2, '4': 1, '5': 9, '8': {}, '10': 'priceListId'},
+    {'1': 'product_variant_id', '3': 3, '4': 1, '5': 9, '8': {}, '10': 'productVariantId'},
+    {'1': 'unit_price', '3': 4, '4': 1, '5': 11, '6': '.common.v1.Money', '10': 'unitPrice'},
+    {'1': 'min_quantity', '3': 5, '4': 1, '5': 5, '10': 'minQuantity'},
+    {'1': 'max_quantity', '3': 6, '4': 1, '5': 5, '10': 'maxQuantity'},
+  ],
+};
+
+/// Descriptor for `PriceListEntry`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List priceListEntryDescriptor = $convert.base64Decode(
+    'Cg5QcmljZUxpc3RFbnRyeRIrCgJpZBgBIAEoCUIbukgYchYQAxgoMhBbMC05YS16Xy1dezMsND'
+    'B9UgJpZBI/Cg1wcmljZV9saXN0X2lkGAIgASgJQhu6SBhyFhADGCgyEFswLTlhLXpfLV17Myw0'
+    'MH1SC3ByaWNlTGlzdElkEkkKEnByb2R1Y3RfdmFyaWFudF9pZBgDIAEoCUIbukgYchYQAxgoMh'
+    'BbMC05YS16Xy1dezMsNDB9UhBwcm9kdWN0VmFyaWFudElkEi8KCnVuaXRfcHJpY2UYBCABKAsy'
+    'EC5jb21tb24udjEuTW9uZXlSCXVuaXRQcmljZRIhCgxtaW5fcXVhbnRpdHkYBSABKAVSC21pbl'
+    'F1YW50aXR5EiEKDG1heF9xdWFudGl0eRgGIAEoBVILbWF4UXVhbnRpdHk=');
+
+@$core.Deprecated('Use customerPriceListAssignmentDescriptor instead')
+const CustomerPriceListAssignment$json = {
+  '1': 'CustomerPriceListAssignment',
+  '2': [
+    {'1': 'id', '3': 1, '4': 1, '5': 9, '8': {}, '10': 'id'},
+    {'1': 'customer_id', '3': 2, '4': 1, '5': 9, '8': {}, '10': 'customerId'},
+    {'1': 'price_list_id', '3': 3, '4': 1, '5': 9, '8': {}, '10': 'priceListId'},
+    {'1': 'assigned_by', '3': 4, '4': 1, '5': 9, '10': 'assignedBy'},
+    {'1': 'status', '3': 5, '4': 1, '5': 14, '6': '.commerce.v1.CustomerPriceListAssignmentStatus', '10': 'status'},
+    {'1': 'created_at', '3': 10, '4': 1, '5': 11, '6': '.google.protobuf.Timestamp', '10': 'createdAt'},
+  ],
+};
+
+/// Descriptor for `CustomerPriceListAssignment`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List customerPriceListAssignmentDescriptor = $convert.base64Decode(
+    'ChtDdXN0b21lclByaWNlTGlzdEFzc2lnbm1lbnQSKwoCaWQYASABKAlCG7pIGHIWEAMYKDIQWz'
+    'AtOWEtel8tXXszLDQwfVICaWQSPAoLY3VzdG9tZXJfaWQYAiABKAlCG7pIGHIWEAMYKDIQWzAt'
+    'OWEtel8tXXszLDQwfVIKY3VzdG9tZXJJZBI/Cg1wcmljZV9saXN0X2lkGAMgASgJQhu6SBhyFh'
+    'ADGCgyEFswLTlhLXpfLV17Myw0MH1SC3ByaWNlTGlzdElkEh8KC2Fzc2lnbmVkX2J5GAQgASgJ'
+    'Ugphc3NpZ25lZEJ5EkYKBnN0YXR1cxgFIAEoDjIuLmNvbW1lcmNlLnYxLkN1c3RvbWVyUHJpY2'
+    'VMaXN0QXNzaWdubWVudFN0YXR1c1IGc3RhdHVzEjkKCmNyZWF0ZWRfYXQYCiABKAsyGi5nb29n'
+    'bGUucHJvdG9idWYuVGltZXN0YW1wUgljcmVhdGVkQXQ=');
+
+@$core.Deprecated('Use customerPriceOverrideDescriptor instead')
+const CustomerPriceOverride$json = {
+  '1': 'CustomerPriceOverride',
+  '2': [
+    {'1': 'id', '3': 1, '4': 1, '5': 9, '8': {}, '10': 'id'},
+    {'1': 'customer_id', '3': 2, '4': 1, '5': 9, '8': {}, '10': 'customerId'},
+    {'1': 'product_variant_id', '3': 3, '4': 1, '5': 9, '8': {}, '10': 'productVariantId'},
+    {'1': 'unit_price', '3': 4, '4': 1, '5': 11, '6': '.common.v1.Money', '10': 'unitPrice'},
+    {'1': 'valid_from', '3': 5, '4': 1, '5': 11, '6': '.google.protobuf.Timestamp', '10': 'validFrom'},
+    {'1': 'valid_until', '3': 6, '4': 1, '5': 11, '6': '.google.protobuf.Timestamp', '10': 'validUntil'},
+    {'1': 'approved_by', '3': 7, '4': 1, '5': 9, '10': 'approvedBy'},
+    {'1': 'status', '3': 8, '4': 1, '5': 14, '6': '.commerce.v1.CustomerPriceOverrideStatus', '10': 'status'},
+    {'1': 'created_at', '3': 10, '4': 1, '5': 11, '6': '.google.protobuf.Timestamp', '10': 'createdAt'},
+  ],
+};
+
+/// Descriptor for `CustomerPriceOverride`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List customerPriceOverrideDescriptor = $convert.base64Decode(
+    'ChVDdXN0b21lclByaWNlT3ZlcnJpZGUSKwoCaWQYASABKAlCG7pIGHIWEAMYKDIQWzAtOWEtel'
+    '8tXXszLDQwfVICaWQSPAoLY3VzdG9tZXJfaWQYAiABKAlCG7pIGHIWEAMYKDIQWzAtOWEtel8t'
+    'XXszLDQwfVIKY3VzdG9tZXJJZBJJChJwcm9kdWN0X3ZhcmlhbnRfaWQYAyABKAlCG7pIGHIWEA'
+    'MYKDIQWzAtOWEtel8tXXszLDQwfVIQcHJvZHVjdFZhcmlhbnRJZBIvCgp1bml0X3ByaWNlGAQg'
+    'ASgLMhAuY29tbW9uLnYxLk1vbmV5Ugl1bml0UHJpY2USOQoKdmFsaWRfZnJvbRgFIAEoCzIaLm'
+    'dvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXBSCXZhbGlkRnJvbRI7Cgt2YWxpZF91bnRpbBgGIAEo'
+    'CzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXBSCnZhbGlkVW50aWwSHwoLYXBwcm92ZWRfYn'
+    'kYByABKAlSCmFwcHJvdmVkQnkSQAoGc3RhdHVzGAggASgOMiguY29tbWVyY2UudjEuQ3VzdG9t'
+    'ZXJQcmljZU92ZXJyaWRlU3RhdHVzUgZzdGF0dXMSOQoKY3JlYXRlZF9hdBgKIAEoCzIaLmdvb2'
+    'dsZS5wcm90b2J1Zi5UaW1lc3RhbXBSCWNyZWF0ZWRBdA==');
+
+@$core.Deprecated('Use discountRuleDescriptor instead')
+const DiscountRule$json = {
+  '1': 'DiscountRule',
+  '2': [
+    {'1': 'id', '3': 1, '4': 1, '5': 9, '8': {}, '10': 'id'},
+    {'1': 'shop_id', '3': 2, '4': 1, '5': 9, '8': {}, '10': 'shopId'},
+    {'1': 'name', '3': 3, '4': 1, '5': 9, '10': 'name'},
+    {'1': 'discount_type', '3': 4, '4': 1, '5': 14, '6': '.commerce.v1.DiscountType', '10': 'discountType'},
+    {'1': 'value', '3': 5, '4': 1, '5': 1, '10': 'value'},
+    {'1': 'applies_to', '3': 6, '4': 1, '5': 14, '6': '.commerce.v1.DiscountAppliesTo', '10': 'appliesTo'},
+    {'1': 'conditions', '3': 7, '4': 1, '5': 11, '6': '.google.protobuf.Struct', '10': 'conditions'},
+    {'1': 'requires_approval', '3': 8, '4': 1, '5': 8, '10': 'requiresApproval'},
+    {'1': 'max_discount_percent', '3': 9, '4': 1, '5': 1, '10': 'maxDiscountPercent'},
+    {'1': 'valid_from', '3': 10, '4': 1, '5': 11, '6': '.google.protobuf.Timestamp', '10': 'validFrom'},
+    {'1': 'valid_until', '3': 11, '4': 1, '5': 11, '6': '.google.protobuf.Timestamp', '10': 'validUntil'},
+    {'1': 'status', '3': 12, '4': 1, '5': 14, '6': '.commerce.v1.DiscountRuleStatus', '10': 'status'},
+    {'1': 'created_at', '3': 15, '4': 1, '5': 11, '6': '.google.protobuf.Timestamp', '10': 'createdAt'},
+  ],
+};
+
+/// Descriptor for `DiscountRule`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List discountRuleDescriptor = $convert.base64Decode(
+    'CgxEaXNjb3VudFJ1bGUSKwoCaWQYASABKAlCG7pIGHIWEAMYKDIQWzAtOWEtel8tXXszLDQwfV'
+    'ICaWQSNAoHc2hvcF9pZBgCIAEoCUIbukgYchYQAxgoMhBbMC05YS16Xy1dezMsNDB9UgZzaG9w'
+    'SWQSEgoEbmFtZRgDIAEoCVIEbmFtZRI+Cg1kaXNjb3VudF90eXBlGAQgASgOMhkuY29tbWVyY2'
+    'UudjEuRGlzY291bnRUeXBlUgxkaXNjb3VudFR5cGUSFAoFdmFsdWUYBSABKAFSBXZhbHVlEj0K'
+    'CmFwcGxpZXNfdG8YBiABKA4yHi5jb21tZXJjZS52MS5EaXNjb3VudEFwcGxpZXNUb1IJYXBwbG'
+    'llc1RvEjcKCmNvbmRpdGlvbnMYByABKAsyFy5nb29nbGUucHJvdG9idWYuU3RydWN0Ugpjb25k'
+    'aXRpb25zEisKEXJlcXVpcmVzX2FwcHJvdmFsGAggASgIUhByZXF1aXJlc0FwcHJvdmFsEjAKFG'
+    '1heF9kaXNjb3VudF9wZXJjZW50GAkgASgBUhJtYXhEaXNjb3VudFBlcmNlbnQSOQoKdmFsaWRf'
+    'ZnJvbRgKIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXBSCXZhbGlkRnJvbRI7Cgt2YW'
+    'xpZF91bnRpbBgLIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXBSCnZhbGlkVW50aWwS'
+    'NwoGc3RhdHVzGAwgASgOMh8uY29tbWVyY2UudjEuRGlzY291bnRSdWxlU3RhdHVzUgZzdGF0dX'
+    'MSOQoKY3JlYXRlZF9hdBgPIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXBSCWNyZWF0'
+    'ZWRBdA==');
+
+@$core.Deprecated('Use resolvedPriceDescriptor instead')
+const ResolvedPrice$json = {
+  '1': 'ResolvedPrice',
+  '2': [
+    {'1': 'variant_id', '3': 1, '4': 1, '5': 9, '8': {}, '10': 'variantId'},
+    {'1': 'unit_price', '3': 2, '4': 1, '5': 11, '6': '.common.v1.Money', '10': 'unitPrice'},
+    {'1': 'price_source', '3': 3, '4': 1, '5': 14, '6': '.commerce.v1.PriceSource', '10': 'priceSource'},
+    {'1': 'price_list_id', '3': 4, '4': 1, '5': 9, '10': 'priceListId'},
+    {'1': 'override_id', '3': 5, '4': 1, '5': 9, '10': 'overrideId'},
+    {'1': 'discount_amount', '3': 6, '4': 1, '5': 11, '6': '.common.v1.Money', '10': 'discountAmount'},
+    {'1': 'discount_rule_id', '3': 7, '4': 1, '5': 9, '10': 'discountRuleId'},
+    {'1': 'pre_discount_price', '3': 8, '4': 1, '5': 11, '6': '.common.v1.Money', '10': 'preDiscountPrice'},
+  ],
+};
+
+/// Descriptor for `ResolvedPrice`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List resolvedPriceDescriptor = $convert.base64Decode(
+    'Cg1SZXNvbHZlZFByaWNlEjoKCnZhcmlhbnRfaWQYASABKAlCG7pIGHIWEAMYKDIQWzAtOWEtel'
+    '8tXXszLDQwfVIJdmFyaWFudElkEi8KCnVuaXRfcHJpY2UYAiABKAsyEC5jb21tb24udjEuTW9u'
+    'ZXlSCXVuaXRQcmljZRI7CgxwcmljZV9zb3VyY2UYAyABKA4yGC5jb21tZXJjZS52MS5QcmljZV'
+    'NvdXJjZVILcHJpY2VTb3VyY2USIgoNcHJpY2VfbGlzdF9pZBgEIAEoCVILcHJpY2VMaXN0SWQS'
+    'HwoLb3ZlcnJpZGVfaWQYBSABKAlSCm92ZXJyaWRlSWQSOQoPZGlzY291bnRfYW1vdW50GAYgAS'
+    'gLMhAuY29tbW9uLnYxLk1vbmV5Ug5kaXNjb3VudEFtb3VudBIoChBkaXNjb3VudF9ydWxlX2lk'
+    'GAcgASgJUg5kaXNjb3VudFJ1bGVJZBI+ChJwcmVfZGlzY291bnRfcHJpY2UYCCABKAsyEC5jb2'
+    '1tb24udjEuTW9uZXlSEHByZURpc2NvdW50UHJpY2U=');
+
+@$core.Deprecated('Use priceListSaveRequestDescriptor instead')
+const PriceListSaveRequest$json = {
+  '1': 'PriceListSaveRequest',
+  '2': [
+    {'1': 'id', '3': 1, '4': 1, '5': 9, '10': 'id'},
+    {'1': 'shop_id', '3': 2, '4': 1, '5': 9, '8': {}, '10': 'shopId'},
+    {'1': 'name', '3': 3, '4': 1, '5': 9, '10': 'name'},
+    {'1': 'currency', '3': 4, '4': 1, '5': 9, '10': 'currency'},
+    {'1': 'priority', '3': 5, '4': 1, '5': 5, '10': 'priority'},
+    {'1': 'valid_from', '3': 6, '4': 1, '5': 11, '6': '.google.protobuf.Timestamp', '10': 'validFrom'},
+    {'1': 'valid_until', '3': 7, '4': 1, '5': 11, '6': '.google.protobuf.Timestamp', '10': 'validUntil'},
+    {'1': 'status', '3': 8, '4': 1, '5': 14, '6': '.commerce.v1.PriceListStatus', '10': 'status'},
+  ],
+};
+
+/// Descriptor for `PriceListSaveRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List priceListSaveRequestDescriptor = $convert.base64Decode(
+    'ChRQcmljZUxpc3RTYXZlUmVxdWVzdBIOCgJpZBgBIAEoCVICaWQSNAoHc2hvcF9pZBgCIAEoCU'
+    'IbukgYchYQAxgoMhBbMC05YS16Xy1dezMsNDB9UgZzaG9wSWQSEgoEbmFtZRgDIAEoCVIEbmFt'
+    'ZRIaCghjdXJyZW5jeRgEIAEoCVIIY3VycmVuY3kSGgoIcHJpb3JpdHkYBSABKAVSCHByaW9yaX'
+    'R5EjkKCnZhbGlkX2Zyb20YBiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wUgl2YWxp'
+    'ZEZyb20SOwoLdmFsaWRfdW50aWwYByABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wUg'
+    'p2YWxpZFVudGlsEjQKBnN0YXR1cxgIIAEoDjIcLmNvbW1lcmNlLnYxLlByaWNlTGlzdFN0YXR1'
+    'c1IGc3RhdHVz');
+
+@$core.Deprecated('Use priceListSaveResponseDescriptor instead')
+const PriceListSaveResponse$json = {
+  '1': 'PriceListSaveResponse',
+  '2': [
+    {'1': 'price_list', '3': 1, '4': 1, '5': 11, '6': '.commerce.v1.PriceList', '10': 'priceList'},
+  ],
+};
+
+/// Descriptor for `PriceListSaveResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List priceListSaveResponseDescriptor = $convert.base64Decode(
+    'ChVQcmljZUxpc3RTYXZlUmVzcG9uc2USNQoKcHJpY2VfbGlzdBgBIAEoCzIWLmNvbW1lcmNlLn'
+    'YxLlByaWNlTGlzdFIJcHJpY2VMaXN0');
+
+@$core.Deprecated('Use priceListGetRequestDescriptor instead')
+const PriceListGetRequest$json = {
+  '1': 'PriceListGetRequest',
+  '2': [
+    {'1': 'id', '3': 1, '4': 1, '5': 9, '8': {}, '10': 'id'},
+  ],
+};
+
+/// Descriptor for `PriceListGetRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List priceListGetRequestDescriptor = $convert.base64Decode(
+    'ChNQcmljZUxpc3RHZXRSZXF1ZXN0EisKAmlkGAEgASgJQhu6SBhyFhADGCgyEFswLTlhLXpfLV'
+    '17Myw0MH1SAmlk');
+
+@$core.Deprecated('Use priceListGetResponseDescriptor instead')
+const PriceListGetResponse$json = {
+  '1': 'PriceListGetResponse',
+  '2': [
+    {'1': 'price_list', '3': 1, '4': 1, '5': 11, '6': '.commerce.v1.PriceList', '10': 'priceList'},
+  ],
+};
+
+/// Descriptor for `PriceListGetResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List priceListGetResponseDescriptor = $convert.base64Decode(
+    'ChRQcmljZUxpc3RHZXRSZXNwb25zZRI1CgpwcmljZV9saXN0GAEgASgLMhYuY29tbWVyY2Uudj'
+    'EuUHJpY2VMaXN0UglwcmljZUxpc3Q=');
+
+@$core.Deprecated('Use priceListSearchRequestDescriptor instead')
+const PriceListSearchRequest$json = {
+  '1': 'PriceListSearchRequest',
+  '2': [
+    {'1': 'shop_id', '3': 1, '4': 1, '5': 9, '8': {}, '10': 'shopId'},
+    {'1': 'search', '3': 2, '4': 1, '5': 11, '6': '.common.v1.SearchRequest', '10': 'search'},
+  ],
+};
+
+/// Descriptor for `PriceListSearchRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List priceListSearchRequestDescriptor = $convert.base64Decode(
+    'ChZQcmljZUxpc3RTZWFyY2hSZXF1ZXN0EjQKB3Nob3BfaWQYASABKAlCG7pIGHIWEAMYKDIQWz'
+    'AtOWEtel8tXXszLDQwfVIGc2hvcElkEjAKBnNlYXJjaBgCIAEoCzIYLmNvbW1vbi52MS5TZWFy'
+    'Y2hSZXF1ZXN0UgZzZWFyY2g=');
+
+@$core.Deprecated('Use priceListSearchResponseDescriptor instead')
+const PriceListSearchResponse$json = {
+  '1': 'PriceListSearchResponse',
+  '2': [
+    {'1': 'price_lists', '3': 1, '4': 3, '5': 11, '6': '.commerce.v1.PriceList', '10': 'priceLists'},
+    {'1': 'next_page', '3': 2, '4': 1, '5': 9, '10': 'nextPage'},
+    {'1': 'prev_cursor', '3': 3, '4': 1, '5': 9, '10': 'prevCursor'},
+  ],
+};
+
+/// Descriptor for `PriceListSearchResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List priceListSearchResponseDescriptor = $convert.base64Decode(
+    'ChdQcmljZUxpc3RTZWFyY2hSZXNwb25zZRI3CgtwcmljZV9saXN0cxgBIAMoCzIWLmNvbW1lcm'
+    'NlLnYxLlByaWNlTGlzdFIKcHJpY2VMaXN0cxIbCgluZXh0X3BhZ2UYAiABKAlSCG5leHRQYWdl'
+    'Eh8KC3ByZXZfY3Vyc29yGAMgASgJUgpwcmV2Q3Vyc29y');
+
+@$core.Deprecated('Use priceListEntryBatchSaveRequestDescriptor instead')
+const PriceListEntryBatchSaveRequest$json = {
+  '1': 'PriceListEntryBatchSaveRequest',
+  '2': [
+    {'1': 'price_list_id', '3': 1, '4': 1, '5': 9, '8': {}, '10': 'priceListId'},
+    {'1': 'entries', '3': 2, '4': 3, '5': 11, '6': '.commerce.v1.PriceListEntry', '10': 'entries'},
+  ],
+};
+
+/// Descriptor for `PriceListEntryBatchSaveRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List priceListEntryBatchSaveRequestDescriptor = $convert.base64Decode(
+    'Ch5QcmljZUxpc3RFbnRyeUJhdGNoU2F2ZVJlcXVlc3QSPwoNcHJpY2VfbGlzdF9pZBgBIAEoCU'
+    'IbukgYchYQAxgoMhBbMC05YS16Xy1dezMsNDB9UgtwcmljZUxpc3RJZBI1CgdlbnRyaWVzGAIg'
+    'AygLMhsuY29tbWVyY2UudjEuUHJpY2VMaXN0RW50cnlSB2VudHJpZXM=');
+
+@$core.Deprecated('Use priceListEntryBatchSaveResponseDescriptor instead')
+const PriceListEntryBatchSaveResponse$json = {
+  '1': 'PriceListEntryBatchSaveResponse',
+  '2': [
+    {'1': 'entries', '3': 1, '4': 3, '5': 11, '6': '.commerce.v1.PriceListEntry', '10': 'entries'},
+  ],
+};
+
+/// Descriptor for `PriceListEntryBatchSaveResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List priceListEntryBatchSaveResponseDescriptor = $convert.base64Decode(
+    'Ch9QcmljZUxpc3RFbnRyeUJhdGNoU2F2ZVJlc3BvbnNlEjUKB2VudHJpZXMYASADKAsyGy5jb2'
+    '1tZXJjZS52MS5QcmljZUxpc3RFbnRyeVIHZW50cmllcw==');
+
+@$core.Deprecated('Use customerPriceListAssignmentSaveRequestDescriptor instead')
+const CustomerPriceListAssignmentSaveRequest$json = {
+  '1': 'CustomerPriceListAssignmentSaveRequest',
+  '2': [
+    {'1': 'id', '3': 1, '4': 1, '5': 9, '10': 'id'},
+    {'1': 'customer_id', '3': 2, '4': 1, '5': 9, '8': {}, '10': 'customerId'},
+    {'1': 'price_list_id', '3': 3, '4': 1, '5': 9, '8': {}, '10': 'priceListId'},
+    {'1': 'assigned_by', '3': 4, '4': 1, '5': 9, '10': 'assignedBy'},
+    {'1': 'status', '3': 5, '4': 1, '5': 14, '6': '.commerce.v1.CustomerPriceListAssignmentStatus', '10': 'status'},
+  ],
+};
+
+/// Descriptor for `CustomerPriceListAssignmentSaveRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List customerPriceListAssignmentSaveRequestDescriptor = $convert.base64Decode(
+    'CiZDdXN0b21lclByaWNlTGlzdEFzc2lnbm1lbnRTYXZlUmVxdWVzdBIOCgJpZBgBIAEoCVICaW'
+    'QSPAoLY3VzdG9tZXJfaWQYAiABKAlCG7pIGHIWEAMYKDIQWzAtOWEtel8tXXszLDQwfVIKY3Vz'
+    'dG9tZXJJZBI/Cg1wcmljZV9saXN0X2lkGAMgASgJQhu6SBhyFhADGCgyEFswLTlhLXpfLV17My'
+    'w0MH1SC3ByaWNlTGlzdElkEh8KC2Fzc2lnbmVkX2J5GAQgASgJUgphc3NpZ25lZEJ5EkYKBnN0'
+    'YXR1cxgFIAEoDjIuLmNvbW1lcmNlLnYxLkN1c3RvbWVyUHJpY2VMaXN0QXNzaWdubWVudFN0YX'
+    'R1c1IGc3RhdHVz');
+
+@$core.Deprecated('Use customerPriceListAssignmentSaveResponseDescriptor instead')
+const CustomerPriceListAssignmentSaveResponse$json = {
+  '1': 'CustomerPriceListAssignmentSaveResponse',
+  '2': [
+    {'1': 'assignment', '3': 1, '4': 1, '5': 11, '6': '.commerce.v1.CustomerPriceListAssignment', '10': 'assignment'},
+  ],
+};
+
+/// Descriptor for `CustomerPriceListAssignmentSaveResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List customerPriceListAssignmentSaveResponseDescriptor = $convert.base64Decode(
+    'CidDdXN0b21lclByaWNlTGlzdEFzc2lnbm1lbnRTYXZlUmVzcG9uc2USSAoKYXNzaWdubWVudB'
+    'gBIAEoCzIoLmNvbW1lcmNlLnYxLkN1c3RvbWVyUHJpY2VMaXN0QXNzaWdubWVudFIKYXNzaWdu'
+    'bWVudA==');
+
+@$core.Deprecated('Use customerPriceListAssignmentSearchRequestDescriptor instead')
+const CustomerPriceListAssignmentSearchRequest$json = {
+  '1': 'CustomerPriceListAssignmentSearchRequest',
+  '2': [
+    {'1': 'customer_id', '3': 1, '4': 1, '5': 9, '10': 'customerId'},
+    {'1': 'price_list_id', '3': 2, '4': 1, '5': 9, '10': 'priceListId'},
+    {'1': 'search', '3': 3, '4': 1, '5': 11, '6': '.common.v1.SearchRequest', '10': 'search'},
+  ],
+};
+
+/// Descriptor for `CustomerPriceListAssignmentSearchRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List customerPriceListAssignmentSearchRequestDescriptor = $convert.base64Decode(
+    'CihDdXN0b21lclByaWNlTGlzdEFzc2lnbm1lbnRTZWFyY2hSZXF1ZXN0Eh8KC2N1c3RvbWVyX2'
+    'lkGAEgASgJUgpjdXN0b21lcklkEiIKDXByaWNlX2xpc3RfaWQYAiABKAlSC3ByaWNlTGlzdElk'
+    'EjAKBnNlYXJjaBgDIAEoCzIYLmNvbW1vbi52MS5TZWFyY2hSZXF1ZXN0UgZzZWFyY2g=');
+
+@$core.Deprecated('Use customerPriceListAssignmentSearchResponseDescriptor instead')
+const CustomerPriceListAssignmentSearchResponse$json = {
+  '1': 'CustomerPriceListAssignmentSearchResponse',
+  '2': [
+    {'1': 'assignments', '3': 1, '4': 3, '5': 11, '6': '.commerce.v1.CustomerPriceListAssignment', '10': 'assignments'},
+    {'1': 'next_page', '3': 2, '4': 1, '5': 9, '10': 'nextPage'},
+    {'1': 'prev_cursor', '3': 3, '4': 1, '5': 9, '10': 'prevCursor'},
+  ],
+};
+
+/// Descriptor for `CustomerPriceListAssignmentSearchResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List customerPriceListAssignmentSearchResponseDescriptor = $convert.base64Decode(
+    'CilDdXN0b21lclByaWNlTGlzdEFzc2lnbm1lbnRTZWFyY2hSZXNwb25zZRJKCgthc3NpZ25tZW'
+    '50cxgBIAMoCzIoLmNvbW1lcmNlLnYxLkN1c3RvbWVyUHJpY2VMaXN0QXNzaWdubWVudFILYXNz'
+    'aWdubWVudHMSGwoJbmV4dF9wYWdlGAIgASgJUghuZXh0UGFnZRIfCgtwcmV2X2N1cnNvchgDIA'
+    'EoCVIKcHJldkN1cnNvcg==');
+
+@$core.Deprecated('Use customerPriceOverrideSaveRequestDescriptor instead')
+const CustomerPriceOverrideSaveRequest$json = {
+  '1': 'CustomerPriceOverrideSaveRequest',
+  '2': [
+    {'1': 'id', '3': 1, '4': 1, '5': 9, '10': 'id'},
+    {'1': 'customer_id', '3': 2, '4': 1, '5': 9, '8': {}, '10': 'customerId'},
+    {'1': 'product_variant_id', '3': 3, '4': 1, '5': 9, '8': {}, '10': 'productVariantId'},
+    {'1': 'unit_price', '3': 4, '4': 1, '5': 11, '6': '.common.v1.Money', '10': 'unitPrice'},
+    {'1': 'valid_from', '3': 5, '4': 1, '5': 11, '6': '.google.protobuf.Timestamp', '10': 'validFrom'},
+    {'1': 'valid_until', '3': 6, '4': 1, '5': 11, '6': '.google.protobuf.Timestamp', '10': 'validUntil'},
+    {'1': 'approved_by', '3': 7, '4': 1, '5': 9, '10': 'approvedBy'},
+    {'1': 'status', '3': 8, '4': 1, '5': 14, '6': '.commerce.v1.CustomerPriceOverrideStatus', '10': 'status'},
+  ],
+};
+
+/// Descriptor for `CustomerPriceOverrideSaveRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List customerPriceOverrideSaveRequestDescriptor = $convert.base64Decode(
+    'CiBDdXN0b21lclByaWNlT3ZlcnJpZGVTYXZlUmVxdWVzdBIOCgJpZBgBIAEoCVICaWQSPAoLY3'
+    'VzdG9tZXJfaWQYAiABKAlCG7pIGHIWEAMYKDIQWzAtOWEtel8tXXszLDQwfVIKY3VzdG9tZXJJ'
+    'ZBJJChJwcm9kdWN0X3ZhcmlhbnRfaWQYAyABKAlCG7pIGHIWEAMYKDIQWzAtOWEtel8tXXszLD'
+    'QwfVIQcHJvZHVjdFZhcmlhbnRJZBIvCgp1bml0X3ByaWNlGAQgASgLMhAuY29tbW9uLnYxLk1v'
+    'bmV5Ugl1bml0UHJpY2USOQoKdmFsaWRfZnJvbRgFIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW'
+    '1lc3RhbXBSCXZhbGlkRnJvbRI7Cgt2YWxpZF91bnRpbBgGIAEoCzIaLmdvb2dsZS5wcm90b2J1'
+    'Zi5UaW1lc3RhbXBSCnZhbGlkVW50aWwSHwoLYXBwcm92ZWRfYnkYByABKAlSCmFwcHJvdmVkQn'
+    'kSQAoGc3RhdHVzGAggASgOMiguY29tbWVyY2UudjEuQ3VzdG9tZXJQcmljZU92ZXJyaWRlU3Rh'
+    'dHVzUgZzdGF0dXM=');
+
+@$core.Deprecated('Use customerPriceOverrideSaveResponseDescriptor instead')
+const CustomerPriceOverrideSaveResponse$json = {
+  '1': 'CustomerPriceOverrideSaveResponse',
+  '2': [
+    {'1': 'override', '3': 1, '4': 1, '5': 11, '6': '.commerce.v1.CustomerPriceOverride', '10': 'override'},
+  ],
+};
+
+/// Descriptor for `CustomerPriceOverrideSaveResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List customerPriceOverrideSaveResponseDescriptor = $convert.base64Decode(
+    'CiFDdXN0b21lclByaWNlT3ZlcnJpZGVTYXZlUmVzcG9uc2USPgoIb3ZlcnJpZGUYASABKAsyIi'
+    '5jb21tZXJjZS52MS5DdXN0b21lclByaWNlT3ZlcnJpZGVSCG92ZXJyaWRl');
+
+@$core.Deprecated('Use customerPriceOverrideSearchRequestDescriptor instead')
+const CustomerPriceOverrideSearchRequest$json = {
+  '1': 'CustomerPriceOverrideSearchRequest',
+  '2': [
+    {'1': 'customer_id', '3': 1, '4': 1, '5': 9, '10': 'customerId'},
+    {'1': 'product_variant_id', '3': 2, '4': 1, '5': 9, '10': 'productVariantId'},
+    {'1': 'search', '3': 3, '4': 1, '5': 11, '6': '.common.v1.SearchRequest', '10': 'search'},
+  ],
+};
+
+/// Descriptor for `CustomerPriceOverrideSearchRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List customerPriceOverrideSearchRequestDescriptor = $convert.base64Decode(
+    'CiJDdXN0b21lclByaWNlT3ZlcnJpZGVTZWFyY2hSZXF1ZXN0Eh8KC2N1c3RvbWVyX2lkGAEgAS'
+    'gJUgpjdXN0b21lcklkEiwKEnByb2R1Y3RfdmFyaWFudF9pZBgCIAEoCVIQcHJvZHVjdFZhcmlh'
+    'bnRJZBIwCgZzZWFyY2gYAyABKAsyGC5jb21tb24udjEuU2VhcmNoUmVxdWVzdFIGc2VhcmNo');
+
+@$core.Deprecated('Use customerPriceOverrideSearchResponseDescriptor instead')
+const CustomerPriceOverrideSearchResponse$json = {
+  '1': 'CustomerPriceOverrideSearchResponse',
+  '2': [
+    {'1': 'overrides', '3': 1, '4': 3, '5': 11, '6': '.commerce.v1.CustomerPriceOverride', '10': 'overrides'},
+    {'1': 'next_page', '3': 2, '4': 1, '5': 9, '10': 'nextPage'},
+    {'1': 'prev_cursor', '3': 3, '4': 1, '5': 9, '10': 'prevCursor'},
+  ],
+};
+
+/// Descriptor for `CustomerPriceOverrideSearchResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List customerPriceOverrideSearchResponseDescriptor = $convert.base64Decode(
+    'CiNDdXN0b21lclByaWNlT3ZlcnJpZGVTZWFyY2hSZXNwb25zZRJACglvdmVycmlkZXMYASADKA'
+    'syIi5jb21tZXJjZS52MS5DdXN0b21lclByaWNlT3ZlcnJpZGVSCW92ZXJyaWRlcxIbCgluZXh0'
+    'X3BhZ2UYAiABKAlSCG5leHRQYWdlEh8KC3ByZXZfY3Vyc29yGAMgASgJUgpwcmV2Q3Vyc29y');
+
+@$core.Deprecated('Use discountRuleSaveRequestDescriptor instead')
+const DiscountRuleSaveRequest$json = {
+  '1': 'DiscountRuleSaveRequest',
+  '2': [
+    {'1': 'id', '3': 1, '4': 1, '5': 9, '10': 'id'},
+    {'1': 'shop_id', '3': 2, '4': 1, '5': 9, '8': {}, '10': 'shopId'},
+    {'1': 'name', '3': 3, '4': 1, '5': 9, '10': 'name'},
+    {'1': 'discount_type', '3': 4, '4': 1, '5': 14, '6': '.commerce.v1.DiscountType', '10': 'discountType'},
+    {'1': 'value', '3': 5, '4': 1, '5': 1, '10': 'value'},
+    {'1': 'applies_to', '3': 6, '4': 1, '5': 14, '6': '.commerce.v1.DiscountAppliesTo', '10': 'appliesTo'},
+    {'1': 'conditions', '3': 7, '4': 1, '5': 11, '6': '.google.protobuf.Struct', '10': 'conditions'},
+    {'1': 'requires_approval', '3': 8, '4': 1, '5': 8, '10': 'requiresApproval'},
+    {'1': 'max_discount_percent', '3': 9, '4': 1, '5': 1, '10': 'maxDiscountPercent'},
+    {'1': 'valid_from', '3': 10, '4': 1, '5': 11, '6': '.google.protobuf.Timestamp', '10': 'validFrom'},
+    {'1': 'valid_until', '3': 11, '4': 1, '5': 11, '6': '.google.protobuf.Timestamp', '10': 'validUntil'},
+    {'1': 'status', '3': 12, '4': 1, '5': 14, '6': '.commerce.v1.DiscountRuleStatus', '10': 'status'},
+  ],
+};
+
+/// Descriptor for `DiscountRuleSaveRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List discountRuleSaveRequestDescriptor = $convert.base64Decode(
+    'ChdEaXNjb3VudFJ1bGVTYXZlUmVxdWVzdBIOCgJpZBgBIAEoCVICaWQSNAoHc2hvcF9pZBgCIA'
+    'EoCUIbukgYchYQAxgoMhBbMC05YS16Xy1dezMsNDB9UgZzaG9wSWQSEgoEbmFtZRgDIAEoCVIE'
+    'bmFtZRI+Cg1kaXNjb3VudF90eXBlGAQgASgOMhkuY29tbWVyY2UudjEuRGlzY291bnRUeXBlUg'
+    'xkaXNjb3VudFR5cGUSFAoFdmFsdWUYBSABKAFSBXZhbHVlEj0KCmFwcGxpZXNfdG8YBiABKA4y'
+    'Hi5jb21tZXJjZS52MS5EaXNjb3VudEFwcGxpZXNUb1IJYXBwbGllc1RvEjcKCmNvbmRpdGlvbn'
+    'MYByABKAsyFy5nb29nbGUucHJvdG9idWYuU3RydWN0Ugpjb25kaXRpb25zEisKEXJlcXVpcmVz'
+    'X2FwcHJvdmFsGAggASgIUhByZXF1aXJlc0FwcHJvdmFsEjAKFG1heF9kaXNjb3VudF9wZXJjZW'
+    '50GAkgASgBUhJtYXhEaXNjb3VudFBlcmNlbnQSOQoKdmFsaWRfZnJvbRgKIAEoCzIaLmdvb2ds'
+    'ZS5wcm90b2J1Zi5UaW1lc3RhbXBSCXZhbGlkRnJvbRI7Cgt2YWxpZF91bnRpbBgLIAEoCzIaLm'
+    'dvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXBSCnZhbGlkVW50aWwSNwoGc3RhdHVzGAwgASgOMh8u'
+    'Y29tbWVyY2UudjEuRGlzY291bnRSdWxlU3RhdHVzUgZzdGF0dXM=');
+
+@$core.Deprecated('Use discountRuleSaveResponseDescriptor instead')
+const DiscountRuleSaveResponse$json = {
+  '1': 'DiscountRuleSaveResponse',
+  '2': [
+    {'1': 'discount_rule', '3': 1, '4': 1, '5': 11, '6': '.commerce.v1.DiscountRule', '10': 'discountRule'},
+  ],
+};
+
+/// Descriptor for `DiscountRuleSaveResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List discountRuleSaveResponseDescriptor = $convert.base64Decode(
+    'ChhEaXNjb3VudFJ1bGVTYXZlUmVzcG9uc2USPgoNZGlzY291bnRfcnVsZRgBIAEoCzIZLmNvbW'
+    '1lcmNlLnYxLkRpc2NvdW50UnVsZVIMZGlzY291bnRSdWxl');
+
+@$core.Deprecated('Use discountRuleSearchRequestDescriptor instead')
+const DiscountRuleSearchRequest$json = {
+  '1': 'DiscountRuleSearchRequest',
+  '2': [
+    {'1': 'shop_id', '3': 1, '4': 1, '5': 9, '8': {}, '10': 'shopId'},
+    {'1': 'search', '3': 2, '4': 1, '5': 11, '6': '.common.v1.SearchRequest', '10': 'search'},
+  ],
+};
+
+/// Descriptor for `DiscountRuleSearchRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List discountRuleSearchRequestDescriptor = $convert.base64Decode(
+    'ChlEaXNjb3VudFJ1bGVTZWFyY2hSZXF1ZXN0EjQKB3Nob3BfaWQYASABKAlCG7pIGHIWEAMYKD'
+    'IQWzAtOWEtel8tXXszLDQwfVIGc2hvcElkEjAKBnNlYXJjaBgCIAEoCzIYLmNvbW1vbi52MS5T'
+    'ZWFyY2hSZXF1ZXN0UgZzZWFyY2g=');
+
+@$core.Deprecated('Use discountRuleSearchResponseDescriptor instead')
+const DiscountRuleSearchResponse$json = {
+  '1': 'DiscountRuleSearchResponse',
+  '2': [
+    {'1': 'discount_rules', '3': 1, '4': 3, '5': 11, '6': '.commerce.v1.DiscountRule', '10': 'discountRules'},
+    {'1': 'next_page', '3': 2, '4': 1, '5': 9, '10': 'nextPage'},
+    {'1': 'prev_cursor', '3': 3, '4': 1, '5': 9, '10': 'prevCursor'},
+  ],
+};
+
+/// Descriptor for `DiscountRuleSearchResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List discountRuleSearchResponseDescriptor = $convert.base64Decode(
+    'ChpEaXNjb3VudFJ1bGVTZWFyY2hSZXNwb25zZRJACg5kaXNjb3VudF9ydWxlcxgBIAMoCzIZLm'
+    'NvbW1lcmNlLnYxLkRpc2NvdW50UnVsZVINZGlzY291bnRSdWxlcxIbCgluZXh0X3BhZ2UYAiAB'
+    'KAlSCG5leHRQYWdlEh8KC3ByZXZfY3Vyc29yGAMgASgJUgpwcmV2Q3Vyc29y');
+
+@$core.Deprecated('Use resolvePriceRequestDescriptor instead')
+const ResolvePriceRequest$json = {
+  '1': 'ResolvePriceRequest',
+  '2': [
+    {'1': 'customer_id', '3': 1, '4': 1, '5': 9, '8': {}, '10': 'customerId'},
+    {'1': 'product_variant_id', '3': 2, '4': 1, '5': 9, '8': {}, '10': 'productVariantId'},
+    {'1': 'quantity', '3': 3, '4': 1, '5': 5, '10': 'quantity'},
+  ],
+};
+
+/// Descriptor for `ResolvePriceRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List resolvePriceRequestDescriptor = $convert.base64Decode(
+    'ChNSZXNvbHZlUHJpY2VSZXF1ZXN0EjwKC2N1c3RvbWVyX2lkGAEgASgJQhu6SBhyFhADGCgyEF'
+    'swLTlhLXpfLV17Myw0MH1SCmN1c3RvbWVySWQSSQoScHJvZHVjdF92YXJpYW50X2lkGAIgASgJ'
+    'Qhu6SBhyFhADGCgyEFswLTlhLXpfLV17Myw0MH1SEHByb2R1Y3RWYXJpYW50SWQSGgoIcXVhbn'
+    'RpdHkYAyABKAVSCHF1YW50aXR5');
+
+@$core.Deprecated('Use resolvePriceResponseDescriptor instead')
+const ResolvePriceResponse$json = {
+  '1': 'ResolvePriceResponse',
+  '2': [
+    {'1': 'resolved_price', '3': 1, '4': 1, '5': 11, '6': '.commerce.v1.ResolvedPrice', '10': 'resolvedPrice'},
+  ],
+};
+
+/// Descriptor for `ResolvePriceResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List resolvePriceResponseDescriptor = $convert.base64Decode(
+    'ChRSZXNvbHZlUHJpY2VSZXNwb25zZRJBCg5yZXNvbHZlZF9wcmljZRgBIAEoCzIaLmNvbW1lcm'
+    'NlLnYxLlJlc29sdmVkUHJpY2VSDXJlc29sdmVkUHJpY2U=');
+
 const $core.Map<$core.String, $core.dynamic> CommerceServiceBase$json = {
   '1': 'CommerceService',
   '2': [
@@ -1061,6 +1708,17 @@ const $core.Map<$core.String, $core.dynamic> CommerceServiceBase$json = {
     {'1': 'CreateFulfilment', '2': '.commerce.v1.CreateFulfilmentRequest', '3': '.commerce.v1.CreateFulfilmentResponse', '4': {}},
     {'1': 'UpdateFulfilment', '2': '.commerce.v1.UpdateFulfilmentRequest', '3': '.commerce.v1.UpdateFulfilmentResponse', '4': {}},
     {'1': 'GetFulfilment', '2': '.commerce.v1.GetFulfilmentRequest', '3': '.commerce.v1.GetFulfilmentResponse', '4': {}},
+    {'1': 'PriceListSave', '2': '.commerce.v1.PriceListSaveRequest', '3': '.commerce.v1.PriceListSaveResponse', '4': {}},
+    {'1': 'PriceListGet', '2': '.commerce.v1.PriceListGetRequest', '3': '.commerce.v1.PriceListGetResponse', '4': {}},
+    {'1': 'PriceListSearch', '2': '.commerce.v1.PriceListSearchRequest', '3': '.commerce.v1.PriceListSearchResponse', '4': {}},
+    {'1': 'PriceListEntryBatchSave', '2': '.commerce.v1.PriceListEntryBatchSaveRequest', '3': '.commerce.v1.PriceListEntryBatchSaveResponse', '4': {}},
+    {'1': 'CustomerPriceListAssignmentSave', '2': '.commerce.v1.CustomerPriceListAssignmentSaveRequest', '3': '.commerce.v1.CustomerPriceListAssignmentSaveResponse', '4': {}},
+    {'1': 'CustomerPriceListAssignmentSearch', '2': '.commerce.v1.CustomerPriceListAssignmentSearchRequest', '3': '.commerce.v1.CustomerPriceListAssignmentSearchResponse', '4': {}},
+    {'1': 'CustomerPriceOverrideSave', '2': '.commerce.v1.CustomerPriceOverrideSaveRequest', '3': '.commerce.v1.CustomerPriceOverrideSaveResponse', '4': {}},
+    {'1': 'CustomerPriceOverrideSearch', '2': '.commerce.v1.CustomerPriceOverrideSearchRequest', '3': '.commerce.v1.CustomerPriceOverrideSearchResponse', '4': {}},
+    {'1': 'DiscountRuleSave', '2': '.commerce.v1.DiscountRuleSaveRequest', '3': '.commerce.v1.DiscountRuleSaveResponse', '4': {}},
+    {'1': 'DiscountRuleSearch', '2': '.commerce.v1.DiscountRuleSearchRequest', '3': '.commerce.v1.DiscountRuleSearchResponse', '4': {}},
+    {'1': 'ResolvePrice', '2': '.commerce.v1.ResolvePriceRequest', '3': '.commerce.v1.ResolvePriceResponse', '4': {}},
   ],
   '3': {},
 };
@@ -1129,6 +1787,34 @@ const $core.Map<$core.String, $core.Map<$core.String, $core.dynamic>> CommerceSe
   '.commerce.v1.UpdateFulfilmentResponse': UpdateFulfilmentResponse$json,
   '.commerce.v1.GetFulfilmentRequest': GetFulfilmentRequest$json,
   '.commerce.v1.GetFulfilmentResponse': GetFulfilmentResponse$json,
+  '.commerce.v1.PriceListSaveRequest': PriceListSaveRequest$json,
+  '.commerce.v1.PriceListSaveResponse': PriceListSaveResponse$json,
+  '.commerce.v1.PriceList': PriceList$json,
+  '.commerce.v1.PriceListGetRequest': PriceListGetRequest$json,
+  '.commerce.v1.PriceListGetResponse': PriceListGetResponse$json,
+  '.commerce.v1.PriceListSearchRequest': PriceListSearchRequest$json,
+  '.commerce.v1.PriceListSearchResponse': PriceListSearchResponse$json,
+  '.commerce.v1.PriceListEntryBatchSaveRequest': PriceListEntryBatchSaveRequest$json,
+  '.commerce.v1.PriceListEntry': PriceListEntry$json,
+  '.commerce.v1.PriceListEntryBatchSaveResponse': PriceListEntryBatchSaveResponse$json,
+  '.commerce.v1.CustomerPriceListAssignmentSaveRequest': CustomerPriceListAssignmentSaveRequest$json,
+  '.commerce.v1.CustomerPriceListAssignmentSaveResponse': CustomerPriceListAssignmentSaveResponse$json,
+  '.commerce.v1.CustomerPriceListAssignment': CustomerPriceListAssignment$json,
+  '.commerce.v1.CustomerPriceListAssignmentSearchRequest': CustomerPriceListAssignmentSearchRequest$json,
+  '.commerce.v1.CustomerPriceListAssignmentSearchResponse': CustomerPriceListAssignmentSearchResponse$json,
+  '.commerce.v1.CustomerPriceOverrideSaveRequest': CustomerPriceOverrideSaveRequest$json,
+  '.commerce.v1.CustomerPriceOverrideSaveResponse': CustomerPriceOverrideSaveResponse$json,
+  '.commerce.v1.CustomerPriceOverride': CustomerPriceOverride$json,
+  '.commerce.v1.CustomerPriceOverrideSearchRequest': CustomerPriceOverrideSearchRequest$json,
+  '.commerce.v1.CustomerPriceOverrideSearchResponse': CustomerPriceOverrideSearchResponse$json,
+  '.commerce.v1.DiscountRuleSaveRequest': DiscountRuleSaveRequest$json,
+  '.commerce.v1.DiscountRuleSaveResponse': DiscountRuleSaveResponse$json,
+  '.commerce.v1.DiscountRule': DiscountRule$json,
+  '.commerce.v1.DiscountRuleSearchRequest': DiscountRuleSearchRequest$json,
+  '.commerce.v1.DiscountRuleSearchResponse': DiscountRuleSearchResponse$json,
+  '.commerce.v1.ResolvePriceRequest': ResolvePriceRequest$json,
+  '.commerce.v1.ResolvePriceResponse': ResolvePriceResponse$json,
+  '.commerce.v1.ResolvedPrice': ResolvedPrice$json,
 };
 
 /// Descriptor for `CommerceService`. Decode as a `google.protobuf.ServiceDescriptorProto`.
@@ -1169,21 +1855,56 @@ final $typed_data.Uint8List commerceServiceDescriptor = $convert.base64Decode(
     'QSJC5jb21tZXJjZS52MS5VcGRhdGVGdWxmaWxtZW50UmVxdWVzdBolLmNvbW1lcmNlLnYxLlVw'
     'ZGF0ZUZ1bGZpbG1lbnRSZXNwb25zZSIXgrUYEwoRZnVsZmlsbWVudF9tYW5hZ2USbQoNR2V0Rn'
     'VsZmlsbWVudBIhLmNvbW1lcmNlLnYxLkdldEZ1bGZpbG1lbnRSZXF1ZXN0GiIuY29tbWVyY2Uu'
-    'djEuR2V0RnVsZmlsbWVudFJlc3BvbnNlIhWCtRgRCg9mdWxmaWxtZW50X3ZpZXca+QaCtRj0Bg'
-    'oQc2VydmljZV9jb21tZXJjZRIJc2hvcF92aWV3EgtzaG9wX2NyZWF0ZRILc2hvcF91cGRhdGUS'
-    'DHByb2R1Y3RfdmlldxIOcHJvZHVjdF9tYW5hZ2USCWNhcnRfdmlldxILY2FydF9tYW5hZ2USCm'
-    '9yZGVyX3ZpZXcSDG9yZGVyX21hbmFnZRIPZnVsZmlsbWVudF92aWV3EhFmdWxmaWxtZW50X21h'
-    'bmFnZRqbAQgBEglzaG9wX3ZpZXcSC3Nob3BfY3JlYXRlEgtzaG9wX3VwZGF0ZRIMcHJvZHVjdF'
-    '92aWV3Eg5wcm9kdWN0X21hbmFnZRIJY2FydF92aWV3EgtjYXJ0X21hbmFnZRIKb3JkZXJfdmll'
-    'dxIMb3JkZXJfbWFuYWdlEg9mdWxmaWxtZW50X3ZpZXcSEWZ1bGZpbG1lbnRfbWFuYWdlGpsBCA'
-    'ISCXNob3BfdmlldxILc2hvcF9jcmVhdGUSC3Nob3BfdXBkYXRlEgxwcm9kdWN0X3ZpZXcSDnBy'
-    'b2R1Y3RfbWFuYWdlEgljYXJ0X3ZpZXcSC2NhcnRfbWFuYWdlEgpvcmRlcl92aWV3EgxvcmRlcl'
-    '9tYW5hZ2USD2Z1bGZpbG1lbnRfdmlldxIRZnVsZmlsbWVudF9tYW5hZ2UadAgDEglzaG9wX3Zp'
-    'ZXcSDHByb2R1Y3RfdmlldxIOcHJvZHVjdF9tYW5hZ2USCWNhcnRfdmlldxIKb3JkZXJfdmlldx'
-    'IMb3JkZXJfbWFuYWdlEg9mdWxmaWxtZW50X3ZpZXcSEWZ1bGZpbG1lbnRfbWFuYWdlGkMIBBIJ'
-    'c2hvcF92aWV3Egxwcm9kdWN0X3ZpZXcSCWNhcnRfdmlldxIKb3JkZXJfdmlldxIPZnVsZmlsbW'
-    'VudF92aWV3GjIIBRIJc2hvcF92aWV3Egxwcm9kdWN0X3ZpZXcSCWNhcnRfdmlldxIKb3JkZXJf'
-    'dmlldxqbAQgGEglzaG9wX3ZpZXcSC3Nob3BfY3JlYXRlEgtzaG9wX3VwZGF0ZRIMcHJvZHVjdF'
-    '92aWV3Eg5wcm9kdWN0X21hbmFnZRIJY2FydF92aWV3EgtjYXJ0X21hbmFnZRIKb3JkZXJfdmll'
-    'dxIMb3JkZXJfbWFuYWdlEg9mdWxmaWxtZW50X3ZpZXcSEWZ1bGZpbG1lbnRfbWFuYWdl');
+    'djEuR2V0RnVsZmlsbWVudFJlc3BvbnNlIhWCtRgRCg9mdWxmaWxtZW50X3ZpZXcSbwoNUHJpY2'
+    'VMaXN0U2F2ZRIhLmNvbW1lcmNlLnYxLlByaWNlTGlzdFNhdmVSZXF1ZXN0GiIuY29tbWVyY2Uu'
+    'djEuUHJpY2VMaXN0U2F2ZVJlc3BvbnNlIheCtRgTChFwcmljZV9saXN0X21hbmFnZRJqCgxQcm'
+    'ljZUxpc3RHZXQSIC5jb21tZXJjZS52MS5QcmljZUxpc3RHZXRSZXF1ZXN0GiEuY29tbWVyY2Uu'
+    'djEuUHJpY2VMaXN0R2V0UmVzcG9uc2UiFYK1GBEKD3ByaWNlX2xpc3RfdmlldxJzCg9QcmljZU'
+    'xpc3RTZWFyY2gSIy5jb21tZXJjZS52MS5QcmljZUxpc3RTZWFyY2hSZXF1ZXN0GiQuY29tbWVy'
+    'Y2UudjEuUHJpY2VMaXN0U2VhcmNoUmVzcG9uc2UiFYK1GBEKD3ByaWNlX2xpc3RfdmlldxKNAQ'
+    'oXUHJpY2VMaXN0RW50cnlCYXRjaFNhdmUSKy5jb21tZXJjZS52MS5QcmljZUxpc3RFbnRyeUJh'
+    'dGNoU2F2ZVJlcXVlc3QaLC5jb21tZXJjZS52MS5QcmljZUxpc3RFbnRyeUJhdGNoU2F2ZVJlc3'
+    'BvbnNlIheCtRgTChFwcmljZV9saXN0X21hbmFnZRKrAQofQ3VzdG9tZXJQcmljZUxpc3RBc3Np'
+    'Z25tZW50U2F2ZRIzLmNvbW1lcmNlLnYxLkN1c3RvbWVyUHJpY2VMaXN0QXNzaWdubWVudFNhdm'
+    'VSZXF1ZXN0GjQuY29tbWVyY2UudjEuQ3VzdG9tZXJQcmljZUxpc3RBc3NpZ25tZW50U2F2ZVJl'
+    'c3BvbnNlIh2CtRgZChdjdXN0b21lcl9wcmljZV9vdmVycmlkZRKpAQohQ3VzdG9tZXJQcmljZU'
+    'xpc3RBc3NpZ25tZW50U2VhcmNoEjUuY29tbWVyY2UudjEuQ3VzdG9tZXJQcmljZUxpc3RBc3Np'
+    'Z25tZW50U2VhcmNoUmVxdWVzdBo2LmNvbW1lcmNlLnYxLkN1c3RvbWVyUHJpY2VMaXN0QXNzaW'
+    'dubWVudFNlYXJjaFJlc3BvbnNlIhWCtRgRCg9wcmljZV9saXN0X3ZpZXcSmQEKGUN1c3RvbWVy'
+    'UHJpY2VPdmVycmlkZVNhdmUSLS5jb21tZXJjZS52MS5DdXN0b21lclByaWNlT3ZlcnJpZGVTYX'
+    'ZlUmVxdWVzdBouLmNvbW1lcmNlLnYxLkN1c3RvbWVyUHJpY2VPdmVycmlkZVNhdmVSZXNwb25z'
+    'ZSIdgrUYGQoXY3VzdG9tZXJfcHJpY2Vfb3ZlcnJpZGUSlwEKG0N1c3RvbWVyUHJpY2VPdmVycm'
+    'lkZVNlYXJjaBIvLmNvbW1lcmNlLnYxLkN1c3RvbWVyUHJpY2VPdmVycmlkZVNlYXJjaFJlcXVl'
+    'c3QaMC5jb21tZXJjZS52MS5DdXN0b21lclByaWNlT3ZlcnJpZGVTZWFyY2hSZXNwb25zZSIVgr'
+    'UYEQoPcHJpY2VfbGlzdF92aWV3EnYKEERpc2NvdW50UnVsZVNhdmUSJC5jb21tZXJjZS52MS5E'
+    'aXNjb3VudFJ1bGVTYXZlUmVxdWVzdBolLmNvbW1lcmNlLnYxLkRpc2NvdW50UnVsZVNhdmVSZX'
+    'Nwb25zZSIVgrUYEQoPZGlzY291bnRfbWFuYWdlEnwKEkRpc2NvdW50UnVsZVNlYXJjaBImLmNv'
+    'bW1lcmNlLnYxLkRpc2NvdW50UnVsZVNlYXJjaFJlcXVlc3QaJy5jb21tZXJjZS52MS5EaXNjb3'
+    'VudFJ1bGVTZWFyY2hSZXNwb25zZSIVgrUYEQoPcHJpY2VfbGlzdF92aWV3EmoKDFJlc29sdmVQ'
+    'cmljZRIgLmNvbW1lcmNlLnYxLlJlc29sdmVQcmljZVJlcXVlc3QaIS5jb21tZXJjZS52MS5SZX'
+    'NvbHZlUHJpY2VSZXNwb25zZSIVgrUYEQoPcHJpY2VfbGlzdF92aWV3Gr4KgrUYuQoKEHNlcnZp'
+    'Y2VfY29tbWVyY2USCXNob3BfdmlldxILc2hvcF9jcmVhdGUSC3Nob3BfdXBkYXRlEgxwcm9kdW'
+    'N0X3ZpZXcSDnByb2R1Y3RfbWFuYWdlEgljYXJ0X3ZpZXcSC2NhcnRfbWFuYWdlEgpvcmRlcl92'
+    'aWV3EgxvcmRlcl9tYW5hZ2USD2Z1bGZpbG1lbnRfdmlldxIRZnVsZmlsbWVudF9tYW5hZ2USD3'
+    'ByaWNlX2xpc3RfdmlldxIRcHJpY2VfbGlzdF9tYW5hZ2USF2N1c3RvbWVyX3ByaWNlX292ZXJy'
+    'aWRlEg9kaXNjb3VudF9tYW5hZ2USEGRpc2NvdW50X2FwcHJvdmUa+wEIARIJc2hvcF92aWV3Eg'
+    'tzaG9wX2NyZWF0ZRILc2hvcF91cGRhdGUSDHByb2R1Y3RfdmlldxIOcHJvZHVjdF9tYW5hZ2US'
+    'CWNhcnRfdmlldxILY2FydF9tYW5hZ2USCm9yZGVyX3ZpZXcSDG9yZGVyX21hbmFnZRIPZnVsZm'
+    'lsbWVudF92aWV3EhFmdWxmaWxtZW50X21hbmFnZRIPcHJpY2VfbGlzdF92aWV3EhFwcmljZV9s'
+    'aXN0X21hbmFnZRIXY3VzdG9tZXJfcHJpY2Vfb3ZlcnJpZGUSD2Rpc2NvdW50X21hbmFnZRIQZG'
+    'lzY291bnRfYXBwcm92ZRr7AQgCEglzaG9wX3ZpZXcSC3Nob3BfY3JlYXRlEgtzaG9wX3VwZGF0'
+    'ZRIMcHJvZHVjdF92aWV3Eg5wcm9kdWN0X21hbmFnZRIJY2FydF92aWV3EgtjYXJ0X21hbmFnZR'
+    'IKb3JkZXJfdmlldxIMb3JkZXJfbWFuYWdlEg9mdWxmaWxtZW50X3ZpZXcSEWZ1bGZpbG1lbnRf'
+    'bWFuYWdlEg9wcmljZV9saXN0X3ZpZXcSEXByaWNlX2xpc3RfbWFuYWdlEhdjdXN0b21lcl9wcm'
+    'ljZV9vdmVycmlkZRIPZGlzY291bnRfbWFuYWdlEhBkaXNjb3VudF9hcHByb3ZlGpYBCAMSCXNo'
+    'b3BfdmlldxIMcHJvZHVjdF92aWV3Eg5wcm9kdWN0X21hbmFnZRIJY2FydF92aWV3EgpvcmRlcl'
+    '92aWV3EgxvcmRlcl9tYW5hZ2USD2Z1bGZpbG1lbnRfdmlldxIRZnVsZmlsbWVudF9tYW5hZ2US'
+    'D3ByaWNlX2xpc3RfdmlldxIPZGlzY291bnRfbWFuYWdlGlQIBBIJc2hvcF92aWV3Egxwcm9kdW'
+    'N0X3ZpZXcSCWNhcnRfdmlldxIKb3JkZXJfdmlldxIPZnVsZmlsbWVudF92aWV3Eg9wcmljZV9s'
+    'aXN0X3ZpZXcaQwgFEglzaG9wX3ZpZXcSDHByb2R1Y3RfdmlldxIJY2FydF92aWV3EgpvcmRlcl'
+    '92aWV3Eg9wcmljZV9saXN0X3ZpZXca+wEIBhIJc2hvcF92aWV3EgtzaG9wX2NyZWF0ZRILc2hv'
+    'cF91cGRhdGUSDHByb2R1Y3RfdmlldxIOcHJvZHVjdF9tYW5hZ2USCWNhcnRfdmlldxILY2FydF'
+    '9tYW5hZ2USCm9yZGVyX3ZpZXcSDG9yZGVyX21hbmFnZRIPZnVsZmlsbWVudF92aWV3EhFmdWxm'
+    'aWxtZW50X21hbmFnZRIPcHJpY2VfbGlzdF92aWV3EhFwcmljZV9saXN0X21hbmFnZRIXY3VzdG'
+    '9tZXJfcHJpY2Vfb3ZlcnJpZGUSD2Rpc2NvdW50X21hbmFnZRIQZGlzY291bnRfYXBwcm92ZQ==');
 

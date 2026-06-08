@@ -31,5 +31,8 @@ func Migrate(ctx context.Context, dbManager datastore.Manager, migrationPath str
 		&models.Cart{}, &models.CartLine{},
 		&models.Order{}, &models.OrderLine{},
 		&models.Fulfilment{}, &models.FulfilmentLine{},
+		&models.PriceList{}, &models.PriceListEntry{},
+		&models.CustomerPriceListAssignment{}, &models.CustomerPriceOverride{},
+		&models.DiscountRule{},
 	)
 }

@@ -100,7 +100,7 @@ func (bs *CommerceBaseTestSuite) CreateService(
 	cfg.ServerPort = ""
 	cfg.DatabaseMigrate = true
 	cfg.DatabaseTraceQueries = true
-	cfg.DatabaseMaxOpenConnections = 1
+	cfg.DatabaseMaxOpenConnections = 2
 	cfg.DatabaseMaxIdleConnections = 0
 
 	res := depOpts.ByIsDatabase(t.Context())

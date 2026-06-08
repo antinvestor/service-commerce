@@ -29,9 +29,19 @@ type Middleware interface {
 	CanOrdersManage(ctx context.Context, shopID string) error
 	CanOrdersView(ctx context.Context, shopID string) error
 	CanFulfilmentManage(ctx context.Context, shopID string) error
+	CanPriceListView(ctx context.Context, shopID string) error
+	CanPriceListManage(ctx context.Context, shopID string) error
+	CanCustomerPriceOverride(ctx context.Context, shopID string) error
+	CanDiscountManage(ctx context.Context, shopID string) error
 
 	// Tuple management
 	AddShopMember(ctx context.Context, shopID string, profileID string, role string) error
 	RemoveShopMember(ctx context.Context, shopID string, profileID string) error
-	UpdateShopMemberRole(ctx context.Context, shopID string, profileID string, oldRole string, newRole string) error
+	UpdateShopMemberRole(
+		ctx context.Context,
+		shopID string,
+		profileID string,
+		oldRole string,
+		newRole string,
+	) error
 }

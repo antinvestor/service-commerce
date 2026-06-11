@@ -59,6 +59,8 @@ dependencies:
     path: ../../../service-manufacturing/sdk/dart/manufacturing
   antinvestor_api_procurement:
     path: ../../sdk/dart/procurement
+  antinvestor_api_audit:
+    path: ../../../service-authentication/sdk/dart/audit
 
   # Cross-cutting concerns
   antinvestor_ui_auth:

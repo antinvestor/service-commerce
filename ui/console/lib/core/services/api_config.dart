@@ -53,6 +53,10 @@ class ApiConfig {
   static String get tenancyBaseUrl =>
       _tenancyExplicit.isNotEmpty ? _tenancyExplicit : '$_apiBaseUrl/tenancy';
 
+  static const String _auditExplicit = String.fromEnvironment('AUDIT_URL');
+  static String get auditBaseUrl =>
+      _auditExplicit.isNotEmpty ? _auditExplicit : '$_apiBaseUrl/audit';
+
   // ── All endpoints (for iteration / diagnostics) ─────────────────────────
 
   static Map<String, String> get allEndpoints => {
@@ -62,6 +66,7 @@ class ApiConfig {
         'notification': notificationBaseUrl,
         'payment': paymentBaseUrl,
         'tenancy': tenancyBaseUrl,
+        'audit': auditBaseUrl,
       };
 
   // ── OAuth2 configuration ────────────────────────────────────────────────

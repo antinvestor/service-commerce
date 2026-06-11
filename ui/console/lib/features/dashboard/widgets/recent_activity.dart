@@ -32,6 +32,16 @@ class RecentActivityList extends StatelessWidget {
             ),
           ),
           const Divider(height: 1),
+          if (entries.isEmpty)
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                'No recent activity yet.',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: AppColors.onSurfaceMuted,
+                ),
+              ),
+            ),
           for (var i = 0; i < entries.length; i++) ...[
             _ActivityTile(entry: entries[i]),
             if (i < entries.length - 1)

@@ -1,3 +1,5 @@
+import 'package:antinvestor_api_audit/antinvestor_api_audit.dart'
+    show AuditEntryObject, ListAuditEntriesRequest, ListAuditEntriesResponse;
 import 'package:antinvestor_api_commerce/antinvestor_api_commerce.dart'
     show Order;
 import 'package:antinvestor_api_manufacturing/antinvestor_api_manufacturing.dart'
@@ -10,12 +12,15 @@ import 'package:antinvestor_ui_orders/antinvestor_ui_orders.dart'
     show orderListProvider;
 import 'package:antinvestor_ui_procurement/antinvestor_ui_procurement.dart'
     show purchaseOrderListProvider;
+import 'package:antinvestor_ui_core/api/stream_helpers.dart'
+    show collectStream;
 import 'package:antinvestor_ui_production/antinvestor_ui_production.dart'
     show batchListProvider;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/auth/tenant_context_provider.dart';
+import '../../../core/services/audit_client_provider.dart';
 
 /// Snapshot of commerce + manufacturing KPIs surfaced on the dashboard.
 class DashboardKpis {
@@ -189,34 +194,103 @@ Future<int> _expiringStockItems(Ref ref, String propertyId) async {
   return 0;
 }
 
-/// Placeholder recent-activity feed.
+/// How many audit entries the dashboard feed shows.
+const _recentActivityCount = 8;
+
+/// Recent-activity feed backed by the audit service.
 ///
-/// A real feed requires an audit/events aggregation (orders, POs,
-/// batches, stock adjustments) that no single service exposes today.
-/// Keeping the sample data here lets the shell render meaningfully
-/// until that cross-cutting feed is built.
-final recentActivityProvider = Provider<List<RecentActivityEntry>>((ref) {
-  final now = DateTime.now();
-  return [
-    RecentActivityEntry(
-      title: 'Batch B-1042 completed',
-      subtitle: 'Recipe: Honey & Oat — 480 units yielded',
-      timestamp: now.subtract(const Duration(minutes: 12)),
-    ),
-    RecentActivityEntry(
-      title: 'Purchase order PO-318 received',
-      subtitle: 'Supplier: Acacia Foods',
-      timestamp: now.subtract(const Duration(hours: 1)),
-    ),
-    RecentActivityEntry(
-      title: 'Low stock alert — Vanilla Extract',
-      subtitle: 'Below reorder level at warehouse W-1',
-      timestamp: now.subtract(const Duration(hours: 3)),
-    ),
-    RecentActivityEntry(
-      title: 'Order SO-9821 fulfilled',
-      subtitle: 'Channel: storefront / 24 lines',
-      timestamp: now.subtract(const Duration(hours: 5)),
-    ),
-  ];
+/// Every service writes its actions to the tamper-proof audit trail, so
+/// one query covers orders, POs, batches, and stock adjustments alike.
+/// The bearer token scopes results to the operator's tenant server-side.
+/// Failures degrade to an empty list (rendered as a quiet empty state)
+/// in line with the KPI providers — a transient audit outage must not
+/// break the dashboard.
+final recentActivityProvider =
+    FutureProvider<List<RecentActivityEntry>>((ref) async {
+  final scope = ref.watch(tenantScopeProvider);
+  if (!scope.isReady) {
+    return const [];
+  }
+
+  try {
+    final client = ref.watch(auditServiceClientProvider);
+    final stream = client.listAuditEntries(
+      ListAuditEntriesRequest(count: _recentActivityCount),
+    );
+    final entries = await collectStream<ListAuditEntriesResponse,
+        AuditEntryObject>(
+      stream,
+      extract: (r) => r.data,
+      maxPages: 1,
+    );
+    entries.sort((a, b) => _entryTime(b).compareTo(_entryTime(a)));
+    return entries
+        .take(_recentActivityCount)
+        .map(_toActivityEntry)
+        .toList(growable: false);
+  } catch (_) {
+    return const [];
+  }
 });
+
+RecentActivityEntry _toActivityEntry(AuditEntryObject entry) {
+  return RecentActivityEntry(
+    title: _activityTitle(entry),
+    subtitle: _activitySubtitle(entry),
+    timestamp: _entryTime(entry),
+  );
+}
+
+DateTime _entryTime(AuditEntryObject entry) {
+  if (!entry.hasCreatedAt()) return DateTime.fromMillisecondsSinceEpoch(0);
+  final ts = entry.createdAt;
+  return DateTime.fromMillisecondsSinceEpoch(
+    ts.seconds.toInt() * 1000 + (ts.nanos ~/ 1000000),
+    isUtc: true,
+  ).toLocal();
+}
+
+/// "purchase_order" + "create" → "Purchase order created".
+String _activityTitle(AuditEntryObject entry) {
+  final resource = _humanize(entry.resourceType);
+  final action = _pastTense(entry.action);
+  if (resource.isEmpty) return action.isEmpty ? 'Activity' : action;
+  return action.isEmpty ? resource : '$resource ${action.toLowerCase()}';
+}
+
+String _activitySubtitle(AuditEntryObject entry) {
+  final parts = <String>[
+    if (entry.service.isNotEmpty) _humanize(entry.service),
+    if (entry.resourceId.isNotEmpty) entry.resourceId,
+  ];
+  return parts.isEmpty ? '—' : parts.join(' · ');
+}
+
+/// "service_commerce" / "purchase_order" → "Service commerce" /
+/// "Purchase order".
+String _humanize(String raw) {
+  final words = raw.replaceAll(RegExp(r'[_\-]+'), ' ').trim();
+  if (words.isEmpty) return '';
+  return words[0].toUpperCase() + words.substring(1).toLowerCase();
+}
+
+/// Best-effort verb for the feed title: "create" → "Created". Unknown
+/// verbs pass through humanized rather than mangled.
+String _pastTense(String action) {
+  final a = action.trim().toLowerCase();
+  if (a.isEmpty) return '';
+  const irregular = {
+    'create': 'Created',
+    'update': 'Updated',
+    'delete': 'Deleted',
+    'login': 'Logged in',
+    'logout': 'Logged out',
+    'grant_permission': 'Permission granted',
+    'revoke_permission': 'Permission revoked',
+  };
+  final known = irregular[a];
+  if (known != null) return known;
+  if (a.endsWith('e')) return _humanize('${a}d');
+  if (a.endsWith('ed')) return _humanize(a);
+  return _humanize(a);
+}

@@ -25,7 +25,7 @@ class DashboardPage extends ConsumerWidget {
     final theme = Theme.of(context);
     final claimsAsync = ref.watch(userClaimsProvider);
     final kpisAsync = ref.watch(dashboardKpisProvider);
-    final activity = ref.watch(recentActivityProvider);
+    final activityAsync = ref.watch(recentActivityProvider);
     final screenSize = screenSizeOf(context);
 
     // Render whatever data we have (including the empty sentinel before
@@ -35,6 +35,14 @@ class DashboardPage extends ConsumerWidget {
       data: (data) => data,
       loading: () => DashboardKpis.empty(),
       error: (_, _) => DashboardKpis.empty(),
+    );
+
+    // Same fallback contract for the audit-backed activity feed: the
+    // list renders its own empty state while loading or on error.
+    final activity = activityAsync.when(
+      data: (entries) => entries,
+      loading: () => const <RecentActivityEntry>[],
+      error: (_, _) => const <RecentActivityEntry>[],
     );
 
     final displayName = claimsAsync.maybeWhen(

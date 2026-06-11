@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../screens/discount_rules_screen.dart';
 import '../screens/price_checker_screen.dart';
+import '../screens/price_list_assignments_screen.dart';
 import '../screens/price_list_detail_screen.dart';
 import '../screens/price_list_screen.dart';
 import '../screens/price_overrides_screen.dart';
@@ -44,7 +45,16 @@ class PricingRouteModule extends RouteModule {
               path: ':priceListId',
               builder: (context, state) => PriceListDetailScreen(
                 priceListId: state.pathParameters['priceListId']!,
+                shopId: shopId,
               ),
+              routes: [
+                GoRoute(
+                  path: 'assignments',
+                  builder: (context, state) => PriceListAssignmentsScreen(
+                    priceListId: state.pathParameters['priceListId']!,
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -68,6 +78,7 @@ class PricingRouteModule extends RouteModule {
         '/pricing/overrides': {'customer_price_override'},
         '/pricing/discounts': {'discount_manage'},
         '/pricing/checker': {'price_list_view'},
+        '/pricing/assignments': {'price_list_manage'},
       };
 
   @override

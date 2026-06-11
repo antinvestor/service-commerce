@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../providers/procurement_providers.dart';
 import '../widgets/supplier_card.dart';
+import 'supplier_form.dart';
 
 /// Screen listing all suppliers.
 class SupplierListScreen extends ConsumerWidget {
@@ -17,9 +18,7 @@ class SupplierListScreen extends ConsumerWidget {
 
     return Scaffold(
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          // TODO: navigate to supplier create form
-        },
+        onPressed: () => showSupplierForm(context: context, ref: ref),
         icon: const Icon(Icons.add),
         label: const Text('New Supplier'),
       ),

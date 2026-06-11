@@ -42,7 +42,7 @@ final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 List<RouteModule> buildConsoleModules(TenantScope scope) => <RouteModule>[
       // Commerce
       CatalogRouteModule(shopId: scope.shopId),
-      CustomerRouteModule(),
+      CustomerRouteModule(shopId: scope.shopId),
       OrderRouteModule(shopId: scope.shopId),
       PricingRouteModule(shopId: scope.shopId),
       ProcurementRouteModule(propertyId: scope.propertyId),

@@ -10,6 +10,8 @@ export 'src/routing/procurement_route_module.dart';
 // Screens
 export 'src/screens/supplier_list_screen.dart';
 export 'src/screens/supplier_detail_screen.dart';
+export 'src/screens/supplier_form.dart';
+export 'src/screens/supplier_item_form.dart';
 export 'src/screens/purchase_order_list_screen.dart';
 export 'src/screens/po_create_wizard_screen.dart';
 export 'src/screens/goods_receipt_wizard_screen.dart';

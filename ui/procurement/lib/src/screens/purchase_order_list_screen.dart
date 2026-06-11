@@ -1,4 +1,5 @@
 import 'package:antinvestor_api_procurement/antinvestor_api_procurement.dart';
+import 'package:antinvestor_ui_core/widgets/edit_dialog.dart';
 import 'package:antinvestor_ui_core/widgets/error_helpers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -63,6 +64,53 @@ class _PurchaseOrderListScreenState
         },
       ),
     );
+  }
+
+  Future<void> _submitOrder(PurchaseOrder order) async {
+    try {
+      final notifier = ref.read(procurementNotifierProvider.notifier);
+      await notifier.submitPO(PurchaseOrderSubmitRequest()..id = order.id);
+      ref.invalidate(purchaseOrderListProvider(widget.propertyId));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Purchase order submitted')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed: ${friendlyError(e)}')),
+        );
+      }
+    }
+  }
+
+  Future<void> _cancelOrder(PurchaseOrder order) async {
+    final confirmed = await showConfirmDialog(
+      context: context,
+      title: 'Cancel Purchase Order',
+      message: order.orderNumber.isNotEmpty
+          ? 'Cancel PO #${order.orderNumber}? This cannot be undone.'
+          : 'Cancel this purchase order? This cannot be undone.',
+      confirmLabel: 'Cancel PO',
+    );
+    if (!confirmed || !mounted) return;
+    try {
+      final notifier = ref.read(procurementNotifierProvider.notifier);
+      await notifier.cancelPO(PurchaseOrderCancelRequest()..id = order.id);
+      ref.invalidate(purchaseOrderListProvider(widget.propertyId));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Purchase order cancelled')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed: ${friendlyError(e)}')),
+        );
+      }
+    }
   }
 
   Widget _buildContent(BuildContext context, ThemeData theme,
@@ -154,14 +202,84 @@ class _PurchaseOrderListScreenState
           else
             ...orders.map((o) => Padding(
                   padding: const EdgeInsets.only(bottom: 8),
-                  child: PurchaseOrderCard(
-                    order: o,
-                    onTap: () => context
-                        .go('/procurement/orders/${o.id}'),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: PurchaseOrderCard(
+                          order: o,
+                          onTap: () => context
+                              .go('/procurement/orders/${o.id}'),
+                        ),
+                      ),
+                      _POActionsMenu(
+                        order: o,
+                        onSubmit: () => _submitOrder(o),
+                        onCancel: () => _cancelOrder(o),
+                      ),
+                    ],
                   ),
                 )),
         ],
       ),
+    );
+  }
+}
+
+/// Overflow menu exposing the submit/cancel actions for a [PurchaseOrder].
+///
+/// Submit is offered only for draft orders; cancel is hidden once the order
+/// has reached a terminal state (received or already cancelled).
+class _POActionsMenu extends StatelessWidget {
+  const _POActionsMenu({
+    required this.order,
+    required this.onSubmit,
+    required this.onCancel,
+  });
+
+  final PurchaseOrder order;
+  final VoidCallback onSubmit;
+  final VoidCallback onCancel;
+
+  @override
+  Widget build(BuildContext context) {
+    final canSubmit =
+        order.status == PurchaseOrderStatus.PURCHASE_ORDER_STATUS_DRAFT;
+    final canCancel = order.status !=
+            PurchaseOrderStatus.PURCHASE_ORDER_STATUS_RECEIVED &&
+        order.status != PurchaseOrderStatus.PURCHASE_ORDER_STATUS_CANCELLED;
+
+    if (!canSubmit && !canCancel) return const SizedBox.shrink();
+
+    return PopupMenuButton<String>(
+      tooltip: 'Order actions',
+      onSelected: (value) {
+        switch (value) {
+          case 'submit':
+            onSubmit();
+          case 'cancel':
+            onCancel();
+        }
+      },
+      itemBuilder: (context) => [
+        if (canSubmit)
+          const PopupMenuItem(
+            value: 'submit',
+            child: ListTile(
+              leading: Icon(Icons.send_outlined),
+              title: Text('Submit'),
+              contentPadding: EdgeInsets.zero,
+            ),
+          ),
+        if (canCancel)
+          const PopupMenuItem(
+            value: 'cancel',
+            child: ListTile(
+              leading: Icon(Icons.cancel_outlined),
+              title: Text('Cancel'),
+              contentPadding: EdgeInsets.zero,
+            ),
+          ),
+      ],
     );
   }
 }

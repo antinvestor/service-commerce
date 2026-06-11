@@ -21,6 +21,15 @@ final supplierByIdProvider =
   return response.supplier;
 });
 
+/// Search supplier items for a given supplier.
+final supplierItemListProvider =
+    FutureProvider.family<List<SupplierItem>, String>((ref, supplierId) async {
+  final client = ref.watch(procurementServiceClientProvider);
+  final request = SupplierItemSearchRequest()..supplierId = supplierId;
+  final response = await client.supplierItemSearch(request);
+  return response.supplierItems;
+});
+
 /// Search purchase orders by property.
 final purchaseOrderListProvider =
     FutureProvider.family<List<PurchaseOrder>, String>(

@@ -9,6 +9,10 @@ import '../screens/customer_detail_screen.dart';
 import '../screens/receive_payment_screen.dart';
 
 class CustomerRouteModule extends RouteModule {
+  CustomerRouteModule({required this.shopId});
+
+  final String shopId;
+
   @override
   String get moduleId => 'customers';
 
@@ -22,6 +26,7 @@ class CustomerRouteModule extends RouteModule {
               path: ':customerId',
               builder: (context, state) => CustomerDetailScreen(
                 customerId: state.pathParameters['customerId']!,
+                shopId: shopId,
               ),
               routes: [
                 GoRoute(

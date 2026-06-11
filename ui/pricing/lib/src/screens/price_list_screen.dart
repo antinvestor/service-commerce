@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../providers/pricing_providers.dart';
 import '../widgets/price_list_card.dart';
+import 'price_list_form.dart';
 
 /// Screen listing all price lists for a shop.
 class PriceListScreen extends ConsumerWidget {
@@ -19,9 +20,11 @@ class PriceListScreen extends ConsumerWidget {
 
     return Scaffold(
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          // TODO: navigate to price list create form
-        },
+        onPressed: () => showPriceListForm(
+          context: context,
+          ref: ref,
+          shopId: shopId,
+        ),
         icon: const Icon(Icons.add),
         label: const Text('New Price List'),
       ),

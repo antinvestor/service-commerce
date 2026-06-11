@@ -465,15 +465,18 @@ func (cs *CommerceServer) CustomerPriceListAssignmentSave(
 	ctx context.Context,
 	req *connect.Request[commercev1.CustomerPriceListAssignmentSaveRequest],
 ) (*connect.Response[commercev1.CustomerPriceListAssignmentSaveResponse], error) {
-	if req.Msg.GetPriceListId() != "" {
-		pl, plErr := cs.pricingBusiness.GetPriceList(ctx, req.Msg.GetPriceListId())
-		if plErr != nil {
-			return nil, errorutil.CleanErr(plErr)
-		}
+	if req.Msg.GetPriceListId() == "" {
+		return nil, connect.NewError(connect.CodeInvalidArgument,
+			errors.New("price_list_id is required"))
+	}
 
-		if err := cs.authz.CanPriceListManage(ctx, pl.GetShopId()); err != nil {
-			return nil, authorizer.ToConnectError(err)
-		}
+	pl, plErr := cs.pricingBusiness.GetPriceList(ctx, req.Msg.GetPriceListId())
+	if plErr != nil {
+		return nil, errorutil.CleanErr(plErr)
+	}
+
+	if err := cs.authz.CanPriceListManage(ctx, pl.GetShopId()); err != nil {
+		return nil, authorizer.ToConnectError(err)
 	}
 
 	assignment, err := cs.pricingBusiness.SaveCustomerPriceListAssignment(ctx, req.Msg)
@@ -506,15 +509,18 @@ func (cs *CommerceServer) CustomerPriceOverrideSave(
 	ctx context.Context,
 	req *connect.Request[commercev1.CustomerPriceOverrideSaveRequest],
 ) (*connect.Response[commercev1.CustomerPriceOverrideSaveResponse], error) {
-	if req.Msg.GetProductVariantId() != "" {
-		shopID, shopErr := cs.pricingBusiness.GetShopIDForVariant(ctx, req.Msg.GetProductVariantId())
-		if shopErr != nil {
-			return nil, errorutil.CleanErr(shopErr)
-		}
+	if req.Msg.GetProductVariantId() == "" {
+		return nil, connect.NewError(connect.CodeInvalidArgument,
+			errors.New("product_variant_id is required"))
+	}
 
-		if err := cs.authz.CanCustomerPriceOverride(ctx, shopID); err != nil {
-			return nil, authorizer.ToConnectError(err)
-		}
+	shopID, shopErr := cs.pricingBusiness.GetShopIDForVariant(ctx, req.Msg.GetProductVariantId())
+	if shopErr != nil {
+		return nil, errorutil.CleanErr(shopErr)
+	}
+
+	if err := cs.authz.CanCustomerPriceOverride(ctx, shopID); err != nil {
+		return nil, authorizer.ToConnectError(err)
 	}
 
 	override, err := cs.pricingBusiness.SaveCustomerPriceOverride(ctx, req.Msg)

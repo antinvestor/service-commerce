@@ -8,10 +8,14 @@ class PriceListEntryTile extends StatelessWidget {
     super.key,
     required this.entry,
     this.variantName = '',
+    this.onEdit,
+    this.onDelete,
   });
 
   final PriceListEntry entry;
   final String variantName;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -59,6 +63,24 @@ class PriceListEntryTile extends StatelessWidget {
             ),
           ),
           AmountDisplay(amount: entry.unitPrice),
+          if (onEdit != null || onDelete != null)
+            PopupMenuButton<String>(
+              icon: Icon(
+                Icons.more_vert,
+                size: 18,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              onSelected: (value) {
+                if (value == 'edit') onEdit?.call();
+                if (value == 'delete') onDelete?.call();
+              },
+              itemBuilder: (context) => [
+                if (onEdit != null)
+                  const PopupMenuItem(value: 'edit', child: Text('Edit')),
+                if (onDelete != null)
+                  const PopupMenuItem(value: 'delete', child: Text('Delete')),
+              ],
+            ),
         ],
       ),
     );

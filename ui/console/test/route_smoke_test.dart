@@ -31,7 +31,7 @@ void main() {
     });
 
     test('CustomerRouteModule exposes routes', () {
-      final module = CustomerRouteModule();
+      final module = CustomerRouteModule(shopId: 'shop-1');
       expect(module.buildRoutes(), isNotEmpty);
       expect(module.buildNavItems(), isNotEmpty);
     });

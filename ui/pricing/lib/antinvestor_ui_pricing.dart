@@ -10,9 +10,15 @@ export 'src/routing/pricing_route_module.dart';
 // Screens
 export 'src/screens/price_list_screen.dart';
 export 'src/screens/price_list_detail_screen.dart';
+export 'src/screens/price_list_assignments_screen.dart';
 export 'src/screens/price_overrides_screen.dart';
 export 'src/screens/discount_rules_screen.dart';
 export 'src/screens/price_checker_screen.dart';
+
+// Forms
+export 'src/screens/price_list_form.dart';
+export 'src/screens/price_list_entry_form.dart';
+export 'src/screens/discount_rule_form.dart';
 
 // Widgets
 export 'src/widgets/price_list_card.dart';

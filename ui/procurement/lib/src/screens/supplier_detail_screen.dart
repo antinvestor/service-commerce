@@ -1,4 +1,5 @@
 import 'package:antinvestor_api_procurement/antinvestor_api_procurement.dart';
+import 'package:antinvestor_ui_core/widgets/amount_display.dart';
 import 'package:antinvestor_ui_core/widgets/error_helpers.dart';
 import 'package:antinvestor_ui_core/widgets/status_badge.dart';
 import 'package:flutter/material.dart';
@@ -7,6 +8,8 @@ import 'package:go_router/go_router.dart';
 
 import '../providers/procurement_providers.dart';
 import '../widgets/supplier_rating_badge.dart';
+import 'supplier_form.dart';
+import 'supplier_item_form.dart';
 
 /// Detail screen for a single supplier.
 class SupplierDetailScreen extends ConsumerWidget {
@@ -72,6 +75,12 @@ class SupplierDetailScreen extends ConsumerWidget {
                       ],
                     ),
                   ),
+                  IconButton(
+                    icon: const Icon(Icons.edit_outlined),
+                    tooltip: 'Edit supplier',
+                    onPressed: () => showSupplierForm(
+                        context: context, ref: ref, existing: supplier),
+                  ),
                 ],
               ),
               const SizedBox(height: 24),
@@ -104,8 +113,125 @@ class SupplierDetailScreen extends ConsumerWidget {
                   value: '${supplier.leadTimeDays} days'),
               if (supplier.notes.isNotEmpty)
                 _DetailRow(label: 'Notes', value: supplier.notes),
+              const SizedBox(height: 24),
+              _SupplierItemsSection(supplier: supplier),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Lists the items supplied by [supplier] with add/edit actions.
+class _SupplierItemsSection extends ConsumerWidget {
+  const _SupplierItemsSection({required this.supplier});
+
+  final Supplier supplier;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final asyncItems = ref.watch(supplierItemListProvider(supplier.id));
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(Icons.inventory_2_outlined,
+                size: 22, color: theme.colorScheme.primary),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text('Supplied Items',
+                  style: theme.textTheme.titleMedium
+                      ?.copyWith(fontWeight: FontWeight.w600)),
+            ),
+            TextButton.icon(
+              onPressed: () => showSupplierItemForm(
+                context: context,
+                ref: ref,
+                supplierId: supplier.id,
+                currency: supplier.currency,
+              ),
+              icon: const Icon(Icons.add, size: 18),
+              label: const Text('Add Item'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        asyncItems.when(
+          loading: () => const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16),
+            child: Center(child: CircularProgressIndicator()),
+          ),
+          error: (error, _) => Text(friendlyError(error),
+              style: theme.textTheme.bodySmall
+                  ?.copyWith(color: theme.colorScheme.error)),
+          data: (items) {
+            if (items.isEmpty) {
+              return Text('No items yet',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant));
+            }
+            return Column(
+              children: items
+                  .map((item) => _SupplierItemTile(
+                        item: item,
+                        supplier: supplier,
+                      ))
+                  .toList(),
+            );
+          },
+        ),
+      ],
+    );
+  }
+}
+
+class _SupplierItemTile extends ConsumerWidget {
+  const _SupplierItemTile({required this.item, required this.supplier});
+
+  final SupplierItem item;
+  final Supplier supplier;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    return Card(
+      elevation: 0,
+      margin: const EdgeInsets.only(bottom: 8),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: theme.colorScheme.outlineVariant),
+      ),
+      child: ListTile(
+        title: Text(
+          item.supplierSku.isNotEmpty
+              ? item.supplierSku
+              : item.inventoryItemId,
+          style: theme.textTheme.titleSmall
+              ?.copyWith(fontWeight: FontWeight.w600),
+        ),
+        subtitle: Text(item.inventoryItemId,
+            style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant)),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (item.hasUnitPrice()) AmountDisplay(amount: item.unitPrice),
+            IconButton(
+              icon: const Icon(Icons.edit_outlined, size: 20),
+              tooltip: 'Edit item',
+              onPressed: () => showSupplierItemForm(
+                context: context,
+                ref: ref,
+                supplierId: supplier.id,
+                currency: supplier.currency,
+                existing: item,
+              ),
+            ),
+          ],
         ),
       ),
     );

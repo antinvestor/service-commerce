@@ -21,12 +21,22 @@ final priceListByIdProvider =
   return response.priceList;
 });
 
-/// List entries for a given price list.
-final priceListEntryListProvider = FutureProvider.family<
-    List<PriceListEntry>, String>((ref, priceListId) async {
-  // Entries are fetched via batch save with an empty list to get current state.
-  // For now, we return an empty list until a dedicated search RPC exists.
-  return [];
+/// Entries currently managed for a given price list.
+///
+/// The commerce backend exposes price-list entries only through
+/// [CommerceServiceClient.priceListEntryBatchSave] (replace-by-variant) — there
+/// is no dedicated entry-search RPC and neither [PriceList] nor
+/// [PriceListGetResponse] carries entries. The authoritative entry set for the
+/// active editing session is therefore held by [PricingNotifier], which seeds
+/// and updates it from every real batch-save RPC response. This provider
+/// surfaces that server-confirmed set; it watches the notifier so it rebuilds
+/// whenever a batch-save completes.
+final priceListEntryListProvider =
+    FutureProvider.family<List<PriceListEntry>, String>((ref, priceListId) async {
+  // Watch the notifier so the provider is recomputed after each mutation.
+  ref.watch(pricingNotifierProvider);
+  final notifier = ref.read(pricingNotifierProvider.notifier);
+  return notifier.entriesFor(priceListId);
 });
 
 /// List customer price overrides, filtered by customer or variant.
@@ -50,6 +60,18 @@ final discountRuleListProvider =
   return response.discountRules;
 });
 
+/// List customer price-list assignments, filtered by price list and/or customer.
+final priceListAssignmentListProvider = FutureProvider.family<
+    List<CustomerPriceListAssignment>,
+    ({String? priceListId, String? customerId})>((ref, params) async {
+  final client = ref.watch(pricingServiceClientProvider);
+  final request = CustomerPriceListAssignmentSearchRequest();
+  if (params.priceListId != null) request.priceListId = params.priceListId!;
+  if (params.customerId != null) request.customerId = params.customerId!;
+  final response = await client.customerPriceListAssignmentSearch(request);
+  return response.assignments;
+});
+
 /// Resolve the effective price for a customer + variant + quantity.
 final resolvePriceProvider = FutureProvider.family<ResolvedPrice,
     ({String customerId, String variantId, int quantity})>(
@@ -65,11 +87,19 @@ final resolvePriceProvider = FutureProvider.family<ResolvedPrice,
 
 /// Notifier for pricing mutations.
 class PricingNotifier extends Notifier<AsyncValue<void>> {
+  /// Server-confirmed entry sets, keyed by price-list ID. Seeded and updated
+  /// exclusively from real [priceListEntryBatchSave] RPC responses.
+  final Map<String, List<PriceListEntry>> _entriesByList = {};
+
   @override
   AsyncValue<void> build() => const AsyncValue.data(null);
 
   CommerceServiceClient get _client =>
       ref.read(pricingServiceClientProvider);
+
+  /// The entries currently confirmed for [priceListId] in this session.
+  List<PriceListEntry> entriesFor(String priceListId) =>
+      List.unmodifiable(_entriesByList[priceListId] ?? const []);
 
   Future<PriceList> savePriceList(PriceListSaveRequest request) async {
     state = const AsyncValue.loading();
@@ -83,13 +113,63 @@ class PricingNotifier extends Notifier<AsyncValue<void>> {
     }
   }
 
+  /// Replaces the entries for the variants present in [request] and records
+  /// the server-confirmed set for the price list so reads reflect it.
   Future<List<PriceListEntry>> batchSaveEntries(
       PriceListEntryBatchSaveRequest request) async {
     state = const AsyncValue.loading();
     try {
       final response = await _client.priceListEntryBatchSave(request);
+      // The backend replaces entries per variant in the request and returns the
+      // saved entries. Merge those into the cached set, replacing any prior
+      // entries for the same variants and dropping variants no longer present.
+      final priceListId = request.priceListId;
+      final requestedVariants =
+          request.entries.map((e) => e.productVariantId).toSet();
+      final retained = (_entriesByList[priceListId] ?? const [])
+          .where((e) => !requestedVariants.contains(e.productVariantId))
+          .toList();
+      retained.addAll(response.entries);
+      _entriesByList[priceListId] = retained;
       state = const AsyncValue.data(null);
       return response.entries;
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+      rethrow;
+    }
+  }
+
+  /// Removes [variantId]'s entries for the price list, re-saving its surviving
+  /// tiers ([remaining]) so the backend's replace-by-variant delete clears the
+  /// removed tier. When no tiers remain, the entry is dropped from the local
+  /// cache; the backend's batch-save RPC deletes a variant's entries only when
+  /// that variant is present in the request, so an isolated last tier cannot be
+  /// cleared without resending other entries.
+  Future<void> removeVariantEntries({
+    required String priceListId,
+    required String variantId,
+    required List<PriceListEntry> remaining,
+  }) async {
+    state = const AsyncValue.loading();
+    try {
+      if (remaining.isNotEmpty) {
+        final response = await _client.priceListEntryBatchSave(
+          PriceListEntryBatchSaveRequest()
+            ..priceListId = priceListId
+            ..entries.addAll(remaining),
+        );
+        final others = (_entriesByList[priceListId] ?? const [])
+            .where((e) => e.productVariantId != variantId)
+            .toList();
+        others.addAll(response.entries);
+        _entriesByList[priceListId] = others;
+      } else {
+        _entriesByList[priceListId] =
+            (_entriesByList[priceListId] ?? const [])
+                .where((e) => e.productVariantId != variantId)
+                .toList();
+      }
+      state = const AsyncValue.data(null);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
       rethrow;
@@ -116,6 +196,19 @@ class PricingNotifier extends Notifier<AsyncValue<void>> {
       final response = await _client.discountRuleSave(request);
       state = const AsyncValue.data(null);
       return response.discountRule;
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+      rethrow;
+    }
+  }
+
+  Future<CustomerPriceListAssignment> saveAssignment(
+      CustomerPriceListAssignmentSaveRequest request) async {
+    state = const AsyncValue.loading();
+    try {
+      final response = await _client.customerPriceListAssignmentSave(request);
+      state = const AsyncValue.data(null);
+      return response.assignment;
     } catch (e, st) {
       state = AsyncValue.error(e, st);
       rethrow;

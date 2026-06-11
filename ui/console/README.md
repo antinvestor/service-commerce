@@ -20,7 +20,7 @@ screens.
 | Customers       | `antinvestor_ui_customers`    | `/customers`              |
 | Orders          | `antinvestor_ui_orders`       | `/orders`                 |
 | Pricing         | `antinvestor_ui_pricing`      | `/pricing`                |
-| Procurement     | `antinvestor_ui_procurement`  | `/procurement` (TODO)     |
+| Procurement     | `antinvestor_ui_procurement`  | `/procurement`            |
 | Inventory       | `antinvestor_ui_inventory`    | `/inventory`              |
 | Recipes         | `antinvestor_ui_recipes`      | `/recipes`                |
 | Production      | `antinvestor_ui_production`   | `/production`             |
@@ -38,8 +38,15 @@ screens.
 | Payments        | `antinvestor_ui_payment`      | `/payments`               |
 | Identity        | `antinvestor_ui_identity`     | (screens only — no module) |
 
-`shopId` and `propertyId` are placeholders today (`'shop-1'`, `'property-1'`);
-the production version will resolve them from user context.
+`shopId` and `propertyId` are resolved from the authenticated user's tenancy
+via `tenantScopeProvider` (`lib/core/auth/tenant_context_provider.dart`): the
+active organization maps to the shop and the active branch (falling back to the
+organization, then the partition) maps to the property. Route modules are built
+for that scope in `buildConsoleModules`.
+
+The shop itself is managed from **Settings → Shop**, which wires the commerce
+`GetShop` / `CreateShop` / `UpdateShop` RPCs (no `ListShops` exists) against the
+scope's `shopId`.
 
 ## Run
 

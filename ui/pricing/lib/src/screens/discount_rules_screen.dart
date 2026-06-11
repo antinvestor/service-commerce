@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/pricing_providers.dart';
 import '../widgets/discount_rule_card.dart';
+import 'discount_rule_form.dart';
 
 /// Screen listing discount rules for a shop.
 class DiscountRulesScreen extends ConsumerWidget {
@@ -18,9 +19,11 @@ class DiscountRulesScreen extends ConsumerWidget {
 
     return Scaffold(
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          // TODO: navigate to discount rule create form
-        },
+        onPressed: () => showDiscountRuleForm(
+          context: context,
+          ref: ref,
+          shopId: shopId,
+        ),
         icon: const Icon(Icons.add),
         label: const Text('New Discount'),
       ),
@@ -88,7 +91,15 @@ class DiscountRulesScreen extends ConsumerWidget {
                 const SizedBox(height: 20),
                 ...rules.map((r) => Padding(
                       padding: const EdgeInsets.only(bottom: 8),
-                      child: DiscountRuleCard(rule: r),
+                      child: DiscountRuleCard(
+                        rule: r,
+                        onTap: () => showDiscountRuleForm(
+                          context: context,
+                          ref: ref,
+                          shopId: shopId,
+                          existing: r,
+                        ),
+                      ),
                     )),
               ],
             ),

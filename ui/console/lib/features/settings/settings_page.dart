@@ -7,6 +7,7 @@ import '../../core/auth/tenant_context_provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/theme_mode_provider.dart';
 import '../../core/widgets/page_header.dart';
+import 'shop_settings_section.dart';
 
 /// Console settings surface.
 ///
@@ -71,6 +72,11 @@ class SettingsPage extends ConsumerWidget {
               _Panel(
                 title: 'Tenant scope',
                 child: _TenantScopeSection(scope: scope),
+              ),
+              const SizedBox(height: 16),
+              const _Panel(
+                title: 'Shop',
+                child: ShopSettingsSection(),
               ),
               const SizedBox(height: 16),
               _Panel(

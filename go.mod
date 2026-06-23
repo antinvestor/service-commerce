@@ -15,7 +15,7 @@ require (
 	github.com/pitabwire/frame v1.98.4
 	github.com/pitabwire/util v0.9.1
 	github.com/stretchr/testify v1.11.1
-	github.com/testcontainers/testcontainers-go v0.42.0
+	github.com/testcontainers/testcontainers-go v0.43.0
 	google.golang.org/protobuf v1.36.11
 	gorm.io/gorm v1.31.1
 )

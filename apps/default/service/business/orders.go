@@ -22,8 +22,8 @@ import (
 
 	commercev1 "buf.build/gen/go/antinvestor/commerce/protocolbuffers/go/v1"
 	"connectrpc.com/connect"
-	"github.com/pitabwire/frame"
-	"github.com/pitabwire/frame/data"
+	"github.com/pitabwire/frame/v2"
+	"github.com/pitabwire/frame/v2/data"
 
 	"github.com/antinvestor/service-commerce/apps/default/service/models"
 	"github.com/antinvestor/service-commerce/apps/default/service/repository"

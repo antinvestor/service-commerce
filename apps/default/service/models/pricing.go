@@ -18,7 +18,7 @@ import (
 	"time"
 
 	commercev1 "buf.build/gen/go/antinvestor/commerce/protocolbuffers/go/v1"
-	"github.com/pitabwire/frame/data"
+	"github.com/pitabwire/frame/v2/data"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 

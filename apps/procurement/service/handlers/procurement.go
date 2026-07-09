@@ -21,9 +21,9 @@ import (
 	"buf.build/gen/go/antinvestor/procurement/connectrpc/go/v1/procurementv1connect"
 	procurementv1 "buf.build/gen/go/antinvestor/procurement/protocolbuffers/go/v1"
 	"connectrpc.com/connect"
-	"github.com/pitabwire/frame"
-	"github.com/pitabwire/frame/datastore"
-	"github.com/pitabwire/frame/security/authorizer"
+	"github.com/pitabwire/frame/v2"
+	"github.com/pitabwire/frame/v2/datastore"
+	"github.com/pitabwire/frame/v2/security/authorizer"
 
 	"github.com/antinvestor/service-commerce/apps/procurement/service/authz"
 	"github.com/antinvestor/service-commerce/apps/procurement/service/business"

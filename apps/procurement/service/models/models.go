@@ -19,7 +19,7 @@ import (
 
 	commonv1 "buf.build/gen/go/antinvestor/common/protocolbuffers/go/common/v1"
 	procurementv1 "buf.build/gen/go/antinvestor/procurement/protocolbuffers/go/v1"
-	"github.com/pitabwire/frame/data"
+	"github.com/pitabwire/frame/v2/data"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 

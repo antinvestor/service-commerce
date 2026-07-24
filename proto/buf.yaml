@@ -10,7 +10,6 @@ deps:
   - buf.build/antinvestor/common
   - buf.build/bufbuild/protovalidate
   - buf.build/gnostic/gnostic
-  - buf.build/googleapis/googleapis
 lint:
   use:
     - STANDARD

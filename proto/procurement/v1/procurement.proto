@@ -75,28 +75,38 @@ service ProcurementService {
       {
         role: ROLE_OWNER
         permissions: [
-          "supplier_view", "supplier_manage",
-          "purchase_order_view", "purchase_order_create",
-          "purchase_order_submit", "purchase_order_cancel",
-          "goods_receipt_view", "goods_receipt_create"
+          "supplier_view",
+          "supplier_manage",
+          "purchase_order_view",
+          "purchase_order_create",
+          "purchase_order_submit",
+          "purchase_order_cancel",
+          "goods_receipt_view",
+          "goods_receipt_create"
         ]
       },
       {
         role: ROLE_ADMIN
         permissions: [
-          "supplier_view", "supplier_manage",
-          "purchase_order_view", "purchase_order_create",
-          "purchase_order_submit", "purchase_order_cancel",
-          "goods_receipt_view", "goods_receipt_create"
+          "supplier_view",
+          "supplier_manage",
+          "purchase_order_view",
+          "purchase_order_create",
+          "purchase_order_submit",
+          "purchase_order_cancel",
+          "goods_receipt_view",
+          "goods_receipt_create"
         ]
       },
       {
         role: ROLE_OPERATOR
         permissions: [
           "supplier_view",
-          "purchase_order_view", "purchase_order_create",
+          "purchase_order_view",
+          "purchase_order_create",
           "purchase_order_submit",
-          "goods_receipt_view", "goods_receipt_create"
+          "goods_receipt_view",
+          "goods_receipt_create"
         ]
       },
       {
@@ -110,10 +120,14 @@ service ProcurementService {
       {
         role: ROLE_SERVICE
         permissions: [
-          "supplier_view", "supplier_manage",
-          "purchase_order_view", "purchase_order_create",
-          "purchase_order_submit", "purchase_order_cancel",
-          "goods_receipt_view", "goods_receipt_create"
+          "supplier_view",
+          "supplier_manage",
+          "purchase_order_view",
+          "purchase_order_create",
+          "purchase_order_submit",
+          "purchase_order_cancel",
+          "goods_receipt_view",
+          "goods_receipt_create"
         ]
       }
     ]
@@ -121,54 +135,54 @@ service ProcurementService {
 
   // ---- Suppliers ----
   rpc SupplierSave(SupplierSaveRequest) returns (SupplierSaveResponse) {
-    option (common.v1.method_permissions) = { permissions: ["supplier_manage"] };
+    option (common.v1.method_permissions) = {permissions: ["supplier_manage"]};
   }
   rpc SupplierGet(SupplierGetRequest) returns (SupplierGetResponse) {
-    option (common.v1.method_permissions) = { permissions: ["supplier_view"] };
+    option (common.v1.method_permissions) = {permissions: ["supplier_view"]};
   }
   rpc SupplierSearch(SupplierSearchRequest) returns (SupplierSearchResponse) {
-    option (common.v1.method_permissions) = { permissions: ["supplier_view"] };
+    option (common.v1.method_permissions) = {permissions: ["supplier_view"]};
   }
 
   // ---- Supplier Items ----
   rpc SupplierItemSave(SupplierItemSaveRequest) returns (SupplierItemSaveResponse) {
-    option (common.v1.method_permissions) = { permissions: ["supplier_manage"] };
+    option (common.v1.method_permissions) = {permissions: ["supplier_manage"]};
   }
   rpc SupplierItemSearch(SupplierItemSearchRequest) returns (SupplierItemSearchResponse) {
-    option (common.v1.method_permissions) = { permissions: ["supplier_view"] };
+    option (common.v1.method_permissions) = {permissions: ["supplier_view"]};
   }
 
   // ---- Purchase Orders ----
   rpc PurchaseOrderCreate(PurchaseOrderCreateRequest) returns (PurchaseOrderCreateResponse) {
-    option (common.v1.method_permissions) = { permissions: ["purchase_order_create"] };
+    option (common.v1.method_permissions) = {permissions: ["purchase_order_create"]};
   }
   rpc PurchaseOrderGet(PurchaseOrderGetRequest) returns (PurchaseOrderGetResponse) {
-    option (common.v1.method_permissions) = { permissions: ["purchase_order_view"] };
+    option (common.v1.method_permissions) = {permissions: ["purchase_order_view"]};
   }
   rpc PurchaseOrderSearch(PurchaseOrderSearchRequest) returns (PurchaseOrderSearchResponse) {
-    option (common.v1.method_permissions) = { permissions: ["purchase_order_view"] };
+    option (common.v1.method_permissions) = {permissions: ["purchase_order_view"]};
   }
   rpc PurchaseOrderSubmit(PurchaseOrderSubmitRequest) returns (PurchaseOrderSubmitResponse) {
-    option (common.v1.method_permissions) = { permissions: ["purchase_order_submit"] };
+    option (common.v1.method_permissions) = {permissions: ["purchase_order_submit"]};
   }
   rpc PurchaseOrderCancel(PurchaseOrderCancelRequest) returns (PurchaseOrderCancelResponse) {
-    option (common.v1.method_permissions) = { permissions: ["purchase_order_cancel"] };
+    option (common.v1.method_permissions) = {permissions: ["purchase_order_cancel"]};
   }
 
   // ---- Goods Receipts ----
   rpc GoodsReceiptCreate(GoodsReceiptCreateRequest) returns (GoodsReceiptCreateResponse) {
-    option (common.v1.method_permissions) = { permissions: ["goods_receipt_create"] };
+    option (common.v1.method_permissions) = {permissions: ["goods_receipt_create"]};
   }
   rpc GoodsReceiptGet(GoodsReceiptGetRequest) returns (GoodsReceiptGetResponse) {
-    option (common.v1.method_permissions) = { permissions: ["goods_receipt_view"] };
+    option (common.v1.method_permissions) = {permissions: ["goods_receipt_view"]};
   }
   rpc GoodsReceiptSearch(GoodsReceiptSearchRequest) returns (GoodsReceiptSearchResponse) {
-    option (common.v1.method_permissions) = { permissions: ["goods_receipt_view"] };
+    option (common.v1.method_permissions) = {permissions: ["goods_receipt_view"]};
   }
 
   // ---- Suggestions ----
   rpc SuggestPurchaseOrders(SuggestPurchaseOrdersRequest) returns (SuggestPurchaseOrdersResponse) {
-    option (common.v1.method_permissions) = { permissions: ["purchase_order_create"] };
+    option (common.v1.method_permissions) = {permissions: ["purchase_order_create"]};
   }
 }
 

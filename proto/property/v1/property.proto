@@ -462,9 +462,7 @@ service PropertyService {
 
   // AddPropertyType creates a new property type classification.
   rpc AddPropertyType(AddPropertyTypeRequest) returns (AddPropertyTypeResponse) {
-    option (common.v1.method_permissions) = {
-      permissions: ["property_type_manage"]
-    };
+    option (common.v1.method_permissions) = {permissions: ["property_type_manage"]};
     option (gnostic.openapi.v3.operation) = {
       operation_id: "addPropertyType"
       summary: "Add property type"
@@ -476,9 +474,7 @@ service PropertyService {
   // ListPropertyType retrieves all property types.
   rpc ListPropertyType(ListPropertyTypeRequest) returns (stream ListPropertyTypeResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
-    option (common.v1.method_permissions) = {
-      permissions: ["property_type_view"]
-    };
+    option (common.v1.method_permissions) = {permissions: ["property_type_view"]};
     option (gnostic.openapi.v3.operation) = {
       operation_id: "listPropertyTypes"
       summary: "List property types"
@@ -489,9 +485,7 @@ service PropertyService {
 
   // AddLocality creates a new geographic locality.
   rpc AddLocality(AddLocalityRequest) returns (AddLocalityResponse) {
-    option (common.v1.method_permissions) = {
-      permissions: ["locality_manage"]
-    };
+    option (common.v1.method_permissions) = {permissions: ["locality_manage"]};
     option (gnostic.openapi.v3.operation) = {
       operation_id: "addLocality"
       summary: "Add locality"
@@ -502,9 +496,7 @@ service PropertyService {
 
   // DeleteLocality removes a locality from the system.
   rpc DeleteLocality(DeleteLocalityRequest) returns (DeleteLocalityResponse) {
-    option (common.v1.method_permissions) = {
-      permissions: ["locality_manage"]
-    };
+    option (common.v1.method_permissions) = {permissions: ["locality_manage"]};
     option (gnostic.openapi.v3.operation) = {
       operation_id: "deleteLocality"
       summary: "Delete locality"
@@ -515,9 +507,7 @@ service PropertyService {
 
   // CreateProperty creates a new property.
   rpc CreateProperty(CreatePropertyRequest) returns (CreatePropertyResponse) {
-    option (common.v1.method_permissions) = {
-      permissions: ["property_manage"]
-    };
+    option (common.v1.method_permissions) = {permissions: ["property_manage"]};
     option (gnostic.openapi.v3.operation) = {
       operation_id: "createProperty"
       summary: "Create property"
@@ -528,9 +518,7 @@ service PropertyService {
 
   // UpdateProperty updates an existing property.
   rpc UpdateProperty(UpdatePropertyRequest) returns (UpdatePropertyResponse) {
-    option (common.v1.method_permissions) = {
-      permissions: ["property_manage"]
-    };
+    option (common.v1.method_permissions) = {permissions: ["property_manage"]};
     option (gnostic.openapi.v3.operation) = {
       operation_id: "updateProperty"
       summary: "Update property"
@@ -541,9 +529,7 @@ service PropertyService {
 
   // DeleteProperty removes a property from the system.
   rpc DeleteProperty(DeletePropertyRequest) returns (DeletePropertyResponse) {
-    option (common.v1.method_permissions) = {
-      permissions: ["property_manage"]
-    };
+    option (common.v1.method_permissions) = {permissions: ["property_manage"]};
     option (gnostic.openapi.v3.operation) = {
       operation_id: "deleteProperty"
       summary: "Delete property"
@@ -555,9 +541,7 @@ service PropertyService {
   // StateOfProperty retrieves the current state of a property.
   rpc StateOfProperty(StateOfPropertyRequest) returns (StateOfPropertyResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
-    option (common.v1.method_permissions) = {
-      permissions: ["property_view"]
-    };
+    option (common.v1.method_permissions) = {permissions: ["property_view"]};
     option (gnostic.openapi.v3.operation) = {
       operation_id: "getPropertyState"
       summary: "Get property state"
@@ -569,9 +553,7 @@ service PropertyService {
   // HistoryOfProperty retrieves the complete state history.
   rpc HistoryOfProperty(HistoryOfPropertyRequest) returns (stream HistoryOfPropertyResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
-    option (common.v1.method_permissions) = {
-      permissions: ["property_view"]
-    };
+    option (common.v1.method_permissions) = {permissions: ["property_view"]};
     option (gnostic.openapi.v3.operation) = {
       operation_id: "getPropertyHistory"
       summary: "Get property history"
@@ -583,9 +565,7 @@ service PropertyService {
   // SearchProperty finds properties matching criteria.
   rpc SearchProperty(SearchPropertyRequest) returns (stream SearchPropertyResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
-    option (common.v1.method_permissions) = {
-      permissions: ["property_view"]
-    };
+    option (common.v1.method_permissions) = {permissions: ["property_view"]};
     option (gnostic.openapi.v3.operation) = {
       operation_id: "searchProperties"
       summary: "Search properties"
@@ -597,9 +577,7 @@ service PropertyService {
   // ListSubscription retrieves subscriptions for a property.
   rpc ListSubscription(ListSubscriptionRequest) returns (stream ListSubscriptionResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
-    option (common.v1.method_permissions) = {
-      permissions: ["property_subscription_view"]
-    };
+    option (common.v1.method_permissions) = {permissions: ["property_subscription_view"]};
     option (gnostic.openapi.v3.operation) = {
       operation_id: "listSubscriptions"
       summary: "List property subscriptions"
@@ -610,9 +588,7 @@ service PropertyService {
 
   // AddSubscription grants a profile access to a property.
   rpc AddSubscription(AddSubscriptionRequest) returns (AddSubscriptionResponse) {
-    option (common.v1.method_permissions) = {
-      permissions: ["property_subscription_manage"]
-    };
+    option (common.v1.method_permissions) = {permissions: ["property_subscription_manage"]};
     option (gnostic.openapi.v3.operation) = {
       operation_id: "addSubscription"
       summary: "Add subscription"
@@ -623,9 +599,7 @@ service PropertyService {
 
   // DeleteSubscription revokes a profile's access to a property.
   rpc DeleteSubscription(DeleteSubscriptionRequest) returns (DeleteSubscriptionResponse) {
-    option (common.v1.method_permissions) = {
-      permissions: ["property_subscription_manage"]
-    };
+    option (common.v1.method_permissions) = {permissions: ["property_subscription_manage"]};
     option (gnostic.openapi.v3.operation) = {
       operation_id: "deleteSubscription"
       summary: "Delete subscription"

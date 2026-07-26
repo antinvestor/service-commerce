@@ -23,8 +23,8 @@ import (
 	"connectrpc.com/connect"
 	"github.com/antinvestor/common/v2/permissions"
 	"github.com/pitabwire/frame/v2"
+	"github.com/pitabwire/frame/v2/setup"
 	"github.com/pitabwire/frame/v2/config"
-	"github.com/pitabwire/frame/v2/datastore"
 	"github.com/pitabwire/frame/v2/security/authorizer"
 	connectInterceptors "github.com/pitabwire/frame/v2/security/interceptors/connect"
 	"github.com/pitabwire/util"
@@ -55,16 +55,15 @@ func main() {
 		frame.WithConfig(&cfg),
 		frame.WithDatastore(),
 	)
+
+	svc.Setup().RegisterFunc(setup.NameMigrate, func(ctx context.Context) error {
+		return repository.Migrate(ctx, svc.DatastoreManager(), cfg.GetDatabaseMigrationPath())
+	})
 	defer svc.Stop(ctx)
 	log := svc.Log(ctx)
 
-	dbManager := svc.DatastoreManager()
 
 	// Handle database migration if requested
-	if handleDatabaseMigration(ctx, dbManager, cfg) {
-		return
-	}
-
 	// Setup Connect server
 	connectHandler := setupConnectServer(ctx, svc)
 
@@ -78,6 +77,13 @@ func main() {
 	// Initialize the service with all options
 	svc.Init(ctx, serviceOptions...)
 
+	if frame.ShouldRunSetup(&cfg) {
+		if setupErr := svc.RunSetupForProcess(ctx, &cfg); setupErr != nil {
+			util.Log(ctx).WithError(setupErr).Fatal("setup plan failed")
+		}
+		return
+	}
+
 	// Start the service
 	err = svc.Run(ctx, "")
 	if err != nil {
@@ -85,21 +91,6 @@ func main() {
 	}
 }
 
-// handleDatabaseMigration performs database migration if configured to do so.
-func handleDatabaseMigration(
-	ctx context.Context,
-	dbManager datastore.Manager,
-	cfg aconfig.CommerceConfig,
-) bool {
-	if cfg.DoDatabaseMigrate() {
-		err := repository.Migrate(ctx, dbManager, cfg.GetDatabaseMigrationPath())
-		if err != nil {
-			util.Log(ctx).WithError(err).Fatal("main -- Could not migrate successfully")
-		}
-		return true
-	}
-	return false
-}
 
 // setupConnectServer initializes and configures the gRPC server.
 func setupConnectServer(ctx context.Context, svc *frame.Service) http.Handler {

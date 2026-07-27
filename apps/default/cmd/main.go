@@ -23,10 +23,10 @@ import (
 	"connectrpc.com/connect"
 	"github.com/antinvestor/common/v2/permissions"
 	"github.com/pitabwire/frame/v2"
-	"github.com/pitabwire/frame/v2/setup"
 	"github.com/pitabwire/frame/v2/config"
 	"github.com/pitabwire/frame/v2/security/authorizer"
 	connectInterceptors "github.com/pitabwire/frame/v2/security/interceptors/connect"
+	"github.com/pitabwire/frame/v2/setup"
 	"github.com/pitabwire/util"
 
 	aconfig "github.com/antinvestor/service-commerce/apps/default/config"
@@ -62,7 +62,6 @@ func main() {
 	defer svc.Stop(ctx)
 	log := svc.Log(ctx)
 
-
 	// Handle database migration if requested
 	// Setup Connect server
 	connectHandler := setupConnectServer(ctx, svc)
@@ -90,7 +89,6 @@ func main() {
 		log.WithError(err).Fatal("could not run Server")
 	}
 }
-
 
 // setupConnectServer initializes and configures the gRPC server.
 func setupConnectServer(ctx context.Context, svc *frame.Service) http.Handler {

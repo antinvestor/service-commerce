@@ -62,28 +62,21 @@ func main() {
 	defer svc.Stop(ctx)
 	log := svc.Log(ctx)
 
-	// Handle database migration if requested
-	// Setup Connect server
-	connectHandler := setupConnectServer(ctx, svc)
-
-	// Setup HTTP handlers and start service
+	// Setup Job: migrate + publish permission manifest only (no HTTP/runtime wiring).
 	commerceSD := commercepb.File_v1_commerce_proto.Services().ByName("CommerceService")
-	serviceOptions := []frame.Option{
-		frame.WithHTTPHandler(connectHandler),
-		frame.WithPermissionRegistration(commerceSD),
-	}
-
-	// Initialize the service with all options
-	svc.Init(ctx, serviceOptions...)
-
 	if frame.ShouldRunSetup(&cfg) {
+		svc.Init(ctx, frame.WithPermissionRegistration(commerceSD))
 		if setupErr := svc.RunSetupForProcess(ctx, &cfg); setupErr != nil {
 			util.Log(ctx).WithError(setupErr).Fatal("setup plan failed")
 		}
+		log.Info("setup plan complete — exiting")
 		return
 	}
 
-	// Start the service
+	// Runtime: HTTP only — no WithPermissionRegistration.
+	connectHandler := setupConnectServer(ctx, svc)
+	svc.Init(ctx, frame.WithHTTPHandler(connectHandler))
+
 	err = svc.Run(ctx, "")
 	if err != nil {
 		log.WithError(err).Fatal("could not run Server")

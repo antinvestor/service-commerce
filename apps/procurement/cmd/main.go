@@ -62,28 +62,21 @@ func main() {
 	defer svc.Stop(ctx)
 	log := svc.Log(ctx)
 
-	// Handle database migration if requested
-	// Setup Connect server
-	connectHandler := setupConnectServer(ctx, svc)
-
-	// Setup HTTP handlers and start service
+	// Setup Job: migrate + publish permission manifest only (no HTTP/runtime wiring).
 	procurementSD := procurementpb.File_v1_procurement_proto.Services().ByName("ProcurementService")
-	serviceOptions := []frame.Option{
-		frame.WithHTTPHandler(connectHandler),
-		frame.WithPermissionRegistration(procurementSD),
-	}
-
-	// Initialize the service with all options
-	svc.Init(ctx, serviceOptions...)
-
 	if frame.ShouldRunSetup(&cfg) {
+		svc.Init(ctx, frame.WithPermissionRegistration(procurementSD))
 		if setupErr := svc.RunSetupForProcess(ctx, &cfg); setupErr != nil {
 			util.Log(ctx).WithError(setupErr).Fatal("setup plan failed")
 		}
+		log.Info("setup plan complete — exiting")
 		return
 	}
 
-	// Start the service
+	// Runtime: HTTP only — no WithPermissionRegistration.
+	connectHandler := setupConnectServer(ctx, svc)
+	svc.Init(ctx, frame.WithHTTPHandler(connectHandler))
+
 	err = svc.Run(ctx, "")
 	if err != nil {
 		log.WithError(err).Fatal("could not run Server")

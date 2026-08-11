@@ -4,8 +4,8 @@ go 1.26.5
 
 require (
 	buf.build/gen/go/antinvestor/commerce/connectrpc/go v1.20.0-20260724174013-58c9eef18c0a.1
-	buf.build/gen/go/antinvestor/commerce/protocolbuffers/go v1.36.11-20260724174013-58c9eef18c0a.1
-	buf.build/gen/go/antinvestor/common/protocolbuffers/go v1.36.11-20260509050709-3f270876dbf3.1
+	buf.build/gen/go/antinvestor/commerce/protocolbuffers/go v1.36.12-20260724174013-58c9eef18c0a.1
+	buf.build/gen/go/antinvestor/common/protocolbuffers/go v1.36.12-20260509050709-3f270876dbf3.1
 	buf.build/gen/go/antinvestor/procurement/connectrpc/go v1.20.0-20260724174013-09687866da48.1
 	buf.build/gen/go/antinvestor/procurement/protocolbuffers/go v1.36.11-20260724174013-09687866da48.1
 	connectrpc.com/connect v1.20.0
@@ -14,13 +14,13 @@ require (
 	github.com/pitabwire/util v0.9.1
 	github.com/stretchr/testify v1.11.1
 	github.com/testcontainers/testcontainers-go v0.43.0
-	google.golang.org/protobuf v1.36.11
+	google.golang.org/protobuf v1.36.12
 	gorm.io/gorm v1.31.2
 )
 
 require (
-	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.11-20260709200747-435963d16310.1 // indirect
-	buf.build/gen/go/gnostic/gnostic/protocolbuffers/go v1.36.11-20230414000709-087bc8072ce4.1 // indirect
+	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.12-20260709200747-435963d16310.1 // indirect
+	buf.build/gen/go/gnostic/gnostic/protocolbuffers/go v1.36.12-20230414000709-087bc8072ce4.1 // indirect
 	buf.build/go/protovalidate v1.2.0 // indirect
 	cel.dev/expr v0.25.2 // indirect
 	cloud.google.com/go/auth v0.22.0 // indirect

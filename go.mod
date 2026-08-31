@@ -1,6 +1,6 @@
 module github.com/antinvestor/service-commerce
 
-go 1.26.5
+go 1.26.7
 
 require (
 	buf.build/gen/go/antinvestor/commerce/connectrpc/go v1.20.0-20260724174013-58c9eef18c0a.1

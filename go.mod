@@ -9,8 +9,8 @@ require (
 	buf.build/gen/go/antinvestor/procurement/connectrpc/go v1.20.0-20260724174013-09687866da48.1
 	buf.build/gen/go/antinvestor/procurement/protocolbuffers/go v1.36.12-20260724174013-09687866da48.1
 	connectrpc.com/connect v1.20.0
-	github.com/antinvestor/common/v2 v2.0.5
-	github.com/pitabwire/frame/v2 v2.1.6
+	github.com/antinvestor/common/v2 v2.0.7
+	github.com/pitabwire/frame/v2 v2.1.7
 	github.com/pitabwire/util v0.9.1
 	github.com/stretchr/testify v1.12.1
 	github.com/testcontainers/testcontainers-go v0.44.0

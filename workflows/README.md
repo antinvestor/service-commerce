@@ -12,6 +12,14 @@ commerce over Connect JSON.
 
 `${COMMERCE_URI}` is substituted from `COMMERCE_SERVICE_URI` at registration.
 
+Each document lists its cron under `schedules` (trustage's `ScheduleSpec`:
+`name`, `cron_expr`, optional IANA `timezone`); the sync refuses a document
+without one, because trustage would otherwise activate it and never run it.
+Trustage's `CreateWorkflow` is idempotent by name: an unchanged document
+returns the live version, a changed one becomes the next version, which the
+sync activates (retiring the previous version and arming its schedules). So
+editing a file here and re-running the setup job is the whole rollout.
+
 ## How the calls are authenticated
 
 No credential is stored in trustage. Trustage's HTTP adapter uses the Frame

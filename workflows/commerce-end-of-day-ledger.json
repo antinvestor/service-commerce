@@ -2,24 +2,38 @@
   "version": "1.0",
   "name": "commerce.end_of_day_ledger",
   "description": "Nightly, merge each shop's paid and refunded orders for the previous trading day into one balanced ledger transaction and tell the shop its takings.",
-  "schedule": { "cron": "15 0 * * *", "active": true, "timezone": "Africa/Nairobi", "jitter_seconds": 120 },
+  "schedule": {
+    "cron": "15 0 * * *",
+    "active": true,
+    "timezone": "Africa/Nairobi",
+    "jitter_seconds": 120
+  },
   "timeout": "1h",
-  "on_error": { "strategy": "fail" },
+  "on_error": {
+    "strategy": "fail"
+  },
   "steps": [
     {
       "id": "post_ledger",
       "type": "call",
       "name": "Post previous day's takings",
       "timeout": "30m",
-      "retry": { "max_attempts": 5, "initial_interval": "1m", "backoff_coefficient": 2.0, "max_interval": "10m" },
+      "retry": {
+        "max_attempts": 5,
+        "initial_interval": "1m",
+        "backoff_coefficient": 2.0,
+        "max_interval": "10m"
+      },
       "call": {
         "action": "http.request",
         "input": {
           "url": "${COMMERCE_URI}/commerce.v1.CommerceService/RunEndOfDayLedger",
           "method": "POST",
-          "headers": { "Content-Type": "application/json", "Connect-Protocol-Version": "1" },
-          "body": {},
-          "auth_header": "Bearer {{ credentials.api_token }}"
+          "headers": {
+            "Content-Type": "application/json",
+            "Connect-Protocol-Version": "1"
+          },
+          "body": {}
         }
       }
     },
@@ -28,13 +42,17 @@
       "type": "call",
       "name": "Record run",
       "depends_on": "post_ledger",
-      "on_error": { "strategy": "continue" },
+      "on_error": {
+        "strategy": "continue"
+      },
       "call": {
         "action": "log.entry",
         "input": {
           "level": "info",
           "message": "commerce end-of-day ledger posted",
-          "fields": { "result": "{{ vars.post_ledger.body }}" }
+          "fields": {
+            "result": "{{ vars.post_ledger.body }}"
+          }
         }
       }
     }

@@ -70,17 +70,23 @@ Standard Frame settings apply. Commerce adds:
 | `LEDGER_TIMEZONE` | Trading-day boundary (default `Africa/Nairobi`). |
 | `WORKFLOWS_PATH` | Directory of workflow DSL files (default `./workflows`). |
 
-The commerce service account needs these grants at the tenancy service:
+Service-to-service calls use the platform's standard mechanism: each service
+authenticates outbound requests with its own OAuth2 service account, and the
+callee checks the token audience and the caller's Keto grants. The seeds live
+in service-authentication's tenancy migrations (`service_commerce`,
+`service_procurement`, and the trustage additions).
 
-| Namespace | Permissions |
-|---|---|
-| `service_checkout` | `checkout_session_create`, `checkout_session_view` |
-| `service_ledger` | `ledger_manage`, `ledger_view` |
-| `service_notification` | `notification_send`, `template_manage` |
-| `service_workflow` (trustage) | workflow create, list, activate |
+| Caller | Audience | Namespace | Permissions |
+|---|---|---|---|
+| commerce | `/checkout` | `service_checkout` | `checkout_session_create`, `checkout_session_view` |
+| commerce | `/ledger` | `service_ledger` | ledger, account, transaction, and book view and manage |
+| commerce | `/notification` | `service_notification` | `notification_send`, `template_manage`, `template_view` |
+| commerce | `/trustage` | `service_trustage` | `workflow_view`, `workflow_manage` |
+| trustage | `/commerce` | `service_commerce` | `ledger_post`, `shops_list` |
 
-And trustage needs a credential named `api_token` carrying a commerce service
-token with `ledger_post` so its scheduled calls pass the interceptors.
+Nothing is stored in trustage for this: its scheduled `http.request` steps
+carry trustage's own token, so the `service_commerce` grant above is what lets
+`ReconcilePayments` and `RunEndOfDayLedger` through the interceptors.
 
 ## Setup job versus runtime
 
@@ -94,6 +100,7 @@ under `workflows/`. The runtime serves Connect RPC only.
 ```bash
 make proto-generate   # OpenAPI, OPL, Dart SDKs from proto/
 make proto-generate-go   # local Go code for the commerce module into gen/go
+git tag dart/commerce/v<version> && git push origin --tags   # publishes the Dart SDK (also automatic on release)
 make format && make lint
 go test -race ./...   # needs Docker: Postgres and Keto testcontainers
 ```

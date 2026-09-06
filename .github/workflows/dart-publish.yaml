@@ -1,8 +1,22 @@
 name: Publish Dart SDK to pub.dev
+# pub.dev automated publishing only accepts runs triggered by a tag matching
+# the pattern registered for the package (dart/<package>/v<version>). The
+# release workflow creates those tags automatically for every SDK version in
+# sdk/dart/*/pubspec.yaml; push one by hand to publish out of band:
+#
+#   git tag dart/commerce/v1.55.0 && git push origin dart/commerce/v1.55.0
+#
+# workflow_dispatch runs a dry run only, to validate a package before tagging.
 on:
   push:
     tags:
       - 'dart/*/v[0-9]+.[0-9]+.[0-9]+*'
+  workflow_dispatch:
+    inputs:
+      package:
+        description: SDK package directory under sdk/dart (e.g. commerce)
+        required: true
+        default: commerce
 
 jobs:
   resolve:
@@ -14,19 +28,37 @@ jobs:
       - uses: actions/checkout@v7
       - id: extract
         run: |
-          TAG="${GITHUB_REF#refs/tags/}"
-          # Tag format: dart/{package}/v{version}
-          PACKAGE=$(echo "$TAG" | cut -d'/' -f2)
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            PACKAGE="${{ inputs.package }}"
+          else
+            TAG="${GITHUB_REF#refs/tags/}"
+            # Tag format: dart/{package}/v{version}
+            PACKAGE=$(echo "$TAG" | cut -d'/' -f2)
+          fi
           DIR="sdk/dart/$PACKAGE"
           if [ ! -f "$DIR/pubspec.yaml" ]; then
-            echo "No pubspec.yaml found at $DIR for tag $TAG"
+            echo "No pubspec.yaml found at $DIR"
             exit 1
           fi
           echo "package=$PACKAGE" >> $GITHUB_OUTPUT
           echo "working_dir=$DIR" >> $GITHUB_OUTPUT
-          echo "Publishing $PACKAGE from $DIR (tag: $TAG)"
+          echo "Resolved $PACKAGE at $DIR"
+
+  dry-run:
+    if: github.event_name == 'workflow_dispatch'
+    needs: resolve
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ needs.resolve.outputs.working_dir }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dart-lang/setup-dart@v1
+      - run: dart pub get
+      - run: dart pub publish --dry-run
 
   publish:
+    if: github.event_name == 'push'
     needs: resolve
     permissions:
       id-token: write

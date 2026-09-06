@@ -2,13 +2,27 @@ name: Release
 on:
   push:
     tags: ["v*.*.*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing image tag to ship (e.g. v0.4.1). Empty = build from ref.
+        required: false
+        default: ""
+      skip_migrate:
+        description: Skip migrate jobs (emergency image-only)
+        type: boolean
+        default: false
+
 jobs:
   docker:
+    if: github.event_name == 'push' || inputs.tag == ''
     permissions:
       contents: read
       packages: write
     uses: antinvestor/common/.github/workflows/docker-release.yml@main
+
   buf-push:
+    if: github.event_name == 'push'
     permissions:
       contents: read
     uses: antinvestor/common/.github/workflows/buf-push.yaml@main
@@ -17,8 +31,77 @@ jobs:
 
   # Merge opl/**/*.opl.ts into identity-authorization-keto namespaces.ts (Cloud Run Keto).
   opl-push:
+    if: github.event_name == 'push'
     permissions:
       contents: read
     uses: antinvestor/common/.github/workflows/opl-push.yml@main
     secrets:
       deploy_token: ${{ secrets.DEPLOY_REPO_TOKEN }}
+
+  # Dart SDKs publish from dart/<package>/v<version> tags (pub.dev automated
+  # publishing verifies that tag pattern). Create any missing tag for the
+  # versions in sdk/dart/*/pubspec.yaml so every service release also ships
+  # the SDKs. A PAT is required: tags pushed with GITHUB_TOKEN never trigger
+  # the publish workflow.
+  dart-sdk-tags:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.DEPLOY_REPO_TOKEN }}
+      - name: Tag SDK versions that are not tagged yet
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          for pubspec in sdk/dart/*/pubspec.yaml; do
+            pkg=$(basename "$(dirname "$pubspec")")
+            version=$(sed -n 's/^version: *//p' "$pubspec" | tr -d '[:space:]')
+            [ -n "$version" ] || continue
+            tag="dart/${pkg}/v${version}"
+            if git ls-remote --exit-code --tags origin "refs/tags/${tag}" >/dev/null 2>&1; then
+              echo "${tag} already exists"
+              continue
+            fi
+            git tag -a "${tag}" -m "Dart SDK ${pkg} ${version} (release ${GITHUB_REF_NAME})"
+            git push origin "refs/tags/${tag}"
+            echo "created ${tag}"
+          done
+
+  ship-platform-commerce:
+    needs: [docker]
+    if: always() && (needs.docker.result == 'success' || (github.event_name == 'workflow_dispatch' && inputs.tag != ''))
+    permissions:
+      contents: read
+      id-token: write
+    uses: antinvestor/common/.github/workflows/cloudrun-ship.yml@main
+    with:
+      image: ghcr.io/antinvestor/service-commerce:${{ inputs.tag != '' && inputs.tag || github.ref_name }}
+      service: platform-commerce
+      migrate_job: platform-commerce-migrate
+      project_id: stawi-platform
+      region: europe-west1
+      ship_service_account: cloudrun-ship@stawi-platform.iam.gserviceaccount.com
+      workload_identity_provider: projects/305282281906/locations/global/workloadIdentityPools/github/providers/github-ship
+      skip_migrate: ${{ github.event_name == 'workflow_dispatch' && inputs.skip_migrate == true }}
+
+  ship-platform-procurement:
+    needs: [docker]
+    if: always() && (needs.docker.result == 'success' || (github.event_name == 'workflow_dispatch' && inputs.tag != ''))
+    permissions:
+      contents: read
+      id-token: write
+    uses: antinvestor/common/.github/workflows/cloudrun-ship.yml@main
+    with:
+      image: ghcr.io/antinvestor/service-commerce-procurement:${{ inputs.tag != '' && inputs.tag || github.ref_name }}
+      service: platform-procurement
+      migrate_job: platform-procurement-migrate
+      project_id: stawi-platform
+      region: europe-west1
+      ship_service_account: cloudrun-ship@stawi-platform.iam.gserviceaccount.com
+      workload_identity_provider: projects/305282281906/locations/global/workloadIdentityPools/github/providers/github-ship
+      skip_migrate: ${{ github.event_name == 'workflow_dispatch' && inputs.skip_migrate == true }}

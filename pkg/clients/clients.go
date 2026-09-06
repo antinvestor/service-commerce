@@ -92,7 +92,7 @@ func New(ctx context.Context, cfg *aconfig.CommerceConfig) (*Platform, error) {
 
 	if cfg.TrustageEnabled() {
 		cli, err := connection.NewServiceClient(ctx, cfg, common.ServiceTarget{
-			ServiceID:             servicecatalog.ServiceID("trustage"),
+			ServiceID:             servicecatalog.ServiceTrustage,
 			Endpoint:              cfg.TrustageServiceURI,
 			WorkloadAPITargetPath: cfg.TrustageServiceWorkloadAPITargetPath,
 		}, workflowv1connect.NewWorkflowServiceClient)

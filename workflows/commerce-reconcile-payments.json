@@ -2,24 +2,39 @@
   "version": "1.0",
   "name": "commerce.reconcile_payments",
   "description": "Every five minutes, settle orders whose hosted checkout completed and release stock held by orders whose payment window lapsed.",
-  "schedule": { "cron": "*/5 * * * *", "active": true, "jitter_seconds": 30 },
+  "schedule": {
+    "cron": "*/5 * * * *",
+    "active": true,
+    "jitter_seconds": 30
+  },
   "timeout": "10m",
-  "on_error": { "strategy": "fail" },
+  "on_error": {
+    "strategy": "fail"
+  },
   "steps": [
     {
       "id": "reconcile",
       "type": "call",
       "name": "Reconcile pending payments",
       "timeout": "5m",
-      "retry": { "max_attempts": 3, "initial_interval": "10s", "backoff_coefficient": 2.0, "max_interval": "2m" },
+      "retry": {
+        "max_attempts": 3,
+        "initial_interval": "10s",
+        "backoff_coefficient": 2.0,
+        "max_interval": "2m"
+      },
       "call": {
         "action": "http.request",
         "input": {
           "url": "${COMMERCE_URI}/commerce.v1.CommerceService/ReconcilePayments",
           "method": "POST",
-          "headers": { "Content-Type": "application/json", "Connect-Protocol-Version": "1" },
-          "body": { "limit": 200 },
-          "auth_header": "Bearer {{ credentials.api_token }}"
+          "headers": {
+            "Content-Type": "application/json",
+            "Connect-Protocol-Version": "1"
+          },
+          "body": {
+            "limit": 200
+          }
         }
       }
     },
@@ -28,13 +43,17 @@
       "type": "call",
       "name": "Record run",
       "depends_on": "reconcile",
-      "on_error": { "strategy": "continue" },
+      "on_error": {
+        "strategy": "continue"
+      },
       "call": {
         "action": "log.entry",
         "input": {
           "level": "info",
           "message": "commerce payments reconciled",
-          "fields": { "result": "{{ vars.reconcile.body }}" }
+          "fields": {
+            "result": "{{ vars.reconcile.body }}"
+          }
         }
       }
     }

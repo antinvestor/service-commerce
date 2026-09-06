@@ -14,8 +14,11 @@
 
 // Package workflows registers commerce's scheduled automations with the
 // trustage orchestrator from the setup job. Each workflow is a DSL document
-// under the workflows directory; the sync creates and activates any whose
-// name is not yet registered, so re-running the job is idempotent.
+// under the workflows directory. Trustage's CreateWorkflow is idempotent by
+// name: an identical live version is returned as-is and a changed document
+// becomes the next version, so re-running the job converges every workflow
+// on the shipped document and activates it (which retires older versions and
+// arms its schedules).
 package workflows
 
 import (
@@ -39,10 +42,6 @@ const SetupStepName = "trustage-workflows"
 
 // Client is the slice of the trustage workflow API the sync uses.
 type Client interface {
-	ListWorkflows(
-		context.Context,
-		*connect.Request[workflowv1.ListWorkflowsRequest],
-	) (*connect.Response[workflowv1.ListWorkflowsResponse], error)
 	CreateWorkflow(
 		context.Context,
 		*connect.Request[workflowv1.CreateWorkflowRequest],
@@ -75,8 +74,8 @@ func RegisterSync(svc *frame.Service, cli Client, dir string, env Env) {
 	})
 }
 
-// SyncFromDir registers every *.json workflow in dir that trustage does not
-// already know by name.
+// SyncFromDir submits every *.json workflow in dir to trustage and makes sure
+// the resulting version is active.
 func SyncFromDir(ctx context.Context, cli Client, dir string, env Env) error {
 	log := util.Log(ctx).WithField("dir", dir)
 
@@ -89,21 +88,21 @@ func SyncFromDir(ctx context.Context, cli Client, dir string, env Env) error {
 		return fmt.Errorf("read workflows dir: %w", err)
 	}
 
-	created := 0
+	activated := 0
 	for _, entry := range entries {
 		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".json") {
 			continue
 		}
 		path := filepath.Join(dir, entry.Name())
-		didCreate, syncErr := syncOne(ctx, cli, path, env)
+		didActivate, syncErr := syncOne(ctx, cli, path, env)
 		if syncErr != nil {
 			return fmt.Errorf("sync %s: %w", entry.Name(), syncErr)
 		}
-		if didCreate {
-			created++
+		if didActivate {
+			activated++
 		}
 	}
-	log.WithField("created", created).Info("trustage workflows synced")
+	log.WithField("activated", activated).Info("trustage workflows synced")
 	return nil
 }
 
@@ -113,31 +112,29 @@ func syncOne(ctx context.Context, cli Client, path string, env Env) (bool, error
 		return false, err
 	}
 
-	existing, err := cli.ListWorkflows(ctx, connect.NewRequest(
-		workflowv1.ListWorkflowsRequest_builder{Name: name}.Build(),
-	))
-	if err != nil {
-		return false, fmt.Errorf("list workflows: %w", err)
-	}
-	for _, wf := range existing.Msg.GetItems() {
-		if wf.GetName() == name && wf.GetStatus() != workflowv1.WorkflowStatus_WORKFLOW_STATUS_ARCHIVED {
-			return false, nil
-		}
-	}
-
 	createResp, err := cli.CreateWorkflow(ctx, connect.NewRequest(
 		workflowv1.CreateWorkflowRequest_builder{Dsl: dsl}.Build(),
 	))
 	if err != nil {
 		return false, fmt.Errorf("create workflow: %w", err)
 	}
-	id := createResp.Msg.GetWorkflow().GetId()
-	if _, err = cli.ActivateWorkflow(ctx, connect.NewRequest(
-		workflowv1.ActivateWorkflowRequest_builder{Id: id}.Build(),
-	)); err != nil {
-		return false, fmt.Errorf("activate workflow %s: %w", id, err)
+	wf := createResp.Msg.GetWorkflow()
+	log := util.Log(ctx).WithFields(map[string]any{
+		"workflow": name,
+		"id":       wf.GetId(),
+		"version":  wf.GetVersion(),
+	})
+	if wf.GetStatus() == workflowv1.WorkflowStatus_WORKFLOW_STATUS_ACTIVE {
+		log.Debug("trustage workflow unchanged")
+		return false, nil
 	}
-	util.Log(ctx).WithFields(map[string]any{"workflow": name, "id": id}).Info("trustage workflow created")
+
+	if _, err = cli.ActivateWorkflow(ctx, connect.NewRequest(
+		workflowv1.ActivateWorkflowRequest_builder{Id: wf.GetId()}.Build(),
+	)); err != nil {
+		return false, fmt.Errorf("activate workflow %s: %w", wf.GetId(), err)
+	}
+	log.Info("trustage workflow activated")
 	return true, nil
 }
 
@@ -157,6 +154,18 @@ func loadDSL(path string, env Env) (*structpb.Struct, string, error) {
 	name := dsl.GetFields()["name"].GetStringValue()
 	if name == "" {
 		return nil, "", fmt.Errorf("%s: workflow name is required", path)
+	}
+	// Trustage only fires what is listed under "schedules" (cron_expr per
+	// entry); a scheduled automation without one would register, activate and
+	// then never run, so refuse it here where the mistake is cheap.
+	schedules := dsl.GetFields()["schedules"].GetListValue().GetValues()
+	if len(schedules) == 0 {
+		return nil, "", fmt.Errorf("%s: at least one entry under \"schedules\" is required", path)
+	}
+	for i, sched := range schedules {
+		if sched.GetStructValue().GetFields()["cron_expr"].GetStringValue() == "" {
+			return nil, "", fmt.Errorf("%s: schedules[%d] needs a cron_expr", path, i)
+		}
 	}
 	return dsl, name, nil
 }

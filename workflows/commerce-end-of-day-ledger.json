@@ -2,12 +2,13 @@
   "version": "1.0",
   "name": "commerce.end_of_day_ledger",
   "description": "Nightly, merge each shop's paid and refunded orders for the previous trading day into one balanced ledger transaction and tell the shop its takings.",
-  "schedule": {
-    "cron": "15 0 * * *",
-    "active": true,
-    "timezone": "Africa/Nairobi",
-    "jitter_seconds": 120
-  },
+  "schedules": [
+    {
+      "name": "commerce.end_of_day_ledger.nightly",
+      "cron_expr": "15 0 * * *",
+      "timezone": "Africa/Nairobi"
+    }
+  ],
   "timeout": "1h",
   "on_error": {
     "strategy": "fail"

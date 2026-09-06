@@ -16,13 +16,20 @@ package repository
 
 import (
 	"context"
+	"errors"
+	"fmt"
 
 	"github.com/pitabwire/frame/v2/datastore"
 	"github.com/pitabwire/frame/v2/datastore/pool"
 	"github.com/pitabwire/frame/v2/workerpool"
+	"gorm.io/gorm"
 
 	"github.com/antinvestor/service-commerce/apps/procurement/service/models"
 )
+
+// ErrPurchaseOrderStateChanged is returned when a compare-and-set status
+// transition finds the purchase order no longer in the expected status.
+var ErrPurchaseOrderStateChanged = errors.New("purchase order status changed concurrently")
 
 type purchaseOrderRepository struct {
 	datastore.BaseRepository[*models.PurchaseOrder]
@@ -38,6 +45,67 @@ func NewPurchaseOrderRepository(
 			ctx, dbPool, workMan, func() *models.PurchaseOrder { return &models.PurchaseOrder{} },
 		),
 	}
+}
+
+// CreateWithLines inserts the purchase order and its lines in one transaction.
+func (r *purchaseOrderRepository) CreateWithLines(
+	ctx context.Context,
+	po *models.PurchaseOrder,
+	lines []*models.PurchaseOrderLine,
+) error {
+	if po == nil {
+		return errors.New("create purchase order: order is required")
+	}
+	if len(lines) == 0 {
+		return errors.New("create purchase order: at least one line is required")
+	}
+	return r.Pool().DB(ctx, false).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(po).Error; err != nil {
+			return fmt.Errorf("create purchase order: %w", err)
+		}
+		for _, line := range lines {
+			line.PurchaseOrderID = po.GetID()
+			if err := tx.Create(line).Error; err != nil {
+				return fmt.Errorf("create purchase order line: %w", err)
+			}
+		}
+		return nil
+	})
+}
+
+// Transition moves the purchase order from expectedStatus to newStatus and
+// applies extra column updates atomically. When lineStatus is non-zero every
+// non-cancelled line is moved to that status in the same transaction.
+func (r *purchaseOrderRepository) Transition(
+	ctx context.Context,
+	poID string,
+	expectedStatus, newStatus int32,
+	columns map[string]any,
+	lineStatus int32,
+) error {
+	return r.Pool().DB(ctx, false).Transaction(func(tx *gorm.DB) error {
+		updates := map[string]any{"status": newStatus}
+		for k, v := range columns {
+			updates[k] = v
+		}
+		result := tx.Model(&models.PurchaseOrder{}).
+			Where("id = ? AND status = ?", poID, expectedStatus).
+			UpdateColumns(updates)
+		if result.Error != nil {
+			return fmt.Errorf("transition purchase order: %w", result.Error)
+		}
+		if result.RowsAffected == 0 {
+			return ErrPurchaseOrderStateChanged
+		}
+		if lineStatus != 0 {
+			if err := tx.Model(&models.PurchaseOrderLine{}).
+				Where("purchase_order_id = ? AND status <> ?", poID, lineStatus).
+				UpdateColumn("status", lineStatus).Error; err != nil {
+				return fmt.Errorf("transition purchase order lines: %w", err)
+			}
+		}
+		return nil
+	})
 }
 
 func (r *purchaseOrderRepository) GetWithLines(ctx context.Context, id string) (*models.PurchaseOrder, error) {

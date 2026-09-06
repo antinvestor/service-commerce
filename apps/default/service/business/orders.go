@@ -16,24 +16,48 @@ package business
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
+	"sort"
+	"strings"
 	"time"
 
-	commercev1 "buf.build/gen/go/antinvestor/commerce/protocolbuffers/go/v1"
 	"connectrpc.com/connect"
 	"github.com/pitabwire/frame/v2"
 	"github.com/pitabwire/frame/v2/data"
+	"github.com/pitabwire/util"
+
+	commercev1 "github.com/antinvestor/service-commerce/gen/go/commerce/v1"
 
 	"github.com/antinvestor/service-commerce/apps/default/service/models"
 	"github.com/antinvestor/service-commerce/apps/default/service/repository"
 )
 
+// OrderPage is one page of orders plus the cursor for the next page.
+type OrderPage struct {
+	Orders   []*commercev1.Order
+	NextPage string
+}
+
+// OrderPolicy carries the deployment knobs order creation depends on.
+type OrderPolicy struct {
+	// PaymentWindow is how long stock stays reserved for a buyer order that
+	// has not been paid.
+	PaymentWindow time.Duration
+}
+
 type OrderBusiness interface {
 	CreateOrder(ctx context.Context, req *commercev1.CreateOrderRequest) (*commercev1.Order, error)
+	// CreateOrderFromCart converts an active cart into an order. The order is
+	// placed for the cart's profile; the request profile is used only when the
+	// cart has none.
 	CreateOrderFromCart(ctx context.Context, req *commercev1.CreateOrderFromCartRequest) (*commercev1.Order, error)
 	GetOrder(ctx context.Context, id string) (*commercev1.Order, error)
-	ListOrders(ctx context.Context, req *commercev1.ListOrdersRequest) ([]*commercev1.Order, error)
+	ListOrders(ctx context.Context, req *commercev1.ListOrdersRequest) (*OrderPage, error)
+	// ListOrdersForProfile pages a buyer's own orders across shops.
+	ListOrdersForProfile(ctx context.Context, profileID string, req *commercev1.ListOrdersRequest) (*OrderPage, error)
 }
 
 func NewOrderBusiness(
@@ -41,17 +65,24 @@ func NewOrderBusiness(
 	orderRepo repository.OrderRepository,
 	orderLineRepo repository.OrderLineRepository,
 	variantRepo repository.ProductVariantRepository,
+	productRepo repository.ProductRepository,
 	shopRepo repository.ShopRepository,
 	cartRepo repository.CartRepository,
 	cartLineRepo repository.CartLineRepository,
+	policy OrderPolicy,
 ) OrderBusiness {
+	if policy.PaymentWindow <= 0 {
+		policy.PaymentWindow = defaultPaymentWindow
+	}
 	return &orderBusiness{
 		orderRepo:     orderRepo,
 		orderLineRepo: orderLineRepo,
 		variantRepo:   variantRepo,
+		productRepo:   productRepo,
 		shopRepo:      shopRepo,
 		cartRepo:      cartRepo,
 		cartLineRepo:  cartLineRepo,
+		policy:        policy,
 	}
 }
 
@@ -59,37 +90,49 @@ type orderBusiness struct {
 	orderRepo     repository.OrderRepository
 	orderLineRepo repository.OrderLineRepository
 	variantRepo   repository.ProductVariantRepository
+	productRepo   repository.ProductRepository
 	shopRepo      repository.ShopRepository
 	cartRepo      repository.CartRepository
 	cartLineRepo  repository.CartLineRepository
+	policy        OrderPolicy
 }
 
+// CreateOrder is the back-office path: the shop records a sale it settles
+// itself (cash, invoice), so the order starts confirmed.
 func (ob *orderBusiness) CreateOrder(
 	ctx context.Context,
 	req *commercev1.CreateOrderRequest,
 ) (*commercev1.Order, error) {
-	// Idempotency check
-	if req.GetIdempotencyKey() != "" {
-		existing, err := ob.orderRepo.GetByIdempotencyKey(ctx, req.GetIdempotencyKey())
-		if err == nil && existing != nil {
-			return existing.ToAPI(), nil
-		}
-		if err != nil && !frame.ErrorIsNotFound(err) {
-			return nil, data.ErrorConvertToAPI(err)
-		}
-	}
+	return ob.createOrder(ctx, req, "", 0, false)
+}
 
-	// Validate shop exists
-	_, shopErr := ob.shopRepo.GetByID(ctx, req.GetShopId())
-	if shopErr != nil {
-		return nil, connect.NewError(connect.CodeNotFound, errors.New("shop not found"))
-	}
-
+func (ob *orderBusiness) createOrder(
+	ctx context.Context,
+	req *commercev1.CreateOrderRequest,
+	convertCartID string,
+	convertedCartStatus int32,
+	awaitPayment bool,
+) (*commercev1.Order, error) {
 	if len(req.GetLines()) == 0 {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("order must have at least one line"))
 	}
 
-	// Validate all variants and snapshot prices
+	requestHash := orderRequestHash(req)
+
+	if existing, err := ob.replayedOrder(ctx, req.GetIdempotencyKey(), requestHash); err != nil {
+		return nil, err
+	} else if existing != nil {
+		return existing, nil
+	}
+
+	shop, shopErr := ob.shopRepo.GetByID(ctx, req.GetShopId())
+	if shopErr != nil {
+		return nil, connect.NewError(connect.CodeNotFound, errors.New("shop not found"))
+	}
+	if shop.Status != int32(commercev1.ShopStatus_SHOP_STATUS_ACTIVE) {
+		return nil, connect.NewError(connect.CodeFailedPrecondition, errors.New("shop is not active"))
+	}
+
 	orderLines, subtotalCurrency, subtotalUnits, subtotalNanos, err := ob.buildOrderLines(
 		ctx,
 		req.GetShopId(),
@@ -99,18 +142,27 @@ func (ob *orderBusiness) CreateOrder(
 		return nil, err
 	}
 
-	orderNumber := generateOrderNumber()
-
 	idempotencyKey := req.GetIdempotencyKey()
 	if idempotencyKey == "" {
-		idempotencyKey = orderNumber
+		idempotencyKey = util.IDString()
+	}
+
+	status := commercev1.OrderStatus_ORDER_STATUS_CONFIRMED
+	var paymentDue *time.Time
+	if awaitPayment {
+		// Buyer orders hold stock only for the payment window; the
+		// reconciler releases it afterwards.
+		status = commercev1.OrderStatus_ORDER_STATUS_PENDING_PAYMENT
+		due := time.Now().Add(ob.policy.PaymentWindow)
+		paymentDue = &due
 	}
 
 	order := &models.Order{
 		ShopID:           req.GetShopId(),
-		OrderNumber:      orderNumber,
 		IdempotencyKey:   idempotencyKey,
-		Status:           int32(commercev1.OrderStatus_ORDER_STATUS_CONFIRMED),
+		RequestHash:      requestHash,
+		Status:           int32(status),
+		PaymentDueAt:     paymentDue,
 		PaymentStatus:    int32(commercev1.PaymentStatus_PAYMENT_STATUS_PENDING),
 		FulfilmentStatus: int32(commercev1.FulfilmentStatus_FULFILMENT_STATUS_UNSPECIFIED),
 		ProfileID:        req.GetProfileId(),
@@ -124,24 +176,58 @@ func (ob *orderBusiness) CreateOrder(
 		TotalNanos:       subtotalNanos,
 	}
 
-	if createErr := ob.orderRepo.Create(ctx, order); createErr != nil {
-		return nil, data.ErrorConvertToAPI(createErr)
-	}
-
-	// Create order lines and decrement stock
-	for _, line := range orderLines {
-		line.OrderID = order.GetID()
-		if lineErr := ob.orderLineRepo.Create(ctx, line); lineErr != nil {
-			return nil, data.ErrorConvertToAPI(lineErr)
-		}
-
-		if stockErr := ob.variantRepo.DecrementStock(ctx, line.ProductVariantID, line.Quantity); stockErr != nil {
-			return nil, connect.NewError(connect.CodeFailedPrecondition,
-				fmt.Errorf("insufficient stock for variant %s", line.ProductVariantID))
-		}
+	createErr := ob.orderRepo.CreateWithLinesAndStock(
+		ctx, order, orderLines, convertCartID, convertedCartStatus,
+	)
+	if createErr != nil {
+		return ob.mapCreateOrderError(ctx, req.GetIdempotencyKey(), createErr)
 	}
 
 	return ob.GetOrder(ctx, order.GetID())
+}
+
+// replayedOrder returns the previously created order for an idempotency key.
+// A reused key with different content is a client bug and is refused rather
+// than silently returning an unrelated order.
+func (ob *orderBusiness) replayedOrder(
+	ctx context.Context,
+	idempotencyKey, requestHash string,
+) (*commercev1.Order, error) {
+	if idempotencyKey == "" {
+		return nil, nil //nolint:nilnil // no key means nothing to replay
+	}
+	existing, err := ob.orderRepo.GetByIdempotencyKey(ctx, idempotencyKey)
+	if err != nil {
+		if frame.ErrorIsNotFound(err) {
+			return nil, nil //nolint:nilnil // first use of this key
+		}
+		return nil, data.ErrorConvertToAPI(err)
+	}
+	if existing.RequestHash != "" && existing.RequestHash != requestHash {
+		return nil, connect.NewError(connect.CodeAlreadyExists,
+			errors.New("idempotency key already used for a different order request"))
+	}
+	return existing.ToAPI(), nil
+}
+
+// mapCreateOrderError converts repository failures into API errors. A
+// duplicate idempotency key means a concurrent retry committed first, so that
+// order is returned instead of an error.
+func (ob *orderBusiness) mapCreateOrderError(
+	ctx context.Context,
+	idempotencyKey string,
+	createErr error,
+) (*commercev1.Order, error) {
+	if errors.Is(createErr, repository.ErrInsufficientStock) ||
+		errors.Is(createErr, repository.ErrCartNotConvertible) {
+		return nil, connect.NewError(connect.CodeFailedPrecondition, createErr)
+	}
+	if idempotencyKey != "" && data.ErrorIsDuplicateKey(createErr) {
+		if existing, getErr := ob.orderRepo.GetByIdempotencyKey(ctx, idempotencyKey); getErr == nil {
+			return existing.ToAPI(), nil
+		}
+	}
+	return nil, data.ErrorConvertToAPI(createErr)
 }
 
 func (ob *orderBusiness) CreateOrderFromCart(
@@ -161,8 +247,7 @@ func (ob *orderBusiness) CreateOrderFromCart(
 		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("cart has no items"))
 	}
 
-	// Build CreateOrderLine from cart lines
-	var createLines []*commercev1.CreateOrderLine
+	createLines := make([]*commercev1.CreateOrderLine, 0, len(cart.Lines))
 	for _, cartLine := range cart.Lines {
 		createLines = append(createLines, &commercev1.CreateOrderLine{
 			VariantId: cartLine.ProductVariantID,
@@ -170,27 +255,32 @@ func (ob *orderBusiness) CreateOrderFromCart(
 		})
 	}
 
+	profileID := cart.ProfileID
+	if profileID == "" {
+		profileID = req.GetProfileId()
+	}
+	contactID := cart.ContactID
+	if contactID == "" {
+		contactID = req.GetContactId()
+	}
+
 	orderReq := &commercev1.CreateOrderRequest{
 		ShopId:    cart.ShopID,
-		ProfileId: req.GetProfileId(),
-		ContactId: req.GetContactId(),
+		ProfileId: profileID,
+		ContactId: contactID,
 		AddressId: req.GetAddressId(),
 		Lines:     createLines,
+		// One cart converts to at most one order.
+		IdempotencyKey: "cart:" + cart.GetID(),
 	}
 
-	order, orderErr := ob.CreateOrder(ctx, orderReq)
-	if orderErr != nil {
-		return nil, orderErr
-	}
-
-	// Mark cart as converted
-	cart.Status = int32(commercev1.CartStatus_CART_STATUS_CONVERTED)
-	_, updateErr := ob.cartRepo.Update(ctx, cart, "status")
-	if updateErr != nil {
-		return nil, data.ErrorConvertToAPI(updateErr)
-	}
-
-	return order, nil
+	return ob.createOrder(
+		ctx,
+		orderReq,
+		cart.GetID(),
+		int32(commercev1.CartStatus_CART_STATUS_CONVERTED),
+		true,
+	)
 }
 
 func (ob *orderBusiness) GetOrder(ctx context.Context, id string) (*commercev1.Order, error) {
@@ -204,34 +294,62 @@ func (ob *orderBusiness) GetOrder(ctx context.Context, id string) (*commercev1.O
 func (ob *orderBusiness) ListOrders(
 	ctx context.Context,
 	req *commercev1.ListOrdersRequest,
-) ([]*commercev1.Order, error) {
-	limit := 50
-	offset := 0
-	if req.GetSearch() != nil && req.GetSearch().GetCursor() != nil {
-		if req.GetSearch().GetCursor().GetLimit() > 0 {
-			limit = int(req.GetSearch().GetCursor().GetLimit())
-		}
+) (*OrderPage, error) {
+	page, err := pageFromSearch(req.GetSearch())
+	if err != nil {
+		return nil, err
 	}
-
-	orders, err := ob.orderRepo.ListByShopID(ctx, req.GetShopId(), limit, offset)
+	orders, next, err := ob.orderRepo.ListByShopID(ctx, req.GetShopId(), page)
 	if err != nil {
 		return nil, data.ErrorConvertToAPI(err)
 	}
-
-	result := make([]*commercev1.Order, 0, len(orders))
-	for _, o := range orders {
-		result = append(result, o.ToAPI())
-	}
-	return result, nil
+	return toOrderPage(orders, next), nil
 }
+
+func (ob *orderBusiness) ListOrdersForProfile(
+	ctx context.Context,
+	profileID string,
+	req *commercev1.ListOrdersRequest,
+) (*OrderPage, error) {
+	if profileID == "" {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("profile is required"))
+	}
+	page, err := pageFromSearch(req.GetSearch())
+	if err != nil {
+		return nil, err
+	}
+	orders, next, err := ob.orderRepo.ListByProfileID(ctx, profileID, page)
+	if err != nil {
+		return nil, data.ErrorConvertToAPI(err)
+	}
+	// A shop filter narrows the buyer's history to that shop.
+	if shopID := req.GetShopId(); shopID != "" {
+		filtered := orders[:0]
+		for _, o := range orders {
+			if o.ShopID == shopID {
+				filtered = append(filtered, o)
+			}
+		}
+		orders = filtered
+	}
+	return toOrderPage(orders, next), nil
+}
+
+func toOrderPage(orders []*models.Order, next *repository.PageKey) *OrderPage {
+	result := &OrderPage{Orders: make([]*commercev1.Order, 0, len(orders)), NextPage: nextCursor(next)}
+	for _, o := range orders {
+		result.Orders = append(result.Orders, o.ToAPI())
+	}
+	return result
+}
+
+const nanosPerUnit int64 = 1_000_000_000
 
 func (ob *orderBusiness) buildOrderLines(
 	ctx context.Context,
 	shopID string,
 	lines []*commercev1.CreateOrderLine,
 ) ([]*models.OrderLine, string, int64, int32, error) {
-	const nanosPerUnit int64 = 1_000_000_000
-
 	var orderLines []*models.OrderLine
 	var subtotalCurrency string
 	var subtotalUnits int64
@@ -248,28 +366,44 @@ func (ob *orderBusiness) buildOrderLines(
 			return nil, "", 0, 0, connect.NewError(connect.CodeNotFound,
 				fmt.Errorf("variant %s not found", line.GetVariantId()))
 		}
-
-		// Validate variant belongs to a product in this shop
-		if variant.Product == nil {
-			// Need to load the product to check shop_id
-			if _, prodErr := ob.shopRepo.GetByID(ctx, shopID); prodErr != nil {
-				return nil, "", 0, 0, connect.NewError(connect.CodeNotFound, errors.New("shop not found"))
-			}
+		if variant.Status != int32(commercev1.ProductVariantStatus_PRODUCT_VARIANT_STATUS_ACTIVE) {
+			return nil, "", 0, 0, connect.NewError(connect.CodeFailedPrecondition,
+				fmt.Errorf("variant %s is not available for sale", line.GetVariantId()))
 		}
 
-		// Check stock
+		productShopID, productStatus, shopErr := ob.variantProduct(ctx, variant)
+		if shopErr != nil {
+			return nil, "", 0, 0, shopErr
+		}
+		if productShopID != shopID {
+			return nil, "", 0, 0, connect.NewError(connect.CodeInvalidArgument,
+				fmt.Errorf("variant %s does not belong to shop %s", line.GetVariantId(), shopID))
+		}
+		if productStatus != int32(commercev1.ProductStatus_PRODUCT_STATUS_ACTIVE) {
+			return nil, "", 0, 0, connect.NewError(connect.CodeFailedPrecondition,
+				fmt.Errorf("product for variant %s is not available for sale", line.GetVariantId()))
+		}
+
+		if subtotalCurrency == "" {
+			subtotalCurrency = variant.CurrencyCode
+		} else if variant.CurrencyCode != subtotalCurrency {
+			return nil, "", 0, 0, connect.NewError(connect.CodeInvalidArgument,
+				fmt.Errorf("variant %s is priced in %s but the order is in %s",
+					line.GetVariantId(), variant.CurrencyCode, subtotalCurrency))
+		}
+
+		// Advisory stock check; CreateWithLinesAndStock re-checks under row update.
 		if variant.StockQuantity < line.GetQuantity() {
 			return nil, "", 0, 0, connect.NewError(connect.CodeFailedPrecondition,
 				fmt.Errorf("insufficient stock for variant %s: requested %d, available %d",
 					line.GetVariantId(), line.GetQuantity(), variant.StockQuantity))
 		}
 
-		// Compute line total using int64 to avoid overflow
 		lineTotalNanos := int64(variant.PriceNanos) * line.GetQuantity()
 		lineTotalUnits := variant.PriceUnits*line.GetQuantity() + lineTotalNanos/nanosPerUnit
 		lineTotalNanos %= nanosPerUnit
 
-		orderLine := &models.OrderLine{
+		orderLines = append(orderLines, &models.OrderLine{
 			ProductVariantID:   variant.GetID(),
 			SKUSnapshot:        variant.SKU,
 			NameSnapshot:       variant.Name,
@@ -280,13 +414,8 @@ func (ob *orderBusiness) buildOrderLines(
 			TotalPriceCurrency: variant.CurrencyCode,
 			TotalPriceUnits:    lineTotalUnits,
 			TotalPriceNanos:    int32(lineTotalNanos),
-		}
-		orderLines = append(orderLines, orderLine)
+		})
 
-		// Accumulate subtotal
-		if subtotalCurrency == "" {
-			subtotalCurrency = variant.CurrencyCode
-		}
 		subtotalUnits += lineTotalUnits
 		subtotalNanos += lineTotalNanos
 		subtotalUnits += subtotalNanos / nanosPerUnit
@@ -296,6 +425,34 @@ func (ob *orderBusiness) buildOrderLines(
 	return orderLines, subtotalCurrency, subtotalUnits, int32(subtotalNanos), nil
 }
 
-func generateOrderNumber() string {
-	return fmt.Sprintf("ORD-%d", time.Now().UnixNano())
+func (ob *orderBusiness) variantProduct(
+	ctx context.Context,
+	variant *models.ProductVariant,
+) (string, int32, error) {
+	if variant.Product != nil && variant.Product.ShopID != "" {
+		return variant.Product.ShopID, variant.Product.Status, nil
+	}
+
+	product, err := ob.productRepo.GetByID(ctx, variant.ProductID)
+	if err != nil {
+		return "", 0, connect.NewError(connect.CodeNotFound,
+			fmt.Errorf("product for variant %s not found", variant.GetID()))
+	}
+	return product.ShopID, product.Status, nil
+}
+
+// orderRequestHash fingerprints the parts of a create request that define the
+// order, independent of line ordering.
+func orderRequestHash(req *commercev1.CreateOrderRequest) string {
+	parts := make([]string, 0, len(req.GetLines()))
+	for _, l := range req.GetLines() {
+		parts = append(parts, fmt.Sprintf("%s:%d", l.GetVariantId(), l.GetQuantity()))
+	}
+	sort.Strings(parts)
+	payload := strings.Join([]string{
+		req.GetShopId(), req.GetProfileId(), req.GetContactId(), req.GetAddressId(),
+		strings.Join(parts, ","),
+	}, "|")
+	sum := sha256.Sum256([]byte(payload))
+	return hex.EncodeToString(sum[:])
 }

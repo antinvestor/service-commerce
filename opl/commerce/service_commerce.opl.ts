@@ -43,6 +43,13 @@ class service_commerce implements Namespace {
     granted_order_manage: (profile_user | service_commerce)[]
     granted_fulfilment_view: (profile_user | service_commerce)[]
     granted_fulfilment_manage: (profile_user | service_commerce)[]
+    granted_price_list_view: (profile_user | service_commerce)[]
+    granted_price_list_manage: (profile_user | service_commerce)[]
+    granted_customer_price_override: (profile_user | service_commerce)[]
+    granted_discount_manage: (profile_user | service_commerce)[]
+    granted_discount_approve: (profile_user | service_commerce)[]
+    granted_shops_list: (profile_user | service_commerce)[]
+    granted_ledger_post: (profile_user | service_commerce)[]
   }
 
   permits = {
@@ -94,6 +101,7 @@ class service_commerce implements Namespace {
 
     cart_manage: (ctx: Context): boolean =>
       this.related.admin.includes(ctx.subject) ||
+      this.related.member.includes(ctx.subject) ||
       this.related.owner.includes(ctx.subject) ||
       this.related.service.includes(ctx.subject) ||
       this.related.granted_cart_manage.includes(ctx.subject),
@@ -109,6 +117,7 @@ class service_commerce implements Namespace {
 
     order_manage: (ctx: Context): boolean =>
       this.related.admin.includes(ctx.subject) ||
+      this.related.member.includes(ctx.subject) ||
       this.related.operator.includes(ctx.subject) ||
       this.related.owner.includes(ctx.subject) ||
       this.related.service.includes(ctx.subject) ||
@@ -128,5 +137,54 @@ class service_commerce implements Namespace {
       this.related.owner.includes(ctx.subject) ||
       this.related.service.includes(ctx.subject) ||
       this.related.granted_fulfilment_manage.includes(ctx.subject),
+
+    price_list_view: (ctx: Context): boolean =>
+      this.related.admin.includes(ctx.subject) ||
+      this.related.member.includes(ctx.subject) ||
+      this.related.operator.includes(ctx.subject) ||
+      this.related.owner.includes(ctx.subject) ||
+      this.related.service.includes(ctx.subject) ||
+      this.related.viewer.includes(ctx.subject) ||
+      this.related.granted_price_list_view.includes(ctx.subject),
+
+    price_list_manage: (ctx: Context): boolean =>
+      this.related.admin.includes(ctx.subject) ||
+      this.related.owner.includes(ctx.subject) ||
+      this.related.service.includes(ctx.subject) ||
+      this.related.granted_price_list_manage.includes(ctx.subject),
+
+    customer_price_override: (ctx: Context): boolean =>
+      this.related.admin.includes(ctx.subject) ||
+      this.related.owner.includes(ctx.subject) ||
+      this.related.service.includes(ctx.subject) ||
+      this.related.granted_customer_price_override.includes(ctx.subject),
+
+    discount_manage: (ctx: Context): boolean =>
+      this.related.admin.includes(ctx.subject) ||
+      this.related.operator.includes(ctx.subject) ||
+      this.related.owner.includes(ctx.subject) ||
+      this.related.service.includes(ctx.subject) ||
+      this.related.granted_discount_manage.includes(ctx.subject),
+
+    discount_approve: (ctx: Context): boolean =>
+      this.related.admin.includes(ctx.subject) ||
+      this.related.owner.includes(ctx.subject) ||
+      this.related.service.includes(ctx.subject) ||
+      this.related.granted_discount_approve.includes(ctx.subject),
+
+    shops_list: (ctx: Context): boolean =>
+      this.related.admin.includes(ctx.subject) ||
+      this.related.member.includes(ctx.subject) ||
+      this.related.operator.includes(ctx.subject) ||
+      this.related.owner.includes(ctx.subject) ||
+      this.related.service.includes(ctx.subject) ||
+      this.related.viewer.includes(ctx.subject) ||
+      this.related.granted_shops_list.includes(ctx.subject),
+
+    ledger_post: (ctx: Context): boolean =>
+      this.related.admin.includes(ctx.subject) ||
+      this.related.owner.includes(ctx.subject) ||
+      this.related.service.includes(ctx.subject) ||
+      this.related.granted_ledger_post.includes(ctx.subject),
   }
 }

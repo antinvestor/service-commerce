@@ -41,3 +41,12 @@ func (r *shopRepository) GetBySlug(ctx context.Context, slug string) (*models.Sh
 	err := r.Pool().DB(ctx, true).First(shop, "slug = ?", slug).Error
 	return shop, err
 }
+
+func (r *shopRepository) List(ctx context.Context, page Page) ([]*models.Shop, *PageKey, error) {
+	var shops []*models.Shop
+	if err := applyKeyset(r.Pool().DB(ctx, true), page).Find(&shops).Error; err != nil {
+		return nil, nil, err
+	}
+	shops, next := trimPage(shops, page, func(s *models.Shop) PageKey { return baseKey(s.BaseModel) })
+	return shops, next, nil
+}

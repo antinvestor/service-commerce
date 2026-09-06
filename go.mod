@@ -3,14 +3,22 @@ module github.com/antinvestor/service-commerce
 go 1.26.7
 
 require (
-	buf.build/gen/go/antinvestor/commerce/connectrpc/go v1.20.0-20260724174013-58c9eef18c0a.1
-	buf.build/gen/go/antinvestor/commerce/protocolbuffers/go v1.36.12-20260724174013-58c9eef18c0a.1
-	buf.build/gen/go/antinvestor/common/protocolbuffers/go v1.36.12-20260509050709-3f270876dbf3.1
+	buf.build/gen/go/antinvestor/common/protocolbuffers/go v1.36.12-20260509050709-3f270876dbf3.2
+	buf.build/gen/go/antinvestor/ledger/connectrpc/go v1.20.0-20260831184824-b59f37b34aa1.1
+	buf.build/gen/go/antinvestor/ledger/protocolbuffers/go v1.36.12-20260831184824-b59f37b34aa1.2
+	buf.build/gen/go/antinvestor/notification/protocolbuffers/go v1.36.12-20260831182621-e7d71a2bcc5d.2
+	buf.build/gen/go/antinvestor/payment/connectrpc/go v1.20.0-20260831184824-a4a7e9defafa.1
+	buf.build/gen/go/antinvestor/payment/protocolbuffers/go v1.36.12-20260831184824-a4a7e9defafa.2
 	buf.build/gen/go/antinvestor/procurement/connectrpc/go v1.20.0-20260724174013-09687866da48.1
 	buf.build/gen/go/antinvestor/procurement/protocolbuffers/go v1.36.12-20260724174013-09687866da48.1
+	buf.build/gen/go/antinvestor/workflow/connectrpc/go v1.20.0-20260511135803-9b0e411394e1.1
+	buf.build/gen/go/antinvestor/workflow/protocolbuffers/go v1.36.12-20260511135803-9b0e411394e1.2
+	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.12-20260825204119-511051f7f437.2
+	buf.build/gen/go/gnostic/gnostic/protocolbuffers/go v1.36.12-20230414000709-087bc8072ce4.2
 	connectrpc.com/connect v1.20.0
+	github.com/antinvestor/common/notification v0.1.0
 	github.com/antinvestor/common/v2 v2.0.7
-	github.com/pitabwire/frame/v2 v2.1.7
+	github.com/pitabwire/frame/v2 v2.1.8
 	github.com/pitabwire/util v0.9.1
 	github.com/stretchr/testify v1.12.1
 	github.com/testcontainers/testcontainers-go v0.44.0
@@ -19,8 +27,7 @@ require (
 )
 
 require (
-	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.12-20260825204119-511051f7f437.1 // indirect
-	buf.build/gen/go/gnostic/gnostic/protocolbuffers/go v1.36.12-20230414000709-087bc8072ce4.1 // indirect
+	buf.build/gen/go/antinvestor/notification/connectrpc/go v1.20.0-20260831182621-e7d71a2bcc5d.1 // indirect
 	buf.build/go/protovalidate v1.3.0 // indirect
 	cel.dev/expr v0.25.3 // indirect
 	cloud.google.com/go/auth v0.23.2 // indirect
@@ -139,7 +146,7 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
 	gocloud.dev v0.46.0 // indirect
-	golang.org/x/crypto v0.55.0 // indirect
+	golang.org/x/crypto v0.56.0 // indirect
 	golang.org/x/exp v0.0.0-20260718201538-764159d718ef // indirect
 	golang.org/x/net v0.58.0 // indirect
 	golang.org/x/oauth2 v0.36.0 // indirect
@@ -153,5 +160,6 @@ require (
 	google.golang.org/genproto/googleapis/api v0.0.0-20260825221802-da73d73af1c5 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260825221802-da73d73af1c5 // indirect
 	google.golang.org/grpc v1.83.2 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gorm.io/driver/postgres v1.6.2 // indirect
 )

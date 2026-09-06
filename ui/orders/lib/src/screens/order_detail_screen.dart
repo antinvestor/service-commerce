@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../providers/order_providers.dart';
 import '../widgets/fulfilment_status_badge.dart';
 import '../widgets/order_line_tile.dart';
+import '../widgets/order_payment_panel.dart';
 import '../widgets/order_status_badge.dart';
 import '../widgets/payment_status_badge.dart';
 
@@ -122,6 +123,10 @@ class OrderDetailScreen extends ConsumerWidget {
                 label: 'Total',
                 child: AmountDisplay(amount: order.total),
               ),
+              const SizedBox(height: 20),
+
+              // Payment and lifecycle actions
+              OrderPaymentPanel(order: order),
               const SizedBox(height: 20),
 
               // Order lines

@@ -18,13 +18,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
-	commercev1 "buf.build/gen/go/antinvestor/commerce/protocolbuffers/go/v1"
 	"connectrpc.com/connect"
 	"github.com/pitabwire/frame/v2/data"
-	"google.golang.org/protobuf/types/known/timestamppb"
+	"github.com/pitabwire/util"
+
+	commercev1 "github.com/antinvestor/service-commerce/gen/go/commerce/v1"
 
 	"github.com/antinvestor/service-commerce/apps/default/service/models"
+	"github.com/antinvestor/service-commerce/apps/default/service/notifications"
 	"github.com/antinvestor/service-commerce/apps/default/service/repository"
 )
 
@@ -40,12 +43,19 @@ func NewFulfilmentBusiness(
 	fulfilmentLineRepo repository.FulfilmentLineRepository,
 	orderRepo repository.OrderRepository,
 	orderLineRepo repository.OrderLineRepository,
+	shopRepo repository.ShopRepository,
+	notifier notifications.Notifier,
 ) FulfilmentBusiness {
+	if notifier == nil {
+		notifier = notifications.New(nil)
+	}
 	return &fulfilmentBusiness{
 		fulfilmentRepo:     fulfilmentRepo,
 		fulfilmentLineRepo: fulfilmentLineRepo,
 		orderRepo:          orderRepo,
 		orderLineRepo:      orderLineRepo,
+		shopRepo:           shopRepo,
+		notifier:           notifier,
 	}
 }
 
@@ -54,13 +64,14 @@ type fulfilmentBusiness struct {
 	fulfilmentLineRepo repository.FulfilmentLineRepository
 	orderRepo          repository.OrderRepository
 	orderLineRepo      repository.OrderLineRepository
+	shopRepo           repository.ShopRepository
+	notifier           notifications.Notifier
 }
 
 func (fb *fulfilmentBusiness) CreateFulfilment(
 	ctx context.Context,
 	req *commercev1.CreateFulfilmentRequest,
 ) (*commercev1.Fulfilment, error) {
-	// Validate order exists and is in a fulfillable state
 	order, err := fb.orderRepo.GetWithLines(ctx, req.GetOrderId())
 	if err != nil {
 		return nil, data.ErrorConvertToAPI(err)
@@ -68,6 +79,9 @@ func (fb *fulfilmentBusiness) CreateFulfilment(
 
 	if order.Status == int32(commercev1.OrderStatus_ORDER_STATUS_CANCELLED) {
 		return nil, connect.NewError(connect.CodeFailedPrecondition, errors.New("cannot fulfil a cancelled order"))
+	}
+	if order.Status == int32(commercev1.OrderStatus_ORDER_STATUS_PENDING_PAYMENT) {
+		return nil, connect.NewError(connect.CodeFailedPrecondition, errors.New("order has not been paid"))
 	}
 
 	if len(req.GetLines()) == 0 {
@@ -78,30 +92,23 @@ func (fb *fulfilmentBusiness) CreateFulfilment(
 		return nil, validErr
 	}
 
-	// Create fulfilment
 	fulfilment := &models.Fulfilment{
 		OrderID: req.GetOrderId(),
 		Status:  int32(commercev1.FulfilmentStatus_FULFILMENT_STATUS_PENDING),
 	}
+	lines := make([]*models.FulfilmentLine, 0, len(req.GetLines()))
+	for _, fl := range req.GetLines() {
+		lines = append(lines, &models.FulfilmentLine{
+			OrderLineID: fl.GetOrderLineId(),
+			Quantity:    fl.GetQuantity(),
+		})
+	}
 
-	if createErr := fb.fulfilmentRepo.Create(ctx, fulfilment); createErr != nil {
+	if createErr := fb.fulfilmentRepo.CreateWithLines(ctx, fulfilment, lines); createErr != nil {
 		return nil, data.ErrorConvertToAPI(createErr)
 	}
 
-	// Create fulfilment lines
-	for _, fl := range req.GetLines() {
-		fulfilmentLine := &models.FulfilmentLine{
-			FulfilmentID: fulfilment.GetID(),
-			OrderLineID:  fl.GetOrderLineId(),
-			Quantity:     fl.GetQuantity(),
-		}
-		if lineErr := fb.fulfilmentLineRepo.Create(ctx, fulfilmentLine); lineErr != nil {
-			return nil, data.ErrorConvertToAPI(lineErr)
-		}
-	}
-
-	// Check if order is fully fulfilled and update status
-	fb.updateOrderFulfilmentStatus(ctx, order)
+	fb.syncOrderFulfilmentStatus(ctx, order)
 
 	return fb.GetFulfilment(ctx, fulfilment.GetID())
 }
@@ -111,30 +118,37 @@ func (fb *fulfilmentBusiness) validateFulfilmentLines(
 	order *models.Order,
 	lines []*commercev1.FulfilmentLine,
 ) error {
-	// Build a map of order line IDs for validation
 	orderLineMap := make(map[string]*models.OrderLine, len(order.Lines))
 	for _, ol := range order.Lines {
 		orderLineMap[ol.GetID()] = ol
 	}
 
+	fulfilled, err := fb.fulfilmentLineRepo.SumFulfilledByOrderID(ctx, order.GetID())
+	if err != nil {
+		return data.ErrorConvertToAPI(err)
+	}
+
+	// Aggregate the request first so the same order line listed twice cannot
+	// slip past the remaining-quantity check.
+	requested := make(map[string]int64, len(lines))
 	for _, fl := range lines {
-		ol, ok := orderLineMap[fl.GetOrderLineId()]
-		if !ok {
+		if fl.GetQuantity() <= 0 {
+			return connect.NewError(connect.CodeInvalidArgument,
+				fmt.Errorf("quantity must be positive for order line %s", fl.GetOrderLineId()))
+		}
+		if _, ok := orderLineMap[fl.GetOrderLineId()]; !ok {
 			return connect.NewError(connect.CodeInvalidArgument,
 				fmt.Errorf("order line %s not found in order", fl.GetOrderLineId()))
 		}
+		requested[fl.GetOrderLineId()] += fl.GetQuantity()
+	}
 
-		// Check remaining unfulfilled quantity
-		fulfilledQty, qErr := fb.fulfilmentLineRepo.GetFulfilledQuantityByOrderLineID(ctx, fl.GetOrderLineId())
-		if qErr != nil {
-			return data.ErrorConvertToAPI(qErr)
-		}
-
-		remaining := ol.Quantity - fulfilledQty
-		if fl.GetQuantity() > remaining {
+	for orderLineID, qty := range requested {
+		remaining := orderLineMap[orderLineID].Quantity - fulfilled[orderLineID]
+		if qty > remaining {
 			return connect.NewError(connect.CodeFailedPrecondition,
 				fmt.Errorf("quantity %d exceeds remaining unfulfilled quantity %d for order line %s",
-					fl.GetQuantity(), remaining, fl.GetOrderLineId()))
+					qty, remaining, orderLineID))
 		}
 	}
 
@@ -150,41 +164,92 @@ func (fb *fulfilmentBusiness) UpdateFulfilment(
 		return nil, data.ErrorConvertToAPI(err)
 	}
 
-	updateColumns := applyFulfilmentFields(fulfilment, req)
+	previousStatus := fulfilment.Status
+	updateColumns, applyErr := applyFulfilmentFields(fulfilment, req)
+	if applyErr != nil {
+		return nil, applyErr
+	}
 
 	if len(updateColumns) > 0 {
-		_, updateErr := fb.fulfilmentRepo.Update(ctx, fulfilment, updateColumns...)
-		if updateErr != nil {
+		if _, updateErr := fb.fulfilmentRepo.Update(ctx, fulfilment, updateColumns...); updateErr != nil {
 			return nil, data.ErrorConvertToAPI(updateErr)
 		}
 	}
 
-	// If status changed, check if order fulfilment status needs updating
 	order, orderErr := fb.orderRepo.GetWithLines(ctx, fulfilment.OrderID)
 	if orderErr == nil {
-		fb.updateOrderFulfilmentStatus(ctx, order)
+		fb.syncOrderFulfilmentStatus(ctx, order)
+		fb.notifyStatus(ctx, order, fulfilment, previousStatus)
 	}
 
 	return fb.GetFulfilment(ctx, req.GetId())
 }
 
+// notifyStatus tells the buyer when their parcel ships and when the whole
+// order has been delivered.
+func (fb *fulfilmentBusiness) notifyStatus(
+	ctx context.Context,
+	order *models.Order,
+	fulfilment *models.Fulfilment,
+	previousStatus int32,
+) {
+	if fulfilment.Status == previousStatus {
+		return
+	}
+	shop, err := fb.shopRepo.GetByID(ctx, order.ShopID)
+	if err != nil {
+		return
+	}
+	shipped := int32(commercev1.FulfilmentStatus_FULFILMENT_STATUS_SHIPPED)
+	if fulfilmentStatusRank(fulfilment.Status) >= fulfilmentStatusRank(shipped) &&
+		fulfilmentStatusRank(previousStatus) < fulfilmentStatusRank(shipped) {
+		fb.notifier.OrderShipped(ctx, shop, order, fulfilment)
+	}
+	if order.Status == int32(commercev1.OrderStatus_ORDER_STATUS_FULFILLED) {
+		fb.notifier.OrderDelivered(ctx, shop, order)
+	}
+}
+
+// fulfilmentStatusRank orders statuses along the delivery path. Cancelled is
+// terminal and outside the path.
+func fulfilmentStatusRank(s int32) int {
+	switch commercev1.FulfilmentStatus(s) {
+	case commercev1.FulfilmentStatus_FULFILMENT_STATUS_PENDING:
+		return 1
+	case commercev1.FulfilmentStatus_FULFILMENT_STATUS_PREPARING:
+		return 2 //nolint:mnd // rank
+	case commercev1.FulfilmentStatus_FULFILMENT_STATUS_PACKED:
+		return 3 //nolint:mnd // rank
+	case commercev1.FulfilmentStatus_FULFILMENT_STATUS_SHIPPED:
+		return 4 //nolint:mnd // rank
+	case commercev1.FulfilmentStatus_FULFILMENT_STATUS_DELIVERED:
+		return 5 //nolint:mnd // rank
+	case commercev1.FulfilmentStatus_FULFILMENT_STATUS_CANCELLED,
+		commercev1.FulfilmentStatus_FULFILMENT_STATUS_UNSPECIFIED:
+		return 0
+	default:
+		return 0
+	}
+}
+
 func applyFulfilmentFields(
 	fulfilment *models.Fulfilment,
 	req *commercev1.UpdateFulfilmentRequest,
-) []string {
+) ([]string, error) {
 	fields := req.GetUpdateMask().GetPaths()
 	if len(fields) == 0 {
 		fields = []string{fieldStatus, "carrier", "tracking_number", "shipped_at"}
 	}
 
-	updateColumns := make([]string, 0, len(fields))
+	updateColumns := make([]string, 0, len(fields)+1)
 	for _, field := range fields {
 		switch field {
 		case fieldStatus:
-			if req.GetStatus() != commercev1.FulfilmentStatus_FULFILMENT_STATUS_UNSPECIFIED {
-				fulfilment.Status = int32(req.GetStatus())
-				updateColumns = append(updateColumns, fieldStatus)
+			columns, err := applyFulfilmentStatus(fulfilment, req.GetStatus())
+			if err != nil {
+				return nil, err
 			}
+			updateColumns = append(updateColumns, columns...)
 		case "carrier":
 			if req.GetCarrier() != "" {
 				fulfilment.Carrier = req.GetCarrier()
@@ -196,13 +261,50 @@ func applyFulfilmentFields(
 				updateColumns = append(updateColumns, "tracking_number")
 			}
 		case "shipped_at":
-			if req.GetShippedAt() != nil && req.GetShippedAt() != (&timestamppb.Timestamp{}) {
-				updateColumns = append(updateColumns, "modified_at")
+			if req.GetShippedAt() != nil && req.GetShippedAt().IsValid() {
+				t := req.GetShippedAt().AsTime()
+				fulfilment.ShippedAt = &t
+				updateColumns = append(updateColumns, "shipped_at")
 			}
 		}
 	}
 
-	return updateColumns
+	return updateColumns, nil
+}
+
+// applyFulfilmentStatus enforces the forward-only delivery path. Cancelled and
+// delivered are terminal; any other status may move to cancelled or forward.
+// Reaching shipped (or beyond) stamps shipped_at if it is not already set.
+func applyFulfilmentStatus(
+	fulfilment *models.Fulfilment,
+	newStatus commercev1.FulfilmentStatus,
+) ([]string, error) {
+	if newStatus == commercev1.FulfilmentStatus_FULFILMENT_STATUS_UNSPECIFIED ||
+		int32(newStatus) == fulfilment.Status {
+		return nil, nil
+	}
+
+	current := commercev1.FulfilmentStatus(fulfilment.Status)
+	if current == commercev1.FulfilmentStatus_FULFILMENT_STATUS_CANCELLED ||
+		current == commercev1.FulfilmentStatus_FULFILMENT_STATUS_DELIVERED {
+		return nil, connect.NewError(connect.CodeFailedPrecondition,
+			errors.New("fulfilment is in a terminal state"))
+	}
+	if newStatus != commercev1.FulfilmentStatus_FULFILMENT_STATUS_CANCELLED &&
+		fulfilmentStatusRank(int32(newStatus)) < fulfilmentStatusRank(fulfilment.Status) {
+		return nil, connect.NewError(connect.CodeFailedPrecondition,
+			fmt.Errorf("fulfilment cannot move backwards from %s to %s", current, newStatus))
+	}
+
+	fulfilment.Status = int32(newStatus)
+	columns := []string{fieldStatus}
+	shippedRank := fulfilmentStatusRank(int32(commercev1.FulfilmentStatus_FULFILMENT_STATUS_SHIPPED))
+	if fulfilmentStatusRank(int32(newStatus)) >= shippedRank && fulfilment.ShippedAt == nil {
+		now := time.Now()
+		fulfilment.ShippedAt = &now
+		columns = append(columns, "shipped_at")
+	}
+	return columns, nil
 }
 
 func (fb *fulfilmentBusiness) GetFulfilment(ctx context.Context, id string) (*commercev1.Fulfilment, error) {
@@ -213,19 +315,78 @@ func (fb *fulfilmentBusiness) GetFulfilment(ctx context.Context, id string) (*co
 	return fulfilment.ToAPI(), nil
 }
 
-func (fb *fulfilmentBusiness) updateOrderFulfilmentStatus(ctx context.Context, order *models.Order) {
-	allFulfilled := true
+// syncOrderFulfilmentStatus derives the order's fulfilment status from its
+// fulfilments. The order becomes FULFILLED only when every line is covered by
+// delivered fulfilments; otherwise it reports the least-advanced live
+// fulfilment so a buyer-facing status never runs ahead of reality.
+func (fb *fulfilmentBusiness) syncOrderFulfilmentStatus(ctx context.Context, order *models.Order) {
+	log := util.Log(ctx).WithField("order_id", order.GetID())
+
+	fulfilments, err := fb.fulfilmentRepo.ListByOrderID(ctx, order.GetID())
+	if err != nil {
+		log.WithError(err).Warn("could not list fulfilments to sync order status")
+		return
+	}
+
+	deliveredByLine := make(map[string]int64)
+	lowestRank := 0
+	lowestStatus := int32(commercev1.FulfilmentStatus_FULFILMENT_STATUS_UNSPECIFIED)
+	for _, f := range fulfilments {
+		if f.Status == int32(commercev1.FulfilmentStatus_FULFILMENT_STATUS_CANCELLED) {
+			continue
+		}
+		if rank := fulfilmentStatusRank(f.Status); lowestRank == 0 || rank < lowestRank {
+			lowestRank = rank
+			lowestStatus = f.Status
+		}
+		if f.Status == int32(commercev1.FulfilmentStatus_FULFILMENT_STATUS_DELIVERED) {
+			for _, l := range f.Lines {
+				deliveredByLine[l.OrderLineID] += l.Quantity
+			}
+		}
+	}
+
+	if lowestRank == 0 {
+		// No live fulfilments.
+		fb.setOrderFulfilment(ctx, order, order.Status,
+			int32(commercev1.FulfilmentStatus_FULFILMENT_STATUS_UNSPECIFIED))
+		return
+	}
+
+	allDelivered := true
 	for _, ol := range order.Lines {
-		fulfilledQty, err := fb.fulfilmentLineRepo.GetFulfilledQuantityByOrderLineID(ctx, ol.GetID())
-		if err != nil || fulfilledQty < ol.Quantity {
-			allFulfilled = false
+		if deliveredByLine[ol.GetID()] < ol.Quantity {
+			allDelivered = false
 			break
 		}
 	}
 
-	if allFulfilled {
-		order.Status = int32(commercev1.OrderStatus_ORDER_STATUS_FULFILLED)
-		order.FulfilmentStatus = int32(commercev1.FulfilmentStatus_FULFILMENT_STATUS_DELIVERED)
-		_, _ = fb.orderRepo.Update(ctx, order, "status", "fulfilment_status")
+	if allDelivered {
+		fb.setOrderFulfilment(ctx, order,
+			int32(commercev1.OrderStatus_ORDER_STATUS_FULFILLED),
+			int32(commercev1.FulfilmentStatus_FULFILMENT_STATUS_DELIVERED))
+		return
+	}
+
+	fb.setOrderFulfilment(ctx, order, order.Status, lowestStatus)
+}
+
+func (fb *fulfilmentBusiness) setOrderFulfilment(
+	ctx context.Context,
+	order *models.Order,
+	orderStatus, fulfilmentStatus int32,
+) {
+	if order.Status == orderStatus && order.FulfilmentStatus == fulfilmentStatus {
+		return
+	}
+	ok, err := fb.orderRepo.UpdateStatus(ctx, order.GetID(), order.Status, orderStatus, fulfilmentStatus)
+	if err != nil {
+		util.Log(ctx).WithError(err).WithField("order_id", order.GetID()).
+			Warn("could not update order fulfilment status")
+		return
+	}
+	if !ok {
+		util.Log(ctx).WithField("order_id", order.GetID()).
+			Debug("order status changed concurrently; fulfilment status sync skipped")
 	}
 }

@@ -225,9 +225,29 @@ func (rts *RepositoryTestSuite) TestProductRepository_ListByShopID() {
 			rts.createTestProduct(ctx, productRepo, shop.GetID())
 		}
 
-		products, err := productRepo.ListByShopID(ctx, shop.GetID(), 50, 0)
+		products, next, err := productRepo.ListByShopID(ctx, shop.GetID(), nil, repository.Page{Limit: 50})
 		require.NoError(t, err)
 		require.Len(t, products, 3)
+		require.Nil(t, next)
+
+		// Keyset paging walks every row exactly once.
+		seen := map[string]bool{}
+		var after *repository.PageKey
+		for {
+			pageItems, nextKey, pageErr := productRepo.ListByShopID(
+				ctx, shop.GetID(), nil, repository.Page{Limit: 2, After: after},
+			)
+			require.NoError(t, pageErr)
+			for _, item := range pageItems {
+				require.False(t, seen[item.GetID()], "row returned twice")
+				seen[item.GetID()] = true
+			}
+			if nextKey == nil {
+				break
+			}
+			after = nextKey
+		}
+		require.Len(t, seen, 3)
 	})
 }
 
@@ -303,6 +323,34 @@ func (rts *RepositoryTestSuite) TestProductVariantRepository_DecrementStock() {
 		updated, err := variantRepo.GetByID(ctx, variant.GetID())
 		require.NoError(t, err)
 		require.Equal(t, int64(90), updated.StockQuantity)
+	})
+}
+
+func (rts *RepositoryTestSuite) TestProductVariantRepository_DecrementStock_FailsWhenInsufficient() {
+	t := rts.T()
+
+	rts.WithTestDependancies(t, func(t *testing.T, dep *definition.DependencyOption) {
+		ctx, svc := rts.CreateService(t, dep)
+		shopRepo, productRepo, variantRepo, _, _, _, _, _, _ := rts.getRepos(ctx, svc)
+
+		shop := rts.createTestShop(ctx, shopRepo)
+		product := rts.createTestProduct(ctx, productRepo, shop.GetID())
+		variant := rts.createTestVariant(ctx, variantRepo, product.GetID())
+
+		// Stock is 100; request more than available — must fail closed (no silent no-op).
+		err := variantRepo.DecrementStock(ctx, variant.GetID(), 101)
+		require.Error(t, err)
+		require.ErrorIs(t, err, repository.ErrInsufficientStock)
+
+		// Stock must be unchanged.
+		updated, getErr := variantRepo.GetByID(ctx, variant.GetID())
+		require.NoError(t, getErr)
+		require.Equal(t, int64(100), updated.StockQuantity)
+
+		// Missing variant also fails closed.
+		err = variantRepo.DecrementStock(ctx, "nonexistent-variant-id", 1)
+		require.Error(t, err)
+		require.ErrorIs(t, err, repository.ErrInsufficientStock)
 	})
 }
 
@@ -447,6 +495,133 @@ func (rts *RepositoryTestSuite) TestOrderRepository_CreateAndGetWithLines() {
 	})
 }
 
+func (rts *RepositoryTestSuite) TestOrderRepository_CreateWithLinesAndStock_Atomic() {
+	t := rts.T()
+
+	rts.WithTestDependancies(t, func(t *testing.T, dep *definition.DependencyOption) {
+		ctx, svc := rts.CreateService(t, dep)
+		shopRepo, productRepo, variantRepo, _, _, orderRepo, _, _, _ := rts.getRepos(ctx, svc)
+
+		shop := rts.createTestShop(ctx, shopRepo)
+		product := rts.createTestProduct(ctx, productRepo, shop.GetID())
+		variant := rts.createTestVariant(ctx, variantRepo, product.GetID())
+
+		order := &models.Order{
+			ShopID:           shop.GetID(),
+			OrderNumber:      "ORD-" + util.RandomAlphaNumericString(10),
+			IdempotencyKey:   "idem-atomic-" + util.RandomAlphaNumericString(10),
+			Status:           1,
+			PaymentStatus:    1,
+			ProfileID:        "profile-123",
+			SubtotalCurrency: "USD",
+			SubtotalUnits:    20,
+			TotalCurrency:    "USD",
+			TotalUnits:       20,
+		}
+		lines := []*models.OrderLine{
+			{
+				ProductVariantID:   variant.GetID(),
+				SKUSnapshot:        variant.SKU,
+				NameSnapshot:       variant.Name,
+				UnitPriceCurrency:  "USD",
+				UnitPriceUnits:     10,
+				Quantity:           2,
+				TotalPriceCurrency: "USD",
+				TotalPriceUnits:    20,
+			},
+		}
+
+		err := orderRepo.CreateWithLinesAndStock(ctx, order, lines, "", 0)
+		require.NoError(t, err)
+		require.NotEmpty(t, order.GetID())
+
+		loaded, err := orderRepo.GetWithLines(ctx, order.GetID())
+		require.NoError(t, err)
+		require.Len(t, loaded.Lines, 1)
+
+		updated, err := variantRepo.GetByID(ctx, variant.GetID())
+		require.NoError(t, err)
+		require.Equal(t, int64(98), updated.StockQuantity)
+	})
+}
+
+func (rts *RepositoryTestSuite) TestOrderRepository_CreateWithLinesAndStock_RollsBackOnInsufficientStock() {
+	t := rts.T()
+
+	rts.WithTestDependancies(t, func(t *testing.T, dep *definition.DependencyOption) {
+		ctx, svc := rts.CreateService(t, dep)
+		shopRepo, productRepo, variantRepo, _, _, orderRepo, _, _, _ := rts.getRepos(ctx, svc)
+
+		shop := rts.createTestShop(ctx, shopRepo)
+		productA := rts.createTestProduct(ctx, productRepo, shop.GetID())
+		productB := rts.createTestProduct(ctx, productRepo, shop.GetID())
+		variantOK := rts.createTestVariant(ctx, variantRepo, productA.GetID())
+		// Low-stock variant so second line fails after first would have decremented.
+		variantLow := &models.ProductVariant{
+			ProductID:     productB.GetID(),
+			SKU:           "SKU-LOW-" + util.RandomAlphaNumericString(8),
+			Name:          "Low Stock Variant",
+			CurrencyCode:  "USD",
+			PriceUnits:    5,
+			StockQuantity: 1,
+			Status:        1,
+		}
+		variantLow.GenID(ctx)
+		require.NoError(t, variantRepo.Create(ctx, variantLow))
+
+		order := &models.Order{
+			ShopID:           shop.GetID(),
+			OrderNumber:      "ORD-" + util.RandomAlphaNumericString(10),
+			IdempotencyKey:   "idem-rollback-" + util.RandomAlphaNumericString(10),
+			Status:           1,
+			PaymentStatus:    1,
+			SubtotalCurrency: "USD",
+			SubtotalUnits:    30,
+			TotalCurrency:    "USD",
+			TotalUnits:       30,
+		}
+		lines := []*models.OrderLine{
+			{
+				ProductVariantID:   variantOK.GetID(),
+				SKUSnapshot:        variantOK.SKU,
+				NameSnapshot:       variantOK.Name,
+				UnitPriceCurrency:  "USD",
+				UnitPriceUnits:     10,
+				Quantity:           2,
+				TotalPriceCurrency: "USD",
+				TotalPriceUnits:    20,
+			},
+			{
+				ProductVariantID:   variantLow.GetID(),
+				SKUSnapshot:        variantLow.SKU,
+				NameSnapshot:       variantLow.Name,
+				UnitPriceCurrency:  "USD",
+				UnitPriceUnits:     5,
+				Quantity:           5, // exceeds stock of 1
+				TotalPriceCurrency: "USD",
+				TotalPriceUnits:    25,
+			},
+		}
+
+		err := orderRepo.CreateWithLinesAndStock(ctx, order, lines, "", 0)
+		require.Error(t, err)
+		require.ErrorIs(t, err, repository.ErrInsufficientStock)
+
+		// Order must not exist (transaction rolled back).
+		_, getErr := orderRepo.GetWithLines(ctx, order.GetID())
+		require.Error(t, getErr)
+
+		// First variant stock must be unchanged (no half-applied decrement).
+		stockOK, err := variantRepo.GetByID(ctx, variantOK.GetID())
+		require.NoError(t, err)
+		require.Equal(t, int64(100), stockOK.StockQuantity)
+
+		stockLow, err := variantRepo.GetByID(ctx, variantLow.GetID())
+		require.NoError(t, err)
+		require.Equal(t, int64(1), stockLow.StockQuantity)
+	})
+}
+
 func (rts *RepositoryTestSuite) TestOrderRepository_GetByIdempotencyKey() {
 	t := rts.T()
 
@@ -498,7 +673,7 @@ func (rts *RepositoryTestSuite) TestOrderRepository_ListByShopID() {
 			require.NoError(t, err)
 		}
 
-		orders, err := orderRepo.ListByShopID(ctx, shop.GetID(), 50, 0)
+		orders, _, err := orderRepo.ListByShopID(ctx, shop.GetID(), repository.Page{Limit: 50})
 		require.NoError(t, err)
 		require.Len(t, orders, 3)
 	})
@@ -611,6 +786,20 @@ func (rts *RepositoryTestSuite) TestFulfilmentLineRepository_GetFulfilledQuantit
 		}
 
 		total, err := fulfilmentLineRepo.GetFulfilledQuantityByOrderLineID(ctx, orderLine.GetID())
+		require.NoError(t, err)
+		require.Equal(t, int64(7), total)
+
+		byLine, err := fulfilmentLineRepo.SumFulfilledByOrderID(ctx, order.GetID())
+		require.NoError(t, err)
+		require.Equal(t, int64(7), byLine[orderLine.GetID()])
+
+		// A cancelled fulfilment no longer counts.
+		cancelled := &models.Fulfilment{OrderID: order.GetID(), Status: 6}
+		cancelled.GenID(ctx)
+		require.NoError(t, fulfilmentRepo.CreateWithLines(ctx, cancelled, []*models.FulfilmentLine{
+			{OrderLineID: orderLine.GetID(), Quantity: 3},
+		}))
+		total, err = fulfilmentLineRepo.GetFulfilledQuantityByOrderLineID(ctx, orderLine.GetID())
 		require.NoError(t, err)
 		require.Equal(t, int64(7), total)
 	})

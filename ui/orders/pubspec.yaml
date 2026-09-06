@@ -21,6 +21,7 @@ dependencies:
     path: ../customers
   antinvestor_ui_profile:
     path: ../../../service-profile/ui/profile
+  url_launcher: ^6.3.0
   antinvestor_api_commerce:
     path: ../../sdk/dart/commerce
   antinvestor_api_profile: ^1.52.0

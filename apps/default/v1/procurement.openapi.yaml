@@ -1,0 +1,1622 @@
+openapi: 3.1.0
+info:
+  title: Procurement API
+  description: Procurement API for supplier management, purchase orders, and goods receiving.
+  contact:
+    name: Ant Investor Ltd
+    url: https://github.com/antinvestor/service-commerce
+    email: info@antinvestor.com
+  license:
+    name: Apache License
+    url: https://github.com/antinvestor/apis/blob/master/LICENSE
+  version: v1.0.0
+x-service-namespace: service_procurement
+x-service-permissions:
+  - supplier_view
+  - supplier_manage
+  - purchase_order_view
+  - purchase_order_create
+  - purchase_order_submit
+  - purchase_order_cancel
+  - goods_receipt_view
+  - goods_receipt_create
+paths:
+  /procurement.v1.ProcurementService/GoodsReceiptCreate:
+    post:
+      tags:
+        - procurement.v1.ProcurementService
+      summary: GoodsReceiptCreate
+      description: '---- Goods Receipts ----'
+      operationId: procurement.v1.ProcurementService.GoodsReceiptCreate
+      parameters:
+        - name: Connect-Protocol-Version
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/connect-protocol-version'
+        - name: Connect-Timeout-Ms
+          in: header
+          schema:
+            $ref: '#/components/schemas/connect-timeout-header'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/procurement.v1.GoodsReceiptCreateRequest'
+        required: true
+      responses:
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/connect.error'
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/procurement.v1.GoodsReceiptCreateResponse'
+      x-required-permissions:
+        - goods_receipt_create
+  /procurement.v1.ProcurementService/GoodsReceiptGet:
+    post:
+      tags:
+        - procurement.v1.ProcurementService
+      summary: GoodsReceiptGet
+      operationId: procurement.v1.ProcurementService.GoodsReceiptGet
+      parameters:
+        - name: Connect-Protocol-Version
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/connect-protocol-version'
+        - name: Connect-Timeout-Ms
+          in: header
+          schema:
+            $ref: '#/components/schemas/connect-timeout-header'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/procurement.v1.GoodsReceiptGetRequest'
+        required: true
+      responses:
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/connect.error'
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/procurement.v1.GoodsReceiptGetResponse'
+      x-required-permissions:
+        - goods_receipt_view
+  /procurement.v1.ProcurementService/GoodsReceiptSearch:
+    post:
+      tags:
+        - procurement.v1.ProcurementService
+      summary: GoodsReceiptSearch
+      operationId: procurement.v1.ProcurementService.GoodsReceiptSearch
+      parameters:
+        - name: Connect-Protocol-Version
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/connect-protocol-version'
+        - name: Connect-Timeout-Ms
+          in: header
+          schema:
+            $ref: '#/components/schemas/connect-timeout-header'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/procurement.v1.GoodsReceiptSearchRequest'
+        required: true
+      responses:
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/connect.error'
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/procurement.v1.GoodsReceiptSearchResponse'
+      x-required-permissions:
+        - goods_receipt_view
+  /procurement.v1.ProcurementService/PurchaseOrderCancel:
+    post:
+      tags:
+        - procurement.v1.ProcurementService
+      summary: PurchaseOrderCancel
+      operationId: procurement.v1.ProcurementService.PurchaseOrderCancel
+      parameters:
+        - name: Connect-Protocol-Version
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/connect-protocol-version'
+        - name: Connect-Timeout-Ms
+          in: header
+          schema:
+            $ref: '#/components/schemas/connect-timeout-header'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/procurement.v1.PurchaseOrderCancelRequest'
+        required: true
+      responses:
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/connect.error'
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/procurement.v1.PurchaseOrderCancelResponse'
+      x-required-permissions:
+        - purchase_order_cancel
+  /procurement.v1.ProcurementService/PurchaseOrderCreate:
+    post:
+      tags:
+        - procurement.v1.ProcurementService
+      summary: PurchaseOrderCreate
+      description: '---- Purchase Orders ----'
+      operationId: procurement.v1.ProcurementService.PurchaseOrderCreate
+      parameters:
+        - name: Connect-Protocol-Version
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/connect-protocol-version'
+        - name: Connect-Timeout-Ms
+          in: header
+          schema:
+            $ref: '#/components/schemas/connect-timeout-header'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/procurement.v1.PurchaseOrderCreateRequest'
+        required: true
+      responses:
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/connect.error'
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/procurement.v1.PurchaseOrderCreateResponse'
+      x-required-permissions:
+        - purchase_order_create
+  /procurement.v1.ProcurementService/PurchaseOrderGet:
+    post:
+      tags:
+        - procurement.v1.ProcurementService
+      summary: PurchaseOrderGet
+      operationId: procurement.v1.ProcurementService.PurchaseOrderGet
+      parameters:
+        - name: Connect-Protocol-Version
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/connect-protocol-version'
+        - name: Connect-Timeout-Ms
+          in: header
+          schema:
+            $ref: '#/components/schemas/connect-timeout-header'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/procurement.v1.PurchaseOrderGetRequest'
+        required: true
+      responses:
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/connect.error'
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/procurement.v1.PurchaseOrderGetResponse'
+      x-required-permissions:
+        - purchase_order_view
+  /procurement.v1.ProcurementService/PurchaseOrderSearch:
+    post:
+      tags:
+        - procurement.v1.ProcurementService
+      summary: PurchaseOrderSearch
+      operationId: procurement.v1.ProcurementService.PurchaseOrderSearch
+      parameters:
+        - name: Connect-Protocol-Version
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/connect-protocol-version'
+        - name: Connect-Timeout-Ms
+          in: header
+          schema:
+            $ref: '#/components/schemas/connect-timeout-header'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/procurement.v1.PurchaseOrderSearchRequest'
+        required: true
+      responses:
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/connect.error'
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/procurement.v1.PurchaseOrderSearchResponse'
+      x-required-permissions:
+        - purchase_order_view
+  /procurement.v1.ProcurementService/PurchaseOrderSubmit:
+    post:
+      tags:
+        - procurement.v1.ProcurementService
+      summary: PurchaseOrderSubmit
+      operationId: procurement.v1.ProcurementService.PurchaseOrderSubmit
+      parameters:
+        - name: Connect-Protocol-Version
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/connect-protocol-version'
+        - name: Connect-Timeout-Ms
+          in: header
+          schema:
+            $ref: '#/components/schemas/connect-timeout-header'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/procurement.v1.PurchaseOrderSubmitRequest'
+        required: true
+      responses:
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/connect.error'
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/procurement.v1.PurchaseOrderSubmitResponse'
+      x-required-permissions:
+        - purchase_order_submit
+  /procurement.v1.ProcurementService/SuggestPurchaseOrders:
+    post:
+      tags:
+        - procurement.v1.ProcurementService
+      summary: SuggestPurchaseOrders
+      description: '---- Suggestions ----'
+      operationId: procurement.v1.ProcurementService.SuggestPurchaseOrders
+      parameters:
+        - name: Connect-Protocol-Version
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/connect-protocol-version'
+        - name: Connect-Timeout-Ms
+          in: header
+          schema:
+            $ref: '#/components/schemas/connect-timeout-header'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/procurement.v1.SuggestPurchaseOrdersRequest'
+        required: true
+      responses:
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/connect.error'
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/procurement.v1.SuggestPurchaseOrdersResponse'
+      x-required-permissions:
+        - purchase_order_create
+  /procurement.v1.ProcurementService/SupplierGet:
+    post:
+      tags:
+        - procurement.v1.ProcurementService
+      summary: SupplierGet
+      operationId: procurement.v1.ProcurementService.SupplierGet
+      parameters:
+        - name: Connect-Protocol-Version
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/connect-protocol-version'
+        - name: Connect-Timeout-Ms
+          in: header
+          schema:
+            $ref: '#/components/schemas/connect-timeout-header'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/procurement.v1.SupplierGetRequest'
+        required: true
+      responses:
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/connect.error'
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/procurement.v1.SupplierGetResponse'
+      x-required-permissions:
+        - supplier_view
+  /procurement.v1.ProcurementService/SupplierItemSave:
+    post:
+      tags:
+        - procurement.v1.ProcurementService
+      summary: SupplierItemSave
+      description: '---- Supplier Items ----'
+      operationId: procurement.v1.ProcurementService.SupplierItemSave
+      parameters:
+        - name: Connect-Protocol-Version
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/connect-protocol-version'
+        - name: Connect-Timeout-Ms
+          in: header
+          schema:
+            $ref: '#/components/schemas/connect-timeout-header'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/procurement.v1.SupplierItemSaveRequest'
+        required: true
+      responses:
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/connect.error'
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/procurement.v1.SupplierItemSaveResponse'
+      x-required-permissions:
+        - supplier_manage
+  /procurement.v1.ProcurementService/SupplierItemSearch:
+    post:
+      tags:
+        - procurement.v1.ProcurementService
+      summary: SupplierItemSearch
+      operationId: procurement.v1.ProcurementService.SupplierItemSearch
+      parameters:
+        - name: Connect-Protocol-Version
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/connect-protocol-version'
+        - name: Connect-Timeout-Ms
+          in: header
+          schema:
+            $ref: '#/components/schemas/connect-timeout-header'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/procurement.v1.SupplierItemSearchRequest'
+        required: true
+      responses:
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/connect.error'
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/procurement.v1.SupplierItemSearchResponse'
+      x-required-permissions:
+        - supplier_view
+  /procurement.v1.ProcurementService/SupplierSave:
+    post:
+      tags:
+        - procurement.v1.ProcurementService
+      summary: SupplierSave
+      description: '---- Suppliers ----'
+      operationId: procurement.v1.ProcurementService.SupplierSave
+      parameters:
+        - name: Connect-Protocol-Version
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/connect-protocol-version'
+        - name: Connect-Timeout-Ms
+          in: header
+          schema:
+            $ref: '#/components/schemas/connect-timeout-header'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/procurement.v1.SupplierSaveRequest'
+        required: true
+      responses:
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/connect.error'
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/procurement.v1.SupplierSaveResponse'
+      x-required-permissions:
+        - supplier_manage
+  /procurement.v1.ProcurementService/SupplierSearch:
+    post:
+      tags:
+        - procurement.v1.ProcurementService
+      summary: SupplierSearch
+      operationId: procurement.v1.ProcurementService.SupplierSearch
+      parameters:
+        - name: Connect-Protocol-Version
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/connect-protocol-version'
+        - name: Connect-Timeout-Ms
+          in: header
+          schema:
+            $ref: '#/components/schemas/connect-timeout-header'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/procurement.v1.SupplierSearchRequest'
+        required: true
+      responses:
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/connect.error'
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/procurement.v1.SupplierSearchResponse'
+      x-required-permissions:
+        - supplier_view
+components:
+  schemas:
+    common.v1.Money:
+      type: object
+      properties:
+        currencyCode:
+          type: string
+          title: currency_code
+          description: The 3-letter ISO 4217 currency code (e.g. "KES", "USD", "EUR").
+        units:
+          type:
+            - integer
+            - string
+          title: units
+          format: int64
+          description: |-
+            The whole units of the amount. For example, if currency_code is "USD",
+             1 unit is one US dollar.
+        nanos:
+          type: integer
+          title: nanos
+          format: int32
+          description: |-
+            Number of nano (10^-9) units of the amount. The value must be between
+             -999,999,999 and +999,999,999 inclusive.
+
+             Sign rules:
+               - If units is positive, nanos must be positive or zero.
+               - If units is zero, nanos can be positive, zero, or negative.
+               - If units is negative, nanos must be negative or zero.
+
+             For example $-1.75 is represented as units=-1 and nanos=-750,000,000.
+      title: Money
+      additionalProperties: false
+      description: |-
+        Money represents an amount of money with its currency type.
+
+         Field numbers and types intentionally mirror google.type.Money so the
+         wire format is identical — services that previously embedded
+         google.type.Money can switch to common.v1.Money without coordinating
+         deploys with their callers.
+    common.v1.PageCursor:
+      type: object
+      properties:
+        limit:
+          type: integer
+          title: limit
+          format: int32
+          description: Number of items per cursor (limit)
+        page:
+          type: string
+          title: page
+          description: Page number/ cursor representing last id from result
+      title: PageCursor
+      additionalProperties: false
+      description: |-
+        PageCursor provides standard offset-based pagination/cursor stream parameters.
+         Used for list operations that return large result sets.
+    common.v1.SearchRequest:
+      type: object
+      properties:
+        query:
+          type: string
+          title: query
+          description: Full-text search query string
+        idQuery:
+          type: string
+          title: id_query
+          description: Specific ID or ID pattern to search for
+        cursor:
+          title: cursor
+          description: Pagination parameters
+          $ref: '#/components/schemas/common.v1.PageCursor'
+        properties:
+          type: array
+          items:
+            type: string
+          title: properties
+          description: Specific properties/fields to include in results
+        extras:
+          title: extras
+          description: Service-specific additional search parameters
+          $ref: '#/components/schemas/google.protobuf.Struct'
+      title: SearchRequest
+      additionalProperties: false
+      description: |-
+        SearchRequest provides a standard structure for search operations across services.
+         Supports text search, ID-based queries, pagination, property filtering, and extensibility.
+    connect-protocol-version:
+      type: number
+      title: Connect-Protocol-Version
+      enum:
+        - 1
+      description: Define the version of the Connect protocol
+      const: 1
+    connect-timeout-header:
+      type: number
+      title: Connect-Timeout-Ms
+      description: Define the timeout, in ms
+    connect.error:
+      type: object
+      properties:
+        code:
+          type: string
+          examples:
+            - not_found
+          enum:
+            - canceled
+            - unknown
+            - invalid_argument
+            - deadline_exceeded
+            - not_found
+            - already_exists
+            - permission_denied
+            - resource_exhausted
+            - failed_precondition
+            - aborted
+            - out_of_range
+            - unimplemented
+            - internal
+            - unavailable
+            - data_loss
+            - unauthenticated
+          description: The status code, which should be an enum value of [google.rpc.Code][google.rpc.Code].
+        message:
+          type: string
+          description: A developer-facing error message, which should be in English. Any user-facing error message should be localized and sent in the [google.rpc.Status.details][google.rpc.Status.details] field, or localized by the client.
+        details:
+          type: array
+          items:
+            $ref: '#/components/schemas/connect.error_details.Any'
+          description: A list of messages that carry the error details. There is no limit on the number of messages.
+      title: Connect Error
+      additionalProperties: true
+      description: 'Error type returned by Connect: https://connectrpc.com/docs/go/errors/#http-representation'
+    connect.error_details.Any:
+      type: object
+      properties:
+        type:
+          type: string
+          description: 'A URL that acts as a globally unique identifier for the type of the serialized message. For example: `type.googleapis.com/google.rpc.ErrorInfo`. This is used to determine the schema of the data in the `value` field and is the discriminator for the `debug` field.'
+        value:
+          type: string
+          format: binary
+          description: The Protobuf message, serialized as bytes and base64-encoded. The specific message type is identified by the `type` field.
+        debug:
+          oneOf:
+            - type: object
+              title: Any
+              additionalProperties: true
+              description: Detailed error information.
+          discriminator:
+            propertyName: type
+          title: Debug
+          description: Deserialized error detail payload. The 'type' field indicates the schema. This field is for easier debugging and should not be relied upon for application logic.
+      additionalProperties: true
+      description: Contains an arbitrary serialized message along with a @type that describes the type of the serialized message, with an additional debug field for ConnectRPC error details.
+    google.protobuf.ListValue:
+      type: object
+      properties:
+        values:
+          type: array
+          items:
+            $ref: '#/components/schemas/google.protobuf.Value'
+          title: values
+          description: Repeated field of dynamically typed values.
+      title: ListValue
+      additionalProperties: false
+      description: |-
+        `ListValue` is a wrapper around a repeated field of values.
+
+         The JSON representation for `ListValue` is JSON array.
+    google.protobuf.NullValue:
+      type: string
+      title: NullValue
+      enum:
+        - NULL_VALUE
+      description: |-
+        `NullValue` is a singleton enumeration to represent the null value for the
+         `Value` type union.
+
+         The JSON representation for `NullValue` is JSON `null`.
+    google.protobuf.Struct:
+      type: object
+      additionalProperties:
+        $ref: '#/components/schemas/google.protobuf.Value'
+      description: |-
+        `Struct` represents a structured data value, consisting of fields
+         which map to dynamically typed values. In some languages, `Struct`
+         might be supported by a native representation. For example, in
+         scripting languages like JS a struct is represented as an
+         object. The details of that representation are described together
+         with the proto support for the language.
+
+         The JSON representation for `Struct` is JSON object.
+    google.protobuf.Struct.FieldsEntry:
+      type: object
+      properties:
+        key:
+          type: string
+          title: key
+        value:
+          title: value
+          $ref: '#/components/schemas/google.protobuf.Value'
+      title: FieldsEntry
+      additionalProperties: false
+    google.protobuf.Timestamp:
+      type: string
+      examples:
+        - "2023-01-15T01:30:15.01Z"
+        - "2024-12-25T12:00:00Z"
+      format: date-time
+      description: |-
+        A Timestamp represents a point in time independent of any time zone or local
+         calendar, encoded as a count of seconds and fractions of seconds at
+         nanosecond resolution. The count is relative to an epoch at UTC midnight on
+         January 1, 1970, in the proleptic Gregorian calendar which extends the
+         Gregorian calendar backwards to year one.
+
+         All minutes are 60 seconds long. Leap seconds are "smeared" so that no leap
+         second table is needed for interpretation, using a [24-hour linear
+         smear](https://developers.google.com/time/smear).
+
+         The range is from 0001-01-01T00:00:00Z to 9999-12-31T23:59:59.999999999Z. By
+         restricting to that range, we ensure that we can convert to and from [RFC
+         3339](https://www.ietf.org/rfc/rfc3339.txt) date strings.
+
+         # Examples
+
+         Example 1: Compute Timestamp from POSIX `time()`.
+
+             Timestamp timestamp;
+             timestamp.set_seconds(time(NULL));
+             timestamp.set_nanos(0);
+
+         Example 2: Compute Timestamp from POSIX `gettimeofday()`.
+
+             struct timeval tv;
+             gettimeofday(&tv, NULL);
+
+             Timestamp timestamp;
+             timestamp.set_seconds(tv.tv_sec);
+             timestamp.set_nanos(tv.tv_usec * 1000);
+
+         Example 3: Compute Timestamp from Win32 `GetSystemTimeAsFileTime()`.
+
+             FILETIME ft;
+             GetSystemTimeAsFileTime(&ft);
+             UINT64 ticks = (((UINT64)ft.dwHighDateTime) << 32) | ft.dwLowDateTime;
+
+             // A Windows tick is 100 nanoseconds. Windows epoch 1601-01-01T00:00:00Z
+             // is 11644473600 seconds before Unix epoch 1970-01-01T00:00:00Z.
+             Timestamp timestamp;
+             timestamp.set_seconds((INT64) ((ticks / 10000000) - 11644473600LL));
+             timestamp.set_nanos((INT32) ((ticks % 10000000) * 100));
+
+         Example 4: Compute Timestamp from Java `System.currentTimeMillis()`.
+
+             long millis = System.currentTimeMillis();
+
+             Timestamp timestamp = Timestamp.newBuilder().setSeconds(millis / 1000)
+                 .setNanos((int) ((millis % 1000) * 1000000)).build();
+
+         Example 5: Compute Timestamp from Java `Instant.now()`.
+
+             Instant now = Instant.now();
+
+             Timestamp timestamp =
+                 Timestamp.newBuilder().setSeconds(now.getEpochSecond())
+                     .setNanos(now.getNano()).build();
+
+         Example 6: Compute Timestamp from current time in Python.
+
+             timestamp = Timestamp()
+             timestamp.GetCurrentTime()
+
+         # JSON Mapping
+
+         In JSON format, the Timestamp type is encoded as a string in the
+         [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) format. That is, the
+         format is "{year}-{month}-{day}T{hour}:{min}:{sec}[.{frac_sec}]Z"
+         where {year} is always expressed using four digits while {month}, {day},
+         {hour}, {min}, and {sec} are zero-padded to two digits each. The fractional
+         seconds, which can go up to 9 digits (i.e. up to 1 nanosecond resolution),
+         are optional. The "Z" suffix indicates the timezone ("UTC"); the timezone
+         is required. A proto3 JSON serializer should always use UTC (as indicated by
+         "Z") when printing the Timestamp type and a proto3 JSON parser should be
+         able to accept both UTC and other timezones (as indicated by an offset).
+
+         For example, "2017-01-15T01:30:15.01Z" encodes 15.01 seconds past
+         01:30 UTC on January 15, 2017.
+
+         In JavaScript, one can convert a Date object to this format using the
+         standard
+         [toISOString()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/toISOString)
+         method. In Python, a standard `datetime.datetime` object can be converted
+         to this format using
+         [`strftime`](https://docs.python.org/2/library/time.html#time.strftime) with
+         the time format spec '%Y-%m-%dT%H:%M:%S.%fZ'. Likewise, in Java, one can use
+         the Joda Time's [`ISODateTimeFormat.dateTime()`](
+         http://joda-time.sourceforge.net/apidocs/org/joda/time/format/ISODateTimeFormat.html#dateTime()
+         ) to obtain a formatter capable of generating timestamps in this format.
+    google.protobuf.Value:
+      oneOf:
+        - type: "null"
+        - type: number
+        - type: string
+        - type: boolean
+        - type: array
+        - type: object
+          additionalProperties: true
+      description: |-
+        `Value` represents a dynamically typed value which can be either
+         null, a number, a string, a boolean, a recursive struct value, or a
+         list of values. A producer of value is expected to set one of these
+         variants. Absence of any variant indicates an error.
+
+         The JSON representation for `Value` is JSON value.
+    procurement.v1.GoodsReceipt:
+      type: object
+      properties:
+        id:
+          type: string
+          title: id
+        purchaseOrderId:
+          type: string
+          title: purchase_order_id
+        propertyId:
+          type: string
+          title: property_id
+        receivedBy:
+          type: string
+          title: received_by
+        receivedAt:
+          title: received_at
+          $ref: '#/components/schemas/google.protobuf.Timestamp'
+        status:
+          title: status
+          $ref: '#/components/schemas/procurement.v1.GoodsReceiptStatus'
+        notes:
+          type: string
+          title: notes
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/procurement.v1.GoodsReceiptLine'
+          title: lines
+        createdAt:
+          title: created_at
+          $ref: '#/components/schemas/google.protobuf.Timestamp'
+      title: GoodsReceipt
+      additionalProperties: false
+    procurement.v1.GoodsReceiptCreateRequest:
+      type: object
+      properties:
+        idempotencyKey:
+          type: string
+          title: idempotency_key
+        purchaseOrderId:
+          type: string
+          title: purchase_order_id
+        propertyId:
+          type: string
+          title: property_id
+        notes:
+          type: string
+          title: notes
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/procurement.v1.GoodsReceiptLineInput'
+          title: lines
+      title: GoodsReceiptCreateRequest
+      additionalProperties: false
+    procurement.v1.GoodsReceiptCreateResponse:
+      type: object
+      properties:
+        goodsReceipt:
+          title: goods_receipt
+          $ref: '#/components/schemas/procurement.v1.GoodsReceipt'
+      title: GoodsReceiptCreateResponse
+      additionalProperties: false
+    procurement.v1.GoodsReceiptGetRequest:
+      type: object
+      properties:
+        id:
+          type: string
+          title: id
+      title: GoodsReceiptGetRequest
+      additionalProperties: false
+    procurement.v1.GoodsReceiptGetResponse:
+      type: object
+      properties:
+        goodsReceipt:
+          title: goods_receipt
+          $ref: '#/components/schemas/procurement.v1.GoodsReceipt'
+      title: GoodsReceiptGetResponse
+      additionalProperties: false
+    procurement.v1.GoodsReceiptLine:
+      type: object
+      properties:
+        id:
+          type: string
+          title: id
+        goodsReceiptId:
+          type: string
+          title: goods_receipt_id
+        purchaseOrderLineId:
+          type: string
+          title: purchase_order_line_id
+        inventoryItemId:
+          type: string
+          title: inventory_item_id
+        receivedQuantity:
+          type: number
+          title: received_quantity
+          format: double
+        acceptedQuantity:
+          type: number
+          title: accepted_quantity
+          format: double
+        rejectedQuantity:
+          type: number
+          title: rejected_quantity
+          format: double
+        rejectionReason:
+          type: string
+          title: rejection_reason
+        lotNumber:
+          type: string
+          title: lot_number
+        expiryDate:
+          title: expiry_date
+          $ref: '#/components/schemas/google.protobuf.Timestamp'
+        unit:
+          type: string
+          title: unit
+      title: GoodsReceiptLine
+      additionalProperties: false
+    procurement.v1.GoodsReceiptLineInput:
+      type: object
+      properties:
+        purchaseOrderLineId:
+          type: string
+          title: purchase_order_line_id
+        inventoryItemId:
+          type: string
+          title: inventory_item_id
+        receivedQuantity:
+          type: number
+          title: received_quantity
+          format: double
+        lotNumber:
+          type: string
+          title: lot_number
+        expiryDate:
+          title: expiry_date
+          $ref: '#/components/schemas/google.protobuf.Timestamp'
+        unit:
+          type: string
+          title: unit
+      title: GoodsReceiptLineInput
+      additionalProperties: false
+    procurement.v1.GoodsReceiptSearchRequest:
+      type: object
+      properties:
+        purchaseOrderId:
+          type: string
+          title: purchase_order_id
+        propertyId:
+          type: string
+          title: property_id
+        status:
+          title: status
+          $ref: '#/components/schemas/procurement.v1.GoodsReceiptStatus'
+        search:
+          title: search
+          $ref: '#/components/schemas/common.v1.SearchRequest'
+      title: GoodsReceiptSearchRequest
+      additionalProperties: false
+    procurement.v1.GoodsReceiptSearchResponse:
+      type: object
+      properties:
+        goodsReceipts:
+          type: array
+          items:
+            $ref: '#/components/schemas/procurement.v1.GoodsReceipt'
+          title: goods_receipts
+        nextPage:
+          type: string
+          title: next_page
+      title: GoodsReceiptSearchResponse
+      additionalProperties: false
+    procurement.v1.GoodsReceiptStatus:
+      type: string
+      title: GoodsReceiptStatus
+      enum:
+        - GOODS_RECEIPT_STATUS_UNSPECIFIED
+        - GOODS_RECEIPT_STATUS_PENDING_INSPECTION
+        - GOODS_RECEIPT_STATUS_ACCEPTED
+        - GOODS_RECEIPT_STATUS_PARTIALLY_ACCEPTED
+        - GOODS_RECEIPT_STATUS_REJECTED
+    procurement.v1.PurchaseOrder:
+      type: object
+      properties:
+        id:
+          type: string
+          title: id
+        propertyId:
+          type: string
+          title: property_id
+        supplierId:
+          type: string
+          title: supplier_id
+        orderNumber:
+          type: string
+          title: order_number
+        status:
+          title: status
+          $ref: '#/components/schemas/procurement.v1.PurchaseOrderStatus'
+        expectedDeliveryDate:
+          title: expected_delivery_date
+          $ref: '#/components/schemas/google.protobuf.Timestamp'
+        submittedAt:
+          title: submitted_at
+          $ref: '#/components/schemas/google.protobuf.Timestamp'
+        submittedBy:
+          type: string
+          title: submitted_by
+        totalAmount:
+          title: total_amount
+          $ref: '#/components/schemas/common.v1.Money'
+        notes:
+          type: string
+          title: notes
+        planId:
+          type: string
+          title: plan_id
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/procurement.v1.PurchaseOrderLine'
+          title: lines
+        createdAt:
+          title: created_at
+          $ref: '#/components/schemas/google.protobuf.Timestamp'
+      title: PurchaseOrder
+      additionalProperties: false
+    procurement.v1.PurchaseOrderCancelRequest:
+      type: object
+      properties:
+        id:
+          type: string
+          title: id
+        reason:
+          type: string
+          title: reason
+      title: PurchaseOrderCancelRequest
+      additionalProperties: false
+    procurement.v1.PurchaseOrderCancelResponse:
+      type: object
+      properties:
+        purchaseOrder:
+          title: purchase_order
+          $ref: '#/components/schemas/procurement.v1.PurchaseOrder'
+      title: PurchaseOrderCancelResponse
+      additionalProperties: false
+    procurement.v1.PurchaseOrderCreateRequest:
+      type: object
+      properties:
+        idempotencyKey:
+          type: string
+          title: idempotency_key
+        propertyId:
+          type: string
+          title: property_id
+        supplierId:
+          type: string
+          title: supplier_id
+        expectedDeliveryDate:
+          title: expected_delivery_date
+          $ref: '#/components/schemas/google.protobuf.Timestamp'
+        notes:
+          type: string
+          title: notes
+        planId:
+          type: string
+          title: plan_id
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/procurement.v1.PurchaseOrderLineInput'
+          title: lines
+      title: PurchaseOrderCreateRequest
+      additionalProperties: false
+    procurement.v1.PurchaseOrderCreateResponse:
+      type: object
+      properties:
+        purchaseOrder:
+          title: purchase_order
+          $ref: '#/components/schemas/procurement.v1.PurchaseOrder'
+      title: PurchaseOrderCreateResponse
+      additionalProperties: false
+    procurement.v1.PurchaseOrderGetRequest:
+      type: object
+      properties:
+        id:
+          type: string
+          title: id
+      title: PurchaseOrderGetRequest
+      additionalProperties: false
+    procurement.v1.PurchaseOrderGetResponse:
+      type: object
+      properties:
+        purchaseOrder:
+          title: purchase_order
+          $ref: '#/components/schemas/procurement.v1.PurchaseOrder'
+      title: PurchaseOrderGetResponse
+      additionalProperties: false
+    procurement.v1.PurchaseOrderLine:
+      type: object
+      properties:
+        id:
+          type: string
+          title: id
+        purchaseOrderId:
+          type: string
+          title: purchase_order_id
+        supplierItemId:
+          type: string
+          title: supplier_item_id
+        inventoryItemId:
+          type: string
+          title: inventory_item_id
+        orderedQuantity:
+          type: number
+          title: ordered_quantity
+          format: double
+        receivedQuantity:
+          type: number
+          title: received_quantity
+          format: double
+        unitPrice:
+          title: unit_price
+          $ref: '#/components/schemas/common.v1.Money'
+        unit:
+          type: string
+          title: unit
+        status:
+          title: status
+          $ref: '#/components/schemas/procurement.v1.PurchaseOrderLineStatus'
+      title: PurchaseOrderLine
+      additionalProperties: false
+    procurement.v1.PurchaseOrderLineInput:
+      type: object
+      properties:
+        supplierItemId:
+          type: string
+          title: supplier_item_id
+        inventoryItemId:
+          type: string
+          title: inventory_item_id
+        orderedQuantity:
+          type: number
+          title: ordered_quantity
+          format: double
+        unit:
+          type: string
+          title: unit
+      title: PurchaseOrderLineInput
+      additionalProperties: false
+    procurement.v1.PurchaseOrderLineStatus:
+      type: string
+      title: PurchaseOrderLineStatus
+      enum:
+        - PURCHASE_ORDER_LINE_STATUS_UNSPECIFIED
+        - PURCHASE_ORDER_LINE_STATUS_PENDING
+        - PURCHASE_ORDER_LINE_STATUS_PARTIALLY_RECEIVED
+        - PURCHASE_ORDER_LINE_STATUS_RECEIVED
+        - PURCHASE_ORDER_LINE_STATUS_CANCELLED
+    procurement.v1.PurchaseOrderSearchRequest:
+      type: object
+      properties:
+        propertyId:
+          type: string
+          title: property_id
+        supplierId:
+          type: string
+          title: supplier_id
+        status:
+          title: status
+          $ref: '#/components/schemas/procurement.v1.PurchaseOrderStatus'
+        search:
+          title: search
+          $ref: '#/components/schemas/common.v1.SearchRequest'
+      title: PurchaseOrderSearchRequest
+      additionalProperties: false
+    procurement.v1.PurchaseOrderSearchResponse:
+      type: object
+      properties:
+        purchaseOrders:
+          type: array
+          items:
+            $ref: '#/components/schemas/procurement.v1.PurchaseOrder'
+          title: purchase_orders
+        nextPage:
+          type: string
+          title: next_page
+      title: PurchaseOrderSearchResponse
+      additionalProperties: false
+    procurement.v1.PurchaseOrderStatus:
+      type: string
+      title: PurchaseOrderStatus
+      enum:
+        - PURCHASE_ORDER_STATUS_UNSPECIFIED
+        - PURCHASE_ORDER_STATUS_DRAFT
+        - PURCHASE_ORDER_STATUS_SUBMITTED
+        - PURCHASE_ORDER_STATUS_CONFIRMED
+        - PURCHASE_ORDER_STATUS_PARTIALLY_RECEIVED
+        - PURCHASE_ORDER_STATUS_RECEIVED
+        - PURCHASE_ORDER_STATUS_CANCELLED
+    procurement.v1.PurchaseOrderSubmitRequest:
+      type: object
+      properties:
+        id:
+          type: string
+          title: id
+      title: PurchaseOrderSubmitRequest
+      additionalProperties: false
+    procurement.v1.PurchaseOrderSubmitResponse:
+      type: object
+      properties:
+        purchaseOrder:
+          title: purchase_order
+          $ref: '#/components/schemas/procurement.v1.PurchaseOrder'
+      title: PurchaseOrderSubmitResponse
+      additionalProperties: false
+    procurement.v1.PurchaseOrderSuggestion:
+      type: object
+      properties:
+        supplierId:
+          type: string
+          title: supplier_id
+        supplierName:
+          type: string
+          title: supplier_name
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/procurement.v1.PurchaseOrderSuggestionLine'
+          title: lines
+        estimatedTotal:
+          title: estimated_total
+          $ref: '#/components/schemas/common.v1.Money'
+      title: PurchaseOrderSuggestion
+      additionalProperties: false
+    procurement.v1.PurchaseOrderSuggestionLine:
+      type: object
+      properties:
+        inventoryItemId:
+          type: string
+          title: inventory_item_id
+        itemName:
+          type: string
+          title: item_name
+        shortageQuantity:
+          type: number
+          title: shortage_quantity
+          format: double
+        unit:
+          type: string
+          title: unit
+        supplierItemId:
+          type: string
+          title: supplier_item_id
+        unitPrice:
+          title: unit_price
+          $ref: '#/components/schemas/common.v1.Money'
+      title: PurchaseOrderSuggestionLine
+      additionalProperties: false
+    procurement.v1.SuggestPurchaseOrdersRequest:
+      type: object
+      properties:
+        propertyId:
+          type: string
+          title: property_id
+        planId:
+          type: string
+          title: plan_id
+      title: SuggestPurchaseOrdersRequest
+      additionalProperties: false
+    procurement.v1.SuggestPurchaseOrdersResponse:
+      type: object
+      properties:
+        suggestions:
+          type: array
+          items:
+            $ref: '#/components/schemas/procurement.v1.PurchaseOrderSuggestion'
+          title: suggestions
+      title: SuggestPurchaseOrdersResponse
+      additionalProperties: false
+    procurement.v1.Supplier:
+      type: object
+      properties:
+        id:
+          type: string
+          title: id
+        profileId:
+          type: string
+          title: profile_id
+        name:
+          type: string
+          title: name
+        supplierType:
+          title: supplier_type
+          $ref: '#/components/schemas/procurement.v1.SupplierType'
+        status:
+          title: status
+          $ref: '#/components/schemas/procurement.v1.SupplierStatus'
+        paymentTermsDays:
+          type: integer
+          title: payment_terms_days
+          format: int32
+        currency:
+          type: string
+          title: currency
+        leadTimeDays:
+          type: integer
+          title: lead_time_days
+          format: int32
+        rating:
+          title: rating
+          $ref: '#/components/schemas/procurement.v1.SupplierRating'
+        notes:
+          type: string
+          title: notes
+        createdAt:
+          title: created_at
+          $ref: '#/components/schemas/google.protobuf.Timestamp'
+      title: Supplier
+      additionalProperties: false
+    procurement.v1.SupplierGetRequest:
+      type: object
+      properties:
+        id:
+          type: string
+          title: id
+      title: SupplierGetRequest
+      additionalProperties: false
+    procurement.v1.SupplierGetResponse:
+      type: object
+      properties:
+        supplier:
+          title: supplier
+          $ref: '#/components/schemas/procurement.v1.Supplier'
+      title: SupplierGetResponse
+      additionalProperties: false
+    procurement.v1.SupplierItem:
+      type: object
+      properties:
+        id:
+          type: string
+          title: id
+        supplierId:
+          type: string
+          title: supplier_id
+        inventoryItemId:
+          type: string
+          title: inventory_item_id
+        supplierSku:
+          type: string
+          title: supplier_sku
+        unitPrice:
+          title: unit_price
+          $ref: '#/components/schemas/common.v1.Money'
+        minOrderQuantity:
+          type: number
+          title: min_order_quantity
+          format: double
+        unit:
+          type: string
+          title: unit
+        leadTimeDays:
+          type: integer
+          title: lead_time_days
+          format: int32
+        status:
+          title: status
+          $ref: '#/components/schemas/procurement.v1.SupplierItemStatus'
+        createdAt:
+          title: created_at
+          $ref: '#/components/schemas/google.protobuf.Timestamp'
+      title: SupplierItem
+      additionalProperties: false
+    procurement.v1.SupplierItemSaveRequest:
+      type: object
+      properties:
+        id:
+          type: string
+          title: id
+        supplierId:
+          type: string
+          title: supplier_id
+        inventoryItemId:
+          type: string
+          title: inventory_item_id
+        supplierSku:
+          type: string
+          title: supplier_sku
+        unitPrice:
+          title: unit_price
+          $ref: '#/components/schemas/common.v1.Money'
+        minOrderQuantity:
+          type: number
+          title: min_order_quantity
+          format: double
+        unit:
+          type: string
+          title: unit
+        leadTimeDays:
+          type: integer
+          title: lead_time_days
+          format: int32
+        status:
+          title: status
+          $ref: '#/components/schemas/procurement.v1.SupplierItemStatus'
+      title: SupplierItemSaveRequest
+      additionalProperties: false
+    procurement.v1.SupplierItemSaveResponse:
+      type: object
+      properties:
+        supplierItem:
+          title: supplier_item
+          $ref: '#/components/schemas/procurement.v1.SupplierItem'
+      title: SupplierItemSaveResponse
+      additionalProperties: false
+    procurement.v1.SupplierItemSearchRequest:
+      type: object
+      properties:
+        supplierId:
+          type: string
+          title: supplier_id
+        inventoryItemId:
+          type: string
+          title: inventory_item_id
+        search:
+          title: search
+          $ref: '#/components/schemas/common.v1.SearchRequest'
+      title: SupplierItemSearchRequest
+      additionalProperties: false
+    procurement.v1.SupplierItemSearchResponse:
+      type: object
+      properties:
+        supplierItems:
+          type: array
+          items:
+            $ref: '#/components/schemas/procurement.v1.SupplierItem'
+          title: supplier_items
+        nextPage:
+          type: string
+          title: next_page
+      title: SupplierItemSearchResponse
+      additionalProperties: false
+    procurement.v1.SupplierItemStatus:
+      type: string
+      title: SupplierItemStatus
+      enum:
+        - SUPPLIER_ITEM_STATUS_UNSPECIFIED
+        - SUPPLIER_ITEM_STATUS_ACTIVE
+        - SUPPLIER_ITEM_STATUS_DISCONTINUED
+    procurement.v1.SupplierRating:
+      type: string
+      title: SupplierRating
+      enum:
+        - SUPPLIER_RATING_UNSPECIFIED
+        - SUPPLIER_RATING_UNRATED
+        - SUPPLIER_RATING_APPROVED
+        - SUPPLIER_RATING_PREFERRED
+        - SUPPLIER_RATING_PROBATION
+    procurement.v1.SupplierSaveRequest:
+      type: object
+      properties:
+        id:
+          type: string
+          title: id
+        profileId:
+          type: string
+          title: profile_id
+        name:
+          type: string
+          title: name
+        supplierType:
+          title: supplier_type
+          $ref: '#/components/schemas/procurement.v1.SupplierType'
+        status:
+          title: status
+          $ref: '#/components/schemas/procurement.v1.SupplierStatus'
+        paymentTermsDays:
+          type: integer
+          title: payment_terms_days
+          format: int32
+        currency:
+          type: string
+          title: currency
+        leadTimeDays:
+          type: integer
+          title: lead_time_days
+          format: int32
+        rating:
+          title: rating
+          $ref: '#/components/schemas/procurement.v1.SupplierRating'
+        notes:
+          type: string
+          title: notes
+      title: SupplierSaveRequest
+      additionalProperties: false
+    procurement.v1.SupplierSaveResponse:
+      type: object
+      properties:
+        supplier:
+          title: supplier
+          $ref: '#/components/schemas/procurement.v1.Supplier'
+      title: SupplierSaveResponse
+      additionalProperties: false
+    procurement.v1.SupplierSearchRequest:
+      type: object
+      properties:
+        search:
+          title: search
+          $ref: '#/components/schemas/common.v1.SearchRequest'
+        supplierType:
+          title: supplier_type
+          $ref: '#/components/schemas/procurement.v1.SupplierType'
+        status:
+          title: status
+          $ref: '#/components/schemas/procurement.v1.SupplierStatus'
+      title: SupplierSearchRequest
+      additionalProperties: false
+    procurement.v1.SupplierSearchResponse:
+      type: object
+      properties:
+        suppliers:
+          type: array
+          items:
+            $ref: '#/components/schemas/procurement.v1.Supplier'
+          title: suppliers
+        nextPage:
+          type: string
+          title: next_page
+      title: SupplierSearchResponse
+      additionalProperties: false
+    procurement.v1.SupplierStatus:
+      type: string
+      title: SupplierStatus
+      enum:
+        - SUPPLIER_STATUS_UNSPECIFIED
+        - SUPPLIER_STATUS_ACTIVE
+        - SUPPLIER_STATUS_SUSPENDED
+        - SUPPLIER_STATUS_INACTIVE
+    procurement.v1.SupplierType:
+      type: string
+      title: SupplierType
+      enum:
+        - SUPPLIER_TYPE_UNSPECIFIED
+        - SUPPLIER_TYPE_RAW_MATERIAL
+        - SUPPLIER_TYPE_PACKAGING
+        - SUPPLIER_TYPE_SERVICE
+        - SUPPLIER_TYPE_EQUIPMENT
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+security: []
+tags:
+  - name: procurement.v1.ProcurementService

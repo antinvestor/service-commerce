@@ -42,6 +42,17 @@ type PurchaseOrderRepository interface {
 	ListByPropertyID(ctx context.Context, propertyID string, limit, offset int) ([]*models.PurchaseOrder, error)
 	ListBySupplierID(ctx context.Context, supplierID string, limit, offset int) ([]*models.PurchaseOrder, error)
 	ListByStatus(ctx context.Context, status int32, limit, offset int) ([]*models.PurchaseOrder, error)
+	// CreateWithLines inserts the order and its lines in one transaction.
+	CreateWithLines(ctx context.Context, po *models.PurchaseOrder, lines []*models.PurchaseOrderLine) error
+	// Transition is a compare-and-set status change with optional extra
+	// columns and an optional line status applied in the same transaction.
+	Transition(
+		ctx context.Context,
+		poID string,
+		expectedStatus, newStatus int32,
+		columns map[string]any,
+		lineStatus int32,
+	) error
 }
 
 type PurchaseOrderLineRepository interface {
@@ -55,6 +66,10 @@ type GoodsReceiptRepository interface {
 	GetByIdempotencyKey(ctx context.Context, key string) (*models.GoodsReceipt, error)
 	ListByPurchaseOrderID(ctx context.Context, purchaseOrderID string) ([]*models.GoodsReceipt, error)
 	ListByPropertyID(ctx context.Context, propertyID string, limit, offset int) ([]*models.GoodsReceipt, error)
+	// CreateWithLines records the receipt, its lines, the purchase order line
+	// quantities, and the order status roll-up atomically. Returns
+	// ErrOverReceipt when a line would exceed its ordered quantity.
+	CreateWithLines(ctx context.Context, gr *models.GoodsReceipt, lines []*models.GoodsReceiptLine) error
 }
 
 type GoodsReceiptLineRepository interface {

@@ -16,11 +16,13 @@ package repository
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/pitabwire/frame/v2/datastore"
 	"github.com/pitabwire/frame/v2/datastore/pool"
 	"github.com/pitabwire/frame/v2/workerpool"
+	"gorm.io/gorm"
 
 	"github.com/antinvestor/service-commerce/apps/default/service/models"
 )
@@ -44,20 +46,15 @@ func NewPriceListRepository(
 }
 
 func (r *priceListRepository) ListByShopID(
-	ctx context.Context, shopID string, limit, offset int,
-) ([]*models.PriceList, error) {
+	ctx context.Context, shopID string, page Page,
+) ([]*models.PriceList, *PageKey, error) {
 	var items []*models.PriceList
-	query := r.Pool().DB(ctx, true).
-		Where("shop_id = ?", shopID).
-		Order("priority DESC, created_at DESC")
-	if limit > 0 {
-		query = query.Limit(limit)
+	query := r.Pool().DB(ctx, true).Where("shop_id = ?", shopID)
+	if err := applyKeyset(query, page).Find(&items).Error; err != nil {
+		return nil, nil, err
 	}
-	if offset > 0 {
-		query = query.Offset(offset)
-	}
-	err := query.Find(&items).Error
-	return items, err
+	items, next := trimPage(items, page, func(m *models.PriceList) PageKey { return baseKey(m.BaseModel) })
+	return items, next, nil
 }
 
 func (r *priceListRepository) ListActive(
@@ -110,6 +107,43 @@ func (r *priceListEntryRepository) DeleteByPriceListAndVariant(
 		Delete(&models.PriceListEntry{}).Error
 }
 
+// ReplaceEntries atomically removes existing entries for every variant present
+// in entries and inserts the new ones.
+func (r *priceListEntryRepository) ReplaceEntries(
+	ctx context.Context,
+	priceListID string,
+	entries []*models.PriceListEntry,
+) error {
+	variantIDs := make([]string, 0, len(entries))
+	seen := make(map[string]struct{}, len(entries))
+	for _, e := range entries {
+		if e.ProductVariantID == "" {
+			continue
+		}
+		if _, ok := seen[e.ProductVariantID]; ok {
+			continue
+		}
+		seen[e.ProductVariantID] = struct{}{}
+		variantIDs = append(variantIDs, e.ProductVariantID)
+	}
+
+	return r.Pool().DB(ctx, false).Transaction(func(tx *gorm.DB) error {
+		if len(variantIDs) > 0 {
+			if err := tx.Where("price_list_id = ? AND product_variant_id IN ?", priceListID, variantIDs).
+				Delete(&models.PriceListEntry{}).Error; err != nil {
+				return fmt.Errorf("delete price list entries: %w", err)
+			}
+		}
+		for _, e := range entries {
+			e.PriceListID = priceListID
+			if err := tx.Create(e).Error; err != nil {
+				return fmt.Errorf("create price list entry: %w", err)
+			}
+		}
+		return nil
+	})
+}
+
 func (r *priceListEntryRepository) GetByPriceListAndVariant(
 	ctx context.Context,
 	priceListID, variantID string,
@@ -145,18 +179,17 @@ func NewCustomerPriceListAssignmentRepository(
 func (r *customerPriceListAssignmentRepository) ListByCustomerID(
 	ctx context.Context,
 	customerID string,
-	limit, offset int,
-) ([]*models.CustomerPriceListAssignment, error) {
+	page Page,
+) ([]*models.CustomerPriceListAssignment, *PageKey, error) {
 	var items []*models.CustomerPriceListAssignment
-	query := r.Pool().DB(ctx, true).Where("customer_id = ?", customerID).Order("created_at DESC")
-	if limit > 0 {
-		query = query.Limit(limit)
+	query := r.Pool().DB(ctx, true).Where("customer_id = ?", customerID)
+	if err := applyKeyset(query, page).Find(&items).Error; err != nil {
+		return nil, nil, err
 	}
-	if offset > 0 {
-		query = query.Offset(offset)
-	}
-	err := query.Find(&items).Error
-	return items, err
+	items, next := trimPage(items, page, func(m *models.CustomerPriceListAssignment) PageKey {
+		return baseKey(m.BaseModel)
+	})
+	return items, next, nil
 }
 
 func (r *customerPriceListAssignmentRepository) GetByCustomerAndPriceList(
@@ -193,18 +226,15 @@ func NewCustomerPriceOverrideRepository(
 func (r *customerPriceOverrideRepository) ListByCustomerID(
 	ctx context.Context,
 	customerID string,
-	limit, offset int,
-) ([]*models.CustomerPriceOverride, error) {
+	page Page,
+) ([]*models.CustomerPriceOverride, *PageKey, error) {
 	var items []*models.CustomerPriceOverride
-	query := r.Pool().DB(ctx, true).Where("customer_id = ?", customerID).Order("created_at DESC")
-	if limit > 0 {
-		query = query.Limit(limit)
+	query := r.Pool().DB(ctx, true).Where("customer_id = ?", customerID)
+	if err := applyKeyset(query, page).Find(&items).Error; err != nil {
+		return nil, nil, err
 	}
-	if offset > 0 {
-		query = query.Offset(offset)
-	}
-	err := query.Find(&items).Error
-	return items, err
+	items, next := trimPage(items, page, func(m *models.CustomerPriceOverride) PageKey { return baseKey(m.BaseModel) })
+	return items, next, nil
 }
 
 func (r *customerPriceOverrideRepository) GetByCustomerAndVariant(
@@ -241,18 +271,15 @@ func NewDiscountRuleRepository(
 func (r *discountRuleRepository) ListByShopID(
 	ctx context.Context,
 	shopID string,
-	limit, offset int,
-) ([]*models.DiscountRule, error) {
+	page Page,
+) ([]*models.DiscountRule, *PageKey, error) {
 	var items []*models.DiscountRule
-	query := r.Pool().DB(ctx, true).Where("shop_id = ?", shopID).Order("created_at DESC")
-	if limit > 0 {
-		query = query.Limit(limit)
+	query := r.Pool().DB(ctx, true).Where("shop_id = ?", shopID)
+	if err := applyKeyset(query, page).Find(&items).Error; err != nil {
+		return nil, nil, err
 	}
-	if offset > 0 {
-		query = query.Offset(offset)
-	}
-	err := query.Find(&items).Error
-	return items, err
+	items, next := trimPage(items, page, func(m *models.DiscountRule) PageKey { return baseKey(m.BaseModel) })
+	return items, next, nil
 }
 
 func (r *discountRuleRepository) ListActive(

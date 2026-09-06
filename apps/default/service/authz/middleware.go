@@ -16,6 +16,7 @@ package authz
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/pitabwire/frame/v2/security"
@@ -120,6 +121,29 @@ func (m *middleware) AddShopMember(ctx context.Context, shopID, profileID, role 
 		Relation: relation,
 		Subject:  security.SubjectRef{Namespace: NamespaceProfile, ID: profileID},
 	})
+}
+
+// BridgeShopRoles writes one subject-set tuple per role:
+//
+//	commerce_shop:<shop>#<role> <- service_commerce:<tenancy>#<role>
+func (m *middleware) BridgeShopRoles(ctx context.Context, shopID, tenancyPath string) error {
+	if tenancyPath == "" {
+		return errors.New("bridge shop roles: tenancy path is required")
+	}
+	roles := append(ValidRoles(), RoleMember, RoleService)
+	tuples := make([]security.RelationTuple, 0, len(roles))
+	for _, role := range roles {
+		tuples = append(tuples, security.RelationTuple{
+			Object:   security.ObjectRef{Namespace: NamespaceShop, ID: shopID},
+			Relation: role,
+			Subject:  security.SubjectRef{Namespace: NamespaceCommerce, ID: tenancyPath, Relation: role},
+		})
+	}
+	util.Log(ctx).WithFields(map[string]any{
+		logKeyShopID:   shopID,
+		"tenancy_path": tenancyPath,
+	}).Debug("BridgeShopRoles writing tuples")
+	return m.service.WriteTuples(ctx, tuples)
 }
 
 // RemoveShopMember removes all relations for a member from a shop.

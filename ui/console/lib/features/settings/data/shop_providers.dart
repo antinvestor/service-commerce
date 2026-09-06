@@ -54,6 +54,9 @@ class ShopNotifier extends Notifier<AsyncValue<void>> {
     required String name,
     required String slug,
     required String description,
+    String currency = '',
+    String contactId = '',
+    String checkoutReturnUrl = '',
   }) async {
     state = const AsyncValue.loading();
     try {
@@ -62,6 +65,10 @@ class ShopNotifier extends Notifier<AsyncValue<void>> {
           name: name,
           slug: slug,
           description: description.isEmpty ? null : description,
+          currency: currency.isEmpty ? null : currency,
+          contactId: contactId.isEmpty ? null : contactId,
+          checkoutReturnUrl:
+              checkoutReturnUrl.isEmpty ? null : checkoutReturnUrl,
         ),
       );
       state = const AsyncValue.data(null);
@@ -81,6 +88,9 @@ class ShopNotifier extends Notifier<AsyncValue<void>> {
     required String name,
     required String description,
     required ShopStatus status,
+    required String currency,
+    required String contactId,
+    required String checkoutReturnUrl,
   }) async {
     state = const AsyncValue.loading();
     try {
@@ -90,8 +100,18 @@ class ShopNotifier extends Notifier<AsyncValue<void>> {
           name: name,
           description: description,
           status: status,
+          currency: currency,
+          contactId: contactId,
+          checkoutReturnUrl: checkoutReturnUrl,
           updateMask: FieldMask(
-            paths: const ['name', 'description', 'status'],
+            paths: const [
+              'name',
+              'description',
+              'status',
+              'currency',
+              'contact_id',
+              'checkout_return_url',
+            ],
           ),
         ),
       );

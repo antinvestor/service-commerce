@@ -17,9 +17,10 @@ package models
 import (
 	"time"
 
-	commercev1 "buf.build/gen/go/antinvestor/commerce/protocolbuffers/go/v1"
 	"github.com/pitabwire/frame/v2/data"
 	"google.golang.org/protobuf/types/known/timestamppb"
+
+	commercev1 "github.com/antinvestor/service-commerce/gen/go/commerce/v1"
 )
 
 // PriceList represents a named collection of prices for a shop.

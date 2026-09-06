@@ -111,12 +111,14 @@ class OrderStatus extends $pb.ProtobufEnum {
   static const OrderStatus ORDER_STATUS_CONFIRMED = OrderStatus._(1, _omitEnumNames ? '' : 'ORDER_STATUS_CONFIRMED');
   static const OrderStatus ORDER_STATUS_CANCELLED = OrderStatus._(2, _omitEnumNames ? '' : 'ORDER_STATUS_CANCELLED');
   static const OrderStatus ORDER_STATUS_FULFILLED = OrderStatus._(3, _omitEnumNames ? '' : 'ORDER_STATUS_FULFILLED');
+  static const OrderStatus ORDER_STATUS_PENDING_PAYMENT = OrderStatus._(4, _omitEnumNames ? '' : 'ORDER_STATUS_PENDING_PAYMENT');
 
   static const $core.List<OrderStatus> values = <OrderStatus> [
     ORDER_STATUS_UNSPECIFIED,
     ORDER_STATUS_CONFIRMED,
     ORDER_STATUS_CANCELLED,
     ORDER_STATUS_FULFILLED,
+    ORDER_STATUS_PENDING_PAYMENT,
   ];
 
   static final $core.Map<$core.int, OrderStatus> _byValue = $pb.ProtobufEnum.initByValue(values);
@@ -131,6 +133,7 @@ class PaymentStatus extends $pb.ProtobufEnum {
   static const PaymentStatus PAYMENT_STATUS_PAID = PaymentStatus._(2, _omitEnumNames ? '' : 'PAYMENT_STATUS_PAID');
   static const PaymentStatus PAYMENT_STATUS_FAILED = PaymentStatus._(3, _omitEnumNames ? '' : 'PAYMENT_STATUS_FAILED');
   static const PaymentStatus PAYMENT_STATUS_REFUNDED = PaymentStatus._(4, _omitEnumNames ? '' : 'PAYMENT_STATUS_REFUNDED');
+  static const PaymentStatus PAYMENT_STATUS_EXPIRED = PaymentStatus._(5, _omitEnumNames ? '' : 'PAYMENT_STATUS_EXPIRED');
 
   static const $core.List<PaymentStatus> values = <PaymentStatus> [
     PAYMENT_STATUS_UNSPECIFIED,
@@ -138,6 +141,7 @@ class PaymentStatus extends $pb.ProtobufEnum {
     PAYMENT_STATUS_PAID,
     PAYMENT_STATUS_FAILED,
     PAYMENT_STATUS_REFUNDED,
+    PAYMENT_STATUS_EXPIRED,
   ];
 
   static final $core.Map<$core.int, PaymentStatus> _byValue = $pb.ProtobufEnum.initByValue(values);

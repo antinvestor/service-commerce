@@ -18,8 +18,8 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
-	commercev1 "buf.build/gen/go/antinvestor/commerce/protocolbuffers/go/v1"
 	commonv1 "buf.build/gen/go/antinvestor/common/protocolbuffers/go/common/v1"
 	"github.com/pitabwire/frame/v2"
 	"github.com/pitabwire/frame/v2/datastore"
@@ -27,6 +27,8 @@ import (
 	"github.com/pitabwire/util"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+
+	commercev1 "github.com/antinvestor/service-commerce/gen/go/commerce/v1"
 
 	"github.com/antinvestor/service-commerce/apps/default/service/business"
 	"github.com/antinvestor/service-commerce/apps/default/service/repository"
@@ -47,6 +49,11 @@ type allBiz struct {
 	cartBiz       business.CartBusiness
 	orderBiz      business.OrderBusiness
 	fulfilmentBiz business.FulfilmentBusiness
+	paymentBiz    business.PaymentBusiness
+	ledgerBiz     business.LedgerBusiness
+	checkout      *fakeCheckout
+	ledger        *fakeLedger
+	notifier      *recordingNotifier
 }
 
 func (bts *BusinessTestSuite) getBusiness(ctx context.Context, svc *frame.Service) allBiz {
@@ -62,9 +69,18 @@ func (bts *BusinessTestSuite) getBusiness(ctx context.Context, svc *frame.Servic
 	orderLineRepo := repository.NewOrderLineRepository(ctx, dbPool, workMan)
 	fulfilmentRepo := repository.NewFulfilmentRepository(ctx, dbPool, workMan)
 	fulfilmentLineRepo := repository.NewFulfilmentLineRepository(ctx, dbPool, workMan)
+	postingRepo := repository.NewLedgerPostingRepository(ctx, dbPool, workMan)
+
+	checkout := newFakeCheckout()
+	ledger := newFakeLedger()
+	notifier := &recordingNotifier{}
+	paymentPolicy := business.PaymentPolicy{
+		DefaultReturnURL: "https://shop.example/orders/{order_id}",
+		PaymentWindow:    30 * time.Minute,
+	}
 
 	return allBiz{
-		shopBiz:    business.NewShopBusiness(ctx, shopRepo),
+		shopBiz:    business.NewShopBusiness(ctx, shopRepo, nil),
 		catalogBiz: business.NewCatalogBusiness(ctx, productRepo, variantRepo, shopRepo),
 		cartBiz:    business.NewCartBusiness(ctx, cartRepo, cartLineRepo, variantRepo),
 		orderBiz: business.NewOrderBusiness(
@@ -72,9 +88,11 @@ func (bts *BusinessTestSuite) getBusiness(ctx context.Context, svc *frame.Servic
 			orderRepo,
 			orderLineRepo,
 			variantRepo,
+			productRepo,
 			shopRepo,
 			cartRepo,
 			cartLineRepo,
+			business.OrderPolicy{PaymentWindow: paymentPolicy.PaymentWindow},
 		),
 		fulfilmentBiz: business.NewFulfilmentBusiness(
 			ctx,
@@ -82,8 +100,45 @@ func (bts *BusinessTestSuite) getBusiness(ctx context.Context, svc *frame.Servic
 			fulfilmentLineRepo,
 			orderRepo,
 			orderLineRepo,
+			shopRepo,
+			notifier,
 		),
+		paymentBiz: business.NewPaymentBusiness(ctx, orderRepo, shopRepo, checkout, notifier, paymentPolicy),
+		ledgerBiz: business.NewLedgerBusiness(ctx, orderRepo, shopRepo, postingRepo, ledger, notifier,
+			business.LedgerPolicy{BookType: "merchant", Timezone: "UTC"}),
+		checkout: checkout,
+		ledger:   ledger,
+		notifier: notifier,
 	}
+}
+
+// payOrder drives an order through hosted checkout with the fake gateway:
+// it creates the session, completes it, and confirms the payment.
+func (bts *BusinessTestSuite) payOrder(ctx context.Context, biz allBiz, orderID string) *commercev1.Order {
+	t := bts.T()
+	checked, err := biz.paymentBiz.CheckoutOrder(ctx, &commercev1.CheckoutOrderRequest{OrderId: orderID})
+	require.NoError(t, err)
+	require.NotEmpty(t, checked.GetCheckoutUrl())
+	biz.checkout.complete(checked.GetPaymentSessionRef(), "pay-"+util.RandomAlphaNumericString(6))
+	paid, err := biz.paymentBiz.ConfirmOrderPayment(ctx, orderID)
+	require.NoError(t, err)
+	require.Equal(t, commercev1.PaymentStatus_PAYMENT_STATUS_PAID, paid.GetPaymentStatus())
+	return paid
+}
+
+// listFulfilmentsForOrder returns fulfilment IDs for an order via the repository,
+// since the business API has no list-by-order operation.
+func listFulfilmentsForOrder(ctx context.Context, t *testing.T, svc *frame.Service, orderID string) []string {
+	t.Helper()
+	dbPool := svc.DatastoreManager().GetPool(ctx, datastore.DefaultPoolName)
+	repo := repository.NewFulfilmentRepository(ctx, dbPool, svc.WorkManager())
+	items, err := repo.ListByOrderID(ctx, orderID)
+	require.NoError(t, err)
+	ids := make([]string, 0, len(items))
+	for _, f := range items {
+		ids = append(ids, f.GetID())
+	}
+	return ids
 }
 
 func (bts *BusinessTestSuite) createTestShop(ctx context.Context, biz allBiz) *commercev1.Shop {
@@ -301,11 +356,12 @@ func (bts *BusinessTestSuite) TestListProducts() {
 			require.NoError(t, err)
 		}
 
-		products, err := biz.catalogBiz.ListProducts(ctx, &commercev1.ListProductsRequest{
+		page, err := biz.catalogBiz.ListProducts(ctx, &commercev1.ListProductsRequest{
 			ShopId: shop.GetId(),
 		})
 		require.NoError(t, err)
-		require.Len(t, products, 3)
+		require.Len(t, page.Products, 3)
+		require.Empty(t, page.NextPage)
 	})
 }
 
@@ -625,6 +681,195 @@ func (bts *BusinessTestSuite) TestCreateOrder_InsufficientStock() {
 			},
 		})
 		require.Error(t, err)
+
+		// No successful order should exist for this shop.
+		orders, listErr := biz.orderBiz.ListOrders(ctx, &commercev1.ListOrdersRequest{
+			ShopId: shop.GetId(),
+		})
+		require.NoError(t, listErr)
+		require.Empty(t, orders.Orders)
+
+		// Stock unchanged.
+		variants, varErr := biz.catalogBiz.ListProductVariants(ctx, variant.GetProductId())
+		require.NoError(t, varErr)
+		require.NotEmpty(t, variants)
+		for _, v := range variants {
+			if v.GetId() == variant.GetId() {
+				require.Equal(t, int64(100), v.GetStockQuantity())
+			}
+		}
+	})
+}
+
+func (bts *BusinessTestSuite) TestCreateOrder_RejectsCrossShopVariant() {
+	t := bts.T()
+
+	bts.WithTestDependancies(t, func(t *testing.T, dep *definition.DependencyOption) {
+		ctx, svc := bts.CreateService(t, dep)
+		biz := bts.getBusiness(ctx, svc)
+
+		shopA := bts.createTestShop(ctx, biz)
+		shopB := bts.createTestShop(ctx, biz)
+		_, variantB := bts.createTestProductWithVariant(ctx, biz, shopB.GetId())
+
+		_, err := biz.orderBiz.CreateOrder(ctx, &commercev1.CreateOrderRequest{
+			ShopId: shopA.GetId(),
+			Lines: []*commercev1.CreateOrderLine{
+				{VariantId: variantB.GetId(), Quantity: 1},
+			},
+		})
+		require.Error(t, err)
+
+		orders, listErr := biz.orderBiz.ListOrders(ctx, &commercev1.ListOrdersRequest{
+			ShopId: shopA.GetId(),
+		})
+		require.NoError(t, listErr)
+		require.Empty(t, orders.Orders)
+	})
+}
+
+func (bts *BusinessTestSuite) TestCreateOrder_DecrementsStockAndSnapshots() {
+	t := bts.T()
+
+	bts.WithTestDependancies(t, func(t *testing.T, dep *definition.DependencyOption) {
+		ctx, svc := bts.CreateService(t, dep)
+		biz := bts.getBusiness(ctx, svc)
+
+		shop := bts.createTestShop(ctx, biz)
+		_, variant := bts.createTestProductWithVariant(ctx, biz, shop.GetId())
+
+		order, err := biz.orderBiz.CreateOrder(ctx, &commercev1.CreateOrderRequest{
+			ShopId: shop.GetId(),
+			Lines: []*commercev1.CreateOrderLine{
+				{VariantId: variant.GetId(), Quantity: 7},
+			},
+		})
+		require.NoError(t, err)
+		require.Len(t, order.GetLines(), 1)
+		require.Equal(t, variant.GetName(), order.GetLines()[0].GetNameSnapshot())
+		require.Equal(t, variant.GetSku(), order.GetLines()[0].GetSkuSnapshot())
+		require.Equal(t, int64(10), order.GetLines()[0].GetUnitPrice().GetUnits())
+		require.Equal(t, int32(500000000), order.GetLines()[0].GetUnitPrice().GetNanos())
+
+		variants, varErr := biz.catalogBiz.ListProductVariants(ctx, variant.GetProductId())
+		require.NoError(t, varErr)
+		for _, v := range variants {
+			if v.GetId() == variant.GetId() {
+				require.Equal(t, int64(93), v.GetStockQuantity())
+			}
+		}
+	})
+}
+
+func (bts *BusinessTestSuite) TestFullSellPath_ShopToFulfilment() {
+	t := bts.T()
+
+	bts.WithTestDependancies(t, func(t *testing.T, dep *definition.DependencyOption) {
+		ctx, svc := bts.CreateService(t, dep)
+		biz := bts.getBusiness(ctx, svc)
+
+		// shop → product+variant → cart → order from cart → fulfilment
+		shop := bts.createTestShop(ctx, biz)
+		_, variant := bts.createTestProductWithVariant(ctx, biz, shop.GetId())
+
+		cart, err := biz.cartBiz.CreateCart(ctx, &commercev1.CreateCartRequest{
+			ShopId:    shop.GetId(),
+			ProfileId: "profile-sell-path",
+		})
+		require.NoError(t, err)
+
+		_, err = biz.cartBiz.AddCartLine(ctx, &commercev1.AddCartLineRequest{
+			CartId:           cart.GetId(),
+			ProductVariantId: variant.GetId(),
+			Quantity:         4,
+		})
+		require.NoError(t, err)
+
+		order, err := biz.orderBiz.CreateOrderFromCart(ctx, &commercev1.CreateOrderFromCartRequest{
+			CartId:    cart.GetId(),
+			ProfileId: "profile-sell-path",
+		})
+		require.NoError(t, err)
+		require.Equal(t, commercev1.OrderStatus_ORDER_STATUS_PENDING_PAYMENT, order.GetStatus())
+		require.Len(t, order.GetLines(), 1)
+		require.Equal(t, int64(4), order.GetLines()[0].GetQuantity())
+		// 4 * $10.50 = $42.00
+		require.Equal(t, int64(42), order.GetTotal().GetUnits())
+
+		// Unpaid orders cannot be fulfilled.
+		_, err = biz.fulfilmentBiz.CreateFulfilment(ctx, &commercev1.CreateFulfilmentRequest{
+			OrderId: order.GetId(),
+			Lines:   []*commercev1.FulfilmentLine{{OrderLineId: order.GetLines()[0].GetId(), Quantity: 1}},
+		})
+		require.Error(t, err)
+
+		paid := bts.payOrder(ctx, biz, order.GetId())
+		require.Equal(t, commercev1.OrderStatus_ORDER_STATUS_CONFIRMED, paid.GetStatus())
+		require.NotEmpty(t, paid.GetPaymentId())
+		require.NotNil(t, paid.GetPaidAt())
+
+		convertedCart, err := biz.cartBiz.GetCart(ctx, cart.GetId())
+		require.NoError(t, err)
+		require.Equal(t, commercev1.CartStatus_CART_STATUS_CONVERTED, convertedCart.GetStatus())
+
+		// Stock reserved
+		variants, err := biz.catalogBiz.ListProductVariants(ctx, variant.GetProductId())
+		require.NoError(t, err)
+		for _, v := range variants {
+			if v.GetId() == variant.GetId() {
+				require.Equal(t, int64(96), v.GetStockQuantity())
+			}
+		}
+
+		// Partial fulfilment then complete
+		orderLineID := order.GetLines()[0].GetId()
+		_, err = biz.fulfilmentBiz.CreateFulfilment(ctx, &commercev1.CreateFulfilmentRequest{
+			OrderId: order.GetId(),
+			Lines: []*commercev1.FulfilmentLine{
+				{OrderLineId: orderLineID, Quantity: 2},
+			},
+		})
+		require.NoError(t, err)
+
+		// Over-fulfil remaining must fail
+		_, err = biz.fulfilmentBiz.CreateFulfilment(ctx, &commercev1.CreateFulfilmentRequest{
+			OrderId: order.GetId(),
+			Lines: []*commercev1.FulfilmentLine{
+				{OrderLineId: orderLineID, Quantity: 3},
+			},
+		})
+		require.Error(t, err)
+
+		second, err := biz.fulfilmentBiz.CreateFulfilment(ctx, &commercev1.CreateFulfilmentRequest{
+			OrderId: order.GetId(),
+			Lines: []*commercev1.FulfilmentLine{
+				{OrderLineId: orderLineID, Quantity: 2},
+			},
+		})
+		require.NoError(t, err)
+
+		// Every line is covered, but nothing has shipped yet.
+		pending, err := biz.orderBiz.GetOrder(ctx, order.GetId())
+		require.NoError(t, err)
+		require.Equal(t, commercev1.OrderStatus_ORDER_STATUS_CONFIRMED, pending.GetStatus())
+		require.Equal(t, commercev1.FulfilmentStatus_FULFILMENT_STATUS_PENDING, pending.GetFulfilmentStatus())
+
+		// Deliver both fulfilments; only then is the order fulfilled.
+		fulfilments, err := biz.fulfilmentBiz.GetFulfilment(ctx, second.GetId())
+		require.NoError(t, err)
+		require.Equal(t, commercev1.FulfilmentStatus_FULFILMENT_STATUS_PENDING, fulfilments.GetStatus())
+		for _, f := range listFulfilmentsForOrder(ctx, t, svc, order.GetId()) {
+			_, err = biz.fulfilmentBiz.UpdateFulfilment(ctx, &commercev1.UpdateFulfilmentRequest{
+				Id:     f,
+				Status: commercev1.FulfilmentStatus_FULFILMENT_STATUS_DELIVERED,
+			})
+			require.NoError(t, err)
+		}
+
+		fulfilled, err := biz.orderBiz.GetOrder(ctx, order.GetId())
+		require.NoError(t, err)
+		require.Equal(t, commercev1.OrderStatus_ORDER_STATUS_FULFILLED, fulfilled.GetStatus())
+		require.Equal(t, commercev1.FulfilmentStatus_FULFILMENT_STATUS_DELIVERED, fulfilled.GetFulfilmentStatus())
 	})
 }
 
@@ -710,7 +955,10 @@ func (bts *BusinessTestSuite) TestListOrders() {
 			ShopId: shop.GetId(),
 		})
 		require.NoError(t, err)
-		require.Len(t, orders, 2)
+		require.Len(t, orders.Orders, 2)
+		// Per-shop numbering: newest first, so the second order is ORD-000002.
+		require.Equal(t, "ORD-000002", orders.Orders[0].GetOrderNumber())
+		require.Equal(t, "ORD-000001", orders.Orders[1].GetOrderNumber())
 	})
 }
 
@@ -790,7 +1038,7 @@ func (bts *BusinessTestSuite) TestCreateFulfilment_FullyFulfilled() {
 		orderLineID := order.GetLines()[0].GetId()
 
 		// Fulfil all 5 items
-		_, err = biz.fulfilmentBiz.CreateFulfilment(ctx, &commercev1.CreateFulfilmentRequest{
+		fulfilment, err := biz.fulfilmentBiz.CreateFulfilment(ctx, &commercev1.CreateFulfilmentRequest{
 			OrderId: order.GetId(),
 			Lines: []*commercev1.FulfilmentLine{
 				{
@@ -801,10 +1049,40 @@ func (bts *BusinessTestSuite) TestCreateFulfilment_FullyFulfilled() {
 		})
 		require.NoError(t, err)
 
-		// Check order status is fully fulfilled
+		// Covered but not delivered: order stays confirmed.
+		pendingOrder, err := biz.orderBiz.GetOrder(ctx, order.GetId())
+		require.NoError(t, err)
+		require.Equal(t, commercev1.OrderStatus_ORDER_STATUS_CONFIRMED, pendingOrder.GetStatus())
+		require.Equal(t, commercev1.FulfilmentStatus_FULFILMENT_STATUS_PENDING, pendingOrder.GetFulfilmentStatus())
+
+		// Shipping sets shipped_at and is reflected on the order.
+		shipped, err := biz.fulfilmentBiz.UpdateFulfilment(ctx, &commercev1.UpdateFulfilmentRequest{
+			Id:     fulfilment.GetId(),
+			Status: commercev1.FulfilmentStatus_FULFILMENT_STATUS_SHIPPED,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, shipped.GetShippedAt())
+		shippedOrder, err := biz.orderBiz.GetOrder(ctx, order.GetId())
+		require.NoError(t, err)
+		require.Equal(t, commercev1.FulfilmentStatus_FULFILMENT_STATUS_SHIPPED, shippedOrder.GetFulfilmentStatus())
+
+		// Moving backwards is rejected.
+		_, err = biz.fulfilmentBiz.UpdateFulfilment(ctx, &commercev1.UpdateFulfilmentRequest{
+			Id:     fulfilment.GetId(),
+			Status: commercev1.FulfilmentStatus_FULFILMENT_STATUS_PACKED,
+		})
+		require.Error(t, err)
+
+		_, err = biz.fulfilmentBiz.UpdateFulfilment(ctx, &commercev1.UpdateFulfilmentRequest{
+			Id:     fulfilment.GetId(),
+			Status: commercev1.FulfilmentStatus_FULFILMENT_STATUS_DELIVERED,
+		})
+		require.NoError(t, err)
+
 		updatedOrder, err := biz.orderBiz.GetOrder(ctx, order.GetId())
 		require.NoError(t, err)
 		require.Equal(t, commercev1.OrderStatus_ORDER_STATUS_FULFILLED, updatedOrder.GetStatus())
+		require.Equal(t, commercev1.FulfilmentStatus_FULFILMENT_STATUS_DELIVERED, updatedOrder.GetFulfilmentStatus())
 	})
 }
 

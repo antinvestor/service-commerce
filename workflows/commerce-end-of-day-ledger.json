@@ -37,25 +37,6 @@
           "body": {}
         }
       }
-    },
-    {
-      "id": "log",
-      "type": "call",
-      "name": "Record run",
-      "depends_on": "post_ledger",
-      "on_error": {
-        "strategy": "continue"
-      },
-      "call": {
-        "action": "log.entry",
-        "input": {
-          "level": "info",
-          "message": "commerce end-of-day ledger posted",
-          "fields": {
-            "result": "{{ vars.post_ledger.body }}"
-          }
-        }
-      }
     }
   ]
 }

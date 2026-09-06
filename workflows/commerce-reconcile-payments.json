@@ -39,25 +39,6 @@
           }
         }
       }
-    },
-    {
-      "id": "log",
-      "type": "call",
-      "name": "Record run",
-      "depends_on": "reconcile",
-      "on_error": {
-        "strategy": "continue"
-      },
-      "call": {
-        "action": "log.entry",
-        "input": {
-          "level": "info",
-          "message": "commerce payments reconciled",
-          "fields": {
-            "result": "{{ vars.reconcile.body }}"
-          }
-        }
-      }
     }
   ]
 }

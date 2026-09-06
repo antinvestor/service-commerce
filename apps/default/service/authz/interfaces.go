@@ -36,6 +36,11 @@ type Middleware interface {
 
 	// Tuple management
 	AddShopMember(ctx context.Context, shopID string, profileID string, role string) error
+	// BridgeShopRoles makes every partition-level commerce role (owner, admin,
+	// operator, viewer, member) hold the same role on the shop, so staff
+	// provisioned through the identity service reach the shop without any
+	// per-shop grant. tenancyPath is "<tenant>/<partition>".
+	BridgeShopRoles(ctx context.Context, shopID string, tenancyPath string) error
 	RemoveShopMember(ctx context.Context, shopID string, profileID string) error
 	UpdateShopMemberRole(
 		ctx context.Context,

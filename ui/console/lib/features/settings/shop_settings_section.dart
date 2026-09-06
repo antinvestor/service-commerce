@@ -107,6 +107,9 @@ class _ShopDetails extends ConsumerWidget {
           value: shop.description.isEmpty ? '—' : shop.description,
         ),
         _ShopRow(label: 'Status', value: shopStatusLabel(shop.status)),
+        _ShopRow(label: 'Currency', value: shop.currency),
+        _ShopRow(label: 'Seller contact', value: shop.contactId),
+        _ShopRow(label: 'Return URL', value: shop.checkoutReturnUrl),
         _ShopRow(label: 'Shop ID', value: shop.id),
         const SizedBox(height: 16),
         OutlinedButton.icon(
@@ -176,6 +179,23 @@ Future<void> _createShop(BuildContext context, WidgetRef ref) async {
         label: 'Description',
         type: DialogFieldType.textarea,
       ),
+      DialogField(
+        key: 'currency',
+        label: 'Currency',
+        hint: 'ISO 4217 code, e.g. KES',
+        initialValue: 'KES',
+        required: true,
+      ),
+      DialogField(
+        key: 'contact_id',
+        label: 'Seller contact',
+        hint: 'Contact that receives order and payment alerts',
+      ),
+      DialogField(
+        key: 'checkout_return_url',
+        label: 'Checkout return URL',
+        hint: 'Where buyers land after paying; {order_id} is substituted',
+      ),
     ],
   );
   if (values == null || !context.mounted) return;
@@ -186,12 +206,20 @@ Future<void> _createShop(BuildContext context, WidgetRef ref) async {
     _showSnack(context, 'Name and slug are required.', isError: true);
     return;
   }
+  final currency = (values['currency'] ?? '').trim().toUpperCase();
+  if (currency.length != 3) {
+    _showSnack(context, 'Currency must be a 3-letter code.', isError: true);
+    return;
+  }
 
   try {
     await ref.read(shopNotifierProvider.notifier).create(
           name: name,
           slug: slug,
           description: (values['description'] ?? '').trim(),
+          currency: currency,
+          contactId: (values['contact_id'] ?? '').trim(),
+          checkoutReturnUrl: (values['checkout_return_url'] ?? '').trim(),
         );
     if (context.mounted) _showSnack(context, 'Shop created.');
   } catch (e) {
@@ -229,6 +257,25 @@ Future<void> _editShop(
         options: shopStatusLabels,
         initialValue: shopStatusLabel(shop.status),
       ),
+      DialogField(
+        key: 'currency',
+        label: 'Currency',
+        hint: 'ISO 4217 code, e.g. KES',
+        initialValue: shop.currency,
+        required: true,
+      ),
+      DialogField(
+        key: 'contact_id',
+        label: 'Seller contact',
+        hint: 'Contact that receives order and payment alerts',
+        initialValue: shop.contactId,
+      ),
+      DialogField(
+        key: 'checkout_return_url',
+        label: 'Checkout return URL',
+        hint: 'Where buyers land after paying; {order_id} is substituted',
+        initialValue: shop.checkoutReturnUrl,
+      ),
     ],
   );
   if (values == null || !context.mounted) return;
@@ -236,6 +283,11 @@ Future<void> _editShop(
   final name = (values['name'] ?? '').trim();
   if (name.isEmpty) {
     _showSnack(context, 'Name is required.', isError: true);
+    return;
+  }
+  final currency = (values['currency'] ?? '').trim().toUpperCase();
+  if (currency.length != 3) {
+    _showSnack(context, 'Currency must be a 3-letter code.', isError: true);
     return;
   }
 
@@ -250,6 +302,9 @@ Future<void> _editShop(
           name: name,
           description: (values['description'] ?? '').trim(),
           status: status,
+          currency: currency,
+          contactId: (values['contact_id'] ?? '').trim(),
+          checkoutReturnUrl: (values['checkout_return_url'] ?? '').trim(),
         );
     if (context.mounted) _showSnack(context, 'Shop updated.');
   } catch (e) {

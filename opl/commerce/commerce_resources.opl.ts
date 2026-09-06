@@ -26,14 +26,19 @@ import { Namespace, Context } from "@ory/keto-namespace-types"
 
 class profile_user implements Namespace {}
 
+// Partition-level commerce roles (see service_commerce.opl.ts). Each shop
+// bridges its roles to the partition's roles by subject set, so staff roles
+// assigned through the identity service apply to every shop in the partition.
+class service_commerce implements Namespace {}
+
 class commerce_shop implements Namespace {
   related: {
-    owner: profile_user[]
-    admin: profile_user[]
-    operator: profile_user[]
-    viewer: profile_user[]
-    member: profile_user[]
-    service: profile_user[]
+    owner: (profile_user | service_commerce)[]
+    admin: (profile_user | service_commerce)[]
+    operator: (profile_user | service_commerce)[]
+    viewer: (profile_user | service_commerce)[]
+    member: (profile_user | service_commerce)[]
+    service: (profile_user | service_commerce)[]
 
     granted_shop_view: profile_user[]
     granted_shop_update: profile_user[]

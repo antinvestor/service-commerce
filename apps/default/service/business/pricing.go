@@ -21,15 +21,40 @@ import (
 	"sort"
 	"time"
 
-	commercev1 "buf.build/gen/go/antinvestor/commerce/protocolbuffers/go/v1"
 	commonv1 "buf.build/gen/go/antinvestor/common/protocolbuffers/go/common/v1"
 	"connectrpc.com/connect"
 	"github.com/pitabwire/frame/v2/data"
 	"github.com/pitabwire/frame/v2/security"
 
+	commercev1 "github.com/antinvestor/service-commerce/gen/go/commerce/v1"
+
 	"github.com/antinvestor/service-commerce/apps/default/service/models"
 	"github.com/antinvestor/service-commerce/apps/default/service/repository"
 )
+
+// PriceListPage is one page of price lists plus the next cursor.
+type PriceListPage struct {
+	Items    []*commercev1.PriceList
+	NextPage string
+}
+
+// AssignmentPage is one page of customer price list assignments.
+type AssignmentPage struct {
+	Items    []*commercev1.CustomerPriceListAssignment
+	NextPage string
+}
+
+// OverridePage is one page of customer price overrides.
+type OverridePage struct {
+	Items    []*commercev1.CustomerPriceOverride
+	NextPage string
+}
+
+// DiscountRulePage is one page of discount rules.
+type DiscountRulePage struct {
+	Items    []*commercev1.DiscountRule
+	NextPage string
+}
 
 // PricingBusiness defines pricing management operations.
 type PricingBusiness interface {
@@ -41,7 +66,7 @@ type PricingBusiness interface {
 	SearchPriceLists(
 		ctx context.Context,
 		req *commercev1.PriceListSearchRequest,
-	) ([]*commercev1.PriceList, error)
+	) (*PriceListPage, error)
 
 	BatchSavePriceListEntries(
 		ctx context.Context,
@@ -55,7 +80,7 @@ type PricingBusiness interface {
 	SearchCustomerPriceListAssignments(
 		ctx context.Context,
 		req *commercev1.CustomerPriceListAssignmentSearchRequest,
-	) ([]*commercev1.CustomerPriceListAssignment, error)
+	) (*AssignmentPage, error)
 
 	SaveCustomerPriceOverride(
 		ctx context.Context,
@@ -64,7 +89,7 @@ type PricingBusiness interface {
 	SearchCustomerPriceOverrides(
 		ctx context.Context,
 		req *commercev1.CustomerPriceOverrideSearchRequest,
-	) ([]*commercev1.CustomerPriceOverride, error)
+	) (*OverridePage, error)
 
 	SaveDiscountRule(
 		ctx context.Context,
@@ -73,7 +98,7 @@ type PricingBusiness interface {
 	SearchDiscountRules(
 		ctx context.Context,
 		req *commercev1.DiscountRuleSearchRequest,
-	) ([]*commercev1.DiscountRule, error)
+	) (*DiscountRulePage, error)
 
 	ResolvePrice(
 		ctx context.Context,
@@ -265,23 +290,18 @@ func (pb *pricingBusiness) GetShopIDForVariant(
 func (pb *pricingBusiness) SearchPriceLists(
 	ctx context.Context,
 	req *commercev1.PriceListSearchRequest,
-) ([]*commercev1.PriceList, error) {
-	limit := 50
-	offset := 0
-	if req.GetSearch() != nil && req.GetSearch().GetCursor() != nil {
-		if req.GetSearch().GetCursor().GetLimit() > 0 {
-			limit = int(req.GetSearch().GetCursor().GetLimit())
-		}
+) (*PriceListPage, error) {
+	page, err := pageFromSearch(req.GetSearch())
+	if err != nil {
+		return nil, err
 	}
-
-	items, err := pb.priceListRepo.ListByShopID(ctx, req.GetShopId(), limit, offset)
+	items, next, err := pb.priceListRepo.ListByShopID(ctx, req.GetShopId(), page)
 	if err != nil {
 		return nil, data.ErrorConvertToAPI(err)
 	}
-
-	result := make([]*commercev1.PriceList, 0, len(items))
+	result := &PriceListPage{Items: make([]*commercev1.PriceList, 0, len(items)), NextPage: nextCursor(next)}
 	for _, item := range items {
-		result = append(result, item.ToAPI())
+		result.Items = append(result.Items, item.ToAPI())
 	}
 	return result, nil
 }
@@ -305,29 +325,23 @@ func (pb *pricingBusiness) BatchSavePriceListEntries(
 		return nil, connect.NewError(connect.CodeNotFound, errors.New("price list not found"))
 	}
 
-	// Collect unique variant IDs and delete existing entries for them
-	variantSeen := make(map[string]bool)
+	entries := make([]*models.PriceListEntry, 0, len(req.GetEntries()))
 	for _, entry := range req.GetEntries() {
-		vid := entry.GetProductVariantId()
-		if vid == "" {
-			continue
+		if entry.GetProductVariantId() == "" {
+			return nil, connect.NewError(connect.CodeInvalidArgument,
+				errors.New("every entry needs a product_variant_id"))
 		}
-		if !variantSeen[vid] {
-			variantSeen[vid] = true
-			delErr := pb.priceListEntryRepo.DeleteByPriceListAndVariant(
-				ctx, req.GetPriceListId(), vid,
-			)
-			if delErr != nil {
-				return nil, data.ErrorConvertToAPI(delErr)
-			}
-		}
-	}
-
-	// Create new entries
-	result := make([]*commercev1.PriceListEntry, 0, len(req.GetEntries()))
-	for _, entry := range req.GetEntries() {
 		currency, units, nanos := models.MoneyFromProto(entry.GetUnitPrice())
-		e := &models.PriceListEntry{
+		if currency == "" {
+			return nil, connect.NewError(connect.CodeInvalidArgument,
+				errors.New("every entry needs a unit_price with currency"))
+		}
+		if entry.GetMinQuantity() < 0 || entry.GetMaxQuantity() < 0 ||
+			(entry.GetMaxQuantity() > 0 && entry.GetMaxQuantity() < entry.GetMinQuantity()) {
+			return nil, connect.NewError(connect.CodeInvalidArgument,
+				errors.New("entry quantity band is invalid"))
+		}
+		entries = append(entries, &models.PriceListEntry{
 			PriceListID:      req.GetPriceListId(),
 			ProductVariantID: entry.GetProductVariantId(),
 			CurrencyCode:     currency,
@@ -335,10 +349,17 @@ func (pb *pricingBusiness) BatchSavePriceListEntries(
 			PriceNanos:       nanos,
 			MinQuantity:      entry.GetMinQuantity(),
 			MaxQuantity:      entry.GetMaxQuantity(),
-		}
-		if createErr := pb.priceListEntryRepo.Create(ctx, e); createErr != nil {
-			return nil, data.ErrorConvertToAPI(createErr)
-		}
+		})
+	}
+
+	// Replace existing entries for the touched variants and insert the new
+	// ones atomically.
+	if replaceErr := pb.priceListEntryRepo.ReplaceEntries(ctx, req.GetPriceListId(), entries); replaceErr != nil {
+		return nil, data.ErrorConvertToAPI(replaceErr)
+	}
+
+	result := make([]*commercev1.PriceListEntry, 0, len(entries))
+	for _, e := range entries {
 		result = append(result, e.ToAPI())
 	}
 	return result, nil
@@ -437,23 +458,24 @@ func (pb *pricingBusiness) updateAssignment(
 func (pb *pricingBusiness) SearchCustomerPriceListAssignments(
 	ctx context.Context,
 	req *commercev1.CustomerPriceListAssignmentSearchRequest,
-) ([]*commercev1.CustomerPriceListAssignment, error) {
-	limit := 50
-	offset := 0
-	if req.GetSearch() != nil && req.GetSearch().GetCursor() != nil {
-		if req.GetSearch().GetCursor().GetLimit() > 0 {
-			limit = int(req.GetSearch().GetCursor().GetLimit())
-		}
+) (*AssignmentPage, error) {
+	page, err := pageFromSearch(req.GetSearch())
+	if err != nil {
+		return nil, err
 	}
-
-	items, err := pb.assignmentRepo.ListByCustomerID(ctx, req.GetCustomerId(), limit, offset)
+	items, next, err := pb.assignmentRepo.ListByCustomerID(ctx, req.GetCustomerId(), page)
 	if err != nil {
 		return nil, data.ErrorConvertToAPI(err)
 	}
-
-	result := make([]*commercev1.CustomerPriceListAssignment, 0, len(items))
+	result := &AssignmentPage{
+		Items:    make([]*commercev1.CustomerPriceListAssignment, 0, len(items)),
+		NextPage: nextCursor(next),
+	}
 	for _, item := range items {
-		result = append(result, item.ToAPI())
+		if req.GetPriceListId() != "" && item.PriceListID != req.GetPriceListId() {
+			continue
+		}
+		result.Items = append(result.Items, item.ToAPI())
 	}
 	return result, nil
 }
@@ -567,23 +589,24 @@ func (pb *pricingBusiness) updateOverride(
 func (pb *pricingBusiness) SearchCustomerPriceOverrides(
 	ctx context.Context,
 	req *commercev1.CustomerPriceOverrideSearchRequest,
-) ([]*commercev1.CustomerPriceOverride, error) {
-	limit := 50
-	offset := 0
-	if req.GetSearch() != nil && req.GetSearch().GetCursor() != nil {
-		if req.GetSearch().GetCursor().GetLimit() > 0 {
-			limit = int(req.GetSearch().GetCursor().GetLimit())
-		}
+) (*OverridePage, error) {
+	page, err := pageFromSearch(req.GetSearch())
+	if err != nil {
+		return nil, err
 	}
-
-	items, err := pb.overrideRepo.ListByCustomerID(ctx, req.GetCustomerId(), limit, offset)
+	items, next, err := pb.overrideRepo.ListByCustomerID(ctx, req.GetCustomerId(), page)
 	if err != nil {
 		return nil, data.ErrorConvertToAPI(err)
 	}
-
-	result := make([]*commercev1.CustomerPriceOverride, 0, len(items))
+	result := &OverridePage{
+		Items:    make([]*commercev1.CustomerPriceOverride, 0, len(items)),
+		NextPage: nextCursor(next),
+	}
 	for _, item := range items {
-		result = append(result, item.ToAPI())
+		if req.GetProductVariantId() != "" && item.ProductVariantID != req.GetProductVariantId() {
+			continue
+		}
+		result.Items = append(result.Items, item.ToAPI())
 	}
 	return result, nil
 }
@@ -708,23 +731,18 @@ func (pb *pricingBusiness) updateDiscountRule(
 func (pb *pricingBusiness) SearchDiscountRules(
 	ctx context.Context,
 	req *commercev1.DiscountRuleSearchRequest,
-) ([]*commercev1.DiscountRule, error) {
-	limit := 50
-	offset := 0
-	if req.GetSearch() != nil && req.GetSearch().GetCursor() != nil {
-		if req.GetSearch().GetCursor().GetLimit() > 0 {
-			limit = int(req.GetSearch().GetCursor().GetLimit())
-		}
+) (*DiscountRulePage, error) {
+	page, err := pageFromSearch(req.GetSearch())
+	if err != nil {
+		return nil, err
 	}
-
-	items, err := pb.discountRuleRepo.ListByShopID(ctx, req.GetShopId(), limit, offset)
+	items, next, err := pb.discountRuleRepo.ListByShopID(ctx, req.GetShopId(), page)
 	if err != nil {
 		return nil, data.ErrorConvertToAPI(err)
 	}
-
-	result := make([]*commercev1.DiscountRule, 0, len(items))
+	result := &DiscountRulePage{Items: make([]*commercev1.DiscountRule, 0, len(items)), NextPage: nextCursor(next)}
 	for _, item := range items {
-		result = append(result, item.ToAPI())
+		result.Items = append(result.Items, item.ToAPI())
 	}
 	return result, nil
 }
@@ -825,8 +843,8 @@ func (pb *pricingBusiness) resolveFromPriceLists(
 	customerID, variantID string,
 	quantity int32,
 ) *priceListMatch {
-	assignments, err := pb.assignmentRepo.ListByCustomerID(
-		ctx, customerID, maxAssignmentLookup, 0,
+	assignments, _, err := pb.assignmentRepo.ListByCustomerID(
+		ctx, customerID, repository.Page{Limit: maxAssignmentLookup},
 	)
 	if err != nil || len(assignments) == 0 {
 		return nil

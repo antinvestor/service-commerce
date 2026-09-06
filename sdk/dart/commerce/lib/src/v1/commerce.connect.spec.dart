@@ -34,6 +34,14 @@ abstract final class CommerceService {
     v1commerce.UpdateShopResponse.new,
   );
 
+  /// Lists the shops in the caller's partition.
+  static const listShops = connect.Spec(
+    '/$name/ListShops',
+    connect.StreamType.unary,
+    v1commerce.ListShopsRequest.new,
+    v1commerce.ListShopsResponse.new,
+  );
+
   /// Creates a new product in the catalog.
   static const createProduct = connect.Spec(
     '/$name/CreateProduct',
@@ -72,6 +80,14 @@ abstract final class CommerceService {
     connect.StreamType.unary,
     v1commerce.UpdateProductVariantRequest.new,
     v1commerce.UpdateProductVariantResponse.new,
+  );
+
+  /// Lists the variants of a product.
+  static const listProductVariants = connect.Spec(
+    '/$name/ListProductVariants',
+    connect.StreamType.unary,
+    v1commerce.ListProductVariantsRequest.new,
+    v1commerce.ListProductVariantsResponse.new,
   );
 
   static const createCart = connect.Spec(
@@ -139,6 +155,52 @@ abstract final class CommerceService {
     connect.StreamType.unary,
     v1commerce.ListOrdersRequest.new,
     v1commerce.ListOrdersResponse.new,
+  );
+
+  /// Starts payment for an order: creates a hosted checkout session and
+  /// returns the page the buyer should be sent to. Idempotent per order.
+  static const checkoutOrder = connect.Spec(
+    '/$name/CheckoutOrder',
+    connect.StreamType.unary,
+    v1commerce.CheckoutOrderRequest.new,
+    v1commerce.CheckoutOrderResponse.new,
+  );
+
+  /// Marks an order paid after verifying the checkout session with the
+  /// payment service. Safe to call repeatedly; used by staff and by the
+  /// scheduled reconciler.
+  static const confirmOrderPayment = connect.Spec(
+    '/$name/ConfirmOrderPayment',
+    connect.StreamType.unary,
+    v1commerce.ConfirmOrderPaymentRequest.new,
+    v1commerce.ConfirmOrderPaymentResponse.new,
+  );
+
+  /// Cancels an unfulfilled order and returns its stock. Buyers may cancel
+  /// their own unpaid orders; staff may cancel any unfulfilled order.
+  static const cancelOrder = connect.Spec(
+    '/$name/CancelOrder',
+    connect.StreamType.unary,
+    v1commerce.CancelOrderRequest.new,
+    v1commerce.CancelOrderResponse.new,
+  );
+
+  /// Reconciles orders awaiting payment against the payment service and
+  /// expires reservations whose payment window has lapsed. Scheduled.
+  static const reconcilePayments = connect.Spec(
+    '/$name/ReconcilePayments',
+    connect.StreamType.unary,
+    v1commerce.ReconcilePaymentsRequest.new,
+    v1commerce.ReconcilePaymentsResponse.new,
+  );
+
+  /// Posts one balanced ledger transaction per shop for a trading day,
+  /// merging that day's paid and refunded orders. Scheduled end of day.
+  static const runEndOfDayLedger = connect.Spec(
+    '/$name/RunEndOfDayLedger',
+    connect.StreamType.unary,
+    v1commerce.RunEndOfDayLedgerRequest.new,
+    v1commerce.RunEndOfDayLedgerResponse.new,
   );
 
   /// Creates a fulfilment for an order.

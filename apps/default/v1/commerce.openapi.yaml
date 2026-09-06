@@ -23,6 +23,13 @@ x-service-permissions:
   - order_manage
   - fulfilment_view
   - fulfilment_manage
+  - price_list_view
+  - price_list_manage
+  - customer_price_override
+  - discount_manage
+  - discount_approve
+  - shops_list
+  - ledger_post
 paths:
   /commerce.v1.CommerceService/AddCartLine:
     post:
@@ -61,6 +68,127 @@ paths:
                 $ref: '#/components/schemas/commerce.v1.AddCartLineResponse'
       x-required-permissions:
         - cart_manage
+  /commerce.v1.CommerceService/CancelOrder:
+    post:
+      tags:
+        - commerce.v1.CommerceService
+      summary: CancelOrder
+      description: |-
+        Cancels an unfulfilled order and returns its stock. Buyers may cancel
+         their own unpaid orders; staff may cancel any unfulfilled order.
+      operationId: commerce.v1.CommerceService.CancelOrder
+      parameters:
+        - name: Connect-Protocol-Version
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/connect-protocol-version'
+        - name: Connect-Timeout-Ms
+          in: header
+          schema:
+            $ref: '#/components/schemas/connect-timeout-header'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/commerce.v1.CancelOrderRequest'
+        required: true
+      responses:
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/connect.error'
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/commerce.v1.CancelOrderResponse'
+      x-required-permissions:
+        - order_manage
+  /commerce.v1.CommerceService/CheckoutOrder:
+    post:
+      tags:
+        - commerce.v1.CommerceService
+      summary: CheckoutOrder
+      description: |-
+        Starts payment for an order: creates a hosted checkout session and
+         returns the page the buyer should be sent to. Idempotent per order.
+      operationId: commerce.v1.CommerceService.CheckoutOrder
+      parameters:
+        - name: Connect-Protocol-Version
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/connect-protocol-version'
+        - name: Connect-Timeout-Ms
+          in: header
+          schema:
+            $ref: '#/components/schemas/connect-timeout-header'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/commerce.v1.CheckoutOrderRequest'
+        required: true
+      responses:
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/connect.error'
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/commerce.v1.CheckoutOrderResponse'
+      x-required-permissions:
+        - order_manage
+  /commerce.v1.CommerceService/ConfirmOrderPayment:
+    post:
+      tags:
+        - commerce.v1.CommerceService
+      summary: ConfirmOrderPayment
+      description: |-
+        Marks an order paid after verifying the checkout session with the
+         payment service. Safe to call repeatedly; used by staff and by the
+         scheduled reconciler.
+      operationId: commerce.v1.CommerceService.ConfirmOrderPayment
+      parameters:
+        - name: Connect-Protocol-Version
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/connect-protocol-version'
+        - name: Connect-Timeout-Ms
+          in: header
+          schema:
+            $ref: '#/components/schemas/connect-timeout-header'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/commerce.v1.ConfirmOrderPaymentRequest'
+        required: true
+      responses:
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/connect.error'
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/commerce.v1.ConfirmOrderPaymentResponse'
+      x-required-permissions:
+        - order_manage
   /commerce.v1.CommerceService/CreateCart:
     post:
       tags:
@@ -336,6 +464,234 @@ paths:
                 $ref: '#/components/schemas/commerce.v1.CreateShopResponse'
       x-required-permissions:
         - shop_create
+  /commerce.v1.CommerceService/CustomerPriceListAssignmentSave:
+    post:
+      tags:
+        - commerce.v1.CommerceService
+      summary: CustomerPriceListAssignmentSave
+      description: Creates or updates a customer-to-price-list assignment.
+      operationId: commerce.v1.CommerceService.CustomerPriceListAssignmentSave
+      parameters:
+        - name: Connect-Protocol-Version
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/connect-protocol-version'
+        - name: Connect-Timeout-Ms
+          in: header
+          schema:
+            $ref: '#/components/schemas/connect-timeout-header'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/commerce.v1.CustomerPriceListAssignmentSaveRequest'
+        required: true
+      responses:
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/connect.error'
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/commerce.v1.CustomerPriceListAssignmentSaveResponse'
+      x-required-permissions:
+        - customer_price_override
+  /commerce.v1.CommerceService/CustomerPriceListAssignmentSearch:
+    post:
+      tags:
+        - commerce.v1.CommerceService
+      summary: CustomerPriceListAssignmentSearch
+      description: Searches customer price list assignments.
+      operationId: commerce.v1.CommerceService.CustomerPriceListAssignmentSearch
+      parameters:
+        - name: Connect-Protocol-Version
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/connect-protocol-version'
+        - name: Connect-Timeout-Ms
+          in: header
+          schema:
+            $ref: '#/components/schemas/connect-timeout-header'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/commerce.v1.CustomerPriceListAssignmentSearchRequest'
+        required: true
+      responses:
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/connect.error'
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/commerce.v1.CustomerPriceListAssignmentSearchResponse'
+      x-required-permissions:
+        - price_list_view
+  /commerce.v1.CommerceService/CustomerPriceOverrideSave:
+    post:
+      tags:
+        - commerce.v1.CommerceService
+      summary: CustomerPriceOverrideSave
+      description: Creates or updates a customer price override for a specific variant.
+      operationId: commerce.v1.CommerceService.CustomerPriceOverrideSave
+      parameters:
+        - name: Connect-Protocol-Version
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/connect-protocol-version'
+        - name: Connect-Timeout-Ms
+          in: header
+          schema:
+            $ref: '#/components/schemas/connect-timeout-header'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/commerce.v1.CustomerPriceOverrideSaveRequest'
+        required: true
+      responses:
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/connect.error'
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/commerce.v1.CustomerPriceOverrideSaveResponse'
+      x-required-permissions:
+        - customer_price_override
+  /commerce.v1.CommerceService/CustomerPriceOverrideSearch:
+    post:
+      tags:
+        - commerce.v1.CommerceService
+      summary: CustomerPriceOverrideSearch
+      description: Searches customer price overrides.
+      operationId: commerce.v1.CommerceService.CustomerPriceOverrideSearch
+      parameters:
+        - name: Connect-Protocol-Version
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/connect-protocol-version'
+        - name: Connect-Timeout-Ms
+          in: header
+          schema:
+            $ref: '#/components/schemas/connect-timeout-header'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/commerce.v1.CustomerPriceOverrideSearchRequest'
+        required: true
+      responses:
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/connect.error'
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/commerce.v1.CustomerPriceOverrideSearchResponse'
+      x-required-permissions:
+        - price_list_view
+  /commerce.v1.CommerceService/DiscountRuleSave:
+    post:
+      tags:
+        - commerce.v1.CommerceService
+      summary: DiscountRuleSave
+      description: Creates or updates a discount rule.
+      operationId: commerce.v1.CommerceService.DiscountRuleSave
+      parameters:
+        - name: Connect-Protocol-Version
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/connect-protocol-version'
+        - name: Connect-Timeout-Ms
+          in: header
+          schema:
+            $ref: '#/components/schemas/connect-timeout-header'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/commerce.v1.DiscountRuleSaveRequest'
+        required: true
+      responses:
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/connect.error'
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/commerce.v1.DiscountRuleSaveResponse'
+      x-required-permissions:
+        - discount_manage
+  /commerce.v1.CommerceService/DiscountRuleSearch:
+    post:
+      tags:
+        - commerce.v1.CommerceService
+      summary: DiscountRuleSearch
+      description: Searches discount rules for a shop.
+      operationId: commerce.v1.CommerceService.DiscountRuleSearch
+      parameters:
+        - name: Connect-Protocol-Version
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/connect-protocol-version'
+        - name: Connect-Timeout-Ms
+          in: header
+          schema:
+            $ref: '#/components/schemas/connect-timeout-header'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/commerce.v1.DiscountRuleSearchRequest'
+        required: true
+      responses:
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/connect.error'
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/commerce.v1.DiscountRuleSearchResponse'
+      x-required-permissions:
+        - price_list_view
   /commerce.v1.CommerceService/GetCart:
     post:
       tags:
@@ -563,6 +919,44 @@ paths:
                 $ref: '#/components/schemas/commerce.v1.ListOrdersResponse'
       x-required-permissions:
         - order_view
+  /commerce.v1.CommerceService/ListProductVariants:
+    post:
+      tags:
+        - commerce.v1.CommerceService
+      summary: ListProductVariants
+      description: Lists the variants of a product.
+      operationId: commerce.v1.CommerceService.ListProductVariants
+      parameters:
+        - name: Connect-Protocol-Version
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/connect-protocol-version'
+        - name: Connect-Timeout-Ms
+          in: header
+          schema:
+            $ref: '#/components/schemas/connect-timeout-header'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/commerce.v1.ListProductVariantsRequest'
+        required: true
+      responses:
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/connect.error'
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/commerce.v1.ListProductVariantsResponse'
+      x-required-permissions:
+        - product_view
   /commerce.v1.CommerceService/ListProducts:
     post:
       tags:
@@ -601,6 +995,236 @@ paths:
                 $ref: '#/components/schemas/commerce.v1.ListProductsResponse'
       x-required-permissions:
         - product_view
+  /commerce.v1.CommerceService/ListShops:
+    post:
+      tags:
+        - commerce.v1.CommerceService
+      summary: ListShops
+      description: Lists the shops in the caller's partition.
+      operationId: commerce.v1.CommerceService.ListShops
+      parameters:
+        - name: Connect-Protocol-Version
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/connect-protocol-version'
+        - name: Connect-Timeout-Ms
+          in: header
+          schema:
+            $ref: '#/components/schemas/connect-timeout-header'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/commerce.v1.ListShopsRequest'
+        required: true
+      responses:
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/connect.error'
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/commerce.v1.ListShopsResponse'
+      x-required-permissions:
+        - shops_list
+  /commerce.v1.CommerceService/PriceListEntryBatchSave:
+    post:
+      tags:
+        - commerce.v1.CommerceService
+      summary: PriceListEntryBatchSave
+      description: Replaces all entries for the given variants in a price list.
+      operationId: commerce.v1.CommerceService.PriceListEntryBatchSave
+      parameters:
+        - name: Connect-Protocol-Version
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/connect-protocol-version'
+        - name: Connect-Timeout-Ms
+          in: header
+          schema:
+            $ref: '#/components/schemas/connect-timeout-header'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/commerce.v1.PriceListEntryBatchSaveRequest'
+        required: true
+      responses:
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/connect.error'
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/commerce.v1.PriceListEntryBatchSaveResponse'
+      x-required-permissions:
+        - price_list_manage
+  /commerce.v1.CommerceService/PriceListGet:
+    post:
+      tags:
+        - commerce.v1.CommerceService
+      summary: PriceListGet
+      description: Retrieves a price list by ID.
+      operationId: commerce.v1.CommerceService.PriceListGet
+      parameters:
+        - name: Connect-Protocol-Version
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/connect-protocol-version'
+        - name: Connect-Timeout-Ms
+          in: header
+          schema:
+            $ref: '#/components/schemas/connect-timeout-header'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/commerce.v1.PriceListGetRequest'
+        required: true
+      responses:
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/connect.error'
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/commerce.v1.PriceListGetResponse'
+      x-required-permissions:
+        - price_list_view
+  /commerce.v1.CommerceService/PriceListSave:
+    post:
+      tags:
+        - commerce.v1.CommerceService
+      summary: PriceListSave
+      description: Creates or updates a price list.
+      operationId: commerce.v1.CommerceService.PriceListSave
+      parameters:
+        - name: Connect-Protocol-Version
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/connect-protocol-version'
+        - name: Connect-Timeout-Ms
+          in: header
+          schema:
+            $ref: '#/components/schemas/connect-timeout-header'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/commerce.v1.PriceListSaveRequest'
+        required: true
+      responses:
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/connect.error'
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/commerce.v1.PriceListSaveResponse'
+      x-required-permissions:
+        - price_list_manage
+  /commerce.v1.CommerceService/PriceListSearch:
+    post:
+      tags:
+        - commerce.v1.CommerceService
+      summary: PriceListSearch
+      description: Searches price lists for a shop.
+      operationId: commerce.v1.CommerceService.PriceListSearch
+      parameters:
+        - name: Connect-Protocol-Version
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/connect-protocol-version'
+        - name: Connect-Timeout-Ms
+          in: header
+          schema:
+            $ref: '#/components/schemas/connect-timeout-header'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/commerce.v1.PriceListSearchRequest'
+        required: true
+      responses:
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/connect.error'
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/commerce.v1.PriceListSearchResponse'
+      x-required-permissions:
+        - price_list_view
+  /commerce.v1.CommerceService/ReconcilePayments:
+    post:
+      tags:
+        - commerce.v1.CommerceService
+      summary: ReconcilePayments
+      description: |-
+        Reconciles orders awaiting payment against the payment service and
+         expires reservations whose payment window has lapsed. Scheduled.
+      operationId: commerce.v1.CommerceService.ReconcilePayments
+      parameters:
+        - name: Connect-Protocol-Version
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/connect-protocol-version'
+        - name: Connect-Timeout-Ms
+          in: header
+          schema:
+            $ref: '#/components/schemas/connect-timeout-header'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/commerce.v1.ReconcilePaymentsRequest'
+        required: true
+      responses:
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/connect.error'
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/commerce.v1.ReconcilePaymentsResponse'
+      x-required-permissions:
+        - ledger_post
   /commerce.v1.CommerceService/RemoveCartLine:
     post:
       tags:
@@ -638,6 +1262,84 @@ paths:
                 $ref: '#/components/schemas/commerce.v1.RemoveCartLineResponse'
       x-required-permissions:
         - cart_manage
+  /commerce.v1.CommerceService/ResolvePrice:
+    post:
+      tags:
+        - commerce.v1.CommerceService
+      summary: ResolvePrice
+      description: Resolves the effective price for a variant given customer and quantity context.
+      operationId: commerce.v1.CommerceService.ResolvePrice
+      parameters:
+        - name: Connect-Protocol-Version
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/connect-protocol-version'
+        - name: Connect-Timeout-Ms
+          in: header
+          schema:
+            $ref: '#/components/schemas/connect-timeout-header'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/commerce.v1.ResolvePriceRequest'
+        required: true
+      responses:
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/connect.error'
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/commerce.v1.ResolvePriceResponse'
+      x-required-permissions:
+        - price_list_view
+  /commerce.v1.CommerceService/RunEndOfDayLedger:
+    post:
+      tags:
+        - commerce.v1.CommerceService
+      summary: RunEndOfDayLedger
+      description: |-
+        Posts one balanced ledger transaction per shop for a trading day,
+         merging that day's paid and refunded orders. Scheduled end of day.
+      operationId: commerce.v1.CommerceService.RunEndOfDayLedger
+      parameters:
+        - name: Connect-Protocol-Version
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/connect-protocol-version'
+        - name: Connect-Timeout-Ms
+          in: header
+          schema:
+            $ref: '#/components/schemas/connect-timeout-header'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/commerce.v1.RunEndOfDayLedgerRequest'
+        required: true
+      responses:
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/connect.error'
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/commerce.v1.RunEndOfDayLedgerResponse'
+      x-required-permissions:
+        - ledger_post
   /commerce.v1.CommerceService/UpdateFulfilment:
     post:
       tags:
@@ -782,6 +1484,28 @@ components:
           $ref: '#/components/schemas/commerce.v1.Cart'
       title: AddCartLineResponse
       additionalProperties: false
+    commerce.v1.CancelOrderRequest:
+      type: object
+      properties:
+        orderId:
+          type: string
+          title: order_id
+          maxLength: 40
+          minLength: 3
+          pattern: '[0-9a-z_-]{3,40}'
+        reason:
+          type: string
+          title: reason
+      title: CancelOrderRequest
+      additionalProperties: false
+    commerce.v1.CancelOrderResponse:
+      type: object
+      properties:
+        order:
+          title: order
+          $ref: '#/components/schemas/commerce.v1.Order'
+      title: CancelOrderResponse
+      additionalProperties: false
     commerce.v1.Cart:
       type: object
       properties:
@@ -848,6 +1572,60 @@ components:
         - CART_STATUS_CONVERTED
         - CART_STATUS_ABANDONED
         - CART_STATUS_EXPIRED
+    commerce.v1.CheckoutOrderRequest:
+      type: object
+      properties:
+        orderId:
+          type: string
+          title: order_id
+          maxLength: 40
+          minLength: 3
+          pattern: '[0-9a-z_-]{3,40}'
+        returnUrl:
+          type: string
+          title: return_url
+          description: Overrides the shop's return URL for this session.
+        methods:
+          type: array
+          items:
+            type: string
+          title: methods
+          description: Optional restriction to specific payment methods.
+      title: CheckoutOrderRequest
+      additionalProperties: false
+    commerce.v1.CheckoutOrderResponse:
+      type: object
+      properties:
+        order:
+          title: order
+          $ref: '#/components/schemas/commerce.v1.Order'
+        checkoutUrl:
+          type: string
+          title: checkout_url
+        sessionRef:
+          type: string
+          title: session_ref
+      title: CheckoutOrderResponse
+      additionalProperties: false
+    commerce.v1.ConfirmOrderPaymentRequest:
+      type: object
+      properties:
+        orderId:
+          type: string
+          title: order_id
+          maxLength: 40
+          minLength: 3
+          pattern: '[0-9a-z_-]{3,40}'
+      title: ConfirmOrderPaymentRequest
+      additionalProperties: false
+    commerce.v1.ConfirmOrderPaymentResponse:
+      type: object
+      properties:
+        order:
+          title: order
+          $ref: '#/components/schemas/commerce.v1.Order'
+      title: ConfirmOrderPaymentResponse
+      additionalProperties: false
     commerce.v1.CreateCartRequest:
       type: object
       properties:
@@ -1110,11 +1888,20 @@ components:
         description:
           type: string
           title: description
+        currency:
+          type: string
+          title: currency
+        contactId:
+          type: string
+          title: contact_id
         mediaIds:
           type: array
           items:
             type: string
           title: media_ids
+        checkoutReturnUrl:
+          type: string
+          title: checkout_return_url
       title: CreateShopRequest
       additionalProperties: false
     commerce.v1.CreateShopResponse:
@@ -1125,6 +1912,393 @@ components:
           $ref: '#/components/schemas/commerce.v1.Shop'
       title: CreateShopResponse
       additionalProperties: false
+    commerce.v1.CustomerPriceListAssignment:
+      type: object
+      properties:
+        id:
+          type: string
+          title: id
+          maxLength: 40
+          minLength: 3
+          pattern: '[0-9a-z_-]{3,40}'
+        customerId:
+          type: string
+          title: customer_id
+          maxLength: 40
+          minLength: 3
+          pattern: '[0-9a-z_-]{3,40}'
+        priceListId:
+          type: string
+          title: price_list_id
+          maxLength: 40
+          minLength: 3
+          pattern: '[0-9a-z_-]{3,40}'
+        assignedBy:
+          type: string
+          title: assigned_by
+        status:
+          title: status
+          $ref: '#/components/schemas/commerce.v1.CustomerPriceListAssignmentStatus'
+        createdAt:
+          title: created_at
+          $ref: '#/components/schemas/google.protobuf.Timestamp'
+      title: CustomerPriceListAssignment
+      additionalProperties: false
+      description: Links a customer to a price list.
+    commerce.v1.CustomerPriceListAssignmentSaveRequest:
+      type: object
+      properties:
+        id:
+          type: string
+          title: id
+          description: Empty for create; set for update.
+        customerId:
+          type: string
+          title: customer_id
+          maxLength: 40
+          minLength: 3
+          pattern: '[0-9a-z_-]{3,40}'
+        priceListId:
+          type: string
+          title: price_list_id
+          maxLength: 40
+          minLength: 3
+          pattern: '[0-9a-z_-]{3,40}'
+        assignedBy:
+          type: string
+          title: assigned_by
+        status:
+          title: status
+          $ref: '#/components/schemas/commerce.v1.CustomerPriceListAssignmentStatus'
+      title: CustomerPriceListAssignmentSaveRequest
+      additionalProperties: false
+    commerce.v1.CustomerPriceListAssignmentSaveResponse:
+      type: object
+      properties:
+        assignment:
+          title: assignment
+          $ref: '#/components/schemas/commerce.v1.CustomerPriceListAssignment'
+      title: CustomerPriceListAssignmentSaveResponse
+      additionalProperties: false
+    commerce.v1.CustomerPriceListAssignmentSearchRequest:
+      type: object
+      properties:
+        customerId:
+          type: string
+          title: customer_id
+        priceListId:
+          type: string
+          title: price_list_id
+        search:
+          title: search
+          $ref: '#/components/schemas/common.v1.SearchRequest'
+      title: CustomerPriceListAssignmentSearchRequest
+      additionalProperties: false
+    commerce.v1.CustomerPriceListAssignmentSearchResponse:
+      type: object
+      properties:
+        assignments:
+          type: array
+          items:
+            $ref: '#/components/schemas/commerce.v1.CustomerPriceListAssignment'
+          title: assignments
+        nextPage:
+          type: string
+          title: next_page
+        prevCursor:
+          type: string
+          title: prev_cursor
+      title: CustomerPriceListAssignmentSearchResponse
+      additionalProperties: false
+    commerce.v1.CustomerPriceListAssignmentStatus:
+      type: string
+      title: CustomerPriceListAssignmentStatus
+      enum:
+        - CUSTOMER_PRICE_LIST_ASSIGNMENT_STATUS_UNSPECIFIED
+        - CUSTOMER_PRICE_LIST_ASSIGNMENT_STATUS_ACTIVE
+        - CUSTOMER_PRICE_LIST_ASSIGNMENT_STATUS_INACTIVE
+    commerce.v1.CustomerPriceOverride:
+      type: object
+      properties:
+        id:
+          type: string
+          title: id
+          maxLength: 40
+          minLength: 3
+          pattern: '[0-9a-z_-]{3,40}'
+        customerId:
+          type: string
+          title: customer_id
+          maxLength: 40
+          minLength: 3
+          pattern: '[0-9a-z_-]{3,40}'
+        productVariantId:
+          type: string
+          title: product_variant_id
+          maxLength: 40
+          minLength: 3
+          pattern: '[0-9a-z_-]{3,40}'
+        unitPrice:
+          title: unit_price
+          $ref: '#/components/schemas/common.v1.Money'
+        validFrom:
+          title: valid_from
+          $ref: '#/components/schemas/google.protobuf.Timestamp'
+        validUntil:
+          title: valid_until
+          $ref: '#/components/schemas/google.protobuf.Timestamp'
+        approvedBy:
+          type: string
+          title: approved_by
+        status:
+          title: status
+          $ref: '#/components/schemas/commerce.v1.CustomerPriceOverrideStatus'
+        createdAt:
+          title: created_at
+          $ref: '#/components/schemas/google.protobuf.Timestamp'
+      title: CustomerPriceOverride
+      additionalProperties: false
+      description: A per-customer, per-variant price override that takes precedence over price lists.
+    commerce.v1.CustomerPriceOverrideSaveRequest:
+      type: object
+      properties:
+        id:
+          type: string
+          title: id
+          description: Empty for create; set for update.
+        customerId:
+          type: string
+          title: customer_id
+          maxLength: 40
+          minLength: 3
+          pattern: '[0-9a-z_-]{3,40}'
+        productVariantId:
+          type: string
+          title: product_variant_id
+          maxLength: 40
+          minLength: 3
+          pattern: '[0-9a-z_-]{3,40}'
+        unitPrice:
+          title: unit_price
+          $ref: '#/components/schemas/common.v1.Money'
+        validFrom:
+          title: valid_from
+          $ref: '#/components/schemas/google.protobuf.Timestamp'
+        validUntil:
+          title: valid_until
+          $ref: '#/components/schemas/google.protobuf.Timestamp'
+        approvedBy:
+          type: string
+          title: approved_by
+        status:
+          title: status
+          $ref: '#/components/schemas/commerce.v1.CustomerPriceOverrideStatus'
+      title: CustomerPriceOverrideSaveRequest
+      additionalProperties: false
+    commerce.v1.CustomerPriceOverrideSaveResponse:
+      type: object
+      properties:
+        override:
+          title: override
+          $ref: '#/components/schemas/commerce.v1.CustomerPriceOverride'
+      title: CustomerPriceOverrideSaveResponse
+      additionalProperties: false
+    commerce.v1.CustomerPriceOverrideSearchRequest:
+      type: object
+      properties:
+        customerId:
+          type: string
+          title: customer_id
+        productVariantId:
+          type: string
+          title: product_variant_id
+        search:
+          title: search
+          $ref: '#/components/schemas/common.v1.SearchRequest'
+      title: CustomerPriceOverrideSearchRequest
+      additionalProperties: false
+    commerce.v1.CustomerPriceOverrideSearchResponse:
+      type: object
+      properties:
+        overrides:
+          type: array
+          items:
+            $ref: '#/components/schemas/commerce.v1.CustomerPriceOverride'
+          title: overrides
+        nextPage:
+          type: string
+          title: next_page
+        prevCursor:
+          type: string
+          title: prev_cursor
+      title: CustomerPriceOverrideSearchResponse
+      additionalProperties: false
+    commerce.v1.CustomerPriceOverrideStatus:
+      type: string
+      title: CustomerPriceOverrideStatus
+      enum:
+        - CUSTOMER_PRICE_OVERRIDE_STATUS_UNSPECIFIED
+        - CUSTOMER_PRICE_OVERRIDE_STATUS_ACTIVE
+        - CUSTOMER_PRICE_OVERRIDE_STATUS_EXPIRED
+    commerce.v1.DiscountAppliesTo:
+      type: string
+      title: DiscountAppliesTo
+      enum:
+        - DISCOUNT_APPLIES_TO_UNSPECIFIED
+        - DISCOUNT_APPLIES_TO_ORDER
+        - DISCOUNT_APPLIES_TO_LINE_ITEM
+    commerce.v1.DiscountRule:
+      type: object
+      properties:
+        id:
+          type: string
+          title: id
+          maxLength: 40
+          minLength: 3
+          pattern: '[0-9a-z_-]{3,40}'
+        shopId:
+          type: string
+          title: shop_id
+          maxLength: 40
+          minLength: 3
+          pattern: '[0-9a-z_-]{3,40}'
+        name:
+          type: string
+          title: name
+        discountType:
+          title: discount_type
+          $ref: '#/components/schemas/commerce.v1.DiscountType'
+        value:
+          type: number
+          title: value
+          format: double
+        appliesTo:
+          title: applies_to
+          $ref: '#/components/schemas/commerce.v1.DiscountAppliesTo'
+        conditions:
+          title: conditions
+          $ref: '#/components/schemas/google.protobuf.Struct'
+        requiresApproval:
+          type: boolean
+          title: requires_approval
+        maxDiscountPercent:
+          type: number
+          title: max_discount_percent
+          format: double
+        validFrom:
+          title: valid_from
+          $ref: '#/components/schemas/google.protobuf.Timestamp'
+        validUntil:
+          title: valid_until
+          $ref: '#/components/schemas/google.protobuf.Timestamp'
+        status:
+          title: status
+          $ref: '#/components/schemas/commerce.v1.DiscountRuleStatus'
+        createdAt:
+          title: created_at
+          $ref: '#/components/schemas/google.protobuf.Timestamp'
+      title: DiscountRule
+      additionalProperties: false
+      description: A rule that applies discounts to orders or line items based on conditions.
+    commerce.v1.DiscountRuleSaveRequest:
+      type: object
+      properties:
+        id:
+          type: string
+          title: id
+          description: Empty for create; set for update.
+        shopId:
+          type: string
+          title: shop_id
+          maxLength: 40
+          minLength: 3
+          pattern: '[0-9a-z_-]{3,40}'
+        name:
+          type: string
+          title: name
+        discountType:
+          title: discount_type
+          $ref: '#/components/schemas/commerce.v1.DiscountType'
+        value:
+          type: number
+          title: value
+          format: double
+        appliesTo:
+          title: applies_to
+          $ref: '#/components/schemas/commerce.v1.DiscountAppliesTo'
+        conditions:
+          title: conditions
+          $ref: '#/components/schemas/google.protobuf.Struct'
+        requiresApproval:
+          type: boolean
+          title: requires_approval
+        maxDiscountPercent:
+          type: number
+          title: max_discount_percent
+          format: double
+        validFrom:
+          title: valid_from
+          $ref: '#/components/schemas/google.protobuf.Timestamp'
+        validUntil:
+          title: valid_until
+          $ref: '#/components/schemas/google.protobuf.Timestamp'
+        status:
+          title: status
+          $ref: '#/components/schemas/commerce.v1.DiscountRuleStatus'
+      title: DiscountRuleSaveRequest
+      additionalProperties: false
+    commerce.v1.DiscountRuleSaveResponse:
+      type: object
+      properties:
+        discountRule:
+          title: discount_rule
+          $ref: '#/components/schemas/commerce.v1.DiscountRule'
+      title: DiscountRuleSaveResponse
+      additionalProperties: false
+    commerce.v1.DiscountRuleSearchRequest:
+      type: object
+      properties:
+        shopId:
+          type: string
+          title: shop_id
+          maxLength: 40
+          minLength: 3
+          pattern: '[0-9a-z_-]{3,40}'
+        search:
+          title: search
+          $ref: '#/components/schemas/common.v1.SearchRequest'
+      title: DiscountRuleSearchRequest
+      additionalProperties: false
+    commerce.v1.DiscountRuleSearchResponse:
+      type: object
+      properties:
+        discountRules:
+          type: array
+          items:
+            $ref: '#/components/schemas/commerce.v1.DiscountRule'
+          title: discount_rules
+        nextPage:
+          type: string
+          title: next_page
+        prevCursor:
+          type: string
+          title: prev_cursor
+      title: DiscountRuleSearchResponse
+      additionalProperties: false
+    commerce.v1.DiscountRuleStatus:
+      type: string
+      title: DiscountRuleStatus
+      enum:
+        - DISCOUNT_RULE_STATUS_UNSPECIFIED
+        - DISCOUNT_RULE_STATUS_ACTIVE
+        - DISCOUNT_RULE_STATUS_INACTIVE
+    commerce.v1.DiscountType:
+      type: string
+      title: DiscountType
+      enum:
+        - DISCOUNT_TYPE_UNSPECIFIED
+        - DISCOUNT_TYPE_PERCENTAGE
+        - DISCOUNT_TYPE_FIXED_AMOUNT
     commerce.v1.Fulfilment:
       type: object
       properties:
@@ -1293,6 +2467,36 @@ components:
           $ref: '#/components/schemas/commerce.v1.Shop'
       title: GetShopResponse
       additionalProperties: false
+    commerce.v1.LedgerPosting:
+      type: object
+      properties:
+        shopId:
+          type: string
+          title: shop_id
+        date:
+          type: string
+          title: date
+        transactionId:
+          type: string
+          title: transaction_id
+        sales:
+          title: sales
+          $ref: '#/components/schemas/common.v1.Money'
+        refunds:
+          title: refunds
+          $ref: '#/components/schemas/common.v1.Money'
+        orders:
+          type: integer
+          title: orders
+          format: int32
+        skipped:
+          type: boolean
+          title: skipped
+        error:
+          type: string
+          title: error
+      title: LedgerPosting
+      additionalProperties: false
     commerce.v1.ListOrdersRequest:
       type: object
       properties:
@@ -1324,6 +2528,27 @@ components:
           title: prev_cursor
       title: ListOrdersResponse
       additionalProperties: false
+    commerce.v1.ListProductVariantsRequest:
+      type: object
+      properties:
+        productId:
+          type: string
+          title: product_id
+          maxLength: 40
+          minLength: 3
+          pattern: '[0-9a-z_-]{3,40}'
+      title: ListProductVariantsRequest
+      additionalProperties: false
+    commerce.v1.ListProductVariantsResponse:
+      type: object
+      properties:
+        productVariants:
+          type: array
+          items:
+            $ref: '#/components/schemas/commerce.v1.ProductVariant'
+          title: product_variants
+      title: ListProductVariantsResponse
+      additionalProperties: false
     commerce.v1.ListProductsRequest:
       type: object
       properties:
@@ -1354,6 +2579,27 @@ components:
           type: string
           title: prev_cursor
       title: ListProductsResponse
+      additionalProperties: false
+    commerce.v1.ListShopsRequest:
+      type: object
+      properties:
+        search:
+          title: search
+          $ref: '#/components/schemas/common.v1.SearchRequest'
+      title: ListShopsRequest
+      additionalProperties: false
+    commerce.v1.ListShopsResponse:
+      type: object
+      properties:
+        shops:
+          type: array
+          items:
+            $ref: '#/components/schemas/commerce.v1.Shop'
+          title: shops
+        nextPage:
+          type: string
+          title: next_page
+      title: ListShopsResponse
       additionalProperties: false
     commerce.v1.Order:
       type: object
@@ -1414,6 +2660,31 @@ components:
         createdAt:
           title: created_at
           $ref: '#/components/schemas/google.protobuf.Timestamp'
+        paymentSessionRef:
+          type: string
+          title: payment_session_ref
+          description: Hosted checkout session for this order, set by CheckoutOrder.
+        checkoutUrl:
+          type: string
+          title: checkout_url
+          description: Page the buyer completes payment on.
+        paymentId:
+          type: string
+          title: payment_id
+          description: Payment service reference once the session completes.
+        paidAt:
+          title: paid_at
+          $ref: '#/components/schemas/google.protobuf.Timestamp'
+        cancelledAt:
+          title: cancelled_at
+          $ref: '#/components/schemas/google.protobuf.Timestamp'
+        cancelReason:
+          type: string
+          title: cancel_reason
+        ledgerTransactionId:
+          type: string
+          title: ledger_transaction_id
+          description: Ledger transaction this order was merged into at end of day.
       title: Order
       additionalProperties: false
     commerce.v1.OrderLine:
@@ -1460,6 +2731,7 @@ components:
         - ORDER_STATUS_CONFIRMED
         - ORDER_STATUS_CANCELLED
         - ORDER_STATUS_FULFILLED
+        - ORDER_STATUS_PENDING_PAYMENT
     commerce.v1.PaymentStatus:
       type: string
       title: PaymentStatus
@@ -1469,6 +2741,218 @@ components:
         - PAYMENT_STATUS_PAID
         - PAYMENT_STATUS_FAILED
         - PAYMENT_STATUS_REFUNDED
+        - PAYMENT_STATUS_EXPIRED
+    commerce.v1.PriceList:
+      type: object
+      properties:
+        id:
+          type: string
+          title: id
+          maxLength: 40
+          minLength: 3
+          pattern: '[0-9a-z_-]{3,40}'
+        shopId:
+          type: string
+          title: shop_id
+          maxLength: 40
+          minLength: 3
+          pattern: '[0-9a-z_-]{3,40}'
+        name:
+          type: string
+          title: name
+        currency:
+          type: string
+          title: currency
+        priority:
+          type: integer
+          title: priority
+          format: int32
+        validFrom:
+          title: valid_from
+          $ref: '#/components/schemas/google.protobuf.Timestamp'
+        validUntil:
+          title: valid_until
+          $ref: '#/components/schemas/google.protobuf.Timestamp'
+        status:
+          title: status
+          $ref: '#/components/schemas/commerce.v1.PriceListStatus'
+        createdAt:
+          title: created_at
+          $ref: '#/components/schemas/google.protobuf.Timestamp'
+      title: PriceList
+      additionalProperties: false
+      description: A named collection of prices for product variants, scoped to a shop and currency.
+    commerce.v1.PriceListEntry:
+      type: object
+      properties:
+        id:
+          type: string
+          title: id
+          maxLength: 40
+          minLength: 3
+          pattern: '[0-9a-z_-]{3,40}'
+        priceListId:
+          type: string
+          title: price_list_id
+          maxLength: 40
+          minLength: 3
+          pattern: '[0-9a-z_-]{3,40}'
+        productVariantId:
+          type: string
+          title: product_variant_id
+          maxLength: 40
+          minLength: 3
+          pattern: '[0-9a-z_-]{3,40}'
+        unitPrice:
+          title: unit_price
+          $ref: '#/components/schemas/common.v1.Money'
+        minQuantity:
+          type: integer
+          title: min_quantity
+          format: int32
+        maxQuantity:
+          type: integer
+          title: max_quantity
+          format: int32
+      title: PriceListEntry
+      additionalProperties: false
+      description: A single price entry within a price list, optionally quantity-tiered.
+    commerce.v1.PriceListEntryBatchSaveRequest:
+      type: object
+      properties:
+        priceListId:
+          type: string
+          title: price_list_id
+          maxLength: 40
+          minLength: 3
+          pattern: '[0-9a-z_-]{3,40}'
+        entries:
+          type: array
+          items:
+            $ref: '#/components/schemas/commerce.v1.PriceListEntry'
+          title: entries
+          description: |-
+            Entries to save. For each product_variant_id present, all existing entries
+             in this price list for that variant are replaced.
+      title: PriceListEntryBatchSaveRequest
+      additionalProperties: false
+    commerce.v1.PriceListEntryBatchSaveResponse:
+      type: object
+      properties:
+        entries:
+          type: array
+          items:
+            $ref: '#/components/schemas/commerce.v1.PriceListEntry'
+          title: entries
+      title: PriceListEntryBatchSaveResponse
+      additionalProperties: false
+    commerce.v1.PriceListGetRequest:
+      type: object
+      properties:
+        id:
+          type: string
+          title: id
+          maxLength: 40
+          minLength: 3
+          pattern: '[0-9a-z_-]{3,40}'
+      title: PriceListGetRequest
+      additionalProperties: false
+    commerce.v1.PriceListGetResponse:
+      type: object
+      properties:
+        priceList:
+          title: price_list
+          $ref: '#/components/schemas/commerce.v1.PriceList'
+      title: PriceListGetResponse
+      additionalProperties: false
+    commerce.v1.PriceListSaveRequest:
+      type: object
+      properties:
+        id:
+          type: string
+          title: id
+          description: Empty for create; set for update.
+        shopId:
+          type: string
+          title: shop_id
+          maxLength: 40
+          minLength: 3
+          pattern: '[0-9a-z_-]{3,40}'
+        name:
+          type: string
+          title: name
+        currency:
+          type: string
+          title: currency
+        priority:
+          type: integer
+          title: priority
+          format: int32
+        validFrom:
+          title: valid_from
+          $ref: '#/components/schemas/google.protobuf.Timestamp'
+        validUntil:
+          title: valid_until
+          $ref: '#/components/schemas/google.protobuf.Timestamp'
+        status:
+          title: status
+          $ref: '#/components/schemas/commerce.v1.PriceListStatus'
+      title: PriceListSaveRequest
+      additionalProperties: false
+    commerce.v1.PriceListSaveResponse:
+      type: object
+      properties:
+        priceList:
+          title: price_list
+          $ref: '#/components/schemas/commerce.v1.PriceList'
+      title: PriceListSaveResponse
+      additionalProperties: false
+    commerce.v1.PriceListSearchRequest:
+      type: object
+      properties:
+        shopId:
+          type: string
+          title: shop_id
+          maxLength: 40
+          minLength: 3
+          pattern: '[0-9a-z_-]{3,40}'
+        search:
+          title: search
+          $ref: '#/components/schemas/common.v1.SearchRequest'
+      title: PriceListSearchRequest
+      additionalProperties: false
+    commerce.v1.PriceListSearchResponse:
+      type: object
+      properties:
+        priceLists:
+          type: array
+          items:
+            $ref: '#/components/schemas/commerce.v1.PriceList'
+          title: price_lists
+        nextPage:
+          type: string
+          title: next_page
+        prevCursor:
+          type: string
+          title: prev_cursor
+      title: PriceListSearchResponse
+      additionalProperties: false
+    commerce.v1.PriceListStatus:
+      type: string
+      title: PriceListStatus
+      enum:
+        - PRICE_LIST_STATUS_UNSPECIFIED
+        - PRICE_LIST_STATUS_ACTIVE
+        - PRICE_LIST_STATUS_DRAFT
+        - PRICE_LIST_STATUS_EXPIRED
+    commerce.v1.PriceSource:
+      type: string
+      title: PriceSource
+      enum:
+        - PRICE_SOURCE_UNSPECIFIED
+        - PRICE_SOURCE_CATALOG
+        - PRICE_SOURCE_PRICE_LIST
+        - PRICE_SOURCE_CUSTOMER_OVERRIDE
     commerce.v1.Product:
       type: object
       properties:
@@ -1604,6 +3088,41 @@ components:
         - PRODUCT_VARIANT_STATUS_UNSPECIFIED
         - PRODUCT_VARIANT_STATUS_ACTIVE
         - PRODUCT_VARIANT_STATUS_DISABLED
+    commerce.v1.ReconcilePaymentsRequest:
+      type: object
+      properties:
+        shopId:
+          type: string
+          title: shop_id
+          description: Limit to one shop; empty reconciles every shop in the partition.
+        limit:
+          type: integer
+          title: limit
+          format: int32
+          description: Maximum orders to examine in this run.
+      title: ReconcilePaymentsRequest
+      additionalProperties: false
+    commerce.v1.ReconcilePaymentsResponse:
+      type: object
+      properties:
+        examined:
+          type: integer
+          title: examined
+          format: int32
+        paid:
+          type: integer
+          title: paid
+          format: int32
+        expired:
+          type: integer
+          title: expired
+          format: int32
+        failed:
+          type: integer
+          title: failed
+          format: int32
+      title: ReconcilePaymentsResponse
+      additionalProperties: false
     commerce.v1.RemoveCartLineRequest:
       type: object
       properties:
@@ -1628,6 +3147,93 @@ components:
           title: cart
           $ref: '#/components/schemas/commerce.v1.Cart'
       title: RemoveCartLineResponse
+      additionalProperties: false
+    commerce.v1.ResolvePriceRequest:
+      type: object
+      properties:
+        customerId:
+          type: string
+          title: customer_id
+          maxLength: 40
+          minLength: 3
+          pattern: '[0-9a-z_-]{3,40}'
+        productVariantId:
+          type: string
+          title: product_variant_id
+          maxLength: 40
+          minLength: 3
+          pattern: '[0-9a-z_-]{3,40}'
+        quantity:
+          type: integer
+          title: quantity
+          format: int32
+      title: ResolvePriceRequest
+      additionalProperties: false
+    commerce.v1.ResolvePriceResponse:
+      type: object
+      properties:
+        resolvedPrice:
+          title: resolved_price
+          $ref: '#/components/schemas/commerce.v1.ResolvedPrice'
+      title: ResolvePriceResponse
+      additionalProperties: false
+    commerce.v1.ResolvedPrice:
+      type: object
+      properties:
+        variantId:
+          type: string
+          title: variant_id
+          maxLength: 40
+          minLength: 3
+          pattern: '[0-9a-z_-]{3,40}'
+        unitPrice:
+          title: unit_price
+          $ref: '#/components/schemas/common.v1.Money'
+        priceSource:
+          title: price_source
+          $ref: '#/components/schemas/commerce.v1.PriceSource'
+        priceListId:
+          type: string
+          title: price_list_id
+        overrideId:
+          type: string
+          title: override_id
+        discountAmount:
+          title: discount_amount
+          $ref: '#/components/schemas/common.v1.Money'
+        discountRuleId:
+          type: string
+          title: discount_rule_id
+        preDiscountPrice:
+          title: pre_discount_price
+          $ref: '#/components/schemas/common.v1.Money'
+      title: ResolvedPrice
+      additionalProperties: false
+      description: The fully resolved price for a variant, showing which source and discounts apply.
+    commerce.v1.RunEndOfDayLedgerRequest:
+      type: object
+      properties:
+        shopId:
+          type: string
+          title: shop_id
+          description: Limit to one shop; empty runs every shop in the partition.
+        date:
+          type: string
+          title: date
+          description: |-
+            Trading day in YYYY-MM-DD, interpreted in the shop's timezone. Empty
+             means the previous calendar day.
+      title: RunEndOfDayLedgerRequest
+      additionalProperties: false
+    commerce.v1.RunEndOfDayLedgerResponse:
+      type: object
+      properties:
+        postings:
+          type: array
+          items:
+            $ref: '#/components/schemas/commerce.v1.LedgerPosting'
+          title: postings
+      title: RunEndOfDayLedgerResponse
       additionalProperties: false
     commerce.v1.Shop:
       type: object
@@ -1658,6 +3264,20 @@ components:
           description: |-
             Media assets associated with the shop (logo, banner, etc.).
             References files in the Files Service.
+        currency:
+          type: string
+          title: currency
+          description: ISO 4217 currency every product in the shop is priced in.
+        contactId:
+          type: string
+          title: contact_id
+          description: Contact that receives seller-side notifications (new orders, payments).
+        checkoutReturnUrl:
+          type: string
+          title: checkout_return_url
+          description: |-
+            Where the hosted checkout page sends the buyer after paying. Empty uses
+             the service default.
         createdAt:
           title: created_at
           $ref: '#/components/schemas/google.protobuf.Timestamp'
@@ -1796,6 +3416,15 @@ components:
         extra:
           title: extra
           $ref: '#/components/schemas/google.protobuf.Struct'
+        currency:
+          type: string
+          title: currency
+        contactId:
+          type: string
+          title: contact_id
+        checkoutReturnUrl:
+          type: string
+          title: checkout_return_url
       title: UpdateShopRequest
       additionalProperties: false
     commerce.v1.UpdateShopResponse:

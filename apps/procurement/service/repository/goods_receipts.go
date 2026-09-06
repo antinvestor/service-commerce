@@ -16,12 +16,30 @@ package repository
 
 import (
 	"context"
+	"errors"
+	"fmt"
 
 	"github.com/pitabwire/frame/v2/datastore"
 	"github.com/pitabwire/frame/v2/datastore/pool"
 	"github.com/pitabwire/frame/v2/workerpool"
+	"gorm.io/gorm"
 
 	"github.com/antinvestor/service-commerce/apps/procurement/service/models"
+)
+
+// ErrOverReceipt is returned when a receipt line would push a purchase order
+// line past its ordered quantity, including under concurrent receipts.
+var ErrOverReceipt = errors.New("received quantity exceeds remaining ordered quantity")
+
+// Purchase order and line statuses mirrored from procurementv1 so the
+// repository can roll status up without importing the API package.
+const (
+	poStatusPartiallyReceived = 4
+	poStatusReceived          = 5
+	poLineStatusPending       = 1
+	poLineStatusPartial       = 2
+	poLineStatusReceived      = 3
+	poLineStatusCancelled     = 4
 )
 
 type goodsReceiptRepository struct {
@@ -38,6 +56,92 @@ func NewGoodsReceiptRepository(
 			ctx, dbPool, workMan, func() *models.GoodsReceipt { return &models.GoodsReceipt{} },
 		),
 	}
+}
+
+// CreateWithLines records the receipt, its lines, the purchase order line
+// received quantities, and the purchase order status roll-up in one
+// transaction. Each line increment is guarded so two concurrent receipts
+// cannot together exceed the ordered quantity.
+func (r *goodsReceiptRepository) CreateWithLines(
+	ctx context.Context,
+	gr *models.GoodsReceipt,
+	lines []*models.GoodsReceiptLine,
+) error {
+	if gr == nil {
+		return errors.New("create goods receipt: receipt is required")
+	}
+	if len(lines) == 0 {
+		return errors.New("create goods receipt: at least one line is required")
+	}
+	return r.Pool().DB(ctx, false).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(gr).Error; err != nil {
+			return fmt.Errorf("create goods receipt: %w", err)
+		}
+		for _, line := range lines {
+			line.GoodsReceiptID = gr.GetID()
+			if err := tx.Create(line).Error; err != nil {
+				return fmt.Errorf("create goods receipt line: %w", err)
+			}
+
+			result := tx.Model(&models.PurchaseOrderLine{}).
+				Where("id = ? AND status <> ? AND received_quantity + ? <= ordered_quantity",
+					line.PurchaseOrderLineID, poLineStatusCancelled, line.ReceivedQuantity).
+				UpdateColumns(map[string]any{
+					"received_quantity": gorm.Expr("received_quantity + ?", line.ReceivedQuantity),
+					"status": gorm.Expr(
+						"CASE WHEN received_quantity + ? >= ordered_quantity THEN ?::integer ELSE ?::integer END",
+						line.ReceivedQuantity, poLineStatusReceived, poLineStatusPartial,
+					),
+				})
+			if result.Error != nil {
+				return fmt.Errorf("receive purchase order line %s: %w", line.PurchaseOrderLineID, result.Error)
+			}
+			if result.RowsAffected == 0 {
+				return fmt.Errorf("%w: purchase order line %s", ErrOverReceipt, line.PurchaseOrderLineID)
+			}
+		}
+
+		return rollUpPurchaseOrderStatus(tx, gr.PurchaseOrderID)
+	})
+}
+
+// rollUpPurchaseOrderStatus derives the PO status from its live lines.
+func rollUpPurchaseOrderStatus(tx *gorm.DB, poID string) error {
+	var lines []*models.PurchaseOrderLine
+	if err := tx.Where("purchase_order_id = ? AND status <> ?", poID, poLineStatusCancelled).
+		Find(&lines).Error; err != nil {
+		return fmt.Errorf("load purchase order lines: %w", err)
+	}
+	if len(lines) == 0 {
+		return nil
+	}
+	allReceived := true
+	anyReceived := false
+	for _, l := range lines {
+		if l.ReceivedQuantity >= l.OrderedQuantity {
+			anyReceived = true
+			continue
+		}
+		allReceived = false
+		if l.ReceivedQuantity > 0 {
+			anyReceived = true
+		}
+	}
+	var status int32
+	switch {
+	case allReceived:
+		status = poStatusReceived
+	case anyReceived:
+		status = poStatusPartiallyReceived
+	default:
+		return nil
+	}
+	if err := tx.Model(&models.PurchaseOrder{}).
+		Where("id = ?", poID).
+		UpdateColumn("status", status).Error; err != nil {
+		return fmt.Errorf("roll up purchase order status: %w", err)
+	}
+	return nil
 }
 
 func (r *goodsReceiptRepository) GetWithLines(ctx context.Context, id string) (*models.GoodsReceipt, error) {

@@ -20,6 +20,8 @@ class PaymentStatusBadge extends StatelessWidget {
           ('Failed', Colors.red, null),
         PaymentStatus.PAYMENT_STATUS_REFUNDED =>
           ('Refunded', Colors.purple, null),
+        PaymentStatus.PAYMENT_STATUS_EXPIRED =>
+          ('Expired', Colors.grey, null),
         _ => ('Unknown', Colors.grey, null),
       },
     );

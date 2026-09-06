@@ -23,6 +23,13 @@ x-service-permissions:
   - order_manage
   - fulfilment_view
   - fulfilment_manage
+  - price_list_view
+  - price_list_manage
+  - customer_price_override
+  - discount_manage
+  - discount_approve
+  - shops_list
+  - ledger_post
 paths:
   /property.v1.PropertyService/AddLocality:
     post:

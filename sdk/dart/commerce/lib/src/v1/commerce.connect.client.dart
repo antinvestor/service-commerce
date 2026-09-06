@@ -62,6 +62,24 @@ extension type CommerceServiceClient (connect.Transport _transport) {
     );
   }
 
+  /// Lists the shops in the caller's partition.
+  Future<v1commerce.ListShopsResponse> listShops(
+    v1commerce.ListShopsRequest input, {
+    connect.Headers? headers,
+    connect.AbortSignal? signal,
+    Function(connect.Headers)? onHeader,
+    Function(connect.Headers)? onTrailer,
+  }) {
+    return connect.Client(_transport).unary(
+      specs.CommerceService.listShops,
+      input,
+      signal: signal,
+      headers: headers,
+      onHeader: onHeader,
+      onTrailer: onTrailer,
+    );
+  }
+
   /// Creates a new product in the catalog.
   Future<v1commerce.CreateProductResponse> createProduct(
     v1commerce.CreateProductRequest input, {
@@ -144,6 +162,24 @@ extension type CommerceServiceClient (connect.Transport _transport) {
   }) {
     return connect.Client(_transport).unary(
       specs.CommerceService.updateProductVariant,
+      input,
+      signal: signal,
+      headers: headers,
+      onHeader: onHeader,
+      onTrailer: onTrailer,
+    );
+  }
+
+  /// Lists the variants of a product.
+  Future<v1commerce.ListProductVariantsResponse> listProductVariants(
+    v1commerce.ListProductVariantsRequest input, {
+    connect.Headers? headers,
+    connect.AbortSignal? signal,
+    Function(connect.Headers)? onHeader,
+    Function(connect.Headers)? onTrailer,
+  }) {
+    return connect.Client(_transport).unary(
+      specs.CommerceService.listProductVariants,
       input,
       signal: signal,
       headers: headers,
@@ -291,6 +327,102 @@ extension type CommerceServiceClient (connect.Transport _transport) {
   }) {
     return connect.Client(_transport).unary(
       specs.CommerceService.listOrders,
+      input,
+      signal: signal,
+      headers: headers,
+      onHeader: onHeader,
+      onTrailer: onTrailer,
+    );
+  }
+
+  /// Starts payment for an order: creates a hosted checkout session and
+  /// returns the page the buyer should be sent to. Idempotent per order.
+  Future<v1commerce.CheckoutOrderResponse> checkoutOrder(
+    v1commerce.CheckoutOrderRequest input, {
+    connect.Headers? headers,
+    connect.AbortSignal? signal,
+    Function(connect.Headers)? onHeader,
+    Function(connect.Headers)? onTrailer,
+  }) {
+    return connect.Client(_transport).unary(
+      specs.CommerceService.checkoutOrder,
+      input,
+      signal: signal,
+      headers: headers,
+      onHeader: onHeader,
+      onTrailer: onTrailer,
+    );
+  }
+
+  /// Marks an order paid after verifying the checkout session with the
+  /// payment service. Safe to call repeatedly; used by staff and by the
+  /// scheduled reconciler.
+  Future<v1commerce.ConfirmOrderPaymentResponse> confirmOrderPayment(
+    v1commerce.ConfirmOrderPaymentRequest input, {
+    connect.Headers? headers,
+    connect.AbortSignal? signal,
+    Function(connect.Headers)? onHeader,
+    Function(connect.Headers)? onTrailer,
+  }) {
+    return connect.Client(_transport).unary(
+      specs.CommerceService.confirmOrderPayment,
+      input,
+      signal: signal,
+      headers: headers,
+      onHeader: onHeader,
+      onTrailer: onTrailer,
+    );
+  }
+
+  /// Cancels an unfulfilled order and returns its stock. Buyers may cancel
+  /// their own unpaid orders; staff may cancel any unfulfilled order.
+  Future<v1commerce.CancelOrderResponse> cancelOrder(
+    v1commerce.CancelOrderRequest input, {
+    connect.Headers? headers,
+    connect.AbortSignal? signal,
+    Function(connect.Headers)? onHeader,
+    Function(connect.Headers)? onTrailer,
+  }) {
+    return connect.Client(_transport).unary(
+      specs.CommerceService.cancelOrder,
+      input,
+      signal: signal,
+      headers: headers,
+      onHeader: onHeader,
+      onTrailer: onTrailer,
+    );
+  }
+
+  /// Reconciles orders awaiting payment against the payment service and
+  /// expires reservations whose payment window has lapsed. Scheduled.
+  Future<v1commerce.ReconcilePaymentsResponse> reconcilePayments(
+    v1commerce.ReconcilePaymentsRequest input, {
+    connect.Headers? headers,
+    connect.AbortSignal? signal,
+    Function(connect.Headers)? onHeader,
+    Function(connect.Headers)? onTrailer,
+  }) {
+    return connect.Client(_transport).unary(
+      specs.CommerceService.reconcilePayments,
+      input,
+      signal: signal,
+      headers: headers,
+      onHeader: onHeader,
+      onTrailer: onTrailer,
+    );
+  }
+
+  /// Posts one balanced ledger transaction per shop for a trading day,
+  /// merging that day's paid and refunded orders. Scheduled end of day.
+  Future<v1commerce.RunEndOfDayLedgerResponse> runEndOfDayLedger(
+    v1commerce.RunEndOfDayLedgerRequest input, {
+    connect.Headers? headers,
+    connect.AbortSignal? signal,
+    Function(connect.Headers)? onHeader,
+    Function(connect.Headers)? onTrailer,
+  }) {
+    return connect.Client(_transport).unary(
+      specs.CommerceService.runEndOfDayLedger,
       input,
       signal: signal,
       headers: headers,

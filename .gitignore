@@ -3,3 +3,6 @@
 .tmp/
 .claude/
 WORK_STATE.md
+
+# Stray build artifacts
+/cmd

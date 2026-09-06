@@ -100,7 +100,9 @@ service CommerceService {
       "price_list_manage",
       "customer_price_override",
       "discount_manage",
-      "discount_approve"
+      "discount_approve",
+      "shops_list",
+      "ledger_post"
     ]
     role_bindings: [
       {
@@ -121,7 +123,9 @@ service CommerceService {
           "price_list_manage",
           "customer_price_override",
           "discount_manage",
-          "discount_approve"
+          "discount_approve",
+          "shops_list",
+          "ledger_post"
         ]
       },
       {
@@ -142,7 +146,9 @@ service CommerceService {
           "price_list_manage",
           "customer_price_override",
           "discount_manage",
-          "discount_approve"
+          "discount_approve",
+          "shops_list",
+          "ledger_post"
         ]
       },
       {
@@ -157,7 +163,8 @@ service CommerceService {
           "fulfilment_view",
           "fulfilment_manage",
           "price_list_view",
-          "discount_manage"
+          "discount_manage",
+          "shops_list"
         ]
       },
       {
@@ -168,17 +175,24 @@ service CommerceService {
           "cart_view",
           "order_view",
           "fulfilment_view",
-          "price_list_view"
+          "price_list_view",
+          "shops_list"
         ]
       },
       {
+        // Members are buyers within the partition: they may browse, build
+        // their own cart, and check it out. Handlers bind carts and orders
+        // to the caller so this never grants access to other buyers' data.
         role: ROLE_MEMBER
         permissions: [
           "shop_view",
           "product_view",
           "cart_view",
+          "cart_manage",
           "order_view",
-          "price_list_view"
+          "order_manage",
+          "price_list_view",
+          "shops_list"
         ]
       },
       {
@@ -199,7 +213,9 @@ service CommerceService {
           "price_list_manage",
           "customer_price_override",
           "discount_manage",
-          "discount_approve"
+          "discount_approve",
+          "shops_list",
+          "ledger_post"
         ]
       }
     ]
@@ -225,6 +241,12 @@ service CommerceService {
   rpc UpdateShop(UpdateShopRequest) returns (UpdateShopResponse) {
     option (common.v1.method_permissions) = {
       permissions: ["shop_update"]
+    };
+  }
+  // Lists the shops in the caller's partition.
+  rpc ListShops(ListShopsRequest) returns (ListShopsResponse) {
+    option (common.v1.method_permissions) = {
+      permissions: ["shops_list"]
     };
   }
 
@@ -261,6 +283,12 @@ service CommerceService {
   rpc UpdateProductVariant(UpdateProductVariantRequest) returns (UpdateProductVariantResponse) {
     option (common.v1.method_permissions) = {
       permissions: ["product_manage"]
+    };
+  }
+  // Lists the variants of a product.
+  rpc ListProductVariants(ListProductVariantsRequest) returns (ListProductVariantsResponse) {
+    option (common.v1.method_permissions) = {
+      permissions: ["product_view"]
     };
   }
 
@@ -329,6 +357,43 @@ service CommerceService {
   rpc ListOrders(ListOrdersRequest) returns (ListOrdersResponse) {
     option (common.v1.method_permissions) = {
       permissions: ["order_view"]
+    };
+  }
+
+  // Starts payment for an order: creates a hosted checkout session and
+  // returns the page the buyer should be sent to. Idempotent per order.
+  rpc CheckoutOrder(CheckoutOrderRequest) returns (CheckoutOrderResponse) {
+    option (common.v1.method_permissions) = {
+      permissions: ["order_manage"]
+    };
+  }
+  // Marks an order paid after verifying the checkout session with the
+  // payment service. Safe to call repeatedly; used by staff and by the
+  // scheduled reconciler.
+  rpc ConfirmOrderPayment(ConfirmOrderPaymentRequest) returns (ConfirmOrderPaymentResponse) {
+    option (common.v1.method_permissions) = {
+      permissions: ["order_manage"]
+    };
+  }
+  // Cancels an unfulfilled order and returns its stock. Buyers may cancel
+  // their own unpaid orders; staff may cancel any unfulfilled order.
+  rpc CancelOrder(CancelOrderRequest) returns (CancelOrderResponse) {
+    option (common.v1.method_permissions) = {
+      permissions: ["order_manage"]
+    };
+  }
+  // Reconciles orders awaiting payment against the payment service and
+  // expires reservations whose payment window has lapsed. Scheduled.
+  rpc ReconcilePayments(ReconcilePaymentsRequest) returns (ReconcilePaymentsResponse) {
+    option (common.v1.method_permissions) = {
+      permissions: ["ledger_post"]
+    };
+  }
+  // Posts one balanced ledger transaction per shop for a trading day,
+  // merging that day's paid and refunded orders. Scheduled end of day.
+  rpc RunEndOfDayLedger(RunEndOfDayLedgerRequest) returns (RunEndOfDayLedgerResponse) {
+    option (common.v1.method_permissions) = {
+      permissions: ["ledger_post"]
     };
   }
 
@@ -463,6 +528,13 @@ message Shop {
      References files in the Files Service.
   */
   repeated string media_ids = 6;
+  // ISO 4217 currency every product in the shop is priced in.
+  string currency = 7;
+  // Contact that receives seller-side notifications (new orders, payments).
+  string contact_id = 8;
+  // Where the hosted checkout page sends the buyer after paying. Empty uses
+  // the service default.
+  string checkout_return_url = 9;
 
   google.protobuf.Timestamp created_at = 10;
   google.protobuf.Struct extra = 15; // Additional key metadata (algorithm, app_id, etc.)
@@ -478,7 +550,10 @@ message CreateShopRequest {
   string name = 1;
   string slug = 2;
   string description = 3;
+  string currency = 4;
+  string contact_id = 5;
   repeated string media_ids = 6;
+  string checkout_return_url = 7;
 }
 
 message CreateShopResponse {
@@ -498,6 +573,9 @@ message UpdateShopRequest {
   repeated string media_ids = 5;
   ShopStatus status = 6;
   google.protobuf.Struct extra = 7;
+  string currency = 8;
+  string contact_id = 9;
+  string checkout_return_url = 10;
 }
 
 message UpdateShopResponse {
@@ -510,6 +588,15 @@ message GetShopRequest {
     (buf.validate.field).string.max_len = 40,
     (buf.validate.field).string.pattern = "[0-9a-z_-]{3,40}"
   ];
+}
+
+message ListShopsRequest {
+  common.v1.SearchRequest search = 1;
+}
+
+message ListShopsResponse {
+  repeated Shop shops = 1;
+  string next_page = 2;
 }
 
 message GetShopResponse {
@@ -680,6 +767,18 @@ message UpdateProductVariantRequest {
   ProductVariantStatus status = 8;
   map<string, string> attributes = 6;
   repeated string media_ids = 9;
+}
+
+message ListProductVariantsRequest {
+  string product_id = 1 [
+    (buf.validate.field).string.min_len = 3,
+    (buf.validate.field).string.max_len = 40,
+    (buf.validate.field).string.pattern = "[0-9a-z_-]{3,40}"
+  ];
+}
+
+message ListProductVariantsResponse {
+  repeated ProductVariant product_variants = 1;
 }
 
 message UpdateProductVariantResponse {
@@ -860,6 +959,18 @@ message Order {
   repeated OrderLine lines = 10;
 
   google.protobuf.Timestamp created_at = 11;
+
+  // Hosted checkout session for this order, set by CheckoutOrder.
+  string payment_session_ref = 12;
+  // Page the buyer completes payment on.
+  string checkout_url = 13;
+  // Payment service reference once the session completes.
+  string payment_id = 14;
+  google.protobuf.Timestamp paid_at = 17;
+  google.protobuf.Timestamp cancelled_at = 18;
+  string cancel_reason = 19;
+  // Ledger transaction this order was merged into at end of day.
+  string ledger_transaction_id = 20;
 }
 
 enum OrderStatus {
@@ -872,6 +983,8 @@ enum OrderStatus {
 
   // All quantities across all order lines have been fulfilled.
   ORDER_STATUS_FULFILLED = 3;
+  // Stock is reserved and the buyer has a checkout session to complete.
+  ORDER_STATUS_PENDING_PAYMENT = 4;
 }
 
 enum PaymentStatus {
@@ -880,6 +993,8 @@ enum PaymentStatus {
   PAYMENT_STATUS_PAID = 2;
   PAYMENT_STATUS_FAILED = 3;
   PAYMENT_STATUS_REFUNDED = 4;
+  // Payment window lapsed without completion; stock was released.
+  PAYMENT_STATUS_EXPIRED = 5;
 }
 
 message OrderLine {
@@ -969,6 +1084,86 @@ message ListOrdersResponse {
 
   string next_page = 2;
   string prev_cursor = 3;
+}
+
+message CheckoutOrderRequest {
+  string order_id = 1 [
+    (buf.validate.field).string.min_len = 3,
+    (buf.validate.field).string.max_len = 40,
+    (buf.validate.field).string.pattern = "[0-9a-z_-]{3,40}"
+  ];
+  // Overrides the shop's return URL for this session.
+  string return_url = 2;
+  // Optional restriction to specific payment methods.
+  repeated string methods = 3;
+}
+
+message CheckoutOrderResponse {
+  Order order = 1;
+  string checkout_url = 2;
+  string session_ref = 3;
+}
+
+message ConfirmOrderPaymentRequest {
+  string order_id = 1 [
+    (buf.validate.field).string.min_len = 3,
+    (buf.validate.field).string.max_len = 40,
+    (buf.validate.field).string.pattern = "[0-9a-z_-]{3,40}"
+  ];
+}
+
+message ConfirmOrderPaymentResponse {
+  Order order = 1;
+}
+
+message CancelOrderRequest {
+  string order_id = 1 [
+    (buf.validate.field).string.min_len = 3,
+    (buf.validate.field).string.max_len = 40,
+    (buf.validate.field).string.pattern = "[0-9a-z_-]{3,40}"
+  ];
+  string reason = 2;
+}
+
+message CancelOrderResponse {
+  Order order = 1;
+}
+
+message ReconcilePaymentsRequest {
+  // Limit to one shop; empty reconciles every shop in the partition.
+  string shop_id = 1;
+  // Maximum orders to examine in this run.
+  int32 limit = 2;
+}
+
+message ReconcilePaymentsResponse {
+  int32 examined = 1;
+  int32 paid = 2;
+  int32 expired = 3;
+  int32 failed = 4;
+}
+
+message RunEndOfDayLedgerRequest {
+  // Limit to one shop; empty runs every shop in the partition.
+  string shop_id = 1;
+  // Trading day in YYYY-MM-DD, interpreted in the shop's timezone. Empty
+  // means the previous calendar day.
+  string date = 2;
+}
+
+message LedgerPosting {
+  string shop_id = 1;
+  string date = 2;
+  string transaction_id = 3;
+  common.v1.Money sales = 4;
+  common.v1.Money refunds = 5;
+  int32 orders = 6;
+  bool skipped = 7;
+  string error = 8;
+}
+
+message RunEndOfDayLedgerResponse {
+  repeated LedgerPosting postings = 1;
 }
 
 //

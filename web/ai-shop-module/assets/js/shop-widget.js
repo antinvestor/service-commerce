@@ -87,6 +87,11 @@
           lines: lines,
         });
       },
+      checkoutOrder: function (orderId, returnUrl) {
+        var body = { orderId: orderId };
+        if (returnUrl) body.returnUrl = returnUrl;
+        return commerce("CheckoutOrder", body);
+      },
       createOrderFromCart: function (cartId, profileId, addressId) {
         var body = { cartId: cartId, profileId: profileId };
         if (addressId) body.addressId = addressId;
@@ -272,6 +277,32 @@
     var profileId = config.profileId || parseJwtSub(config.token);
     var mediaBase = config.mediaBaseUrl;
     var paymentUrl = config.paymentUrl;
+
+    // startPayment sends the buyer to the hosted checkout page for the order.
+    // The commerce service creates the checkout session and returns its URL;
+    // a legacy paymentUrl is only used when no hosted checkout is configured.
+    function startPayment(order) {
+      if (!order) {
+        showToast("Order placed successfully!", "success");
+        dispatch("INIT");
+        return null;
+      }
+      return api
+        .checkoutOrder(order.id, paymentUrl || undefined)
+        .then(function (r) {
+          if (r.checkoutUrl) {
+            window.location.href = r.checkoutUrl;
+            return null;
+          }
+          showToast("Order " + (order.orderNumber || "") + " placed. Payment is pending.", "success");
+          dispatch("INIT");
+          return null;
+        })
+        .catch(function () {
+          showToast("Order placed. Complete payment from your order page.", "success");
+          dispatch("INIT");
+        });
+    }
 
     function showToast(msg, type) {
       store.setState({ toastMessage: msg, toastType: type || "error" });
@@ -621,20 +652,7 @@
                 cartItems: [],
                 cartOpen: false,
               });
-              if (paymentUrl && order) {
-                var sep = paymentUrl.indexOf("?") >= 0 ? "&" : "?";
-                var redirect =
-                  paymentUrl +
-                  sep +
-                  "orderId=" + encodeURIComponent(order.id) +
-                  "&orderNumber=" + encodeURIComponent(order.orderNumber || "") +
-                  "&total=" + encodeURIComponent(moneyToDecimal(order.total)) +
-                  "&currency=" + encodeURIComponent((order.total && order.total.currencyCode) || "");
-                window.location.href = redirect;
-              } else {
-                showToast("Order placed successfully!", "success");
-                dispatch("INIT");
-              }
+              return startPayment(order);
             })
             .catch(function (err) {
               store.setState({ screen: "checkout" });
@@ -653,21 +671,7 @@
               },
             ])
             .then(function (r) {
-              var order = r.order;
-              if (paymentUrl && order) {
-                var sep = paymentUrl.indexOf("?") >= 0 ? "&" : "?";
-                var redirect =
-                  paymentUrl +
-                  sep +
-                  "orderId=" + encodeURIComponent(order.id) +
-                  "&orderNumber=" + encodeURIComponent(order.orderNumber || "") +
-                  "&total=" + encodeURIComponent(moneyToDecimal(order.total)) +
-                  "&currency=" + encodeURIComponent((order.total && order.total.currencyCode) || "");
-                window.location.href = redirect;
-              } else {
-                showToast("Order placed successfully!", "success");
-                dispatch("INIT");
-              }
+              return startPayment(r.order);
             })
             .catch(function (err) {
               store.setState({ screen: "detail" });

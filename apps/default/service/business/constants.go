@@ -16,7 +16,14 @@ package business
 
 // Field name constants used in update masks.
 const (
-	fieldStatus   = "status"
-	fieldName     = "name"
-	fieldMediaIDs = "media_ids"
+	fieldStatus      = "status"
+	fieldName        = "name"
+	fieldMediaIDs    = "media_ids"
+	fieldDescription = "description"
+	fieldAttributes  = "attributes"
+	fieldSKU         = "sku"
+
+	fieldCurrency          = "currency"
+	fieldContactID         = "contact_id"
+	fieldCheckoutReturnURL = "checkout_return_url"
 )

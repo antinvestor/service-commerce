@@ -70,6 +70,58 @@ class OrderNotifier extends Notifier<AsyncValue<void>> {
       rethrow;
     }
   }
+
+  /// Starts hosted checkout for an order and returns the page URL the buyer
+  /// completes payment on. Idempotent: an existing live session is reused.
+  Future<CheckoutOrderResponse> checkout(String orderId,
+      {String? returnUrl}) async {
+    state = const AsyncValue.loading();
+    try {
+      final request = CheckoutOrderRequest()..orderId = orderId;
+      if (returnUrl != null && returnUrl.isNotEmpty) {
+        request.returnUrl = returnUrl;
+      }
+      final response = await _client.checkoutOrder(request);
+      state = const AsyncValue.data(null);
+      ref.invalidate(orderByIdProvider(orderId));
+      return response;
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+      rethrow;
+    }
+  }
+
+  /// Verifies the checkout session with the payment service and marks the
+  /// order paid.
+  Future<Order> confirmPayment(String orderId) async {
+    state = const AsyncValue.loading();
+    try {
+      final response = await _client
+          .confirmOrderPayment(ConfirmOrderPaymentRequest()..orderId = orderId);
+      state = const AsyncValue.data(null);
+      ref.invalidate(orderByIdProvider(orderId));
+      return response.order;
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+      rethrow;
+    }
+  }
+
+  /// Cancels an unfulfilled order and returns its stock.
+  Future<Order> cancel(String orderId, {String reason = ''}) async {
+    state = const AsyncValue.loading();
+    try {
+      final request = CancelOrderRequest()..orderId = orderId;
+      if (reason.isNotEmpty) request.reason = reason;
+      final response = await _client.cancelOrder(request);
+      state = const AsyncValue.data(null);
+      ref.invalidate(orderByIdProvider(orderId));
+      return response.order;
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+      rethrow;
+    }
+  }
 }
 
 final orderNotifierProvider =

@@ -15,7 +15,7 @@ require (
 	buf.build/gen/go/antinvestor/workflow/protocolbuffers/go v1.36.12-20260511135803-9b0e411394e1.2
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.12-20260825204119-511051f7f437.2
 	buf.build/gen/go/gnostic/gnostic/protocolbuffers/go v1.36.12-20230414000709-087bc8072ce4.2
-	connectrpc.com/connect v1.20.0
+	connectrpc.com/connect v1.21.0
 	github.com/antinvestor/common/notification v0.1.0
 	github.com/antinvestor/common/v2 v2.0.7
 	github.com/pitabwire/frame/v2 v2.1.8

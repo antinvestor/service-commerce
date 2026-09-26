@@ -31,8 +31,6 @@ import '../../features/settings/settings_page.dart';
 import '../auth/tenant_context_provider.dart';
 import '../widgets/responsive_scaffold.dart';
 
-final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
-
 /// Composes the 16 commerce + manufacturing route modules plus the
 /// three cross-cutting modules for the active tenant scope.
 ///
@@ -205,7 +203,8 @@ GoRouter createAppRouter(Ref ref, {String initialLocation = '/'}) {
                 const NoTransitionPage(child: SettingsPage()),
           ),
           // Compose every domain-owned RouteModule. Tenant scope is
-          // resolved lazily at router-construction time via Riverpod.
+          // captured here; appRouterProvider rebuilds the router when it
+          // changes.
           for (final module in buildConsoleModules(ref.read(tenantScopeProvider)))
             ...module.buildRoutes(),
         ],
@@ -214,22 +213,36 @@ GoRouter createAppRouter(Ref ref, {String initialLocation = '/'}) {
   );
 }
 
+/// Remembers the router location across router rebuilds.
+class _RouterLocationMemo {
+  String? location;
+}
+
+final _routerLocationMemoProvider =
+    Provider<_RouterLocationMemo>((ref) => _RouterLocationMemo());
+
 /// Provider for the app router, reactive to auth + tenant-scope
 /// transitions.
+///
+/// Route modules capture `shopId` / `propertyId` when their routes are
+/// built, so the router is rebuilt whenever either changes (shops finish
+/// loading, the operator switches shop). The current location is carried
+/// over so the operator stays on the page they were on.
 final appRouterProvider = Provider<GoRouter>((ref) {
-  final router = createAppRouter(ref);
+  ref.watch(tenantScopeProvider.select((s) => (s.shopId, s.propertyId)));
+  final memo = ref.watch(_routerLocationMemoProvider);
+  final router = createAppRouter(ref, initialLocation: memo.location ?? '/');
 
   // Re-evaluate redirects when auth state changes.
   ref.listen(consoleAuthStateProvider, (previous, next) {
     router.refresh();
   });
 
-  // Re-evaluate when the tenant scope changes (e.g. user switches
-  // organization). Today this triggers a redirect-only refresh; a
-  // future revision will rebuild route modules so per-tenant routes
-  // pick up the new scope.
-  ref.listen(tenantScopeProvider, (previous, next) {
-    router.refresh();
+  ref.onDispose(() {
+    final uri = router.routerDelegate.currentConfiguration.uri;
+    if (uri.path.isNotEmpty) memo.location = uri.toString();
+    // The widget tree still holds the old router until the next frame.
+    WidgetsBinding.instance.addPostFrameCallback((_) => router.dispose());
   });
 
   return router;

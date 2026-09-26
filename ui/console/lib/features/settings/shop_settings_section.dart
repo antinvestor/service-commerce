@@ -4,38 +4,42 @@ import 'package:antinvestor_ui_core/antinvestor_ui_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/auth/tenant_context_provider.dart';
+import '../../core/auth/active_shop_provider.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/widgets/shop_switcher.dart';
 import 'data/shop_providers.dart';
 
-/// Settings panel body for the commerce shop bound to the active tenant
-/// scope.
+/// Settings panel body for the commerce shop the console operates on.
 ///
-/// Resolves the shop via `GetShop` and offers:
-/// - an Edit action (`UpdateShop`) when a shop exists, and
-/// - a Create action (`CreateShop`) when none exists yet.
+/// Shops are resolved via `ListShops` and offer:
+/// - a shop selector when the operator can see several shops,
+/// - an Edit action (`UpdateShop`) for the active shop, and
+/// - a Create action (`CreateShop`); the created shop becomes active.
 class ShopSettingsSection extends ConsumerWidget {
   const ShopSettingsSection({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final scope = ref.watch(tenantScopeProvider);
-    if (scope.shopId.isEmpty) {
-      return Text(
-        'Select an organization to manage its shop.',
-        style: Theme.of(context).textTheme.bodyMedium,
-      );
-    }
-
     final shopAsync = ref.watch(currentShopProvider);
+    final shopCount = ref.watch(shopListProvider).value?.length ?? 0;
     return shopAsync.when(
       loading: () => const Padding(
         padding: EdgeInsets.all(8),
         child: Center(child: CircularProgressIndicator()),
       ),
       error: (err, _) => _ShopError(message: friendlyError(err)),
-      data: (shop) =>
-          shop == null ? const _NoShop() : _ShopDetails(shop: shop),
+      data: (shop) => shop == null
+          ? const _NoShop()
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (shopCount > 1) ...[
+                  const ShopSwitcher(),
+                  const SizedBox(height: 12),
+                ],
+                _ShopDetails(shop: shop),
+              ],
+            ),
     );
   }
 }
@@ -74,7 +78,7 @@ class _NoShop extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'No shop is provisioned for this scope yet.',
+          "You don't have a shop yet. Create one to start selling.",
           style: Theme.of(context).textTheme.bodyMedium,
         ),
         const SizedBox(height: 16),
@@ -112,10 +116,21 @@ class _ShopDetails extends ConsumerWidget {
         _ShopRow(label: 'Return URL', value: shop.checkoutReturnUrl),
         _ShopRow(label: 'Shop ID', value: shop.id),
         const SizedBox(height: 16),
-        OutlinedButton.icon(
-          onPressed: saving ? null : () => _editShop(context, ref, shop),
-          icon: const Icon(Icons.edit_outlined),
-          label: const Text('Edit shop'),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            OutlinedButton.icon(
+              onPressed: saving ? null : () => _editShop(context, ref, shop),
+              icon: const Icon(Icons.edit_outlined),
+              label: const Text('Edit shop'),
+            ),
+            TextButton.icon(
+              onPressed: saving ? null : () => _createShop(context, ref),
+              icon: const Icon(Icons.add_business_outlined),
+              label: const Text('Create another shop'),
+            ),
+          ],
         ),
       ],
     );

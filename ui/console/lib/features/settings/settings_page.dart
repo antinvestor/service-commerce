@@ -239,7 +239,12 @@ class _TenantScopeSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _ScopeRow(label: 'Shop', value: scope.shopId),
+        _ScopeRow(
+          label: 'Shop',
+          value: scope.shopName.isEmpty
+              ? scope.shopId
+              : '${scope.shopName} (${scope.shopId})',
+        ),
         _ScopeRow(label: 'Property', value: scope.propertyId),
         _ScopeRow(label: 'Partition', value: scope.partitionId),
       ],

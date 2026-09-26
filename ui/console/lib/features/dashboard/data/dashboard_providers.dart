@@ -142,7 +142,7 @@ Future<int> _activeBatches(Ref ref, String propertyId) async {
   if (propertyId.isEmpty) return 0;
   try {
     final batches = await ref.read(batchListProvider(propertyId).future);
-    return batches.where(_isActiveBatch).length;
+    return batches.items.where(_isActiveBatch).length;
   } catch (_) {
     return 0;
   }
@@ -172,7 +172,9 @@ Future<int> _lowStockItems(Ref ref, String propertyId) async {
   try {
     // Touch the provider so the page still warms the inventory cache;
     // ignore the result until a dedicated low-stock RPC is available.
-    await ref.read(inventoryItemListProvider(propertyId).future);
+    await ref.read(
+      inventoryItemListProvider((propertyId: propertyId, query: '')).future,
+    );
     return 0;
   } catch (_) {
     return 0;

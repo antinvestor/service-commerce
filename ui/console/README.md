@@ -38,15 +38,27 @@ screens.
 | Payments        | `antinvestor_ui_payment`      | `/payments`               |
 | Identity        | `antinvestor_ui_identity`     | (screens only — no module) |
 
-`shopId` and `propertyId` are resolved from the authenticated user's tenancy
-via `tenantScopeProvider` (`lib/core/auth/tenant_context_provider.dart`): the
-active organization maps to the shop and the active branch (falling back to the
-organization, then the partition) maps to the property. Route modules are built
-for that scope in `buildConsoleModules`.
+`shopId` and `propertyId` are exposed by `tenantScopeProvider`
+(`lib/core/auth/tenant_context_provider.dart`):
+
+- **Shop** — shop ids are generated server-side by `CreateShop`, so the console
+  lists the caller's shops with the commerce `ListShops` RPC
+  (`lib/core/auth/active_shop_provider.dart`) and uses the first active one.
+  When the operator can see several shops, the switcher in the app header (and
+  in **Settings → Shop**) changes the active shop.
+- **Property** — the active branch, falling back to the organization, then the
+  partition (from the tenancy context or the `partition_id` claim).
+
+Route modules are built for that scope in `buildConsoleModules`; the router is
+rebuilt, keeping the current location, whenever the shop or property changes.
 
 The shop itself is managed from **Settings → Shop**, which wires the commerce
-`GetShop` / `CreateShop` / `UpdateShop` RPCs (no `ListShops` exists) against the
-scope's `shopId`.
+`ListShops` / `CreateShop` / `UpdateShop` RPCs. A newly created shop becomes the
+active shop.
+
+Deep links survive sign-in: while auth resolves (or the user signs in) the
+requested location rides along as `?from=` on `/splash` / `/login`, and the
+router returns there once the user is authenticated.
 
 ## Run
 

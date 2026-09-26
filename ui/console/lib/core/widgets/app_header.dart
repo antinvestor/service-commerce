@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../auth/tenant_context_provider.dart';
 import '../theme/app_colors.dart';
+import 'shop_switcher.dart';
 
 class AppHeader extends ConsumerWidget implements PreferredSizeWidget {
   const AppHeader({
@@ -23,7 +23,6 @@ class AppHeader extends ConsumerWidget implements PreferredSizeWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final width = MediaQuery.sizeOf(context).width;
     final isCompact = width < 800;
-    final scope = ref.watch(tenantScopeProvider);
 
     return Container(
       height: 64,
@@ -42,14 +41,11 @@ class AppHeader extends ConsumerWidget implements PreferredSizeWidget {
             ),
             const SizedBox(width: 8),
           ],
-          if (!isCompact) ...[
-            Text(
-              _scopeLabel(scope),
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    color: AppColors.onSurfaceMuted,
-                  ),
+          Flexible(
+            child: ShopSwitcher(
+              onCreateShop: () => context.go('/settings'),
             ),
-          ],
+          ),
           const Spacer(),
           if (!isCompact) ...[
             IconButton(
@@ -67,12 +63,6 @@ class AppHeader extends ConsumerWidget implements PreferredSizeWidget {
         ],
       ),
     );
-  }
-
-  String _scopeLabel(TenantScope scope) {
-    if (scope.shopId.isEmpty) return 'No shop selected';
-    if (scope.propertyId.isEmpty) return scope.shopId;
-    return '${scope.shopId} · ${scope.propertyId}';
   }
 }
 

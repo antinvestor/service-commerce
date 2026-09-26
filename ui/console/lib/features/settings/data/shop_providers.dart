@@ -2,7 +2,6 @@ import 'package:antinvestor_api_commerce/antinvestor_api_commerce.dart'
     show
         CommerceServiceClient,
         CreateShopRequest,
-        GetShopRequest,
         Shop,
         ShopStatus,
         UpdateShopRequest;
@@ -11,33 +10,19 @@ import 'package:antinvestor_api_commerce/antinvestor_api_commerce.dart'
 // ignore: implementation_imports
 import 'package:antinvestor_api_commerce/src/google/protobuf/field_mask.pb.dart'
     show FieldMask;
-import 'package:connectrpc/connect.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/auth/tenant_context_provider.dart';
+import '../../../core/auth/active_shop_provider.dart';
 import '../../../core/services/commerce_client_provider.dart';
 
-/// Loads the shop bound to the active tenant scope via `GetShop`.
+/// The shop the console is operating on, resolved from `ListShops`.
 ///
-/// Returns `null` when no shop exists yet for the scope (the backend
-/// answers `notFound`), which the UI uses to offer a create flow rather
-/// than surfacing an error.
+/// Returns `null` when the caller has no shops yet, which the UI uses to
+/// offer a create flow rather than surfacing an error. Load failures are
+/// surfaced as errors.
 final currentShopProvider = FutureProvider<Shop?>((ref) async {
-  final scope = ref.watch(tenantScopeProvider);
-  if (scope.shopId.isEmpty) return null;
-
-  final client = ref.watch(commerceServiceClientProvider);
-  try {
-    final response = await client.getShop(
-      GetShopRequest(id: scope.shopId),
-    );
-    return response.hasShop() ? response.shop : null;
-  } on ConnectException catch (e) {
-    // No shop provisioned for this scope yet — surface the create flow
-    // instead of an error.
-    if (e.code == Code.notFound) return null;
-    rethrow;
-  }
+  final shops = await ref.watch(shopListProvider.future);
+  return resolveActiveShop(shops, ref.watch(selectedShopIdProvider));
 });
 
 /// Drives shop create/update mutations and exposes their async state so
@@ -49,7 +34,8 @@ class ShopNotifier extends Notifier<AsyncValue<void>> {
   CommerceServiceClient get _client =>
       ref.read(commerceServiceClientProvider);
 
-  /// Provisions a new shop. The authenticated user becomes its admin.
+  /// Provisions a new shop. The authenticated user becomes its admin and
+  /// the new shop becomes the console's active shop.
   Future<Shop> create({
     required String name,
     required String slug,
@@ -72,7 +58,10 @@ class ShopNotifier extends Notifier<AsyncValue<void>> {
         ),
       );
       state = const AsyncValue.data(null);
-      ref.invalidate(currentShopProvider);
+      // The shop id is generated server-side: select it explicitly and
+      // reload the listing so the whole console switches to it.
+      ref.read(selectedShopIdProvider.notifier).select(response.shop.id);
+      ref.invalidate(shopListProvider);
       return response.shop;
     } catch (e, st) {
       state = AsyncValue.error(e, st);
@@ -116,7 +105,7 @@ class ShopNotifier extends Notifier<AsyncValue<void>> {
         ),
       );
       state = const AsyncValue.data(null);
-      ref.invalidate(currentShopProvider);
+      ref.invalidate(shopListProvider);
       return response.shop;
     } catch (e, st) {
       state = AsyncValue.error(e, st);

@@ -1,13 +1,16 @@
+import 'package:antinvestor_auth_runtime/antinvestor_auth_runtime.dart'
+    show userClaimsProvider;
 import 'package:antinvestor_ui_core/auth/tenancy_context.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'active_shop_provider.dart';
+
 /// Resolved shop and property identifiers for the active session.
 ///
-/// The console derives these from the authenticated user's tenancy
-/// context. The current user's `partitionId` maps to a property, and
-/// the active organization maps to a shop. Until full multi-shop
-/// support lands, the partition acts as the property identifier and a
-/// derived value identifies the shop.
+/// The shop is the commerce tenant the merchant operates, resolved from
+/// the shops the caller can see (`ListShops`, see [activeShopProvider]).
+/// The property is the operational site: the active branch, else the
+/// organization, else the partition.
 class TenantScope {
   const TenantScope({
     required this.shopId,
@@ -15,6 +18,7 @@ class TenantScope {
     required this.partitionId,
     required this.organizationId,
     required this.branchId,
+    this.shopName = '',
   });
 
   /// Sentinel scope used before login completes.
@@ -27,6 +31,7 @@ class TenantScope {
       );
 
   final String shopId;
+  final String shopName;
   final String propertyId;
   final String partitionId;
   final String organizationId;
@@ -35,16 +40,22 @@ class TenantScope {
   bool get isReady => shopId.isNotEmpty && propertyId.isNotEmpty;
 }
 
-/// Reads the active [TenancyContext] and projects it onto the
-/// console's [TenantScope]. Returns [TenantScope.empty] when the user
-/// has not yet selected an organization/branch.
+/// Projects the active shop and the user's tenancy onto the console's
+/// [TenantScope].
+///
+/// The partition comes from the selected [TenancyContext] when one is set,
+/// falling back to the `partition_id` claim of the signed-in user.
 final tenantScopeProvider = Provider<TenantScope>((ref) {
   final context = ref.watch(tenancyContextProvider);
-  if (!context.hasPartition) return TenantScope.empty();
+  final shop = ref.watch(activeShopProvider);
 
   final organizationId = context.organizationId;
   final branchId = context.branchId;
-  final partitionId = context.partitionId;
+  var partitionId = context.partitionId;
+  if (partitionId.isEmpty) {
+    final claim = ref.watch(userClaimsProvider).value?['partition_id'];
+    if (claim is String) partitionId = claim;
+  }
 
   // Property is the operational site — a branch when set, else the
   // organization. The partition is the catch-all fallback.
@@ -54,13 +65,9 @@ final tenantScopeProvider = Provider<TenantScope>((ref) {
           ? organizationId
           : partitionId;
 
-  // Shop is the commerce-facing tenant — currently 1:1 with the
-  // organization (or partition until orgs are selected).
-  final shopId =
-      organizationId.isNotEmpty ? organizationId : partitionId;
-
   return TenantScope(
-    shopId: shopId,
+    shopId: shop?.id ?? '',
+    shopName: shop?.name ?? '',
     propertyId: propertyId,
     partitionId: partitionId,
     organizationId: organizationId,

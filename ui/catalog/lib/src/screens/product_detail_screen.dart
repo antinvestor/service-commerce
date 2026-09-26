@@ -7,6 +7,8 @@ import 'package:go_router/go_router.dart';
 import '../providers/catalog_providers.dart';
 import '../widgets/fulfilment_type_badge.dart';
 import '../widgets/product_status_badge.dart';
+import '../widgets/variant_card.dart';
+import '../widgets/variant_edit_dialog.dart';
 
 /// Detail page for a single product showing product info and actions.
 class ProductDetailScreen extends ConsumerWidget {
@@ -181,6 +183,13 @@ class _ProductDetailContent extends StatelessWidget {
               if (attrCard != null) ...[const SizedBox(height: 16), attrCard],
             ]);
           }),
+          const SizedBox(height: 16),
+          _buildCard(
+            context,
+            title: 'Variants',
+            icon: Icons.style_outlined,
+            child: _ProductVariantsList(productId: productId),
+          ),
         ],
       ),
     );
@@ -242,6 +251,69 @@ class _OvRow extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// The product's variants, each with an edit action for name, price,
+/// stock and status.
+class _ProductVariantsList extends ConsumerWidget {
+  const _ProductVariantsList({required this.productId});
+
+  final String productId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final asyncVariants = ref.watch(productVariantsProvider(productId));
+    final saving = ref.watch(variantNotifierProvider).isLoading;
+
+    return asyncVariants.when(
+      loading: () => const Padding(
+        padding: EdgeInsets.all(8),
+        child: Center(child: CircularProgressIndicator()),
+      ),
+      error: (error, _) => Row(
+        children: [
+          Expanded(
+            child: Text(friendlyError(error),
+                style: theme.textTheme.bodySmall
+                    ?.copyWith(color: theme.colorScheme.error)),
+          ),
+          TextButton.icon(
+            onPressed: () =>
+                ref.invalidate(productVariantsProvider(productId)),
+            icon: const Icon(Icons.refresh, size: 18),
+            label: const Text('Retry'),
+          ),
+        ],
+      ),
+      data: (variants) {
+        if (variants.isEmpty) {
+          return Text(
+            'No variants yet. Add one to set a price and stock.',
+            style: theme.textTheme.bodySmall
+                ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+          );
+        }
+        return Column(
+          children: [
+            for (final variant in variants)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: VariantCard(
+                  variant: variant,
+                  onTap: saving
+                      ? null
+                      : () => showVariantEditDialog(context, ref, variant),
+                  onEdit: saving
+                      ? null
+                      : () => showVariantEditDialog(context, ref, variant),
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 }

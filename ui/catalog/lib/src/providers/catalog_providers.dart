@@ -21,6 +21,15 @@ final productByIdProvider =
   return response.product;
 });
 
+/// List the variants of a product.
+final productVariantsProvider =
+    FutureProvider.family<List<ProductVariant>, String>((ref, productId) async {
+  final client = ref.watch(catalogServiceClientProvider);
+  final request = ListProductVariantsRequest()..productId = productId;
+  final response = await client.listProductVariants(request);
+  return response.productVariants;
+});
+
 /// Search products by shop + query.
 final productSearchProvider = FutureProvider.family<List<Product>,
     ({String shopId, String query})>((ref, params) async {
@@ -70,6 +79,7 @@ class VariantNotifier extends Notifier<AsyncValue<void>> {
     try {
       final response = await _client.createProductVariant(request);
       state = const AsyncValue.data(null);
+      ref.invalidate(productVariantsProvider(request.productId));
       return response.productVariant;
     } catch (e, st) {
       state = AsyncValue.error(e, st);
@@ -82,6 +92,10 @@ class VariantNotifier extends Notifier<AsyncValue<void>> {
     try {
       final response = await _client.updateProductVariant(request);
       state = const AsyncValue.data(null);
+      final productId = response.productVariant.productId;
+      if (productId.isNotEmpty) {
+        ref.invalidate(productVariantsProvider(productId));
+      }
       return response.productVariant;
     } catch (e, st) {
       state = AsyncValue.error(e, st);

@@ -50,10 +50,13 @@ type allBiz struct {
 	orderBiz      business.OrderBusiness
 	fulfilmentBiz business.FulfilmentBusiness
 	paymentBiz    business.PaymentBusiness
-	ledgerBiz     business.LedgerBusiness
-	checkout      *fakeCheckout
-	ledger        *fakeLedger
-	notifier      *recordingNotifier
+	// returnPaymentBiz routes buyers back through commerce's return page.
+	returnPaymentBiz business.PaymentBusiness
+	pricingBiz       business.PricingBusiness
+	ledgerBiz        business.LedgerBusiness
+	checkout         *fakeCheckout
+	ledger           *fakeLedger
+	notifier         *recordingNotifier
 }
 
 func (bts *BusinessTestSuite) getBusiness(ctx context.Context, svc *frame.Service) allBiz {
@@ -70,6 +73,17 @@ func (bts *BusinessTestSuite) getBusiness(ctx context.Context, svc *frame.Servic
 	fulfilmentRepo := repository.NewFulfilmentRepository(ctx, dbPool, workMan)
 	fulfilmentLineRepo := repository.NewFulfilmentLineRepository(ctx, dbPool, workMan)
 	postingRepo := repository.NewLedgerPostingRepository(ctx, dbPool, workMan)
+	pricingBiz := business.NewPricingBusiness(
+		ctx,
+		repository.NewPriceListRepository(ctx, dbPool, workMan),
+		repository.NewPriceListEntryRepository(ctx, dbPool, workMan),
+		repository.NewCustomerPriceListAssignmentRepository(ctx, dbPool, workMan),
+		repository.NewCustomerPriceOverrideRepository(ctx, dbPool, workMan),
+		repository.NewDiscountRuleRepository(ctx, dbPool, workMan),
+		variantRepo,
+		productRepo,
+		shopRepo,
+	)
 
 	checkout := newFakeCheckout()
 	ledger := newFakeLedger()
@@ -92,6 +106,7 @@ func (bts *BusinessTestSuite) getBusiness(ctx context.Context, svc *frame.Servic
 			shopRepo,
 			cartRepo,
 			cartLineRepo,
+			pricingBiz,
 			business.OrderPolicy{PaymentWindow: paymentPolicy.PaymentWindow},
 		),
 		fulfilmentBiz: business.NewFulfilmentBusiness(
@@ -104,6 +119,13 @@ func (bts *BusinessTestSuite) getBusiness(ctx context.Context, svc *frame.Servic
 			notifier,
 		),
 		paymentBiz: business.NewPaymentBusiness(ctx, orderRepo, shopRepo, checkout, notifier, paymentPolicy),
+		returnPaymentBiz: business.NewPaymentBusiness(ctx, orderRepo, shopRepo, checkout, notifier,
+			business.PaymentPolicy{
+				DefaultReturnURL: paymentPolicy.DefaultReturnURL,
+				ReturnBaseURL:    "https://api.example/commerce/",
+				PaymentWindow:    paymentPolicy.PaymentWindow,
+			}),
+		pricingBiz: pricingBiz,
 		ledgerBiz: business.NewLedgerBusiness(ctx, orderRepo, shopRepo, postingRepo, ledger, notifier,
 			business.LedgerPolicy{BookType: "merchant", Timezone: "UTC"}),
 		checkout: checkout,

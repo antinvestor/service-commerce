@@ -16,6 +16,7 @@ package business
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"math"
 	"sort"
@@ -775,6 +776,11 @@ func (pb *pricingBusiness) ResolvePrice(
 		)
 	}
 	shopID := product.ShopID
+	target := discountTarget{
+		variantID: variant.GetID(),
+		productID: product.GetID(),
+		quantity:  int64(req.GetQuantity()),
+	}
 
 	resolved := &commercev1.ResolvedPrice{
 		VariantId: req.GetProductVariantId(),
@@ -795,7 +801,7 @@ func (pb *pricingBusiness) ResolvePrice(
 			)
 			resolved.PriceSource = commercev1.PriceSource_PRICE_SOURCE_CUSTOMER_OVERRIDE
 			resolved.OverrideId = override.ID
-			return pb.applyDiscounts(ctx, resolved, shopID)
+			return pb.applyDiscounts(ctx, resolved, shopID, target)
 		}
 	}
 
@@ -811,7 +817,7 @@ func (pb *pricingBusiness) ResolvePrice(
 			resolved.UnitPrice = priceListPrice.unitPrice
 			resolved.PriceSource = commercev1.PriceSource_PRICE_SOURCE_PRICE_LIST
 			resolved.PriceListId = priceListPrice.priceListID
-			return pb.applyDiscounts(ctx, resolved, shopID)
+			return pb.applyDiscounts(ctx, resolved, shopID, target)
 		}
 	}
 
@@ -823,7 +829,7 @@ func (pb *pricingBusiness) ResolvePrice(
 	)
 	resolved.PriceSource = commercev1.PriceSource_PRICE_SOURCE_CATALOG
 
-	return pb.applyDiscounts(ctx, resolved, shopID)
+	return pb.applyDiscounts(ctx, resolved, shopID, target)
 }
 
 type priceListMatch struct {
@@ -929,10 +935,95 @@ func isPriceListActive(pl *models.PriceList) bool {
 	return true
 }
 
+// discountTarget is what a discount rule's conditions are evaluated against.
+type discountTarget struct {
+	variantID string
+	productID string
+	quantity  int64
+}
+
+// Discount rule condition keys understood at pricing time. A rule carrying
+// any other key is never applied automatically: guessing at a condition
+// would give away money the merchant did not intend to.
+const (
+	conditionVariantIDs  = "variant_ids"
+	conditionProductIDs  = "product_ids"
+	conditionMinQuantity = "min_quantity"
+)
+
+// discountApplies reports whether rule may be applied to one unit of target
+// without a person approving it.
+func discountApplies(rule *models.DiscountRule, target discountTarget) bool {
+	if rule.RequiresApproval {
+		return false
+	}
+	switch commercev1.DiscountAppliesTo(rule.AppliesTo) {
+	case commercev1.DiscountAppliesTo_DISCOUNT_APPLIES_TO_LINE_ITEM:
+	case commercev1.DiscountAppliesTo_DISCOUNT_APPLIES_TO_ORDER:
+		// A fixed amount off the order cannot be spread per unit; a
+		// percentage off the order is the same percentage off every unit.
+		if commercev1.DiscountType(rule.DiscountType) != commercev1.DiscountType_DISCOUNT_TYPE_PERCENTAGE {
+			return false
+		}
+	case commercev1.DiscountAppliesTo_DISCOUNT_APPLIES_TO_UNSPECIFIED:
+		return false
+	default:
+		return false
+	}
+	for key, value := range rule.Conditions {
+		switch key {
+		case conditionVariantIDs:
+			if !conditionListContains(value, target.variantID) {
+				return false
+			}
+		case conditionProductIDs:
+			if !conditionListContains(value, target.productID) {
+				return false
+			}
+		case conditionMinQuantity:
+			minQty, ok := conditionNumber(value)
+			if !ok || float64(target.quantity) < minQty {
+				return false
+			}
+		default:
+			return false
+		}
+	}
+	return true
+}
+
+// conditionNumber reads a numeric condition whether it came straight from a
+// protobuf Struct (float64) or back out of the JSONB column (json.Number).
+func conditionNumber(value any) (float64, bool) {
+	switch v := value.(type) {
+	case float64:
+		return v, true
+	case json.Number:
+		f, err := v.Float64()
+		return f, err == nil
+	default:
+		return 0, false
+	}
+}
+
+func conditionListContains(value any, want string) bool {
+	items, ok := value.([]any)
+	if !ok {
+		return false
+	}
+	for _, item := range items {
+		if s, isString := item.(string); isString && s == want {
+			return true
+		}
+	}
+	return false
+}
+
 func (pb *pricingBusiness) applyDiscounts(
 	ctx context.Context,
 	resolved *commercev1.ResolvedPrice,
 	shopID string,
+	target discountTarget,
 ) (*commercev1.ResolvedPrice, error) {
 	if resolved.GetUnitPrice() == nil {
 		return resolved, nil
@@ -950,8 +1041,7 @@ func (pb *pricingBusiness) applyDiscounts(
 	var bestDiscountAmount int64
 
 	for _, rule := range rules {
-		if rule.AppliesTo != int32(commercev1.DiscountAppliesTo_DISCOUNT_APPLIES_TO_LINE_ITEM) &&
-			rule.AppliesTo != int32(commercev1.DiscountAppliesTo_DISCOUNT_APPLIES_TO_ORDER) {
+		if !discountApplies(rule, target) {
 			continue
 		}
 

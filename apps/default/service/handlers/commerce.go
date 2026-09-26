@@ -90,6 +90,18 @@ func NewCommerceServer(
 	discountRuleRepo := repository.NewDiscountRuleRepository(ctx, dbPool, workMan)
 	postingRepo := repository.NewLedgerPostingRepository(ctx, dbPool, workMan)
 
+	pricingBusiness := business.NewPricingBusiness(
+		ctx,
+		priceListRepo,
+		priceListEntryRepo,
+		assignmentRepo,
+		overrideRepo,
+		discountRuleRepo,
+		variantRepo,
+		productRepo,
+		shopRepo,
+	)
+
 	return &CommerceServer{
 		authz:           authzMiddleware,
 		shopBusiness:    business.NewShopBusiness(ctx, shopRepo, authzMiddleware),
@@ -104,6 +116,7 @@ func NewCommerceServer(
 			shopRepo,
 			cartRepo,
 			cartLineRepo,
+			pricingBusiness,
 			business.OrderPolicy{PaymentWindow: deps.PaymentPolicy.PaymentWindow},
 		),
 		fulfilmentBusiness: business.NewFulfilmentBusiness(
@@ -121,17 +134,7 @@ func NewCommerceServer(
 		ledgerBusiness: business.NewLedgerBusiness(
 			ctx, orderRepo, shopRepo, postingRepo, deps.Ledger, deps.Notifier, deps.LedgerPolicy,
 		),
-		pricingBusiness: business.NewPricingBusiness(
-			ctx,
-			priceListRepo,
-			priceListEntryRepo,
-			assignmentRepo,
-			overrideRepo,
-			discountRuleRepo,
-			variantRepo,
-			productRepo,
-			shopRepo,
-		),
+		pricingBusiness: pricingBusiness,
 	}
 }
 

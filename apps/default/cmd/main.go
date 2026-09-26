@@ -23,6 +23,7 @@ import (
 	"github.com/antinvestor/common/v2/permissions"
 	"github.com/pitabwire/frame/v2"
 	"github.com/pitabwire/frame/v2/config"
+	"github.com/pitabwire/frame/v2/datastore"
 	"github.com/pitabwire/frame/v2/security/authorizer"
 	connectInterceptors "github.com/pitabwire/frame/v2/security/interceptors/connect"
 	"github.com/pitabwire/frame/v2/setup"
@@ -89,6 +90,13 @@ func main() {
 	}
 
 	// Runtime: HTTP only, no permission registration.
+	// Without a database every repository would be built on a nil pool; say
+	// so plainly instead of crashing on the first dereference.
+	if svc.DatastoreManager().GetPool(ctx, datastore.DefaultPoolName) == nil {
+		log.Error("database is unavailable; check DATABASE_URL and the database provider's status")
+		return
+	}
+
 	platform, err := clients.New(ctx, &cfg)
 	if err != nil {
 		log.WithError(err).Fatal("could not build peer clients")
@@ -148,7 +156,9 @@ func setupConnectServer(
 		Notifier: notifications.New(platform.Notification),
 		PaymentPolicy: business.PaymentPolicy{
 			DefaultReturnURL:   cfg.CheckoutReturnURL,
+			ReturnBaseURL:      cfg.ReturnBaseURL(),
 			PaymentWindow:      cfg.OrderPaymentWindow,
+			SettleGrace:        cfg.PaymentSettleGrace,
 			ReconcileBatchSize: cfg.PaymentReconcileBatchSize,
 		},
 		LedgerPolicy: business.LedgerPolicy{
@@ -161,6 +171,7 @@ func setupConnectServer(
 		implementation, connect.WithInterceptors(defaultInterceptorList...))
 
 	mux := http.NewServeMux()
+	mux.Handle(business.PaymentReturnPath, implementation.PaymentReturnHandler())
 	mux.Handle("/", serverHandler)
 
 	return mux

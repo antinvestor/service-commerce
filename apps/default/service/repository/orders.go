@@ -343,6 +343,41 @@ func (r *orderRepository) CancelAndRestock(
 	return transitioned, err
 }
 
+func (r *orderRepository) AttachPaymentSession(ctx context.Context, orderID, ref, checkoutURL string) error {
+	return r.Pool().DB(ctx, false).Transaction(func(tx *gorm.DB) error {
+		result := tx.Model(&models.Order{}).
+			Where("id = ?", orderID).
+			UpdateColumns(map[string]any{
+				"payment_session_ref": ref,
+				"checkout_url":        checkoutURL,
+			})
+		if result.Error != nil {
+			return fmt.Errorf("attach payment session: %w", result.Error)
+		}
+		if result.RowsAffected == 0 {
+			return fmt.Errorf("attach payment session: order %s: %w", orderID, gorm.ErrRecordNotFound)
+		}
+		session := &models.OrderPaymentSession{OrderID: orderID, SessionRef: ref}
+		if err := tx.Create(session).Error; err != nil {
+			return fmt.Errorf("record payment session: %w", err)
+		}
+		return nil
+	})
+}
+
+func (r *orderRepository) ListPaymentSessionRefs(ctx context.Context, orderID string) ([]string, error) {
+	var refs []string
+	err := r.Pool().DB(ctx, true).
+		Model(&models.OrderPaymentSession{}).
+		Where("order_id = ?", orderID).
+		Order("created_at ASC").
+		Pluck("session_ref", &refs).Error
+	if err != nil {
+		return nil, fmt.Errorf("list payment sessions: %w", err)
+	}
+	return refs, nil
+}
+
 func (r *orderRepository) SetLedgerTransaction(ctx context.Context, orderIDs []string, transactionID string) error {
 	return r.stampColumn(ctx, orderIDs, "ledger_transaction_id", transactionID)
 }

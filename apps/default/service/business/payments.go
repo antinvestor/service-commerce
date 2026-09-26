@@ -18,9 +18,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/url"
+	"slices"
 	"strings"
 	"time"
 
+	commonv1 "buf.build/gen/go/antinvestor/common/protocolbuffers/go/common/v1"
 	checkoutv1 "buf.build/gen/go/antinvestor/payment/protocolbuffers/go/checkout/v1"
 	"connectrpc.com/connect"
 	"github.com/pitabwire/frame/v2"
@@ -47,8 +50,16 @@ type CheckoutGateway interface {
 type PaymentPolicy struct {
 	// DefaultReturnURL is used when a shop has none; {order_id} is substituted.
 	DefaultReturnURL string
+	// ReturnBaseURL is commerce's own public address. When set, hosted
+	// checkout sends buyers to {ReturnBaseURL}/payments/return so the payment
+	// is verified the moment they come back; they are then forwarded to the
+	// storefront URL, or shown a status page when there is none.
+	ReturnBaseURL string
 	// PaymentWindow bounds how long stock stays reserved for an unpaid order.
 	PaymentWindow time.Duration
+	// SettleGrace keeps an overdue order open while a payment attempt is
+	// still in flight at the provider, so a slow confirmation is not lost.
+	SettleGrace time.Duration
 	// ReconcileBatchSize caps orders examined per reconcile run.
 	ReconcileBatchSize int
 }
@@ -61,11 +72,19 @@ type ReconcileSummary struct {
 	Failed   int32
 }
 
+// PaymentReturn is the outcome of a buyer returning from hosted checkout.
+type PaymentReturn struct {
+	Order *commercev1.Order
+	// RedirectURL is the storefront page to forward the buyer to; empty when
+	// commerce should render the status itself.
+	RedirectURL string
+}
+
 type PaymentBusiness interface {
 	// CheckoutOrder creates (or returns) the hosted checkout session for an
 	// order awaiting payment.
 	CheckoutOrder(ctx context.Context, req *commercev1.CheckoutOrderRequest) (*commercev1.Order, error)
-	// ConfirmOrderPayment verifies the checkout session and marks the order
+	// ConfirmOrderPayment verifies the checkout sessions and marks the order
 	// paid. Safe to call repeatedly.
 	ConfirmOrderPayment(ctx context.Context, orderID string) (*commercev1.Order, error)
 	// CancelOrder cancels an unfulfilled order and returns stock. Buyers may
@@ -75,6 +94,10 @@ type PaymentBusiness interface {
 	// ReconcilePayments settles orders whose sessions completed and expires
 	// orders whose payment window lapsed.
 	ReconcilePayments(ctx context.Context, shopID string, limit int) (*ReconcileSummary, error)
+	// HandlePaymentReturn settles the order a buyer is returning from hosted
+	// checkout with. sessionRef must be one of the order's sessions; it is
+	// the capability that lets an unauthenticated browser redirect through.
+	HandlePaymentReturn(ctx context.Context, orderID, sessionRef string) (*PaymentReturn, error)
 }
 
 func NewPaymentBusiness(
@@ -88,9 +111,13 @@ func NewPaymentBusiness(
 	if policy.PaymentWindow <= 0 {
 		policy.PaymentWindow = defaultPaymentWindow
 	}
+	if policy.SettleGrace <= 0 {
+		policy.SettleGrace = defaultSettleGrace
+	}
 	if policy.ReconcileBatchSize <= 0 {
 		policy.ReconcileBatchSize = defaultReconcileBatch
 	}
+	policy.ReturnBaseURL = strings.TrimRight(strings.TrimSpace(policy.ReturnBaseURL), "/")
 	return &paymentBusiness{
 		orderRepo: orderRepo,
 		shopRepo:  shopRepo,
@@ -102,13 +129,22 @@ func NewPaymentBusiness(
 
 const (
 	defaultPaymentWindow  = 45 * time.Minute
+	defaultSettleGrace    = time.Hour
 	defaultReconcileBatch = 200
 	orderRefPrefix        = "order:"
 	metadataShopID        = "shop_id"
 	metadataOrderNumber   = "order_number"
 	metadataSource        = "source"
+	metadataReturnTo      = "return_to"
 	sourceCommerce        = "service_commerce"
 	cancelReasonExpired   = "payment window expired"
+
+	// PaymentReturnPath is where hosted checkout sends buyers back to.
+	PaymentReturnPath = "/payments/return"
+
+	// Checkout session field limits (checkout.v1 validation).
+	sessionNameMaxLen        = 100
+	sessionDescriptionMaxLen = 500
 )
 
 type paymentBusiness struct {
@@ -117,6 +153,73 @@ type paymentBusiness struct {
 	gateway   CheckoutGateway
 	notifier  notifications.Notifier
 	policy    PaymentPolicy
+}
+
+// --- session scan ---
+
+// sessionScan is what the checkout service knows about every session issued
+// for an order.
+type sessionScan struct {
+	refs []string
+	// sessions holds each session that could be read, by ref.
+	sessions map[string]*checkoutv1.CheckoutSession
+	// completed is the first session found paid.
+	completed *checkoutv1.CheckoutSession
+	// inFlight means a payment prompt went out on some session and the
+	// provider has not reported a final outcome yet.
+	inFlight bool
+	// unreadable counts sessions that failed to load for a reason other than
+	// not existing; their state is unknown.
+	unreadable int
+	lastErr    error
+}
+
+func (pb *paymentBusiness) scanSessions(ctx context.Context, order *models.Order) (*sessionScan, error) {
+	refs, err := pb.orderRepo.ListPaymentSessionRefs(ctx, order.GetID())
+	if err != nil {
+		return nil, data.ErrorConvertToAPI(err)
+	}
+	// Orders created before session history was kept only carry the latest.
+	if order.PaymentSessionRef != "" && !slices.Contains(refs, order.PaymentSessionRef) {
+		refs = append(refs, order.PaymentSessionRef)
+	}
+
+	scan := &sessionScan{refs: refs, sessions: make(map[string]*checkoutv1.CheckoutSession, len(refs))}
+	for _, ref := range refs {
+		session, getErr := pb.gateway.GetSession(ctx, ref)
+		if getErr != nil {
+			if !isNotFound(getErr) {
+				scan.unreadable++
+				scan.lastErr = getErr
+				util.Log(ctx).WithError(getErr).
+					WithField("order_id", order.GetID()).
+					WithField("session_ref", ref).
+					Warn("could not load checkout session")
+			}
+			continue
+		}
+		scan.sessions[ref] = session
+		switch session.GetStatus() {
+		case checkoutv1.SessionStatus_SESSION_STATUS_COMPLETED:
+			if scan.completed == nil {
+				scan.completed = session
+			}
+		case checkoutv1.SessionStatus_SESSION_STATUS_PROCESSING,
+			checkoutv1.SessionStatus_SESSION_STATUS_EXPIRED:
+			// Checkout still recovers an expired session whose prompt later
+			// succeeds, so a prompt on either status may yet be paid.
+			if session.GetPromptId() != "" {
+				scan.inFlight = true
+			}
+		case checkoutv1.SessionStatus_SESSION_STATUS_PENDING_UNSPECIFIED,
+			checkoutv1.SessionStatus_SESSION_STATUS_FAILED:
+		}
+	}
+	return scan, nil
+}
+
+func isNotFound(err error) bool {
+	return connect.CodeOf(err) == connect.CodeNotFound || frame.ErrorIsNotFound(err)
 }
 
 // --- CheckoutOrder ---
@@ -141,16 +244,31 @@ func (pb *paymentBusiness) CheckoutOrder(
 		return nil, connect.NewError(connect.CodeFailedPrecondition, errors.New("order is not awaiting payment"))
 	}
 
-	// An existing live session is reused so a buyer who reloads does not get
-	// a second reservation at the payment service.
+	scan, err := pb.scanSessions(ctx, order)
+	if err != nil {
+		return nil, err
+	}
+
+	// A buyer may have paid an earlier link; never issue a new session for
+	// an order that is already paid at the checkout service.
+	if scan.completed != nil {
+		if err = pb.settle(ctx, order, scan.completed); err != nil {
+			return nil, err
+		}
+		return pb.refresh(ctx, order.GetID())
+	}
+
 	if order.PaymentSessionRef != "" {
-		session, getErr := pb.gateway.GetSession(ctx, order.PaymentSessionRef)
-		if getErr == nil && sessionReusable(session) {
+		// A live session is reused so a buyer who reloads, or whose attempt
+		// failed and wants to retry, stays on the same payment page.
+		if current, ok := scan.sessions[order.PaymentSessionRef]; ok && sessionReusable(current) {
 			return order.ToAPI(), nil
 		}
-		if getErr != nil {
-			util.Log(ctx).WithError(getErr).WithField("order_id", order.GetID()).
-				Warn("could not load existing checkout session; creating a new one")
+		// If the current session could not be read its state is unknown;
+		// issuing another could let the buyer pay twice.
+		if scan.unreadable > 0 {
+			return nil, connect.NewError(connect.CodeUnavailable,
+				fmt.Errorf("verify existing checkout session: %w", scan.lastErr))
 		}
 	}
 
@@ -164,11 +282,11 @@ func (pb *paymentBusiness) CheckoutOrder(
 		return nil, connect.NewError(connect.CodeUnavailable, fmt.Errorf("create checkout session: %w", err))
 	}
 
+	if err = pb.orderRepo.AttachPaymentSession(ctx, order.GetID(), session.GetRef(), session.GetPageUrl()); err != nil {
+		return nil, data.ErrorConvertToAPI(err)
+	}
 	order.PaymentSessionRef = session.GetRef()
 	order.CheckoutURL = session.GetPageUrl()
-	if _, updErr := pb.orderRepo.Update(ctx, order, "payment_session_ref", "checkout_url"); updErr != nil {
-		return nil, data.ErrorConvertToAPI(updErr)
-	}
 
 	// The buyer's confirmation carries the payment link, so it goes out once
 	// the session exists rather than at order creation.
@@ -177,16 +295,19 @@ func (pb *paymentBusiness) CheckoutOrder(
 	return order.ToAPI(), nil
 }
 
+// sessionReusable reports whether the buyer can still pay on s. A failed
+// attempt is retryable on the same page; only completed and expired sessions
+// are finished.
 func sessionReusable(s *checkoutv1.CheckoutSession) bool {
 	if s == nil || s.GetPageUrl() == "" {
 		return false
 	}
 	switch s.GetStatus() {
 	case checkoutv1.SessionStatus_SESSION_STATUS_PENDING_UNSPECIFIED,
-		checkoutv1.SessionStatus_SESSION_STATUS_PROCESSING:
+		checkoutv1.SessionStatus_SESSION_STATUS_PROCESSING,
+		checkoutv1.SessionStatus_SESSION_STATUS_FAILED:
 		return true
 	case checkoutv1.SessionStatus_SESSION_STATUS_COMPLETED,
-		checkoutv1.SessionStatus_SESSION_STATUS_FAILED,
 		checkoutv1.SessionStatus_SESSION_STATUS_EXPIRED:
 		return false
 	default:
@@ -194,11 +315,13 @@ func sessionReusable(s *checkoutv1.CheckoutSession) bool {
 	}
 }
 
-func (pb *paymentBusiness) buildSessionRequest(
+// storefrontReturnURL is where the buyer finally lands: the request's URL,
+// else the shop's, else the deployment default, with {order_id} filled in.
+func (pb *paymentBusiness) storefrontReturnURL(
 	shop *models.Shop,
 	order *models.Order,
 	req *commercev1.CheckoutOrderRequest,
-) *checkoutv1.CreateCheckoutSessionRequest {
+) string {
 	returnURL := strings.TrimSpace(req.GetReturnUrl())
 	if returnURL == "" {
 		returnURL = shop.CheckoutReturnURL
@@ -206,7 +329,29 @@ func (pb *paymentBusiness) buildSessionRequest(
 	if returnURL == "" {
 		returnURL = pb.policy.DefaultReturnURL
 	}
-	returnURL = strings.ReplaceAll(returnURL, "{order_id}", order.GetID())
+	return strings.ReplaceAll(returnURL, "{order_id}", order.GetID())
+}
+
+func (pb *paymentBusiness) buildSessionRequest(
+	shop *models.Shop,
+	order *models.Order,
+	req *commercev1.CheckoutOrderRequest,
+) *checkoutv1.CreateCheckoutSessionRequest {
+	metadata := map[string]string{
+		metadataShopID:      shop.GetID(),
+		metadataOrderNumber: order.OrderNumber,
+		metadataSource:      sourceCommerce,
+	}
+
+	returnURL := pb.storefrontReturnURL(shop, order, req)
+	if pb.policy.ReturnBaseURL != "" {
+		// Route the buyer through commerce so the payment is confirmed on
+		// arrival; the storefront URL rides along in the session metadata.
+		if returnURL != "" {
+			metadata[metadataReturnTo] = returnURL
+		}
+		returnURL = pb.policy.ReturnBaseURL + PaymentReturnPath + "?order=" + url.QueryEscape(order.GetID())
+	}
 
 	payer := checkoutv1.PayerPrefill_builder{ProfileId: order.ProfileID}
 	if order.ContactID != "" {
@@ -216,20 +361,27 @@ func (pb *paymentBusiness) buildSessionRequest(
 	}
 
 	return checkoutv1.CreateCheckoutSessionRequest_builder{
-		Name:         fmt.Sprintf("%s order %s", shop.Name, order.OrderNumber),
-		Description:  fmt.Sprintf("%d item(s) from %s", len(order.Lines), shop.Name),
+		Name: truncateRunes(fmt.Sprintf("%s order %s", shop.Name, order.OrderNumber), sessionNameMaxLen),
+		Description: truncateRunes(
+			fmt.Sprintf("%d item(s) from %s", len(order.Lines), shop.Name),
+			sessionDescriptionMaxLen,
+		),
 		Amount:       models.MoneyToProto(order.TotalCurrency, order.TotalUnits, order.TotalNanos),
 		AmountOption: checkoutv1.AmountOption_AMOUNT_OPTION_FIXED_UNSPECIFIED,
 		OrderRef:     orderRefPrefix + order.GetID(),
-		Metadata: map[string]string{
-			metadataShopID:      shop.GetID(),
-			metadataOrderNumber: order.OrderNumber,
-			metadataSource:      sourceCommerce,
-		},
-		ReturnUrl: returnURL,
-		Payer:     payer.Build(),
-		Methods:   req.GetMethods(),
+		Metadata:     metadata,
+		ReturnUrl:    returnURL,
+		Payer:        payer.Build(),
+		Methods:      req.GetMethods(),
 	}.Build()
+}
+
+func truncateRunes(s string, limit int) string {
+	r := []rune(s)
+	if len(r) <= limit {
+		return s
+	}
+	return string(r[:limit])
 }
 
 // --- ConfirmOrderPayment ---
@@ -245,30 +397,56 @@ func (pb *paymentBusiness) ConfirmOrderPayment(ctx context.Context, orderID stri
 	if order.Status != int32(commercev1.OrderStatus_ORDER_STATUS_PENDING_PAYMENT) {
 		return nil, connect.NewError(connect.CodeFailedPrecondition, errors.New("order is not awaiting payment"))
 	}
-	if order.PaymentSessionRef == "" {
-		return nil, connect.NewError(connect.CodeFailedPrecondition, errors.New("order has no checkout session"))
-	}
 	if pb.gateway == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errors.New("online payment is not configured"))
 	}
 
-	session, err := pb.gateway.GetSession(ctx, order.PaymentSessionRef)
+	scan, err := pb.scanSessions(ctx, order)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeUnavailable, fmt.Errorf("verify checkout session: %w", err))
-	}
-	if session.GetStatus() != checkoutv1.SessionStatus_SESSION_STATUS_COMPLETED {
-		return nil, connect.NewError(connect.CodeFailedPrecondition,
-			fmt.Errorf("checkout session is %s, not completed", session.GetStatus()))
-	}
-	if err = pb.settle(ctx, order, session.GetPaymentId()); err != nil {
 		return nil, err
 	}
-	return pb.refresh(ctx, order.GetID())
+	if len(scan.refs) == 0 {
+		return nil, connect.NewError(connect.CodeFailedPrecondition, errors.New("order has no checkout session"))
+	}
+	if scan.completed != nil {
+		if err = pb.settle(ctx, order, scan.completed); err != nil {
+			return nil, err
+		}
+		return pb.refresh(ctx, order.GetID())
+	}
+	if len(scan.sessions) == 0 && scan.unreadable > 0 {
+		return nil, connect.NewError(connect.CodeUnavailable, fmt.Errorf("verify checkout session: %w", scan.lastErr))
+	}
+
+	status := checkoutv1.SessionStatus_SESSION_STATUS_EXPIRED
+	if current, ok := scan.sessions[order.PaymentSessionRef]; ok {
+		status = current.GetStatus()
+	}
+	return nil, connect.NewError(connect.CodeFailedPrecondition,
+		fmt.Errorf("checkout session is %s, not completed", status))
 }
 
-// settle marks the order paid and notifies both sides. Only the first caller
+// settle marks the order paid and notifies both sides, after checking the
+// session charged exactly the order total. Only the first caller
 // transitions; concurrent confirmations are no-ops.
-func (pb *paymentBusiness) settle(ctx context.Context, order *models.Order, paymentID string) error {
+func (pb *paymentBusiness) settle(ctx context.Context, order *models.Order, session *checkoutv1.CheckoutSession) error {
+	if !amountMatches(order, session.GetAmount()) {
+		util.Log(ctx).
+			WithField("order_id", order.GetID()).
+			WithField("session_ref", session.GetRef()).
+			WithField("order_total", fmt.Sprintf("%s %d.%09d", order.TotalCurrency, order.TotalUnits, order.TotalNanos)).
+			WithField("session_amount", fmt.Sprintf("%s %d.%09d", session.GetAmount().GetCurrencyCode(),
+				session.GetAmount().GetUnits(), session.GetAmount().GetNanos())).
+			Error("checkout session amount does not match the order total; not settling")
+		return connect.NewError(connect.CodeFailedPrecondition,
+			errors.New("the payment amount does not match the order total"))
+	}
+
+	paymentID := session.GetPaymentId()
+	if paymentID == "" {
+		paymentID = session.GetRef()
+	}
+
 	paidAt := time.Now()
 	ok, err := pb.orderRepo.MarkPaid(ctx, order.GetID(), paymentID, paidAt)
 	if err != nil {
@@ -288,12 +466,70 @@ func (pb *paymentBusiness) settle(ctx context.Context, order *models.Order, paym
 	return nil
 }
 
+// amountMatches compares the charged amount with the order total to the cent,
+// which is the precision hosted checkout charges at.
+func amountMatches(order *models.Order, charged *commonv1.Money) bool {
+	if charged == nil || !strings.EqualFold(charged.GetCurrencyCode(), order.TotalCurrency) {
+		return false
+	}
+	return models.MoneyCents(charged.GetUnits(), charged.GetNanos()) ==
+		models.MoneyCents(order.TotalUnits, order.TotalNanos)
+}
+
 func (pb *paymentBusiness) refresh(ctx context.Context, orderID string) (*commercev1.Order, error) {
 	order, err := pb.orderRepo.GetWithLines(ctx, orderID)
 	if err != nil {
 		return nil, data.ErrorConvertToAPI(err)
 	}
 	return order.ToAPI(), nil
+}
+
+// --- HandlePaymentReturn ---
+
+func (pb *paymentBusiness) HandlePaymentReturn(
+	ctx context.Context,
+	orderID, sessionRef string,
+) (*PaymentReturn, error) {
+	if pb.gateway == nil {
+		return nil, connect.NewError(connect.CodeUnimplemented, errors.New("online payment is not configured"))
+	}
+	if orderID == "" || sessionRef == "" {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("order and session are required"))
+	}
+
+	order, err := pb.orderRepo.GetWithLines(ctx, orderID)
+	if err != nil {
+		return nil, data.ErrorConvertToAPI(err)
+	}
+	refs, err := pb.orderRepo.ListPaymentSessionRefs(ctx, order.GetID())
+	if err != nil {
+		return nil, data.ErrorConvertToAPI(err)
+	}
+	if sessionRef != order.PaymentSessionRef && !slices.Contains(refs, sessionRef) {
+		// Indistinguishable from a missing order so refs cannot be probed.
+		return nil, connect.NewError(connect.CodeNotFound, errors.New("order not found"))
+	}
+
+	if order.Status == int32(commercev1.OrderStatus_ORDER_STATUS_PENDING_PAYMENT) {
+		scan, scanErr := pb.scanSessions(ctx, order)
+		if scanErr != nil {
+			return nil, scanErr
+		}
+		if scan.completed != nil {
+			// A mismatch is logged inside settle and the order stays unpaid.
+			_ = pb.settle(ctx, order, scan.completed)
+		}
+	}
+
+	result := &PaymentReturn{}
+	if session, getErr := pb.gateway.GetSession(ctx, sessionRef); getErr == nil {
+		result.RedirectURL = session.GetMetadata()[metadataReturnTo]
+	}
+	result.Order, err = pb.refresh(ctx, order.GetID())
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
 }
 
 // --- CancelOrder ---
@@ -320,6 +556,20 @@ func (pb *paymentBusiness) CancelOrder(
 	if paid && !staff {
 		return nil, connect.NewError(connect.CodePermissionDenied,
 			errors.New("a paid order can only be cancelled by the shop"))
+	}
+
+	// A buyer cancelling an unpaid order they have in fact just paid would
+	// otherwise lose both the goods and the money.
+	if !paid {
+		settled, settleErr := pb.settleIfPaid(ctx, order)
+		if settleErr != nil {
+			return nil, settleErr
+		}
+		if settled && !staff {
+			return nil, connect.NewError(connect.CodeFailedPrecondition,
+				errors.New("the order has been paid and can only be cancelled by the shop"))
+		}
+		paid = settled
 	}
 
 	reason = strings.TrimSpace(reason)
@@ -350,6 +600,25 @@ func (pb *paymentBusiness) CancelOrder(
 		pb.notifier.OrderCancelled(ctx, shop, order, reason)
 	}
 	return pb.refresh(ctx, order.GetID())
+}
+
+// settleIfPaid settles an order awaiting payment whose checkout already
+// completed, reporting whether it did.
+func (pb *paymentBusiness) settleIfPaid(ctx context.Context, order *models.Order) (bool, error) {
+	if pb.gateway == nil || order.Status != int32(commercev1.OrderStatus_ORDER_STATUS_PENDING_PAYMENT) {
+		return false, nil
+	}
+	scan, err := pb.scanSessions(ctx, order)
+	if err != nil {
+		return false, err
+	}
+	if scan.completed == nil {
+		return false, nil
+	}
+	if err = pb.settle(ctx, order, scan.completed); err != nil {
+		return false, err
+	}
+	return true, nil
 }
 
 // --- ReconcilePayments ---
@@ -398,22 +667,21 @@ const (
 func (pb *paymentBusiness) reconcileOne(ctx context.Context, order *models.Order, now time.Time) reconcileOutcome {
 	log := util.Log(ctx).WithField("order_id", order.GetID())
 
-	if order.PaymentSessionRef != "" && pb.gateway != nil {
-		session, err := pb.gateway.GetSession(ctx, order.PaymentSessionRef)
-		switch {
-		case err != nil:
-			log.WithError(err).Warn("reconcile: could not load checkout session")
-			return reconciledFailed
-		case session.GetStatus() == checkoutv1.SessionStatus_SESSION_STATUS_COMPLETED:
-			if settleErr := pb.settle(ctx, order, session.GetPaymentId()); settleErr != nil {
-				log.WithError(settleErr).Warn("reconcile: could not settle paid order")
-				return reconciledFailed
-			}
-			return reconciledPaid
+	inFlight := false
+	if pb.gateway != nil {
+		outcome, flight, decided := pb.reconcileSessions(ctx, order, now)
+		if decided {
+			return outcome
 		}
+		inFlight = flight
 	}
 
 	if !pb.expired(order, now) {
+		return reconciledUntouched
+	}
+	// A prompt still outstanding at the provider gets a grace period before
+	// the reservation is released.
+	if inFlight && now.Before(pb.dueAt(order).Add(pb.policy.SettleGrace)) {
 		return reconciledUntouched
 	}
 	ok, err := pb.orderRepo.CancelAndRestock(ctx, order.GetID(),
@@ -433,11 +701,43 @@ func (pb *paymentBusiness) reconcileOne(ctx context.Context, order *models.Order
 	return reconciledExpired
 }
 
-func (pb *paymentBusiness) expired(order *models.Order, now time.Time) bool {
-	if order.PaymentDueAt != nil {
-		return now.After(*order.PaymentDueAt)
+// reconcileSessions settles the order if any session completed. decided is
+// true when that, or an unreadable session on an overdue order, settles the
+// outcome; otherwise inFlight reports an outstanding prompt.
+func (pb *paymentBusiness) reconcileSessions(
+	ctx context.Context,
+	order *models.Order,
+	now time.Time,
+) (reconcileOutcome, bool, bool) {
+	log := util.Log(ctx).WithField("order_id", order.GetID())
+	scan, err := pb.scanSessions(ctx, order)
+	if err != nil {
+		log.WithError(err).Warn("reconcile: could not list checkout sessions")
+		return reconciledFailed, false, true
 	}
-	return now.Sub(order.CreatedAt) > pb.policy.PaymentWindow
+	if scan.completed != nil {
+		if settleErr := pb.settle(ctx, order, scan.completed); settleErr != nil {
+			log.WithError(settleErr).Warn("reconcile: could not settle paid order")
+			return reconciledFailed, false, true
+		}
+		return reconciledPaid, false, true
+	}
+	// Never release stock for an order whose payment state is unknown.
+	if scan.unreadable > 0 && pb.expired(order, now) {
+		return reconciledFailed, false, true
+	}
+	return reconciledUntouched, scan.inFlight, false
+}
+
+func (pb *paymentBusiness) dueAt(order *models.Order) time.Time {
+	if order.PaymentDueAt != nil {
+		return *order.PaymentDueAt
+	}
+	return order.CreatedAt.Add(pb.policy.PaymentWindow)
+}
+
+func (pb *paymentBusiness) expired(order *models.Order, now time.Time) bool {
+	return now.After(pb.dueAt(order))
 }
 
 // connectCheckoutGateway adapts the generated Connect client.

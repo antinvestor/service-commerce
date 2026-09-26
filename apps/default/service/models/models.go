@@ -300,6 +300,15 @@ func (o *Order) TotalNanosValue() int64 {
 
 const nanosPerUnit int64 = 1_000_000_000
 
+// OrderPaymentSession records every hosted checkout session issued for an
+// order. A buyer can still pay a link that has been superseded, so
+// settlement checks all of them, not only the latest.
+type OrderPaymentSession struct {
+	data.BaseModel
+	OrderID    string `gorm:"type:varchar(50);index:idx_order_payment_session_order"`
+	SessionRef string `gorm:"type:varchar(64);uniqueIndex:idx_order_payment_session_ref"`
+}
+
 // LedgerPosting records one end-of-day merge for a shop and trading day, so
 // a re-run is idempotent and the ledger transaction can be traced back.
 type LedgerPosting struct {
@@ -460,4 +469,22 @@ func MapToJSONMap(m map[string]string) data.JSONMap {
 		result[k] = v
 	}
 	return result
+}
+
+const nanosPerCent int64 = 10_000_000
+
+// MoneyCents converts units/nanos to whole cents, rounding half away from
+// zero. Hosted checkout charges at cent precision.
+func MoneyCents(units int64, nanos int32) int64 {
+	total := units*nanosPerUnit + int64(nanos)
+	if total < 0 {
+		return -((-total + nanosPerCent/2) / nanosPerCent)
+	}
+	return (total + nanosPerCent/2) / nanosPerCent
+}
+
+// RoundToCents rounds units/nanos to the nearest cent.
+func RoundToCents(units int64, nanos int32) (int64, int32) {
+	nanosTotal := MoneyCents(units, nanos) * nanosPerCent
+	return nanosTotal / nanosPerUnit, int32(nanosTotal % nanosPerUnit)
 }

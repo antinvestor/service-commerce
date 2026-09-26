@@ -89,7 +89,8 @@ func NewPaymentReturnHandler(payments business.PaymentBusiness) http.Handler {
 		if target := storefrontRedirect(result.RedirectURL, result.Order.GetId(), state); target != "" {
 			// The target is the storefront URL commerce itself stored on the
 			// session when the order was checked out, restricted to http(s).
-			http.Redirect(w, r, target, http.StatusSeeOther)
+			w.Header().Set("Location", target)
+			w.WriteHeader(http.StatusSeeOther)
 			return
 		}
 		renderReturnPage(w, http.StatusOK, statusPage(result.Order, state))

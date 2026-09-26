@@ -12,10 +12,14 @@ class VariantCard extends StatelessWidget {
     super.key,
     required this.variant,
     this.onTap,
+    this.onEdit,
   });
 
   final ProductVariant variant;
   final VoidCallback? onTap;
+
+  /// When set, shows an edit action on the card.
+  final VoidCallback? onEdit;
 
   @override
   Widget build(BuildContext context) {
@@ -111,6 +115,14 @@ class VariantCard extends StatelessWidget {
                   ),
                 ],
               ),
+              if (onEdit != null) ...[
+                const SizedBox(width: 4),
+                IconButton(
+                  tooltip: 'Edit variant',
+                  icon: const Icon(Icons.edit_outlined, size: 20),
+                  onPressed: onEdit,
+                ),
+              ],
             ],
           ),
         ),

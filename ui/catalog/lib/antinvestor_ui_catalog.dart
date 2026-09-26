@@ -17,6 +17,7 @@ export 'src/screens/variant_create_screen.dart';
 export 'src/widgets/product_card.dart';
 export 'src/widgets/product_grid.dart';
 export 'src/widgets/variant_card.dart';
+export 'src/widgets/variant_edit_dialog.dart';
 export 'src/widgets/variant_selector.dart';
 export 'src/widgets/product_status_badge.dart';
 export 'src/widgets/variant_status_badge.dart';

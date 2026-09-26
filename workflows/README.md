@@ -7,7 +7,7 @@ commerce over Connect JSON.
 
 | Workflow | Cron | Calls |
 |---|---|---|
-| `commerce.reconcile_payments` | every 5 minutes | `ReconcilePayments` — settles completed checkout sessions, expires unpaid reservations |
+| `commerce.reconcile_payments` | every 30 minutes | `ReconcilePayments` — settles completed checkout sessions, expires unpaid reservations |
 | `commerce.end_of_day_ledger` | 00:15 shop time | `RunEndOfDayLedger` — one balanced ledger transaction per shop per trading day |
 
 `${COMMERCE_URI}` is substituted from `COMMERCE_SERVICE_URI` at registration.

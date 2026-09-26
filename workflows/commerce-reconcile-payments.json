@@ -1,11 +1,11 @@
 {
   "version": "1.0",
   "name": "commerce.reconcile_payments",
-  "description": "Every five minutes, settle orders whose hosted checkout completed and release stock held by orders whose payment window lapsed.",
+  "description": "Every thirty minutes, settle orders whose hosted checkout completed without the buyer returning, and release stock held by orders whose payment window lapsed. Buyers who return from checkout are settled immediately by the payment return page.",
   "schedules": [
     {
-      "name": "commerce.reconcile_payments.every_5m",
-      "cron_expr": "*/5 * * * *",
+      "name": "commerce.reconcile_payments.every_30m",
+      "cron_expr": "*/30 * * * *",
       "timezone": "UTC"
     }
   ],

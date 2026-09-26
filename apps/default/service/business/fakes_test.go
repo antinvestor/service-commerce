@@ -20,8 +20,10 @@ import (
 	"fmt"
 	"sync"
 
+	commonv1 "buf.build/gen/go/antinvestor/common/protocolbuffers/go/common/v1"
 	ledgerv1 "buf.build/gen/go/antinvestor/ledger/protocolbuffers/go/v1"
 	checkoutv1 "buf.build/gen/go/antinvestor/payment/protocolbuffers/go/checkout/v1"
+	"connectrpc.com/connect"
 	"github.com/pitabwire/util"
 
 	"github.com/antinvestor/service-commerce/apps/default/service/business"
@@ -38,6 +40,9 @@ type fakeCheckout struct {
 	sessions map[string]*checkoutv1.CheckoutSession
 	created  int
 	failNext error
+	// getErr, when set, fails every GetSession the way an unreachable
+	// checkout service would.
+	getErr error
 }
 
 func newFakeCheckout() *fakeCheckout {
@@ -75,9 +80,12 @@ func (f *fakeCheckout) CreateSession(
 func (f *fakeCheckout) GetSession(_ context.Context, ref string) (*checkoutv1.CheckoutSession, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
+	if f.getErr != nil {
+		return nil, f.getErr
+	}
 	s, ok := f.sessions[ref]
 	if !ok {
-		return nil, fmt.Errorf("session %s not found", ref)
+		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("session %s not found", ref))
 	}
 	return s, nil
 }
@@ -98,6 +106,46 @@ func (f *fakeCheckout) expire(ref string) {
 	if s, ok := f.sessions[ref]; ok {
 		s.SetStatus(checkoutv1.SessionStatus_SESSION_STATUS_EXPIRED)
 	}
+}
+
+// attempt records a payment prompt going out on a session.
+func (f *fakeCheckout) attempt(ref, promptID string) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if s, ok := f.sessions[ref]; ok {
+		s.SetStatus(checkoutv1.SessionStatus_SESSION_STATUS_PROCESSING)
+		s.SetPromptId(promptID)
+	}
+}
+
+// fail marks the latest attempt on a session as declined.
+func (f *fakeCheckout) fail(ref string) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if s, ok := f.sessions[ref]; ok {
+		s.SetStatus(checkoutv1.SessionStatus_SESSION_STATUS_FAILED)
+	}
+}
+
+// setAmount rewrites what the session charged.
+func (f *fakeCheckout) setAmount(ref string, amount *commonv1.Money) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if s, ok := f.sessions[ref]; ok {
+		s.SetAmount(amount)
+	}
+}
+
+func (f *fakeCheckout) session(ref string) *checkoutv1.CheckoutSession {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.sessions[ref]
+}
+
+func (f *fakeCheckout) setGetErr(err error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.getErr = err
 }
 
 func (f *fakeCheckout) createdSessions() int {

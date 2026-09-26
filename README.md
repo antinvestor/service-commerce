@@ -19,14 +19,28 @@ Flutter widget packages and console (`ui/`), a Hugo storefront module
 ## How a sale flows
 
 1. A buyer (a partition member) builds a cart and calls `CreateOrderFromCart`.
-   Stock is reserved and the order waits for payment for
-   `ORDER_PAYMENT_WINDOW`.
+   Each line is priced by the pricing engine (customer override, then price
+   list, then catalog, then the best automatic discount, rounded to the
+   cent). A discount rule is applied automatically only when it does not
+   require approval and its conditions use nothing but `variant_ids`,
+   `product_ids` and `min_quantity`; a fixed amount off the whole order is
+   never spread per unit. Stock is reserved and the order waits for payment
+   for `ORDER_PAYMENT_WINDOW`.
 2. `CheckoutOrder` creates a hosted checkout session at the payment service
    and returns the page URL; the buyer pays there. The buyer and the shop's
-   contact are notified.
-3. Payment is settled by `ConfirmOrderPayment` (from the return page or
-   staff) or by the scheduled `ReconcilePayments`, which also releases stock
-   from orders whose window lapsed. Both sides are notified when paid.
+   contact are notified. Reloading reuses the live session, including after a
+   declined attempt, which the buyer can retry on the same page.
+3. Checkout sends the buyer back to commerce's `/payments/return` page, which
+   verifies the payment with the checkout service and marks the order paid
+   before forwarding the buyer to the storefront (the request's or shop's
+   return URL, else `CHECKOUT_RETURN_URL`) or showing the status itself.
+   `ConfirmOrderPayment` does the same on demand, and the scheduled
+   `ReconcilePayments` catches buyers who never came back and releases stock
+   from orders whose window lapsed. Every session ever issued for an order is
+   checked, an order is only marked paid when the session charged exactly the
+   order total in the order currency, and stock is held for
+   `PAYMENT_SETTLE_GRACE` past the window while a prompt is still outstanding.
+   Both sides are notified when paid.
 4. Staff record fulfilments; shipping and delivery notify the buyer.
    `CancelOrder` returns stock, and a staff cancel of a paid order records a
    refund.
@@ -63,7 +77,9 @@ Standard Frame settings apply. Commerce adds:
 | `TRUSTAGE_SERVICE_URI` | Orchestrator that runs the scheduled workflows. Empty skips workflow sync. |
 | `*_WORKLOAD_API_TARGET_PATH` | Workload identity path per peer (defaults match the platform layout). |
 | `COMMERCE_SERVICE_URI` | Public address trustage calls back into; substituted into the workflow DSL. |
-| `CHECKOUT_RETURN_URL` | Default page buyers return to after paying; `{order_id}` is substituted. Shops can override it. |
+| `CHECKOUT_RETURN_URL` | Storefront page buyers are forwarded to after paying; `{order_id}` is substituted and `order_id`/`payment` are appended. Shops can override it. Empty shows commerce's own status page. |
+| `PAYMENT_RETURN_BASE_URL` | Commerce's public address for `/payments/return` (default `COMMERCE_SERVICE_URI`). Empty on both sends buyers straight to the storefront URL. |
+| `PAYMENT_SETTLE_GRACE` | Extra time stock stays reserved while a payment prompt is outstanding (default 1h). |
 | `ORDER_PAYMENT_WINDOW` | How long stock is held for an unpaid order (default 45m). |
 | `PAYMENT_RECONCILE_BATCH_SIZE` | Orders examined per reconcile run (default 200). |
 | `LEDGER_BOOK_TYPE` | Book type for shop books (default `merchant`). |

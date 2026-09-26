@@ -20,6 +20,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"math"
 	"sort"
 	"strings"
 	"time"
@@ -48,6 +49,12 @@ type OrderPolicy struct {
 	PaymentWindow time.Duration
 }
 
+// PriceResolver quotes the unit price a customer pays for a variant, after
+// customer overrides, price lists and discounts. PricingBusiness satisfies it.
+type PriceResolver interface {
+	ResolvePrice(ctx context.Context, req *commercev1.ResolvePriceRequest) (*commercev1.ResolvedPrice, error)
+}
+
 type OrderBusiness interface {
 	CreateOrder(ctx context.Context, req *commercev1.CreateOrderRequest) (*commercev1.Order, error)
 	// CreateOrderFromCart converts an active cart into an order. The order is
@@ -69,6 +76,7 @@ func NewOrderBusiness(
 	shopRepo repository.ShopRepository,
 	cartRepo repository.CartRepository,
 	cartLineRepo repository.CartLineRepository,
+	prices PriceResolver,
 	policy OrderPolicy,
 ) OrderBusiness {
 	if policy.PaymentWindow <= 0 {
@@ -82,6 +90,7 @@ func NewOrderBusiness(
 		shopRepo:      shopRepo,
 		cartRepo:      cartRepo,
 		cartLineRepo:  cartLineRepo,
+		prices:        prices,
 		policy:        policy,
 	}
 }
@@ -94,6 +103,7 @@ type orderBusiness struct {
 	shopRepo      repository.ShopRepository
 	cartRepo      repository.CartRepository
 	cartLineRepo  repository.CartLineRepository
+	prices        PriceResolver
 	policy        OrderPolicy
 }
 
@@ -136,6 +146,7 @@ func (ob *orderBusiness) createOrder(
 	orderLines, subtotalCurrency, subtotalUnits, subtotalNanos, err := ob.buildOrderLines(
 		ctx,
 		req.GetShopId(),
+		req.GetProfileId(),
 		req.GetLines(),
 	)
 	if err != nil {
@@ -347,7 +358,7 @@ const nanosPerUnit int64 = 1_000_000_000
 
 func (ob *orderBusiness) buildOrderLines(
 	ctx context.Context,
-	shopID string,
+	shopID, customerID string,
 	lines []*commercev1.CreateOrderLine,
 ) ([]*models.OrderLine, string, int64, int32, error) {
 	var orderLines []*models.OrderLine
@@ -384,12 +395,17 @@ func (ob *orderBusiness) buildOrderLines(
 				fmt.Errorf("product for variant %s is not available for sale", line.GetVariantId()))
 		}
 
+		currency, unitUnits, unitNanos, err := ob.unitPrice(ctx, variant, customerID, line.GetQuantity())
+		if err != nil {
+			return nil, "", 0, 0, err
+		}
+
 		if subtotalCurrency == "" {
-			subtotalCurrency = variant.CurrencyCode
-		} else if variant.CurrencyCode != subtotalCurrency {
+			subtotalCurrency = currency
+		} else if currency != subtotalCurrency {
 			return nil, "", 0, 0, connect.NewError(connect.CodeInvalidArgument,
 				fmt.Errorf("variant %s is priced in %s but the order is in %s",
-					line.GetVariantId(), variant.CurrencyCode, subtotalCurrency))
+					line.GetVariantId(), currency, subtotalCurrency))
 		}
 
 		// Advisory stock check; CreateWithLinesAndStock re-checks under row update.
@@ -399,19 +415,19 @@ func (ob *orderBusiness) buildOrderLines(
 					line.GetVariantId(), line.GetQuantity(), variant.StockQuantity))
 		}
 
-		lineTotalNanos := int64(variant.PriceNanos) * line.GetQuantity()
-		lineTotalUnits := variant.PriceUnits*line.GetQuantity() + lineTotalNanos/nanosPerUnit
+		lineTotalNanos := int64(unitNanos) * line.GetQuantity()
+		lineTotalUnits := unitUnits*line.GetQuantity() + lineTotalNanos/nanosPerUnit
 		lineTotalNanos %= nanosPerUnit
 
 		orderLines = append(orderLines, &models.OrderLine{
 			ProductVariantID:   variant.GetID(),
 			SKUSnapshot:        variant.SKU,
 			NameSnapshot:       variant.Name,
-			UnitPriceCurrency:  variant.CurrencyCode,
-			UnitPriceUnits:     variant.PriceUnits,
-			UnitPriceNanos:     variant.PriceNanos,
+			UnitPriceCurrency:  currency,
+			UnitPriceUnits:     unitUnits,
+			UnitPriceNanos:     unitNanos,
 			Quantity:           line.GetQuantity(),
-			TotalPriceCurrency: variant.CurrencyCode,
+			TotalPriceCurrency: currency,
 			TotalPriceUnits:    lineTotalUnits,
 			TotalPriceNanos:    int32(lineTotalNanos),
 		})
@@ -423,6 +439,36 @@ func (ob *orderBusiness) buildOrderLines(
 	}
 
 	return orderLines, subtotalCurrency, subtotalUnits, int32(subtotalNanos), nil
+}
+
+// unitPrice is what customerID pays per unit of variant at quantity, rounded
+// to the cent because that is the precision payment is taken at.
+func (ob *orderBusiness) unitPrice(
+	ctx context.Context,
+	variant *models.ProductVariant,
+	customerID string,
+	quantity int64,
+) (string, int64, int32, error) {
+	currency, units, nanos := variant.CurrencyCode, variant.PriceUnits, variant.PriceNanos
+	if ob.prices != nil {
+		resolved, err := ob.prices.ResolvePrice(ctx, &commercev1.ResolvePriceRequest{
+			CustomerId:       customerID,
+			ProductVariantId: variant.GetID(),
+			Quantity:         int32(min(quantity, math.MaxInt32)), //nolint:gosec // clamped
+		})
+		if err != nil {
+			return "", 0, 0, err
+		}
+		if price := resolved.GetUnitPrice(); price != nil && price.GetCurrencyCode() != "" {
+			currency, units, nanos = price.GetCurrencyCode(), price.GetUnits(), price.GetNanos()
+		}
+	}
+	if currency == "" {
+		return "", 0, 0, connect.NewError(connect.CodeFailedPrecondition,
+			fmt.Errorf("variant %s has no price", variant.GetID()))
+	}
+	units, nanos = models.RoundToCents(units, nanos)
+	return currency, units, nanos, nil
 }
 
 func (ob *orderBusiness) variantProduct(

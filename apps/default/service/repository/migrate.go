@@ -29,7 +29,7 @@ func Migrate(ctx context.Context, dbManager datastore.Manager, migrationPath str
 		&models.Shop{},
 		&models.Product{}, &models.ProductVariant{},
 		&models.Cart{}, &models.CartLine{},
-		&models.Order{}, &models.OrderLine{}, &models.OrderSequence{},
+		&models.Order{}, &models.OrderLine{}, &models.OrderSequence{}, &models.OrderPaymentSession{},
 		&models.Fulfilment{}, &models.FulfilmentLine{},
 		&models.PriceList{}, &models.PriceListEntry{},
 		&models.CustomerPriceListAssignment{}, &models.CustomerPriceOverride{},

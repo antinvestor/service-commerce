@@ -41,6 +41,13 @@ type CommerceConfig struct {
 	// CheckoutReturnURL is where the hosted payment page sends buyers when a
 	// shop has not configured its own. {order_id} is substituted.
 	CheckoutReturnURL string `env:"CHECKOUT_RETURN_URL" envDefault:""`
+	// PaymentReturnBaseURL is commerce's public address that hosted checkout
+	// returns buyers to (/payments/return), where the payment is verified on
+	// arrival. Defaults to CommerceServiceURI.
+	PaymentReturnBaseURL string `env:"PAYMENT_RETURN_BASE_URL" envDefault:""`
+	// PaymentSettleGrace keeps an overdue order reserved while a payment
+	// prompt is still outstanding at the provider.
+	PaymentSettleGrace time.Duration `env:"PAYMENT_SETTLE_GRACE" envDefault:"1h"`
 	// OrderPaymentWindow is how long a reservation is held for an unpaid
 	// order before ReconcilePayments releases the stock.
 	OrderPaymentWindow time.Duration `env:"ORDER_PAYMENT_WINDOW" envDefault:"45m"`
@@ -64,6 +71,14 @@ type CommerceConfig struct {
 
 // CheckoutEnabled reports whether hosted checkout is wired.
 func (c *CommerceConfig) CheckoutEnabled() bool { return c.CheckoutServiceURI != "" }
+
+// ReturnBaseURL is where hosted checkout sends buyers back to commerce.
+func (c *CommerceConfig) ReturnBaseURL() string {
+	if c.PaymentReturnBaseURL != "" {
+		return c.PaymentReturnBaseURL
+	}
+	return c.CommerceServiceURI
+}
 
 // LedgerEnabled reports whether end-of-day posting is wired.
 func (c *CommerceConfig) LedgerEnabled() bool { return c.LedgerServiceURI != "" }

@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/url"
 	"strings"
 
 	"connectrpc.com/connect"
@@ -63,6 +64,10 @@ func (sb *shopBusiness) CreateShop(ctx context.Context, req *commercev1.CreateSh
 	name := strings.TrimSpace(req.GetName())
 	if name == "" {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("shop name is required"))
+	}
+
+	if err := validateShopInput(name, req.GetCheckoutReturnUrl()); err != nil {
+		return nil, err
 	}
 
 	slug := strings.TrimSpace(req.GetSlug())
@@ -115,8 +120,27 @@ func (sb *shopBusiness) CreateShop(ctx context.Context, req *commercev1.CreateSh
 	return shop.ToAPI(), nil
 }
 
+// validateShopInput rejects values the database or the hosted checkout would
+// refuse later, so the merchant hears about it when saving the shop rather
+// than when a buyer tries to pay.
+func validateShopInput(name, checkoutReturnURL string) error {
+	if len([]rune(name)) > maxShopNameLength {
+		return connect.NewError(connect.CodeInvalidArgument,
+			fmt.Errorf("shop name must be at most %d characters", maxShopNameLength))
+	}
+	if raw := strings.TrimSpace(checkoutReturnURL); raw != "" {
+		u, err := url.Parse(strings.ReplaceAll(raw, "{order_id}", "order"))
+		if err != nil || (u.Scheme != "https" && u.Scheme != "http") || u.Host == "" {
+			return connect.NewError(connect.CodeInvalidArgument,
+				errors.New("checkout_return_url must be an absolute http(s) URL"))
+		}
+	}
+	return nil
+}
+
 // Shop defaults.
 const (
+	maxShopNameLength   = 255
 	defaultShopCurrency = "KES"
 	currencyCodeLength  = 3
 )
@@ -172,6 +196,9 @@ func (sb *shopBusiness) GetShop(ctx context.Context, id string) (*commercev1.Sho
 }
 
 func (sb *shopBusiness) UpdateShop(ctx context.Context, req *commercev1.UpdateShopRequest) (*commercev1.Shop, error) {
+	if err := validateShopInput(strings.TrimSpace(req.GetName()), req.GetCheckoutReturnUrl()); err != nil {
+		return nil, err
+	}
 	shop, err := sb.shopRepo.GetByID(ctx, req.GetId())
 	if err != nil {
 		return nil, data.ErrorConvertToAPI(err)

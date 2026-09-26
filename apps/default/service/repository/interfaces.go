@@ -102,6 +102,12 @@ type OrderRepository interface {
 		reason string,
 		cancelledAt time.Time,
 	) (bool, error)
+	// AttachPaymentSession makes ref the order's current checkout session and
+	// records it in the order's session history, atomically.
+	AttachPaymentSession(ctx context.Context, orderID, ref, checkoutURL string) error
+	// ListPaymentSessionRefs returns every checkout session ever issued for
+	// the order, oldest first.
+	ListPaymentSessionRefs(ctx context.Context, orderID string) ([]string, error)
 	// SetLedgerTransaction stamps the sale-side ledger transaction on orders.
 	SetLedgerTransaction(ctx context.Context, orderIDs []string, transactionID string) error
 	// SetRefundLedgerTransaction stamps the refund-side ledger transaction.

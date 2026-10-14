@@ -17,7 +17,7 @@ require (
 	buf.build/gen/go/gnostic/gnostic/protocolbuffers/go v1.36.12-20230414000709-087bc8072ce4.2
 	connectrpc.com/connect v1.21.0
 	github.com/antinvestor/common/notification v0.1.0
-	github.com/antinvestor/common/v2 v2.0.7
+	github.com/antinvestor/common/v2 v2.0.8
 	github.com/pitabwire/frame/v2 v2.1.8
 	github.com/pitabwire/util v0.9.1
 	github.com/stretchr/testify v1.12.1

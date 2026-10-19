@@ -94,10 +94,12 @@ Future<bool> showSupplierItemForm({
     ..unit = (values['unit'] ?? '').trim()
     ..minOrderQuantity =
         double.tryParse((values['minOrderQuantity'] ?? '0').trim()) ?? 0
-    ..leadTimeDays =
-        int.tryParse((values['leadTimeDays'] ?? '0').trim()) ?? 0;
-  setMoneyFields(request.ensureUnitPrice(), priceStr,
-      currency.isNotEmpty ? currency : existing?.unitPrice.currencyCode ?? '');
+    ..leadTimeDays = int.tryParse((values['leadTimeDays'] ?? '0').trim()) ?? 0;
+  setMoneyFields(
+    request.ensureUnitPrice(),
+    priceStr,
+    currency.isNotEmpty ? currency : existing?.unitPrice.currencyCode ?? '',
+  );
   final status = _statusLabels[values['status']];
   if (status != null) request.status = status;
   if (isEdit) request.id = existing.id;

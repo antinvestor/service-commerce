@@ -63,7 +63,7 @@ Future<bool> showPriceListEntryForm({
     ..productVariantId = variantId
     ..minQuantity = int.tryParse((values['minQuantity'] ?? '0').trim()) ?? 0
     ..maxQuantity = int.tryParse((values['maxQuantity'] ?? '0').trim()) ?? 0;
-  setMoneyFields(entry.unitPrice, priceStr, currency);
+  setMoneyFields(entry.ensureUnitPrice(), priceStr, currency);
   if (isEdit) entry.id = existing.id;
 
   // The backend replaces all entries for the variant. Send the complete set of
@@ -115,8 +115,9 @@ Future<bool> deletePriceListEntry({
   // the supplied ones, so resending the surviving tiers removes this entry.
   final remaining = notifier
       .entriesFor(priceListId)
-      .where((e) =>
-          e.productVariantId == entry.productVariantId && e.id != entry.id)
+      .where(
+        (e) => e.productVariantId == entry.productVariantId && e.id != entry.id,
+      )
       .toList();
 
   try {
@@ -127,9 +128,9 @@ Future<bool> deletePriceListEntry({
     );
     ref.invalidate(priceListEntryListProvider(priceListId));
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Entry deleted')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Entry deleted')));
     }
     return true;
   } catch (e) {

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../providers/pricing_providers.dart';
 import '../widgets/price_list_card.dart';
+import '../widgets/pricing_section_nav.dart';
 import 'price_list_form.dart';
 
 /// Screen listing all price lists for a shop.
@@ -20,94 +21,124 @@ class PriceListScreen extends ConsumerWidget {
 
     return Scaffold(
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => showPriceListForm(
-          context: context,
-          ref: ref,
-          shopId: shopId,
-        ),
+        onPressed: () =>
+            showPriceListForm(context: context, ref: ref, shopId: shopId),
         icon: const Icon(Icons.add),
         label: const Text('New Price List'),
       ),
-      body: asyncLists.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.error_outline,
-                  size: 48, color: theme.colorScheme.error),
-              const SizedBox(height: 16),
-              Text('Failed to load price lists',
-                  style: theme.textTheme.titleMedium),
-              const SizedBox(height: 8),
-              Text(friendlyError(error),
-                  style: theme.textTheme.bodySmall
-                      ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-              const SizedBox(height: 16),
-              OutlinedButton.icon(
-                onPressed: () => ref.invalidate(priceListProvider(shopId)),
-                icon: const Icon(Icons.refresh, size: 18),
-                label: const Text('Retry'),
-              ),
-            ],
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Padding(
+            padding: EdgeInsets.fromLTRB(24, 24, 24, 0),
+            child: PricingSectionNav(current: PricingSection.priceLists),
           ),
-        ),
-        data: (priceLists) {
-          if (priceLists.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.price_change_outlined,
-                      size: 48,
-                      color: theme.colorScheme.onSurfaceVariant
-                          .withAlpha(120)),
-                  const SizedBox(height: 12),
-                  Text('No price lists yet',
-                      style: theme.textTheme.bodyLarge),
-                ],
-              ),
-            );
-          }
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+          Expanded(
+            child: asyncLists.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (error, _) => Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.price_change_outlined,
-                        size: 28, color: theme.colorScheme.primary),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Price Lists',
-                              style: theme.textTheme.headlineSmall
-                                  ?.copyWith(fontWeight: FontWeight.w600)),
-                          Text('${priceLists.length} price lists',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                  color:
-                                      theme.colorScheme.onSurfaceVariant)),
-                        ],
+                    Icon(
+                      Icons.error_outline,
+                      size: 48,
+                      color: theme.colorScheme.error,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Failed to load price lists',
+                      style: theme.textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      friendlyError(error),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
                       ),
+                    ),
+                    const SizedBox(height: 16),
+                    OutlinedButton.icon(
+                      onPressed: () =>
+                          ref.invalidate(priceListProvider(shopId)),
+                      icon: const Icon(Icons.refresh, size: 18),
+                      label: const Text('Retry'),
                     ),
                   ],
                 ),
-                const SizedBox(height: 20),
-                ...priceLists.map((pl) => Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: PriceListCard(
-                        priceList: pl,
-                        onTap: () =>
-                            context.go('/pricing/${pl.id}'),
+              ),
+              data: (priceLists) {
+                if (priceLists.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.price_change_outlined,
+                          size: 48,
+                          color: theme.colorScheme.onSurfaceVariant.withAlpha(
+                            120,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'No price lists yet',
+                          style: theme.textTheme.bodyLarge,
+                        ),
+                      ],
+                    ),
+                  );
+                }
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.price_change_outlined,
+                            size: 28,
+                            color: theme.colorScheme.primary,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Price Lists',
+                                  style: theme.textTheme.headlineSmall
+                                      ?.copyWith(fontWeight: FontWeight.w600),
+                                ),
+                                Text(
+                                  '${priceLists.length} price lists',
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
-                    )),
-              ],
+                      const SizedBox(height: 20),
+                      ...priceLists.map(
+                        (pl) => Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: PriceListCard(
+                            priceList: pl,
+                            onTap: () => context.go('/pricing/${pl.id}'),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
-          );
-        },
+          ),
+        ],
       ),
     );
   }

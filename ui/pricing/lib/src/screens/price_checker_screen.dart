@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/pricing_providers.dart';
 import '../widgets/price_resolver_preview.dart';
+import '../widgets/pricing_section_nav.dart';
 
 /// Screen for resolving the effective price for a customer + variant combination.
 class PriceCheckerScreen extends ConsumerStatefulWidget {
@@ -17,8 +18,7 @@ class PriceCheckerScreen extends ConsumerStatefulWidget {
   final String shopId;
 
   @override
-  ConsumerState<PriceCheckerScreen> createState() =>
-      _PriceCheckerScreenState();
+  ConsumerState<PriceCheckerScreen> createState() => _PriceCheckerScreenState();
 }
 
 class _PriceCheckerScreenState extends ConsumerState<PriceCheckerScreen> {
@@ -46,22 +46,33 @@ class _PriceCheckerScreenState extends ConsumerState<PriceCheckerScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            const PricingSectionNav(current: PricingSection.checker),
+            const SizedBox(height: 20),
             Row(
               children: [
-                Icon(Icons.price_check,
-                    size: 28, color: theme.colorScheme.primary),
+                Icon(
+                  Icons.price_check,
+                  size: 28,
+                  color: theme.colorScheme.primary,
+                ),
                 const SizedBox(width: 12),
-                Text('Price Checker',
-                    style: theme.textTheme.headlineSmall
-                        ?.copyWith(fontWeight: FontWeight.w600)),
+                Text(
+                  'Price Checker',
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 24),
 
             // Customer selector
-            Text('Customer',
-                style: theme.textTheme.titleSmall
-                    ?.copyWith(fontWeight: FontWeight.w600)),
+            Text(
+              'Customer',
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
             const SizedBox(height: 8),
             CustomerSearchSelect(
               onSelected: (p) => setState(() => _selectedCustomer = p),
@@ -71,16 +82,18 @@ class _PriceCheckerScreenState extends ConsumerState<PriceCheckerScreen> {
               Chip(
                 label: Text(profileName(_selectedCustomer!)),
                 avatar: const Icon(Icons.person, size: 18),
-                onDeleted: () =>
-                    setState(() => _selectedCustomer = null),
+                onDeleted: () => setState(() => _selectedCustomer = null),
               ),
             ],
             const SizedBox(height: 20),
 
             // Product/variant selector
-            Text('Product Variant',
-                style: theme.textTheme.titleSmall
-                    ?.copyWith(fontWeight: FontWeight.w600)),
+            Text(
+              'Product Variant',
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
             const SizedBox(height: 8),
             ProductSearchSelect(
               shopId: widget.shopId,
@@ -92,12 +105,13 @@ class _PriceCheckerScreenState extends ConsumerState<PriceCheckerScreen> {
             if (_selectedVariant != null) ...[
               const SizedBox(height: 8),
               Chip(
-                label: Text(_selectedVariant!.name.isNotEmpty
-                    ? _selectedVariant!.name
-                    : _selectedVariant!.sku),
+                label: Text(
+                  _selectedVariant!.name.isNotEmpty
+                      ? _selectedVariant!.name
+                      : _selectedVariant!.sku,
+                ),
                 avatar: const Icon(Icons.sell, size: 18),
-                onDeleted: () =>
-                    setState(() => _selectedVariant = null),
+                onDeleted: () => setState(() => _selectedVariant = null),
               ),
             ],
             const SizedBox(height: 20),
@@ -138,11 +152,13 @@ class _PriceCheckerScreenState extends ConsumerState<PriceCheckerScreen> {
   }
 
   Widget _buildResult() {
-    final asyncResolved = ref.watch(resolvePriceProvider((
-      customerId: _selectedCustomer!.id,
-      variantId: _selectedVariant!.id,
-      quantity: _quantity,
-    )));
+    final asyncResolved = ref.watch(
+      resolvePriceProvider((
+        customerId: _selectedCustomer!.id,
+        variantId: _selectedVariant!.id,
+        quantity: _quantity,
+      )),
+    );
 
     return asyncResolved.when(
       loading: () => const Center(child: CircularProgressIndicator()),
@@ -166,19 +182,30 @@ class _PriceCheckerScreenState extends ConsumerState<PriceCheckerScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(product.name,
-                style: Theme.of(context).textTheme.titleMedium),
+            Text(product.name, style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 12),
-            VariantSelector(
-              variants: const [],
-              onSelected: (variant) {
-                setState(() => _selectedVariant = variant);
-                Navigator.of(context).pop();
-              },
+            Consumer(
+              builder: (context, ref, _) => ref
+                  .watch(productVariantsProvider(product.id))
+                  .when(
+                    loading: () => const LinearProgressIndicator(),
+                    error: (error, _) => Text(
+                      'Could not load variants: ${friendlyError(error)}',
+                    ),
+                    data: (variants) => VariantSelector(
+                      variants: variants,
+                      onSelected: (variant) {
+                        setState(() => _selectedVariant = variant);
+                        Navigator.of(context).pop();
+                      },
+                    ),
+                  ),
             ),
             const SizedBox(height: 8),
-            Text('Select a variant to check its price.',
-                style: Theme.of(context).textTheme.bodySmall),
+            Text(
+              'Select a variant to check its price.',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
           ],
         ),
       ),

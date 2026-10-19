@@ -96,8 +96,7 @@ class PurchaseOrderCard extends StatelessWidget {
                     AmountDisplay(amount: order.totalAmount),
                   if (order.hasExpectedDeliveryDate())
                     Text(
-                      _formatDate(
-                          order.expectedDeliveryDate.toDateTime()),
+                      _formatDate(order.expectedDeliveryDate.toDateTime()),
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),

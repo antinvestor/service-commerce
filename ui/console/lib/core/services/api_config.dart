@@ -22,14 +22,16 @@ class ApiConfig {
 
   // ── Per-service endpoint overrides ──────────────────────────────────────
 
-  static const String _commerceExplicit =
-      String.fromEnvironment('COMMERCE_URL');
+  static const String _commerceExplicit = String.fromEnvironment(
+    'COMMERCE_URL',
+  );
   static String get commerceBaseUrl => _commerceExplicit.isNotEmpty
       ? _commerceExplicit
       : '$_apiBaseUrl/commerce';
 
-  static const String _manufacturingExplicit =
-      String.fromEnvironment('MANUFACTURING_URL');
+  static const String _manufacturingExplicit = String.fromEnvironment(
+    'MANUFACTURING_URL',
+  );
   static String get manufacturingBaseUrl => _manufacturingExplicit.isNotEmpty
       ? _manufacturingExplicit
       : '$_apiBaseUrl/manufacturing';
@@ -38,14 +40,14 @@ class ApiConfig {
   static String get profileBaseUrl =>
       _profileExplicit.isNotEmpty ? _profileExplicit : '$_apiBaseUrl/profile';
 
-  static const String _notificationExplicit =
-      String.fromEnvironment('NOTIFICATION_URL');
+  static const String _notificationExplicit = String.fromEnvironment(
+    'NOTIFICATION_URL',
+  );
   static String get notificationBaseUrl => _notificationExplicit.isNotEmpty
       ? _notificationExplicit
       : '$_apiBaseUrl/notification';
 
-  static const String _paymentExplicit =
-      String.fromEnvironment('PAYMENT_URL');
+  static const String _paymentExplicit = String.fromEnvironment('PAYMENT_URL');
   static String get paymentBaseUrl =>
       _paymentExplicit.isNotEmpty ? _paymentExplicit : '$_apiBaseUrl/payment';
 
@@ -53,16 +55,48 @@ class ApiConfig {
   static String get tenancyBaseUrl =>
       _tenancyExplicit.isNotEmpty ? _tenancyExplicit : '$_apiBaseUrl/tenancy';
 
+  static const String _procurementExplicit = String.fromEnvironment(
+    'PROCUREMENT_URL',
+  );
+  static String get procurementBaseUrl => _procurementExplicit.isNotEmpty
+      ? _procurementExplicit
+      : '$_apiBaseUrl/procurement';
+
+  static const String _identityExplicit = String.fromEnvironment(
+    'IDENTITY_URL',
+  );
+  static String get identityBaseUrl => _identityExplicit.isNotEmpty
+      ? _identityExplicit
+      : '$_apiBaseUrl/identity';
+
+  static const String _geolocationExplicit = String.fromEnvironment(
+    'GEOLOCATION_URL',
+  );
+  static String get geolocationBaseUrl => _geolocationExplicit.isNotEmpty
+      ? _geolocationExplicit
+      : '$_apiBaseUrl/geolocation';
+
+  static const String _authenticationExplicit = String.fromEnvironment(
+    'AUTHENTICATION_URL',
+  );
+  static String get authenticationBaseUrl => _authenticationExplicit.isNotEmpty
+      ? _authenticationExplicit
+      : '$_apiBaseUrl/authentication';
+
   // ── All endpoints (for iteration / diagnostics) ─────────────────────────
 
   static Map<String, String> get allEndpoints => {
-        'commerce': commerceBaseUrl,
-        'manufacturing': manufacturingBaseUrl,
-        'profile': profileBaseUrl,
-        'notification': notificationBaseUrl,
-        'payment': paymentBaseUrl,
-        'tenancy': tenancyBaseUrl,
-      };
+    'commerce': commerceBaseUrl,
+    'manufacturing': manufacturingBaseUrl,
+    'profile': profileBaseUrl,
+    'notification': notificationBaseUrl,
+    'payment': paymentBaseUrl,
+    'tenancy': tenancyBaseUrl,
+    'procurement': procurementBaseUrl,
+    'identity': identityBaseUrl,
+    'geolocation': geolocationBaseUrl,
+    'authentication': authenticationBaseUrl,
+  };
 
   // ── OAuth2 configuration ────────────────────────────────────────────────
 

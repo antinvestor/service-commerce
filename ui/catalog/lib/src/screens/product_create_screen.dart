@@ -7,11 +7,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../providers/catalog_providers.dart';
+import '../widgets/payment_policy_editor.dart';
+import '../widgets/product_edit_dialog.dart' show fulfilmentTypeOptions;
 
-/// Screen for creating a new product using a 3-step Stepper:
-/// 1. Name/Description
+/// Screen for creating a new product using a 4-step Stepper:
+/// 1. Name, description and fulfilment type
 /// 2. Attributes
-/// 3. Confirm
+/// 3. Payment policy (optional override of the shop's)
+/// 4. Confirm
 class ProductCreateScreen extends ConsumerStatefulWidget {
   const ProductCreateScreen({super.key, required this.shopId});
 
@@ -23,12 +26,15 @@ class ProductCreateScreen extends ConsumerStatefulWidget {
 }
 
 class _ProductCreateScreenState extends ConsumerState<ProductCreateScreen> {
+  static const _lastStep = 3;
   int _currentStep = 0;
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _attrKeyController = TextEditingController();
   final _attrValueController = TextEditingController();
   final Map<String, String> _attributes = {};
+  FulfilmentType _fulfilmentType = FulfilmentType.FULFILMENT_TYPE_PHYSICAL;
+  PaymentPolicy? _paymentPolicy;
   bool _isLoading = false;
   String? _error;
 
@@ -58,6 +64,11 @@ class _ProductCreateScreenState extends ConsumerState<ProductCreateScreen> {
       setState(() => _error = 'Name is required');
       return;
     }
+    final policyError = validatePaymentPolicy(_paymentPolicy);
+    if (policyError != null) {
+      setState(() => _error = policyError);
+      return;
+    }
 
     setState(() {
       _isLoading = true;
@@ -68,14 +79,19 @@ class _ProductCreateScreenState extends ConsumerState<ProductCreateScreen> {
       final request = CreateProductRequest()
         ..shopId = widget.shopId
         ..name = _nameController.text.trim()
-        ..description = _descriptionController.text.trim();
+        ..description = _descriptionController.text.trim()
+        ..fulfilmentType = _fulfilmentType;
 
       if (_attributes.isNotEmpty) {
         request.attributes.addAll(_attributes);
       }
+      if (_paymentPolicy != null) {
+        request.paymentPolicy = _paymentPolicy!;
+      }
 
-      final created =
-          await ref.read(productNotifierProvider.notifier).create(request);
+      final created = await ref
+          .read(productNotifierProvider.notifier)
+          .create(request);
 
       if (mounted) {
         context.go('/catalog/${created.id}');
@@ -97,7 +113,7 @@ class _ProductCreateScreenState extends ConsumerState<ProductCreateScreen> {
       body: Stepper(
         currentStep: _currentStep,
         onStepContinue: () {
-          if (_currentStep < 2) {
+          if (_currentStep < _lastStep) {
             setState(() => _currentStep++);
           } else {
             _create();
@@ -115,7 +131,7 @@ class _ProductCreateScreenState extends ConsumerState<ProductCreateScreen> {
             padding: const EdgeInsets.only(top: 16),
             child: Row(
               children: [
-                if (_currentStep == 2)
+                if (_currentStep == _lastStep)
                   GradientButton(
                     onPressed: _isLoading ? null : _create,
                     label: 'Create Product',
@@ -140,9 +156,7 @@ class _ProductCreateScreenState extends ConsumerState<ProductCreateScreen> {
           Step(
             title: const Text('Name & Description'),
             isActive: _currentStep >= 0,
-            state: _currentStep > 0
-                ? StepState.complete
-                : StepState.indexed,
+            state: _currentStep > 0 ? StepState.complete : StepState.indexed,
             content: Column(
               children: [
                 FormFieldCard(
@@ -165,15 +179,32 @@ class _ProductCreateScreenState extends ConsumerState<ProductCreateScreen> {
                     maxLines: 3,
                   ),
                 ),
+                FormFieldCard(
+                  label: 'Fulfilment Type',
+                  description: 'How the buyer receives this product.',
+                  child: DropdownButtonFormField<FulfilmentType>(
+                    key: const ValueKey('product-create-fulfilment'),
+                    isExpanded: true,
+                    initialValue: _fulfilmentType,
+                    items: [
+                      for (final (type, label) in fulfilmentTypeOptions)
+                        DropdownMenuItem(
+                          value: type,
+                          child: Text(label, overflow: TextOverflow.ellipsis),
+                        ),
+                    ],
+                    onChanged: (v) {
+                      if (v != null) setState(() => _fulfilmentType = v);
+                    },
+                  ),
+                ),
               ],
             ),
           ),
           Step(
             title: const Text('Attributes'),
             isActive: _currentStep >= 1,
-            state: _currentStep > 1
-                ? StepState.complete
-                : StepState.indexed,
+            state: _currentStep > 1 ? StepState.complete : StepState.indexed,
             content: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -208,47 +239,79 @@ class _ProductCreateScreenState extends ConsumerState<ProductCreateScreen> {
                 ),
                 const SizedBox(height: 12),
                 if (_attributes.isEmpty)
-                  Text('No attributes added yet.',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant))
+                  Text(
+                    'No attributes added yet.',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  )
                 else
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
                     children: _attributes.entries
-                        .map((e) => Chip(
-                              label: Text('${e.key}: ${e.value}'),
-                              onDeleted: () => setState(
-                                  () => _attributes.remove(e.key)),
-                            ))
+                        .map(
+                          (e) => Chip(
+                            label: Text('${e.key}: ${e.value}'),
+                            onDeleted: () =>
+                                setState(() => _attributes.remove(e.key)),
+                          ),
+                        )
                         .toList(),
                   ),
               ],
             ),
           ),
           Step(
-            title: const Text('Confirm'),
+            title: const Text('Payment'),
             isActive: _currentStep >= 2,
+            state: _currentStep > 2 ? StepState.complete : StepState.indexed,
+            content: PaymentPolicyEditor(
+              initial: _paymentPolicy,
+              allowInherit: true,
+              onChanged: (v) => setState(() => _paymentPolicy = v),
+            ),
+          ),
+          Step(
+            title: const Text('Confirm'),
+            isActive: _currentStep >= _lastStep,
             content: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Review your product:',
-                    style: theme.textTheme.titleSmall),
+                Text('Review your product:', style: theme.textTheme.titleSmall),
                 const SizedBox(height: 12),
-                _ConfirmRow('Name', _nameController.text.trim().isEmpty
-                    ? '(not set)'
-                    : _nameController.text.trim()),
                 _ConfirmRow(
-                    'Description',
-                    _descriptionController.text.trim().isEmpty
-                        ? '(none)'
-                        : _descriptionController.text.trim()),
-                _ConfirmRow('Attributes',
-                    _attributes.isEmpty
-                        ? '(none)'
-                        : _attributes.entries
+                  'Name',
+                  _nameController.text.trim().isEmpty
+                      ? '(not set)'
+                      : _nameController.text.trim(),
+                ),
+                _ConfirmRow(
+                  'Description',
+                  _descriptionController.text.trim().isEmpty
+                      ? '(none)'
+                      : _descriptionController.text.trim(),
+                ),
+                _ConfirmRow(
+                  'Attributes',
+                  _attributes.isEmpty
+                      ? '(none)'
+                      : _attributes.entries
                             .map((e) => '${e.key}=${e.value}')
-                            .join(', ')),
+                            .join(', '),
+                ),
+                _ConfirmRow(
+                  'Fulfilment',
+                  fulfilmentTypeOptions
+                      .firstWhere((o) => o.$1 == _fulfilmentType)
+                      .$2,
+                ),
+                _ConfirmRow(
+                  'Payment',
+                  _paymentPolicy == null
+                      ? 'Shop policy'
+                      : describePaymentPolicy(_paymentPolicy!),
+                ),
                 _ConfirmRow('Shop', widget.shopId),
                 if (_error != null) ...[
                   const SizedBox(height: 12),
@@ -283,14 +346,20 @@ class _ConfirmRow extends StatelessWidget {
         children: [
           SizedBox(
             width: 110,
-            child: Text(label,
-                style: theme.textTheme.bodySmall
-                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+            child: Text(
+              label,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
           ),
           Expanded(
-            child: Text(value,
-                style: theme.textTheme.bodySmall
-                    ?.copyWith(fontWeight: FontWeight.w500)),
+            child: Text(
+              value,
+              style: theme.textTheme.bodySmall?.copyWith(
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ),
         ],
       ),

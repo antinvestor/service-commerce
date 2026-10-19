@@ -1,19 +1,25 @@
 import 'package:antinvestor_api_commerce/antinvestor_api_commerce.dart'
-    show Shop;
+    show PaymentPolicy, Shop;
+import 'package:antinvestor_ui_catalog/antinvestor_ui_catalog.dart'
+    show PaymentPolicyEditor, validatePaymentPolicy;
 import 'package:antinvestor_ui_core/antinvestor_ui_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/auth/active_shop_provider.dart';
+import '../../core/services/commerce_client_provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/shop_switcher.dart';
 import 'data/shop_providers.dart';
+import 'webhook_settings.dart';
 
 /// Settings panel body for the commerce shop the console operates on.
 ///
 /// Shops are resolved via `ListShops` and offer:
 /// - a shop selector when the operator can see several shops,
-/// - an Edit action (`UpdateShop`) for the active shop, and
+/// - an Edit action (`UpdateShop`) for the active shop,
+/// - webhook URL and write-only secret settings,
+/// - a read-only payment policy summary, and
 /// - a Create action (`CreateShop`); the created shop becomes active.
 class ShopSettingsSection extends ConsumerWidget {
   const ShopSettingsSection({super.key});
@@ -58,9 +64,9 @@ class _ShopError extends StatelessWidget {
         Expanded(
           child: Text(
             message,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppColors.error,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: AppColors.error),
           ),
         ),
       ],
@@ -132,6 +138,157 @@ class _ShopDetails extends ConsumerWidget {
             ),
           ],
         ),
+        const Divider(height: 32),
+        _PaymentPolicySummary(shop: shop),
+        const Divider(height: 32),
+        WebhookSettingsSection(shop: shop),
+      ],
+    );
+  }
+}
+
+/// Payment policy section: a summary of how buyers may pay, with an editor
+/// for instalments, deposit and balance terms, and payment signals.
+class _PaymentPolicySummary extends ConsumerWidget {
+  const _PaymentPolicySummary({required this.shop});
+
+  final Shop shop;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final saving = ref.watch(shopNotifierProvider).isLoading;
+    return Column(
+      key: const Key('payment-policy-section'),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Payment policy',
+          style: theme.textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 8),
+        for (final line in paymentPolicySummary(shop))
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 2),
+            child: Text(line, style: theme.textTheme.bodyMedium),
+          ),
+        const SizedBox(height: 8),
+        OutlinedButton.icon(
+          key: const Key('edit-payment-policy'),
+          onPressed: saving ? null : () => _editPolicy(context, ref),
+          icon: const Icon(Icons.payments_outlined),
+          label: const Text('Edit payment policy'),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _editPolicy(BuildContext context, WidgetRef ref) async {
+    final result = await showDialog<_PolicyEdit>(
+      context: context,
+      builder: (_) => _PaymentPolicyDialog(
+        initial: shop.hasPaymentPolicy() ? shop.paymentPolicy : null,
+      ),
+    );
+    if (result == null || !context.mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await ref
+          .read(shopNotifierProvider.notifier)
+          .updatePaymentPolicy(id: shop.id, policy: result.policy);
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Payment policy saved')),
+      );
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('Could not save the payment policy: $e'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
+  }
+}
+
+/// The outcome of the policy dialog; a null [policy] means "pay in full".
+class _PolicyEdit {
+  const _PolicyEdit(this.policy);
+
+  final PaymentPolicy? policy;
+}
+
+class _PaymentPolicyDialog extends StatefulWidget {
+  const _PaymentPolicyDialog({required this.initial});
+
+  final PaymentPolicy? initial;
+
+  @override
+  State<_PaymentPolicyDialog> createState() => _PaymentPolicyDialogState();
+}
+
+class _PaymentPolicyDialogState extends State<_PaymentPolicyDialog> {
+  late PaymentPolicy? _policy = widget.initial;
+  String? _error;
+
+  void _save() {
+    final error = validatePaymentPolicy(_policy);
+    if (error != null) {
+      setState(() => _error = error);
+      return;
+    }
+    final policy = _policy;
+    Navigator.of(context).pop(
+      _PolicyEdit(policy == null || !policy.allowInstalments ? null : policy),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Payment policy'),
+      content: SizedBox(
+        width: 520,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Applies to new orders. Products can override it, and '
+                'orders already placed keep the policy they were placed with.',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              const SizedBox(height: 12),
+              PaymentPolicyEditor(
+                initial: widget.initial,
+                onChanged: (policy) => setState(() {
+                  _policy = policy;
+                  _error = null;
+                }),
+              ),
+              if (_error != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  _error!,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          key: const Key('save-payment-policy'),
+          onPressed: _save,
+          child: const Text('Save'),
+        ),
       ],
     );
   }
@@ -154,9 +311,9 @@ class _ShopRow extends StatelessWidget {
             width: 96,
             child: Text(
               label,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppColors.onSurfaceMuted,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: AppColors.onSurfaceMuted),
             ),
           ),
           Expanded(
@@ -171,25 +328,48 @@ class _ShopRow extends StatelessWidget {
   }
 }
 
+/// Resolves the suggested default currency while showing a progress
+/// dialog. Never throws; see [resolveDefaultCurrencySuggestion].
+Future<DefaultCurrencySuggestion> _suggestCurrency(
+  BuildContext context,
+  WidgetRef ref,
+) async {
+  final navigator = Navigator.of(context, rootNavigator: true);
+  var dialogOpen = true;
+  showDialog<void>(
+    context: context,
+    barrierDismissible: false,
+    useRootNavigator: true,
+    builder: (_) => const Center(child: CircularProgressIndicator()),
+  ).whenComplete(() => dialogOpen = false);
+  final suggestion = await resolveDefaultCurrencySuggestion(
+    ref.read(commerceServiceClientProvider),
+  );
+  if (dialogOpen) navigator.pop();
+  return suggestion;
+}
+
 Future<void> _createShop(BuildContext context, WidgetRef ref) async {
+  final suggestion = await _suggestCurrency(context, ref);
+  if (!context.mounted) return;
   final values = await showEditDialog(
     context: context,
     title: 'Create shop',
     saveLabel: 'Create',
-    fields: const [
-      DialogField(
+    fields: [
+      const DialogField(
         key: 'name',
         label: 'Name',
         hint: 'e.g. Acacia Foods Storefront',
         required: true,
       ),
-      DialogField(
+      const DialogField(
         key: 'slug',
         label: 'Slug',
         hint: 'e.g. acacia-foods',
         required: true,
       ),
-      DialogField(
+      const DialogField(
         key: 'description',
         label: 'Description',
         type: DialogFieldType.textarea,
@@ -197,16 +377,15 @@ Future<void> _createShop(BuildContext context, WidgetRef ref) async {
       DialogField(
         key: 'currency',
         label: 'Currency',
-        hint: 'ISO 4217 code, e.g. KES',
-        initialValue: 'KES',
-        required: true,
+        hint: suggestion.hint,
+        initialValue: suggestion.currency,
       ),
-      DialogField(
+      const DialogField(
         key: 'contact_id',
         label: 'Seller contact',
         hint: 'Contact that receives order and payment alerts',
       ),
-      DialogField(
+      const DialogField(
         key: 'checkout_return_url',
         label: 'Checkout return URL',
         hint: 'Where buyers land after paying; {order_id} is substituted',
@@ -221,14 +400,18 @@ Future<void> _createShop(BuildContext context, WidgetRef ref) async {
     _showSnack(context, 'Name and slug are required.', isError: true);
     return;
   }
+  // Empty lets the backend apply the same default ResolveDefaultCurrency
+  // would have suggested.
   final currency = (values['currency'] ?? '').trim().toUpperCase();
-  if (currency.length != 3) {
+  if (currency.isNotEmpty && currency.length != 3) {
     _showSnack(context, 'Currency must be a 3-letter code.', isError: true);
     return;
   }
 
   try {
-    await ref.read(shopNotifierProvider.notifier).create(
+    await ref
+        .read(shopNotifierProvider.notifier)
+        .create(
           name: name,
           slug: slug,
           description: (values['description'] ?? '').trim(),
@@ -244,11 +427,7 @@ Future<void> _createShop(BuildContext context, WidgetRef ref) async {
   }
 }
 
-Future<void> _editShop(
-  BuildContext context,
-  WidgetRef ref,
-  Shop shop,
-) async {
+Future<void> _editShop(BuildContext context, WidgetRef ref, Shop shop) async {
   final values = await showEditDialog(
     context: context,
     title: 'Edit shop',
@@ -312,7 +491,9 @@ Future<void> _editShop(
       : shopStatusFromLabel(statusLabel);
 
   try {
-    await ref.read(shopNotifierProvider.notifier).update(
+    await ref
+        .read(shopNotifierProvider.notifier)
+        .update(
           id: shop.id,
           name: name,
           description: (values['description'] ?? '').trim(),

@@ -1,6 +1,9 @@
 import 'package:antinvestor_api_procurement/antinvestor_api_procurement.dart';
 import 'package:flutter/material.dart';
 
+String _formatDate(DateTime dt) =>
+    '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
+
 /// A tile showing a single [GoodsReceiptLine].
 class ReceiptLineTile extends StatelessWidget {
   const ReceiptLineTile({super.key, required this.line, this.itemName = ''});
@@ -35,11 +38,10 @@ class ReceiptLineTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  itemName.isNotEmpty
-                      ? itemName
-                      : line.inventoryItemId,
-                  style: theme.textTheme.bodyMedium
-                      ?.copyWith(fontWeight: FontWeight.w500),
+                  itemName.isNotEmpty ? itemName : line.inventoryItemId,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w500,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -49,9 +51,13 @@ class ReceiptLineTile extends StatelessWidget {
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
-                if (line.lotNumber.isNotEmpty)
+                if (line.lotNumber.isNotEmpty || line.hasExpiryDate())
                   Text(
-                    'Lot: ${line.lotNumber}',
+                    [
+                      if (line.lotNumber.isNotEmpty) 'Lot: ${line.lotNumber}',
+                      if (line.hasExpiryDate())
+                        'Expires: ${_formatDate(line.expiryDate.toDateTime())}',
+                    ].join(' | '),
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),

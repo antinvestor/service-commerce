@@ -13,14 +13,26 @@ class GoodsReceiptStatusBadge extends StatelessWidget {
     return StatusBadge.fromEnum(
       value: status,
       mapper: (s) => switch (s) {
-        GoodsReceiptStatus.GOODS_RECEIPT_STATUS_PENDING_INSPECTION =>
-          ('Pending', Colors.orange, null),
-        GoodsReceiptStatus.GOODS_RECEIPT_STATUS_ACCEPTED =>
-          ('Accepted', Colors.green, null),
-        GoodsReceiptStatus.GOODS_RECEIPT_STATUS_PARTIALLY_ACCEPTED =>
-          ('Partial', Colors.blue, null),
-        GoodsReceiptStatus.GOODS_RECEIPT_STATUS_REJECTED =>
-          ('Rejected', Colors.red, null),
+        GoodsReceiptStatus.GOODS_RECEIPT_STATUS_PENDING_INSPECTION => (
+          'Pending',
+          Colors.orange,
+          null,
+        ),
+        GoodsReceiptStatus.GOODS_RECEIPT_STATUS_ACCEPTED => (
+          'Accepted',
+          Colors.green,
+          null,
+        ),
+        GoodsReceiptStatus.GOODS_RECEIPT_STATUS_PARTIALLY_ACCEPTED => (
+          'Partial',
+          Colors.blue,
+          null,
+        ),
+        GoodsReceiptStatus.GOODS_RECEIPT_STATUS_REJECTED => (
+          'Rejected',
+          Colors.red,
+          null,
+        ),
         _ => ('Unknown', Colors.grey, null),
       },
     );

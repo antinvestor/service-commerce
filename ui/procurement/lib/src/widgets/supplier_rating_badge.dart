@@ -13,14 +13,26 @@ class SupplierRatingBadge extends StatelessWidget {
     return StatusBadge.fromEnum(
       value: rating,
       mapper: (r) => switch (r) {
-        SupplierRating.SUPPLIER_RATING_PREFERRED =>
-          ('Preferred', Colors.green, null),
-        SupplierRating.SUPPLIER_RATING_APPROVED =>
-          ('Approved', Colors.blue, null),
-        SupplierRating.SUPPLIER_RATING_PROBATION =>
-          ('Probation', Colors.orange, null),
-        SupplierRating.SUPPLIER_RATING_UNRATED =>
-          ('Unrated', Colors.grey, null),
+        SupplierRating.SUPPLIER_RATING_PREFERRED => (
+          'Preferred',
+          Colors.green,
+          null,
+        ),
+        SupplierRating.SUPPLIER_RATING_APPROVED => (
+          'Approved',
+          Colors.blue,
+          null,
+        ),
+        SupplierRating.SUPPLIER_RATING_PROBATION => (
+          'Probation',
+          Colors.orange,
+          null,
+        ),
+        SupplierRating.SUPPLIER_RATING_UNRATED => (
+          'Unrated',
+          Colors.grey,
+          null,
+        ),
         _ => ('Unknown', Colors.grey, null),
       },
     );

@@ -6,6 +6,8 @@ import 'package:go_router/go_router.dart';
 
 import '../providers/catalog_providers.dart';
 import '../widgets/fulfilment_type_badge.dart';
+import '../widgets/payment_policy_editor.dart';
+import '../widgets/product_edit_dialog.dart';
 import '../widgets/product_status_badge.dart';
 import '../widgets/variant_card.dart';
 import '../widgets/variant_edit_dialog.dart';
@@ -27,19 +29,19 @@ class ProductDetailScreen extends ConsumerWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.error_outline,
-                size: 48, color: theme.colorScheme.error),
+            Icon(Icons.error_outline, size: 48, color: theme.colorScheme.error),
             const SizedBox(height: 16),
-            Text('Failed to load product',
-                style: theme.textTheme.titleMedium),
+            Text('Failed to load product', style: theme.textTheme.titleMedium),
             const SizedBox(height: 8),
-            Text(friendlyError(error),
-                style: theme.textTheme.bodySmall
-                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+            Text(
+              friendlyError(error),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
             const SizedBox(height: 16),
             OutlinedButton.icon(
-              onPressed: () =>
-                  ref.invalidate(productByIdProvider(productId)),
+              onPressed: () => ref.invalidate(productByIdProvider(productId)),
               icon: const Icon(Icons.refresh, size: 18),
               label: const Text('Retry'),
             ),
@@ -53,10 +55,7 @@ class ProductDetailScreen extends ConsumerWidget {
 }
 
 class _ProductDetailContent extends StatelessWidget {
-  const _ProductDetailContent({
-    required this.product,
-    required this.productId,
-  });
+  const _ProductDetailContent({required this.product, required this.productId});
 
   final Product product;
   final String productId;
@@ -92,15 +91,21 @@ class _ProductDetailContent extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      product.name.isNotEmpty ? product.name : 'Unnamed Product',
-                      style: theme.textTheme.headlineSmall
-                          ?.copyWith(fontWeight: FontWeight.w600),
+                      product.name.isNotEmpty
+                          ? product.name
+                          : 'Unnamed Product',
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                     const SizedBox(height: 4),
-                    SelectableText('ID: ${product.id}',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                            fontFamily: 'monospace',
-                            color: theme.colorScheme.onSurfaceVariant)),
+                    SelectableText(
+                      'ID: ${product.id}',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        fontFamily: 'monospace',
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -110,9 +115,14 @@ class _ProductDetailContent extends StatelessWidget {
                 label: const Text('Back'),
               ),
               const SizedBox(width: 8),
+              OutlinedButton.icon(
+                onPressed: () => showProductEditDialog(context, product),
+                icon: const Icon(Icons.edit_outlined, size: 18),
+                label: const Text('Edit'),
+              ),
+              const SizedBox(width: 8),
               FilledButton.icon(
-                onPressed: () =>
-                    context.go('/catalog/$productId/variants/new'),
+                onPressed: () => context.go('/catalog/$productId/variants/new'),
                 icon: const Icon(Icons.add, size: 18),
                 label: const Text('Add Variant'),
               ),
@@ -135,68 +145,92 @@ class _ProductDetailContent extends StatelessWidget {
           const SizedBox(height: 24),
 
           // Product details card
-          LayoutBuilder(builder: (context, constraints) {
-            final wide = constraints.maxWidth > 700;
-            final detailCard = _buildCard(
-              context,
-              title: 'Product Details',
-              icon: Icons.info_outlined,
-              child: Column(children: [
-                _OvRow('Name',
-                    product.name.isNotEmpty ? product.name : '—'),
-                _OvRow('Description',
-                    product.description.isNotEmpty
-                        ? product.description
-                        : '—'),
-                _OvRow('Shop ID', product.shopId),
-                _OvRow('Status', product.status.name),
-                _OvRow('Fulfilment', product.fulfilmentType.name),
-              ]),
-            );
-
-            final attrCard = product.attributes.isNotEmpty
-                ? _buildCard(
-                    context,
-                    title: 'Attributes',
-                    icon: Icons.label_outlined,
-                    child: Column(
-                      children: [
-                        for (final e in product.attributes.entries)
-                          _OvRow(e.key, e.value),
-                      ],
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final wide = constraints.maxWidth > 700;
+              final detailCard = _buildCard(
+                context,
+                title: 'Product Details',
+                icon: Icons.info_outlined,
+                child: Column(
+                  children: [
+                    _OvRow(
+                      'Name',
+                      product.name.isNotEmpty ? product.name : '—',
                     ),
-                  )
-                : null;
+                    _OvRow(
+                      'Description',
+                      product.description.isNotEmpty
+                          ? product.description
+                          : '—',
+                    ),
+                    _OvRow('Shop ID', product.shopId),
+                    _OvRow('Status', productStatusLabel(product.status)),
+                    _OvRow(
+                      'Fulfilment',
+                      fulfilmentTypeLabel(product.fulfilmentType),
+                    ),
+                    _PaymentPolicyRow(product: product),
+                  ],
+                ),
+              );
 
-            if (wide && attrCard != null) {
-              return Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              final attrCard = product.attributes.isNotEmpty
+                  ? _buildCard(
+                      context,
+                      title: 'Attributes',
+                      icon: Icons.label_outlined,
+                      child: Column(
+                        children: [
+                          for (final e in product.attributes.entries)
+                            _OvRow(e.key, e.value),
+                        ],
+                      ),
+                    )
+                  : null;
+
+              if (wide && attrCard != null) {
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(child: detailCard),
+                    const SizedBox(width: 16),
+                    Expanded(child: attrCard),
+                  ],
+                );
+              }
+              return Column(
                 children: [
-                  Expanded(child: detailCard),
-                  const SizedBox(width: 16),
-                  Expanded(child: attrCard),
+                  detailCard,
+                  if (attrCard != null) ...[
+                    const SizedBox(height: 16),
+                    attrCard,
+                  ],
                 ],
               );
-            }
-            return Column(children: [
-              detailCard,
-              if (attrCard != null) ...[const SizedBox(height: 16), attrCard],
-            ]);
-          }),
+            },
+          ),
           const SizedBox(height: 16),
           _buildCard(
             context,
             title: 'Variants',
             icon: Icons.style_outlined,
-            child: _ProductVariantsList(productId: productId),
+            child: _ProductVariantsList(
+              productId: productId,
+              shopId: product.shopId,
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildCard(BuildContext context,
-      {required String title, required IconData icon, required Widget child}) {
+  Widget _buildCard(
+    BuildContext context, {
+    required String title,
+    required IconData icon,
+    required Widget child,
+  }) {
     final theme = Theme.of(context);
     return Card(
       elevation: 0,
@@ -209,13 +243,18 @@ class _ProductDetailContent extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(children: [
-              Icon(icon, size: 18, color: theme.colorScheme.primary),
-              const SizedBox(width: 8),
-              Text(title,
-                  style: theme.textTheme.titleSmall
-                      ?.copyWith(fontWeight: FontWeight.w600)),
-            ]),
+            Row(
+              children: [
+                Icon(icon, size: 18, color: theme.colorScheme.primary),
+                const SizedBox(width: 8),
+                Text(
+                  title,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
             const SizedBox(height: 12),
             child,
           ],
@@ -240,14 +279,20 @@ class _OvRow extends StatelessWidget {
         children: [
           SizedBox(
             width: 100,
-            child: Text(label,
-                style: theme.textTheme.bodySmall
-                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+            child: Text(
+              label,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
           ),
           Expanded(
-            child: SelectableText(value,
-                style: theme.textTheme.bodySmall
-                    ?.copyWith(fontWeight: FontWeight.w500)),
+            child: SelectableText(
+              value,
+              style: theme.textTheme.bodySmall?.copyWith(
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ),
         ],
       ),
@@ -255,12 +300,49 @@ class _OvRow extends StatelessWidget {
   }
 }
 
+/// Human label for a [ProductStatus].
+String productStatusLabel(ProductStatus status) => switch (status) {
+  ProductStatus.PRODUCT_STATUS_ACTIVE => 'Active',
+  ProductStatus.PRODUCT_STATUS_INACTIVE => 'Inactive',
+  ProductStatus.PRODUCT_STATUS_ARCHIVED => 'Archived',
+  _ => 'Unknown',
+};
+
+/// Human label for a [FulfilmentType].
+String fulfilmentTypeLabel(FulfilmentType type) => switch (type) {
+  FulfilmentType.FULFILMENT_TYPE_PHYSICAL => 'Physical',
+  FulfilmentType.FULFILMENT_TYPE_DIGITAL => 'Digital',
+  FulfilmentType.FULFILMENT_TYPE_NONE => 'None',
+  _ => 'Not set',
+};
+
+/// The product's own payment policy, or the shop's when it has none.
+class _PaymentPolicyRow extends ConsumerWidget {
+  const _PaymentPolicyRow({required this.product});
+
+  final Product product;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (product.hasPaymentPolicy()) {
+      return _OvRow('Payment', describePaymentPolicy(product.paymentPolicy));
+    }
+    if (product.shopId.isEmpty) return const _OvRow('Payment', 'Shop policy');
+    final shop = ref.watch(shopProvider(product.shopId)).value;
+    final summary = shop == null
+        ? 'Shop policy'
+        : 'Shop policy (${describePaymentPolicy(shop.paymentPolicy)})';
+    return _OvRow('Payment', summary);
+  }
+}
+
 /// The product's variants, each with an edit action for name, price,
 /// stock and status.
 class _ProductVariantsList extends ConsumerWidget {
-  const _ProductVariantsList({required this.productId});
+  const _ProductVariantsList({required this.productId, required this.shopId});
 
   final String productId;
+  final String shopId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -276,13 +358,15 @@ class _ProductVariantsList extends ConsumerWidget {
       error: (error, _) => Row(
         children: [
           Expanded(
-            child: Text(friendlyError(error),
-                style: theme.textTheme.bodySmall
-                    ?.copyWith(color: theme.colorScheme.error)),
+            child: Text(
+              friendlyError(error),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.error,
+              ),
+            ),
           ),
           TextButton.icon(
-            onPressed: () =>
-                ref.invalidate(productVariantsProvider(productId)),
+            onPressed: () => ref.invalidate(productVariantsProvider(productId)),
             icon: const Icon(Icons.refresh, size: 18),
             label: const Text('Retry'),
           ),
@@ -292,8 +376,9 @@ class _ProductVariantsList extends ConsumerWidget {
         if (variants.isEmpty) {
           return Text(
             'No variants yet. Add one to set a price and stock.',
-            style: theme.textTheme.bodySmall
-                ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
           );
         }
         return Column(
@@ -305,10 +390,20 @@ class _ProductVariantsList extends ConsumerWidget {
                   variant: variant,
                   onTap: saving
                       ? null
-                      : () => showVariantEditDialog(context, ref, variant),
+                      : () => showVariantEditDialog(
+                          context,
+                          ref,
+                          variant,
+                          shopId: shopId,
+                        ),
                   onEdit: saving
                       ? null
-                      : () => showVariantEditDialog(context, ref, variant),
+                      : () => showVariantEditDialog(
+                          context,
+                          ref,
+                          variant,
+                          shopId: shopId,
+                        ),
                 ),
               ),
           ],

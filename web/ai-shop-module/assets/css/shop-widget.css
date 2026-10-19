@@ -721,6 +721,57 @@
   padding-top: var(--ai-shop-spacing-sm);
 }
 
+/* --- Instalment Payments --- */
+.ai-shop-pay-amount {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: var(--ai-shop-spacing);
+}
+
+.ai-shop-pay-hint,
+.ai-shop-pay-due {
+  font-size: 0.85rem;
+  color: var(--ai-shop-color-text-muted);
+}
+
+.ai-shop-pay-due {
+  margin-top: var(--ai-shop-spacing-sm);
+}
+
+.ai-shop-pay-status {
+  display: inline-block;
+  margin-top: var(--ai-shop-spacing-sm);
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: var(--ai-shop-color-surface);
+  border: 1px solid var(--ai-shop-color-border);
+}
+
+.ai-shop-pay-status--paid {
+  color: var(--ai-shop-color-success);
+  border-color: var(--ai-shop-color-success);
+}
+
+.ai-shop-pay-status--partially_paid {
+  color: var(--ai-shop-color-primary);
+  border-color: var(--ai-shop-color-primary);
+}
+
+.ai-shop-pay-status--failed,
+.ai-shop-pay-status--expired,
+.ai-shop-pay-status--refunded {
+  color: var(--ai-shop-color-danger);
+  border-color: var(--ai-shop-color-danger);
+}
+
+.ai-shop-pay-actions {
+  justify-content: space-between;
+  margin-top: var(--ai-shop-spacing);
+}
+
 /* --- Toast Notification --- */
 .ai-shop-toast {
   position: fixed;

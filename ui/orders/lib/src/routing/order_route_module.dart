@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../screens/checkout_flow_screen.dart';
 import '../screens/fulfilment_screen.dart';
 import '../screens/order_detail_screen.dart';
+import '../screens/order_events_screen.dart';
 import '../screens/order_list_screen.dart';
 
 class OrderRouteModule extends RouteModule {
@@ -19,87 +20,90 @@ class OrderRouteModule extends RouteModule {
 
   @override
   List<RouteBase> buildRoutes() => [
+    GoRoute(
+      path: '/orders',
+      builder: (context, state) => OrderListScreen(shopId: shopId),
+      routes: [
         GoRoute(
-          path: '/orders',
+          path: 'checkout',
+          builder: (context, state) => CheckoutFlowScreen(shopId: shopId),
+        ),
+        // Declared before ':orderId' so '/orders/events' is not read as
+        // an order id.
+        GoRoute(
+          path: 'events',
+          builder: (context, state) => OrderEventsScreen(shopId: shopId),
+        ),
+        GoRoute(
+          path: ':orderId',
           builder: (context, state) =>
-              OrderListScreen(shopId: shopId),
+              OrderDetailScreen(orderId: state.pathParameters['orderId']!),
           routes: [
             GoRoute(
-              path: 'checkout',
+              path: 'fulfilment',
               builder: (context, state) =>
-                  CheckoutFlowScreen(shopId: shopId),
-            ),
-            GoRoute(
-              path: ':orderId',
-              builder: (context, state) => OrderDetailScreen(
-                orderId: state.pathParameters['orderId']!,
-              ),
-              routes: [
-                GoRoute(
-                  path: 'fulfilment',
-                  builder: (context, state) => FulfilmentScreen(
-                    orderId: state.pathParameters['orderId']!,
-                  ),
-                ),
-              ],
+                  FulfilmentScreen(orderId: state.pathParameters['orderId']!),
             ),
           ],
         ),
-      ];
+      ],
+    ),
+  ];
 
   @override
   List<NavItem> buildNavItems() => [
-        const NavItem(
-          id: 'orders',
-          label: 'Orders',
-          icon: Icons.receipt_long_outlined,
-          activeIcon: Icons.receipt_long,
-          route: '/orders',
-          requiredPermissions: {'order_view'},
-        ),
-      ];
+    const NavItem(
+      id: 'orders',
+      label: 'Orders',
+      icon: Icons.receipt_long_outlined,
+      activeIcon: Icons.receipt_long,
+      route: '/orders',
+      requiredPermissions: {'order_view'},
+    ),
+  ];
 
   @override
   Map<String, Set<String>> get routePermissions => {
-        '/orders': {'order_view'},
-        '/orders/checkout': {'order_manage'},
-        '/orders/:orderId/fulfilment': {'fulfilment_manage'},
-      };
+    '/orders': {'order_view'},
+    '/orders/checkout': {'order_manage'},
+    '/orders/events': {'order_view'},
+    '/orders/:orderId/fulfilment': {'fulfilment_manage'},
+  };
 
   @override
   PermissionManifest get permissionManifest => const PermissionManifest(
-        namespace: 'service_commerce',
-        permissions: [
-          PermissionEntry(
-            key: 'order_view',
-            label: 'View Orders',
-            scope: PermissionScope.service,
-          ),
-          PermissionEntry(
-            key: 'order_manage',
-            label: 'Manage Orders',
-            scope: PermissionScope.action,
-          ),
-          PermissionEntry(
-            key: 'cart_view',
-            label: 'View Carts',
-            scope: PermissionScope.service,
-          ),
-          PermissionEntry(
-            key: 'cart_manage',
-            label: 'Manage Carts',
-            scope: PermissionScope.action,
-          ),
-          PermissionEntry(
-            key: 'fulfilment_view',
-            label: 'View Fulfilments',
-            scope: PermissionScope.service,
-          ),
-          PermissionEntry(
-            key: 'fulfilment_manage',
-            label: 'Manage Fulfilments',
-            scope: PermissionScope.action,
-          ),
-        ],
-      );
+    namespace: 'service_commerce',
+    permissions: [
+      PermissionEntry(
+        key: 'order_view',
+        label: 'View Orders',
+        scope: PermissionScope.service,
+      ),
+      PermissionEntry(
+        key: 'order_manage',
+        label: 'Manage Orders',
+        scope: PermissionScope.action,
+      ),
+      PermissionEntry(
+        key: 'cart_view',
+        label: 'View Carts',
+        scope: PermissionScope.service,
+      ),
+      PermissionEntry(
+        key: 'cart_manage',
+        label: 'Manage Carts',
+        scope: PermissionScope.action,
+      ),
+      PermissionEntry(
+        key: 'fulfilment_view',
+        label: 'View Fulfilments',
+        scope: PermissionScope.service,
+      ),
+      PermissionEntry(
+        key: 'fulfilment_manage',
+        label: 'Manage Fulfilments',
+        scope: PermissionScope.action,
+      ),
+    ],
+  );
 }

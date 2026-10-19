@@ -13,15 +13,24 @@ class PaymentStatusBadge extends StatelessWidget {
     return StatusBadge.fromEnum(
       value: status,
       mapper: (s) => switch (s) {
-        PaymentStatus.PAYMENT_STATUS_PENDING =>
-          ('Pending', Colors.orange, null),
+        PaymentStatus.PAYMENT_STATUS_PENDING => (
+          'Pending',
+          Colors.orange,
+          null,
+        ),
         PaymentStatus.PAYMENT_STATUS_PAID => ('Paid', Colors.green, null),
-        PaymentStatus.PAYMENT_STATUS_FAILED =>
-          ('Failed', Colors.red, null),
-        PaymentStatus.PAYMENT_STATUS_REFUNDED =>
-          ('Refunded', Colors.purple, null),
-        PaymentStatus.PAYMENT_STATUS_EXPIRED =>
-          ('Expired', Colors.grey, null),
+        PaymentStatus.PAYMENT_STATUS_PARTIALLY_PAID => (
+          'Partially paid',
+          Colors.blue,
+          null,
+        ),
+        PaymentStatus.PAYMENT_STATUS_FAILED => ('Failed', Colors.red, null),
+        PaymentStatus.PAYMENT_STATUS_REFUNDED => (
+          'Refunded',
+          Colors.purple,
+          null,
+        ),
+        PaymentStatus.PAYMENT_STATUS_EXPIRED => ('Expired', Colors.grey, null),
         _ => ('Unknown', Colors.grey, null),
       },
     );

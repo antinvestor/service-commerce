@@ -4,12 +4,33 @@ import 'package:antinvestor_ui_core/routing/route_module.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../screens/goods_receipt_detail_screen.dart';
 import '../screens/goods_receipt_wizard_screen.dart';
 import '../screens/po_create_wizard_screen.dart';
+import '../screens/procurement_home_screen.dart';
+import '../screens/purchase_order_detail_screen.dart';
 import '../screens/purchase_order_list_screen.dart';
+import '../screens/purchase_order_suggestions_screen.dart';
 import '../screens/supplier_detail_screen.dart';
 import '../screens/supplier_list_screen.dart';
+import 'procurement_paths.dart';
 
+/// Registers every procurement screen under a single `/procurement` root.
+///
+/// | Path                                   | Screen                     |
+/// |----------------------------------------|----------------------------|
+/// | /procurement                           | ProcurementHomeScreen      |
+/// | /procurement/suppliers                 | SupplierListScreen         |
+/// | /procurement/suppliers/:supplierId     | SupplierDetailScreen       |
+/// | /procurement/orders                    | PurchaseOrderListScreen    |
+/// | /procurement/orders/new                | POCreateWizardScreen       |
+/// | /procurement/orders/:poId              | PurchaseOrderDetailScreen  |
+/// | /procurement/orders/:poId/receive      | GoodsReceiptWizardScreen   |
+/// | /procurement/suggestions               | PurchaseOrderSuggestionsScreen |
+/// | /procurement/receipts/:receiptId       | GoodsReceiptDetailScreen   |
+///
+/// Screens link through [ProcurementPaths] so they stay in step with this
+/// table.
 class ProcurementRouteModule extends RouteModule {
   ProcurementRouteModule({required this.propertyId});
 
@@ -20,8 +41,13 @@ class ProcurementRouteModule extends RouteModule {
 
   @override
   List<RouteBase> buildRoutes() => [
+    GoRoute(
+      path: ProcurementPaths.root,
+      builder: (context, state) =>
+          ProcurementHomeScreen(propertyId: propertyId),
+      routes: [
         GoRoute(
-          path: '/suppliers',
+          path: 'suppliers',
           builder: (context, state) => const SupplierListScreen(),
           routes: [
             GoRoute(
@@ -33,86 +59,111 @@ class ProcurementRouteModule extends RouteModule {
           ],
         ),
         GoRoute(
-          path: '/purchase-orders',
+          path: 'orders',
           builder: (context, state) =>
               PurchaseOrderListScreen(propertyId: propertyId),
           routes: [
+            // Must precede ':poId' so "new" is not taken as an ID.
             GoRoute(
               path: 'new',
               builder: (context, state) =>
                   POCreateWizardScreen(propertyId: propertyId),
             ),
             GoRoute(
-              path: ':poId/receive',
-              builder: (context, state) => GoodsReceiptWizardScreen(
+              path: ':poId',
+              builder: (context, state) => PurchaseOrderDetailScreen(
                 poId: state.pathParameters['poId']!,
               ),
+              routes: [
+                GoRoute(
+                  path: 'receive',
+                  builder: (context, state) => GoodsReceiptWizardScreen(
+                    poId: state.pathParameters['poId']!,
+                    propertyId: propertyId,
+                  ),
+                ),
+              ],
             ),
           ],
         ),
-      ];
+        GoRoute(
+          path: 'suggestions',
+          builder: (context, state) =>
+              PurchaseOrderSuggestionsScreen(propertyId: propertyId),
+        ),
+        GoRoute(
+          path: 'receipts/:receiptId',
+          builder: (context, state) => GoodsReceiptDetailScreen(
+            receiptId: state.pathParameters['receiptId']!,
+          ),
+        ),
+      ],
+    ),
+  ];
 
   @override
   List<NavItem> buildNavItems() => const [
-        NavItem(
-          id: 'procurement_suppliers',
-          label: 'Suppliers',
-          icon: Icons.people_outline,
-          activeIcon: Icons.people,
-          route: '/suppliers',
-          requiredPermissions: {'supplier_view'},
-        ),
-        NavItem(
-          id: 'procurement_purchase_orders',
-          label: 'Purchase Orders',
-          icon: Icons.shopping_cart_outlined,
-          activeIcon: Icons.shopping_cart,
-          route: '/purchase-orders',
-          requiredPermissions: {'purchase_order_view'},
-        ),
-      ];
+    NavItem(
+      id: 'procurement_suppliers',
+      label: 'Suppliers',
+      icon: Icons.people_outline,
+      activeIcon: Icons.people,
+      route: ProcurementPaths.suppliers,
+      requiredPermissions: {'supplier_view'},
+    ),
+    NavItem(
+      id: 'procurement_purchase_orders',
+      label: 'Purchase Orders',
+      icon: Icons.shopping_cart_outlined,
+      activeIcon: Icons.shopping_cart,
+      route: ProcurementPaths.orders,
+      requiredPermissions: {'purchase_order_view'},
+    ),
+  ];
 
   @override
   Map<String, Set<String>> get routePermissions => const {
-        '/suppliers': {'supplier_view'},
-        '/purchase-orders': {'purchase_order_view'},
-        '/purchase-orders/new': {'purchase_order_create'},
-      };
+    ProcurementPaths.root: {'supplier_view', 'purchase_order_view'},
+    ProcurementPaths.suppliers: {'supplier_view'},
+    ProcurementPaths.orders: {'purchase_order_view'},
+    ProcurementPaths.newOrder: {'purchase_order_create'},
+    ProcurementPaths.receipts: {'purchase_order_view'},
+  };
 
   @override
   PermissionManifest get permissionManifest => const PermissionManifest(
-        namespace: 'service_procurement',
-        permissions: [
-          PermissionEntry(
-            key: 'supplier_view',
-            label: 'View Suppliers',
-            scope: PermissionScope.service,
-          ),
-          PermissionEntry(
-            key: 'supplier_manage',
-            label: 'Manage Suppliers',
-            scope: PermissionScope.action,
-          ),
-          PermissionEntry(
-            key: 'purchase_order_view',
-            label: 'View Purchase Orders',
-            scope: PermissionScope.service,
-          ),
-          PermissionEntry(
-            key: 'purchase_order_create',
-            label: 'Create Purchase Orders',
-            scope: PermissionScope.action,
-          ),
-          PermissionEntry(
-            key: 'purchase_order_submit',
-            label: 'Submit Purchase Orders',
-            scope: PermissionScope.action,
-          ),
-          PermissionEntry(
-            key: 'goods_receipt_create',
-            label: 'Create Goods Receipts',
-            scope: PermissionScope.action,
-          ),
-        ],
-      );
+    namespace: 'service_procurement',
+    permissions: [
+      PermissionEntry(
+        key: 'supplier_view',
+        label: 'View Suppliers',
+        scope: PermissionScope.service,
+      ),
+      PermissionEntry(
+        key: 'supplier_manage',
+        label: 'Manage Suppliers',
+        scope: PermissionScope.action,
+      ),
+      PermissionEntry(
+        key: 'purchase_order_view',
+        label: 'View Purchase Orders',
+        scope: PermissionScope.service,
+      ),
+      PermissionEntry(
+        key: 'purchase_order_create',
+        label: 'Create Purchase Orders',
+        scope: PermissionScope.action,
+      ),
+      PermissionEntry(
+        key: 'purchase_order_submit',
+        label: 'Submit Purchase Orders',
+        scope: PermissionScope.action,
+      ),
+      PermissionEntry(
+        key: 'goods_receipt_create',
+        label: 'Create Goods Receipts',
+        scope: PermissionScope.action,
+      ),
+    ],
+  );
 }

@@ -10,6 +10,7 @@ import 'core/auth/auth_bridge.dart';
 import 'core/auth/migration.dart';
 import 'core/auth/runtime_provider.dart';
 import 'core/config/url_strategy.dart';
+import 'core/services/transport_overrides.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -41,6 +42,10 @@ Future<void> main() async {
         authTokenProviderProvider.overrideWith(
           (ref) => ConsoleAuthBridge(ref.watch(authRuntimeProvider)),
         ),
+
+        // Every service call goes through the runtime, which attaches the
+        // signed-in user's token; the bridge above only carries logout.
+        ...runtimeTransportOverrides(authRuntime),
       ],
       child: const ConsoleApp(),
     ),

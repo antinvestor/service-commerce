@@ -5,14 +5,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/procurement_providers.dart';
 
-const _typeLabels = <String, SupplierType>{
+/// Display labels for [SupplierType], in presentation order.
+const supplierTypeLabels = <String, SupplierType>{
   'Raw Material': SupplierType.SUPPLIER_TYPE_RAW_MATERIAL,
   'Packaging': SupplierType.SUPPLIER_TYPE_PACKAGING,
   'Service': SupplierType.SUPPLIER_TYPE_SERVICE,
   'Equipment': SupplierType.SUPPLIER_TYPE_EQUIPMENT,
 };
 
-const _statusLabels = <String, SupplierStatus>{
+/// Display labels for [SupplierStatus], in presentation order.
+const supplierStatusLabels = <String, SupplierStatus>{
   'Active': SupplierStatus.SUPPLIER_STATUS_ACTIVE,
   'Suspended': SupplierStatus.SUPPLIER_STATUS_SUSPENDED,
   'Inactive': SupplierStatus.SUPPLIER_STATUS_INACTIVE,
@@ -56,18 +58,18 @@ Future<bool> showSupplierForm({
         key: 'type',
         label: 'Type',
         type: DialogFieldType.dropdown,
-        options: _typeLabels.keys.toList(),
+        options: supplierTypeLabels.keys.toList(),
         initialValue: isEdit
-            ? _labelFor(_typeLabels, existing.supplierType, '')
+            ? _labelFor(supplierTypeLabels, existing.supplierType, '')
             : '',
       ),
       DialogField(
         key: 'status',
         label: 'Status',
         type: DialogFieldType.dropdown,
-        options: _statusLabels.keys.toList(),
+        options: supplierStatusLabels.keys.toList(),
         initialValue: isEdit
-            ? _labelFor(_statusLabels, existing.status, 'Active')
+            ? _labelFor(supplierStatusLabels, existing.status, 'Active')
             : 'Active',
       ),
       DialogField(
@@ -116,13 +118,12 @@ Future<bool> showSupplierForm({
     ..currency = (values['currency'] ?? '').trim()
     ..paymentTermsDays =
         int.tryParse((values['paymentTermsDays'] ?? '0').trim()) ?? 0
-    ..leadTimeDays =
-        int.tryParse((values['leadTimeDays'] ?? '0').trim()) ?? 0
+    ..leadTimeDays = int.tryParse((values['leadTimeDays'] ?? '0').trim()) ?? 0
     ..notes = (values['notes'] ?? '').trim();
 
-  final type = _typeLabels[values['type']];
+  final type = supplierTypeLabels[values['type']];
   if (type != null) request.supplierType = type;
-  final status = _statusLabels[values['status']];
+  final status = supplierStatusLabels[values['status']];
   if (status != null) request.status = status;
   final rating = _ratingLabels[values['rating']];
   if (rating != null) request.rating = rating;
@@ -134,11 +135,13 @@ Future<bool> showSupplierForm({
   try {
     final notifier = ref.read(procurementNotifierProvider.notifier);
     final saved = await notifier.saveSupplier(request);
-    ref.invalidate(supplierListProvider(null));
+    ref.invalidate(supplierListProvider);
     if (isEdit) ref.invalidate(supplierByIdProvider(saved.id));
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(isEdit ? 'Supplier updated' : 'Supplier created')),
+        SnackBar(
+          content: Text(isEdit ? 'Supplier updated' : 'Supplier created'),
+        ),
       );
     }
     return true;

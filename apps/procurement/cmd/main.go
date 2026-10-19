@@ -143,9 +143,7 @@ func newManufacturingClient(
 		return nil, nil //nolint:nilnil // not configured is a valid state
 	}
 	cli, err := connection.NewServiceClient(ctx, cfg, common.ServiceTarget{
-		// servicecatalog.ServiceManufacturing from common v2.0.9; the catalog
-		// must know the ID to issue a /manufacturing token audience.
-		ServiceID:             servicecatalog.ServiceID("manufacturing"),
+		ServiceID:             servicecatalog.ServiceManufacturing,
 		Endpoint:              cfg.ManufacturingServiceURI,
 		WorkloadAPITargetPath: cfg.ManufacturingServiceWorkloadAPITargetPath,
 	}, manufacturingv1connect.NewManufacturingServiceClient)

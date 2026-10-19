@@ -93,8 +93,7 @@ from its cheapest active supplier item (shorter lead time breaks ties),
 raised to the supplier's minimum order, and grouped by supplier with an
 estimated total. Shortages nobody supplies come back in a suggestion with no
 supplier. The console turns a suggestion into a draft purchase order linked
-to the plan. Calling manufacturing needs `common/v2` v2.0.9, whose service
-catalog knows the `/manufacturing` audience.
+to the plan.
 
 ## Default currency
 

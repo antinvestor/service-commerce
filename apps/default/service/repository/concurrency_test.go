@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/pitabwire/frame/v3/frametests/definition"
+	"github.com/pitabwire/frame/v3/security"
 	"github.com/pitabwire/util"
 	"github.com/stretchr/testify/require"
 
@@ -250,5 +251,52 @@ func (rts *RepositoryTestSuite) TestCreateOrder_ConcurrentFirstOrdersGetDistinct
 		for i := 1; i <= racers; i++ {
 			require.True(t, seen[fmt.Sprintf("ORD-%06d", i)], "numbers are gap-free")
 		}
+	})
+}
+
+func (rts *RepositoryTestSuite) TestApplyPayment_InheritsTheOrdersTenancy() {
+	t := rts.T()
+
+	rts.WithTestDependancies(t, func(t *testing.T, dep *definition.DependencyOption) {
+		ctx, svc := rts.CreateService(t, dep)
+		shopRepo, productRepo, variantRepo, _, _, orderRepo, _, _, _ := rts.getRepos(ctx, svc)
+		shop := rts.createTestShop(ctx, shopRepo)
+		variant := rts.createTestVariant(
+			ctx,
+			variantRepo,
+			rts.createTestProduct(ctx, productRepo, shop.GetID()).GetID(),
+		)
+
+		order := rts.createUnpaidOrder(ctx, orderRepo, shop.GetID(), variant)
+		order.TenantID, order.PartitionID = "tenant-shop", "partition-shop"
+		_, err := orderRepo.Update(ctx, order, "tenant_id", "partition_id")
+		if err != nil {
+			// tenant_id is immutable through the base repository; set it directly.
+			require.NoError(t, svc.DatastoreManager().GetPool(ctx, "").DB(ctx, false).
+				Model(&models.Order{}).Where("id = ?", order.GetID()).
+				UpdateColumns(map[string]any{"tenant_id": "tenant-shop", "partition_id": "partition-shop"}).Error)
+		}
+
+		// Applied by a caller from another tenant (here, the reconciler's service
+		// account), the payment and its events still belong to the shop.
+		other := &security.AuthenticationClaims{TenantID: "tenant-svc", PartitionID: "partition-svc"}
+		other.Subject = "svc"
+		applied, events, ok, err := orderRepo.ApplyPayment(other.ClaimsToContext(ctx), order.GetID(),
+			&models.OrderPayment{Currency: "USD", AmountNanos: 10_000_000_000, Reference: "cs_t", PaidAt: time.Now()},
+			func(o *models.Order, _ *models.OrderPayment) []*models.OrderEvent {
+				e := &models.OrderEvent{ShopID: o.ShopID, OrderID: o.GetID(), Type: 1}
+				e.CopyPartitionInfo(&o.BaseModel)
+				return []*models.OrderEvent{e}
+			})
+		require.NoError(t, err)
+		require.True(t, ok)
+		require.Len(t, events, 1)
+		require.Equal(t, "tenant-shop", events[0].TenantID)
+
+		loaded, err := orderRepo.GetWithLines(ctx, applied.GetID())
+		require.NoError(t, err)
+		require.Len(t, loaded.Payments, 1)
+		require.Equal(t, "tenant-shop", loaded.Payments[0].TenantID)
+		require.Equal(t, "partition-shop", loaded.Payments[0].PartitionID)
 	})
 }

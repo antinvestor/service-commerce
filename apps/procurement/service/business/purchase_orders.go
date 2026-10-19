@@ -23,10 +23,10 @@ import (
 	"time"
 
 	procurementv1 "buf.build/gen/go/antinvestor/procurement/protocolbuffers/go/v1"
-	"connectrpc.com/connect"
-	"github.com/pitabwire/frame/v2"
-	"github.com/pitabwire/frame/v2/data"
-	"github.com/pitabwire/frame/v2/security"
+	"connectrpc.com/connect/v2"
+	"github.com/pitabwire/frame/v3"
+	"github.com/pitabwire/frame/v3/data"
+	"github.com/pitabwire/frame/v3/security"
 	"github.com/pitabwire/util"
 
 	"github.com/antinvestor/service-commerce/apps/procurement/service/models"
@@ -88,16 +88,15 @@ func (pob *purchaseOrderBusiness) CreatePurchaseOrder(
 	}
 
 	if req.GetSupplierId() == "" {
-		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("supplier_id is required"))
+		return nil, connect.NewError(connect.CodeInvalidArgument, "supplier_id is required")
 	}
 	if req.GetPropertyId() == "" {
-		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("property_id is required"))
+		return nil, connect.NewError(connect.CodeInvalidArgument, "property_id is required")
 	}
 	if len(req.GetLines()) == 0 {
 		return nil, connect.NewError(
 			connect.CodeInvalidArgument,
-			errors.New("purchase order must have at least one line"),
-		)
+			"purchase order must have at least one line")
 	}
 
 	// Build lines and compute total
@@ -184,8 +183,7 @@ func (pob *purchaseOrderBusiness) SearchPurchaseOrders(
 	default:
 		return nil, connect.NewError(
 			connect.CodeInvalidArgument,
-			errors.New("property_id, supplier_id, or status filter is required"),
-		)
+			"property_id, supplier_id, or status filter is required")
 	}
 
 	if err != nil {
@@ -210,7 +208,7 @@ func (pob *purchaseOrderBusiness) SubmitPurchaseOrder(
 
 	if po.Status != int32(procurementv1.PurchaseOrderStatus_PURCHASE_ORDER_STATUS_DRAFT) {
 		return nil, connect.NewError(connect.CodeFailedPrecondition,
-			errors.New("only draft purchase orders can be submitted"))
+			"only draft purchase orders can be submitted")
 	}
 
 	now := time.Now()
@@ -230,7 +228,7 @@ func (pob *purchaseOrderBusiness) SubmitPurchaseOrder(
 	if err != nil {
 		if errors.Is(err, repository.ErrPurchaseOrderStateChanged) {
 			return nil, connect.NewError(connect.CodeFailedPrecondition,
-				errors.New("only draft purchase orders can be submitted"))
+				"only draft purchase orders can be submitted")
 		}
 		return nil, data.ErrorConvertToAPI(err)
 	}
@@ -250,10 +248,10 @@ func (pob *purchaseOrderBusiness) CancelPurchaseOrder(
 	switch procurementv1.PurchaseOrderStatus(po.Status) {
 	case procurementv1.PurchaseOrderStatus_PURCHASE_ORDER_STATUS_RECEIVED:
 		return nil, connect.NewError(connect.CodeFailedPrecondition,
-			errors.New("cannot cancel a fully received purchase order"))
+			"cannot cancel a fully received purchase order")
 	case procurementv1.PurchaseOrderStatus_PURCHASE_ORDER_STATUS_PARTIALLY_RECEIVED:
 		return nil, connect.NewError(connect.CodeFailedPrecondition,
-			errors.New("cannot cancel a partially received purchase order; receive or close remaining lines"))
+			"cannot cancel a partially received purchase order; receive or close remaining lines")
 	case procurementv1.PurchaseOrderStatus_PURCHASE_ORDER_STATUS_CANCELLED:
 		return po.ToAPI(), nil
 	case procurementv1.PurchaseOrderStatus_PURCHASE_ORDER_STATUS_UNSPECIFIED,
@@ -272,7 +270,7 @@ func (pob *purchaseOrderBusiness) CancelPurchaseOrder(
 	if err != nil {
 		if errors.Is(err, repository.ErrPurchaseOrderStateChanged) {
 			return nil, connect.NewError(connect.CodeFailedPrecondition,
-				errors.New("purchase order changed; reload and retry"))
+				"purchase order changed; reload and retry")
 		}
 		return nil, data.ErrorConvertToAPI(err)
 	}
@@ -295,25 +293,25 @@ func (pob *purchaseOrderBusiness) buildPurchaseOrderLines(
 	for _, line := range lines {
 		if line.GetOrderedQuantity() <= 0 {
 			return nil, "", 0, 0, connect.NewError(connect.CodeInvalidArgument,
-				fmt.Errorf("ordered quantity must be positive for supplier item %s", line.GetSupplierItemId()))
+				fmt.Sprintf("ordered quantity must be positive for supplier item %s", line.GetSupplierItemId()))
 		}
 
 		supplierItem, err := pob.supplierItemRepo.GetByID(ctx, line.GetSupplierItemId())
 		if err != nil {
 			return nil, "", 0, 0, connect.NewError(connect.CodeNotFound,
-				fmt.Errorf("supplier item %s not found", line.GetSupplierItemId()))
+				fmt.Sprintf("supplier item %s not found", line.GetSupplierItemId()))
 		}
 		if supplierItem.SupplierID != supplierID {
 			return nil, "", 0, 0, connect.NewError(connect.CodeInvalidArgument,
-				fmt.Errorf("supplier item %s does not belong to supplier %s", line.GetSupplierItemId(), supplierID))
+				fmt.Sprintf("supplier item %s does not belong to supplier %s", line.GetSupplierItemId(), supplierID))
 		}
 		if supplierItem.Status != int32(procurementv1.SupplierItemStatus_SUPPLIER_ITEM_STATUS_ACTIVE) {
 			return nil, "", 0, 0, connect.NewError(connect.CodeFailedPrecondition,
-				fmt.Errorf("supplier item %s is not active", line.GetSupplierItemId()))
+				fmt.Sprintf("supplier item %s is not active", line.GetSupplierItemId()))
 		}
 		if supplierItem.MinOrderQuantity > 0 && line.GetOrderedQuantity() < supplierItem.MinOrderQuantity {
 			return nil, "", 0, 0, connect.NewError(connect.CodeInvalidArgument,
-				fmt.Errorf("supplier item %s requires a minimum order of %.2f",
+				fmt.Sprintf("supplier item %s requires a minimum order of %.2f",
 					line.GetSupplierItemId(), supplierItem.MinOrderQuantity))
 		}
 
@@ -341,7 +339,7 @@ func (pob *purchaseOrderBusiness) buildPurchaseOrderLines(
 			totalCurrency = supplierItem.CurrencyCode
 		} else if supplierItem.CurrencyCode != totalCurrency {
 			return nil, "", 0, 0, connect.NewError(connect.CodeInvalidArgument,
-				fmt.Errorf("supplier item %s is priced in %s but the order is in %s",
+				fmt.Sprintf("supplier item %s is priced in %s but the order is in %s",
 					line.GetSupplierItemId(), supplierItem.CurrencyCode, totalCurrency))
 		}
 		totalUnits += lineTotalUnits

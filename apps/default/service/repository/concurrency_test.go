@@ -21,7 +21,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pitabwire/frame/v2/frametests/definition"
+	"github.com/pitabwire/frame/v3/frametests/definition"
 	"github.com/pitabwire/util"
 	"github.com/stretchr/testify/require"
 

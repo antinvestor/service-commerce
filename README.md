@@ -184,4 +184,14 @@ go test -race ./...   # needs Docker: Postgres and Keto testcontainers
 
 Go code for the commerce API is generated locally into `gen/go/commerce`
 (`proto/buf.gen.local-go.yaml`) so new RPCs can be implemented before the
-schema registry publishes a build. Peer APIs are consumed from the registry.
+schema registry publishes a build. It uses the pinned remote plugins
+`buf.build/protocolbuffers/go:v1.36.12` and `buf.build/connectrpc/go:v2.0.0`,
+never whatever is installed locally. Peer APIs are consumed from the
+registry's connect-go v2 modules (`.../connectrpc/go/v2`).
+
+The Go services run connect-go v2 (`connectrpc.com/connect/v2`) on
+`github.com/pitabwire/frame/v3` and `github.com/antinvestor/common/v3`:
+handlers take and return messages directly, servers are a
+`connect.NewServer` with the frame interceptors mounted via
+`connecthttp.Mount`, and errors are `connect.NewError(code, message)`.
+The Dart SDK and UI stay on connectrpc 1 until `antinvestor_ui_core` moves.

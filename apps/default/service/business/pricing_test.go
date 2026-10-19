@@ -18,9 +18,9 @@ import (
 	"testing"
 
 	commonv1 "buf.build/gen/go/antinvestor/common/protocolbuffers/go/common/v1"
-	"github.com/pitabwire/frame/v2"
-	"github.com/pitabwire/frame/v2/datastore"
-	"github.com/pitabwire/frame/v2/frametests/definition"
+	"github.com/pitabwire/frame/v3"
+	"github.com/pitabwire/frame/v3/datastore"
+	"github.com/pitabwire/frame/v3/frametests/definition"
 	"github.com/pitabwire/util"
 	"github.com/stretchr/testify/require"
 

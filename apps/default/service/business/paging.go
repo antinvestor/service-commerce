@@ -16,7 +16,7 @@ package business
 
 import (
 	commonv1 "buf.build/gen/go/antinvestor/common/protocolbuffers/go/common/v1"
-	"connectrpc.com/connect"
+	"connectrpc.com/connect/v2"
 
 	"github.com/antinvestor/service-commerce/apps/default/service/repository"
 )
@@ -32,7 +32,7 @@ func pageFromSearch(search *commonv1.SearchRequest) (repository.Page, error) {
 	page.Limit = int(cursor.GetLimit())
 	after, err := repository.DecodePageKey(cursor.GetPage())
 	if err != nil {
-		return page, connect.NewError(connect.CodeInvalidArgument, err)
+		return page, connect.NewError(connect.CodeInvalidArgument, err.Error()).WithCause(err)
 	}
 	page.After = after
 	return page, nil

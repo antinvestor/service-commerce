@@ -17,7 +17,7 @@ package models
 import (
 	"time"
 
-	"github.com/pitabwire/frame/v2/data"
+	"github.com/pitabwire/frame/v3/data"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	commercev1 "github.com/antinvestor/service-commerce/gen/go/commerce/v1"

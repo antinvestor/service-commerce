@@ -17,7 +17,7 @@ package config
 import (
 	"time"
 
-	"github.com/pitabwire/frame/v2/config"
+	"github.com/pitabwire/frame/v3/config"
 )
 
 // CommerceConfig extends the Frame defaults with the peer services commerce

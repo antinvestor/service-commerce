@@ -16,12 +16,11 @@ package business
 
 import (
 	"context"
-	"errors"
 	"strings"
 
 	procurementv1 "buf.build/gen/go/antinvestor/procurement/protocolbuffers/go/v1"
-	"connectrpc.com/connect"
-	"github.com/pitabwire/frame/v2/data"
+	"connectrpc.com/connect/v2"
+	"github.com/pitabwire/frame/v3/data"
 
 	"github.com/antinvestor/service-commerce/apps/procurement/service/models"
 	"github.com/antinvestor/service-commerce/apps/procurement/service/repository"
@@ -63,7 +62,7 @@ func (sb *supplierBusiness) SaveSupplier(
 ) (*procurementv1.Supplier, error) {
 	name := strings.TrimSpace(req.GetName())
 	if name == "" {
-		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("supplier name is required"))
+		return nil, connect.NewError(connect.CodeInvalidArgument, "supplier name is required")
 	}
 
 	// Update existing supplier
@@ -182,16 +181,16 @@ func (sb *supplierBusiness) SaveSupplierItem(
 	req *procurementv1.SupplierItemSaveRequest,
 ) (*procurementv1.SupplierItem, error) {
 	if req.GetSupplierId() == "" {
-		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("supplier_id is required"))
+		return nil, connect.NewError(connect.CodeInvalidArgument, "supplier_id is required")
 	}
 	if req.GetInventoryItemId() == "" {
-		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("inventory_item_id is required"))
+		return nil, connect.NewError(connect.CodeInvalidArgument, "inventory_item_id is required")
 	}
 
 	// Validate supplier exists
 	_, supplierErr := sb.supplierRepo.GetByID(ctx, req.GetSupplierId())
 	if supplierErr != nil {
-		return nil, connect.NewError(connect.CodeNotFound, errors.New("supplier not found"))
+		return nil, connect.NewError(connect.CodeNotFound, "supplier not found")
 	}
 
 	currencyCode, priceUnits, priceNanos := models.MoneyFromProto(req.GetUnitPrice())
@@ -269,8 +268,7 @@ func (sb *supplierBusiness) SearchSupplierItems(
 	default:
 		return nil, connect.NewError(
 			connect.CodeInvalidArgument,
-			errors.New("supplier_id or inventory_item_id is required"),
-		)
+			"supplier_id or inventory_item_id is required")
 	}
 
 	if err != nil {

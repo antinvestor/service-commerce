@@ -16,16 +16,15 @@ package business
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/url"
 	"slices"
 	"strings"
 
-	"connectrpc.com/connect"
-	"github.com/pitabwire/frame/v2"
-	"github.com/pitabwire/frame/v2/data"
-	"github.com/pitabwire/frame/v2/security"
+	"connectrpc.com/connect/v2"
+	"github.com/pitabwire/frame/v3"
+	"github.com/pitabwire/frame/v3/data"
+	"github.com/pitabwire/frame/v3/security"
 	"github.com/pitabwire/util"
 
 	commercev1 "github.com/antinvestor/service-commerce/gen/go/commerce/v1"
@@ -79,7 +78,7 @@ type shopBusiness struct {
 func (sb *shopBusiness) CreateShop(ctx context.Context, req *commercev1.CreateShopRequest) (*commercev1.Shop, error) {
 	name := strings.TrimSpace(req.GetName())
 	if name == "" {
-		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("shop name is required"))
+		return nil, connect.NewError(connect.CodeInvalidArgument, "shop name is required")
 	}
 
 	if err := validateShopInput(name, req.GetCheckoutReturnUrl()); err != nil {
@@ -101,7 +100,7 @@ func (sb *shopBusiness) CreateShop(ctx context.Context, req *commercev1.CreateSh
 	// Check slug uniqueness
 	existing, err := sb.shopRepo.GetBySlug(ctx, slug)
 	if err == nil && existing != nil {
-		return nil, connect.NewError(connect.CodeAlreadyExists, errors.New("shop with this slug already exists"))
+		return nil, connect.NewError(connect.CodeAlreadyExists, "shop with this slug already exists")
 	}
 	if err != nil && !frame.ErrorIsNotFound(err) {
 		return nil, err
@@ -112,7 +111,7 @@ func (sb *shopBusiness) CreateShop(ctx context.Context, req *commercev1.CreateSh
 		currency, _ = sb.currencies.DefaultCurrency(ctx)
 	}
 	if len(currency) != currencyCodeLength {
-		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("currency must be an ISO 4217 code"))
+		return nil, connect.NewError(connect.CodeInvalidArgument, "currency must be an ISO 4217 code")
 	}
 
 	shop := &models.Shop{
@@ -129,7 +128,7 @@ func (sb *shopBusiness) CreateShop(ctx context.Context, req *commercev1.CreateSh
 		WebhookURL:        webhookURL,
 	}
 	if shop.WebhookSecret, err = sb.secrets.Seal(strings.TrimSpace(req.GetWebhookSecret())); err != nil {
-		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("seal webhook secret: %w", err))
+		return nil, connect.NewError(connect.CodeInternal, fmt.Sprintf("seal webhook secret: %v", err)).WithCause(err)
 	}
 
 	if createErr := sb.shopRepo.Create(ctx, shop); createErr != nil {
@@ -142,7 +141,7 @@ func (sb *shopBusiness) CreateShop(ctx context.Context, req *commercev1.CreateSh
 				Error("could not roll back shop after ownership grant failure")
 		}
 		return nil, connect.NewError(connect.CodeInternal,
-			fmt.Errorf("grant shop ownership: %w", ownerErr))
+			fmt.Sprintf("grant shop ownership: %v", ownerErr)).WithCause(ownerErr)
 	}
 
 	return shop.ToAPI(), nil
@@ -154,13 +153,13 @@ func (sb *shopBusiness) CreateShop(ctx context.Context, req *commercev1.CreateSh
 func validateShopInput(name, checkoutReturnURL string) error {
 	if len([]rune(name)) > maxShopNameLength {
 		return connect.NewError(connect.CodeInvalidArgument,
-			fmt.Errorf("shop name must be at most %d characters", maxShopNameLength))
+			fmt.Sprintf("shop name must be at most %d characters", maxShopNameLength))
 	}
 	if raw := strings.TrimSpace(checkoutReturnURL); raw != "" {
 		u, err := url.Parse(strings.ReplaceAll(raw, "{order_id}", "order"))
 		if err != nil || (u.Scheme != "https" && u.Scheme != "http") || u.Host == "" {
 			return connect.NewError(connect.CodeInvalidArgument,
-				errors.New("checkout_return_url must be an absolute http(s) URL"))
+				"checkout_return_url must be an absolute http(s) URL")
 		}
 	}
 	return nil
@@ -241,7 +240,8 @@ func (sb *shopBusiness) UpdateShop(ctx context.Context, req *commercev1.UpdateSh
 	updateColumns := applyShopFields(shop, req)
 	if slices.Contains(updateColumns, fieldWebhookSecret) {
 		if shop.WebhookSecret, err = sb.secrets.Seal(shop.WebhookSecret); err != nil {
-			return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("seal webhook secret: %w", err))
+			return nil, connect.NewError(connect.CodeInternal, fmt.Sprintf("seal webhook secret: %v", err)).
+				WithCause(err)
 		}
 	}
 	if len(updateColumns) > 0 {

@@ -15,13 +15,12 @@
 package business
 
 import (
-	"errors"
 	"fmt"
 	"math/bits"
 	"slices"
 	"time"
 
-	"connectrpc.com/connect"
+	"connectrpc.com/connect/v2"
 
 	"github.com/antinvestor/service-commerce/apps/default/service/models"
 	"github.com/antinvestor/service-commerce/apps/default/service/repository"
@@ -46,16 +45,16 @@ func validatePaymentPolicy(p *commercev1.PaymentPolicy) error {
 		"fulfil_at_percent":      p.GetFulfilAtPercent(),
 	} {
 		if v < 0 || v > fullPercent {
-			return connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("%s must be between 0 and 100", name))
+			return connect.NewError(connect.CodeInvalidArgument, fmt.Sprintf("%s must be between 0 and 100", name))
 		}
 	}
 	if p.GetBalanceDueDays() < 0 {
-		return connect.NewError(connect.CodeInvalidArgument, errors.New("balance_due_days must not be negative"))
+		return connect.NewError(connect.CodeInvalidArgument, "balance_due_days must not be negative")
 	}
 	for _, t := range p.GetSignalThresholds() {
 		if t <= 0 || t > fullPercent {
 			return connect.NewError(connect.CodeInvalidArgument,
-				errors.New("signal thresholds must be between 1 and 100"))
+				"signal thresholds must be between 1 and 100")
 		}
 	}
 	return nil

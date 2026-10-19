@@ -19,19 +19,18 @@ import (
 	"fmt"
 
 	manufacturingv1 "buf.build/gen/go/antinvestor/manufacturing/protocolbuffers/go/v1"
-	"connectrpc.com/connect"
 )
 
 // ManufacturingClient is the slice of the manufacturing API suggestions use.
 type ManufacturingClient interface {
 	GetProductionPlan(
 		context.Context,
-		*connect.Request[manufacturingv1.GetProductionPlanRequest],
-	) (*connect.Response[manufacturingv1.GetProductionPlanResponse], error)
+		*manufacturingv1.GetProductionPlanRequest,
+	) (*manufacturingv1.GetProductionPlanResponse, error)
 	GetPlanMaterialRequirements(
 		context.Context,
-		*connect.Request[manufacturingv1.GetPlanMaterialRequirementsRequest],
-	) (*connect.Response[manufacturingv1.GetPlanMaterialRequirementsResponse], error)
+		*manufacturingv1.GetPlanMaterialRequirementsRequest,
+	) (*manufacturingv1.GetPlanMaterialRequirementsResponse, error)
 }
 
 // NewManufacturingMaterialSource reads plan shortages from manufacturing. A
@@ -51,23 +50,23 @@ func (m *manufacturingMaterialSource) PlanShortages(
 	ctx context.Context,
 	propertyID, planID string,
 ) ([]Shortage, error) {
-	plan, err := m.cli.GetProductionPlan(ctx, connect.NewRequest(
+	plan, err := m.cli.GetProductionPlan(ctx,
 		manufacturingv1.GetProductionPlanRequest_builder{Id: planID}.Build(),
-	))
+	)
 	if err != nil {
 		return nil, fmt.Errorf("get production plan: %w", err)
 	}
-	if plan.Msg.GetProductionPlan().GetPropertyId() != propertyID {
+	if plan.GetProductionPlan().GetPropertyId() != propertyID {
 		return nil, ErrPlanNotInProperty
 	}
-	resp, err := m.cli.GetPlanMaterialRequirements(ctx, connect.NewRequest(
+	resp, err := m.cli.GetPlanMaterialRequirements(ctx,
 		manufacturingv1.GetPlanMaterialRequirementsRequest_builder{PlanId: planID}.Build(),
-	))
+	)
 	if err != nil {
 		return nil, fmt.Errorf("get plan material requirements: %w", err)
 	}
-	shortages := make([]Shortage, 0, len(resp.Msg.GetRequirements()))
-	for _, r := range resp.Msg.GetRequirements() {
+	shortages := make([]Shortage, 0, len(resp.GetRequirements()))
+	for _, r := range resp.GetRequirements() {
 		if r.GetShortageQuantity() <= 0 {
 			continue
 		}

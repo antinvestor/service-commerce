@@ -23,7 +23,7 @@ import (
 	commonv1 "buf.build/gen/go/antinvestor/common/protocolbuffers/go/common/v1"
 	ledgerv1 "buf.build/gen/go/antinvestor/ledger/protocolbuffers/go/v1"
 	checkoutv1 "buf.build/gen/go/antinvestor/payment/protocolbuffers/go/checkout/v1"
-	"connectrpc.com/connect"
+	"connectrpc.com/connect/v2"
 	"github.com/pitabwire/util"
 
 	"github.com/antinvestor/service-commerce/apps/default/service/business"
@@ -86,7 +86,7 @@ func (f *fakeCheckout) GetSession(_ context.Context, ref string) (*checkoutv1.Ch
 	}
 	s, ok := f.sessions[ref]
 	if !ok {
-		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("session %s not found", ref))
+		return nil, connect.NewError(connect.CodeNotFound, fmt.Sprintf("session %s not found", ref))
 	}
 	return s, nil
 }

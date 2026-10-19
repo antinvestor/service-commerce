@@ -22,8 +22,7 @@ import (
 	devicev1 "buf.build/gen/go/antinvestor/device/protocolbuffers/go/device/v1"
 	profilev1 "buf.build/gen/go/antinvestor/profile/protocolbuffers/go/profile/v1"
 	settingsv1 "buf.build/gen/go/antinvestor/settingz/protocolbuffers/go/settings/v1"
-	"connectrpc.com/connect"
-	"github.com/pitabwire/frame/v2/security"
+	"github.com/pitabwire/frame/v3/security"
 	"github.com/pitabwire/util"
 	"golang.org/x/text/currency"
 	"golang.org/x/text/language"
@@ -174,8 +173,8 @@ var countriesByName = sync.OnceValue(func() map[string]language.Region {
 type SettingsClient interface {
 	Get(
 		context.Context,
-		*connect.Request[settingsv1.GetRequest],
-	) (*connect.Response[settingsv1.GetResponse], error)
+		*settingsv1.GetRequest,
+	) (*settingsv1.GetResponse, error)
 }
 
 // DeviceClient is the subset of the generated device client the directory
@@ -183,12 +182,12 @@ type SettingsClient interface {
 type DeviceClient interface {
 	GetById(
 		context.Context,
-		*connect.Request[devicev1.GetByIdRequest],
-	) (*connect.Response[devicev1.GetByIdResponse], error)
+		*devicev1.GetByIdRequest,
+	) (*devicev1.GetByIdResponse, error)
 	GetBySessionId(
 		context.Context,
-		*connect.Request[devicev1.GetBySessionIdRequest],
-	) (*connect.Response[devicev1.GetBySessionIdResponse], error)
+		*devicev1.GetBySessionIdRequest,
+	) (*devicev1.GetBySessionIdResponse, error)
 }
 
 // ProfileClient is the subset of the generated profile client the
@@ -196,8 +195,8 @@ type DeviceClient interface {
 type ProfileClient interface {
 	GetById(
 		context.Context,
-		*connect.Request[profilev1.GetByIdRequest],
-	) (*connect.Response[profilev1.GetByIdResponse], error)
+		*profilev1.GetByIdRequest,
+	) (*profilev1.GetByIdResponse, error)
 }
 
 // NewConnectCurrencyDirectory wraps the generated peer clients. Any of them
@@ -223,17 +222,17 @@ func (d *connectCurrencyDirectory) PreferredCurrency(ctx context.Context, profil
 	if d.settings == nil {
 		return "", nil
 	}
-	resp, err := d.settings.Get(ctx, connect.NewRequest(settingsv1.GetRequest_builder{
+	resp, err := d.settings.Get(ctx, settingsv1.GetRequest_builder{
 		Key: settingsv1.Setting_builder{
 			Name:     currencySettingName,
 			Object:   currencySettingObject,
 			ObjectId: profileID,
 		}.Build(),
-	}.Build()))
+	}.Build())
 	if err != nil {
 		return "", err
 	}
-	return resp.Msg.GetData().GetValue(), nil
+	return resp.GetData().GetValue(), nil
 }
 
 func (d *connectCurrencyDirectory) DeviceCurrency(ctx context.Context, deviceID, sessionID string) (string, error) {
@@ -241,13 +240,13 @@ func (d *connectCurrencyDirectory) DeviceCurrency(ctx context.Context, deviceID,
 		return "", nil
 	}
 	if deviceID != "" {
-		resp, err := d.devices.GetById(ctx, connect.NewRequest(devicev1.GetByIdRequest_builder{
+		resp, err := d.devices.GetById(ctx, devicev1.GetByIdRequest_builder{
 			Id: []string{deviceID},
-		}.Build()))
+		}.Build())
 		if err != nil {
 			return "", err
 		}
-		for _, device := range resp.Msg.GetData() {
+		for _, device := range resp.GetData() {
 			if code := device.GetLocale().GetCurrency(); code != "" {
 				return code, nil
 			}
@@ -256,26 +255,26 @@ func (d *connectCurrencyDirectory) DeviceCurrency(ctx context.Context, deviceID,
 	if sessionID == "" {
 		return "", nil
 	}
-	resp, err := d.devices.GetBySessionId(ctx, connect.NewRequest(devicev1.GetBySessionIdRequest_builder{
+	resp, err := d.devices.GetBySessionId(ctx, devicev1.GetBySessionIdRequest_builder{
 		Id: sessionID,
-	}.Build()))
+	}.Build())
 	if err != nil {
 		return "", err
 	}
-	return resp.Msg.GetData().GetLocale().GetCurrency(), nil
+	return resp.GetData().GetLocale().GetCurrency(), nil
 }
 
 func (d *connectCurrencyDirectory) AddressCountry(ctx context.Context, profileID string) (string, error) {
 	if d.profiles == nil {
 		return "", nil
 	}
-	resp, err := d.profiles.GetById(ctx, connect.NewRequest(profilev1.GetByIdRequest_builder{
+	resp, err := d.profiles.GetById(ctx, profilev1.GetByIdRequest_builder{
 		Id: profileID,
-	}.Build()))
+	}.Build())
 	if err != nil {
 		return "", err
 	}
-	for _, address := range resp.Msg.GetData().GetAddresses() {
+	for _, address := range resp.GetData().GetAddresses() {
 		if country := strings.TrimSpace(address.GetCountry()); country != "" {
 			return country, nil
 		}

@@ -22,8 +22,8 @@ import (
 
 	commonv1 "buf.build/gen/go/antinvestor/common/protocolbuffers/go/common/v1"
 	procurementv1 "buf.build/gen/go/antinvestor/procurement/protocolbuffers/go/v1"
-	"connectrpc.com/connect"
-	"github.com/pitabwire/frame/v2/data"
+	"connectrpc.com/connect/v2"
+	"github.com/pitabwire/frame/v3/data"
 	"github.com/pitabwire/util"
 
 	"github.com/antinvestor/service-commerce/apps/procurement/service/models"
@@ -84,16 +84,16 @@ func (sb *suggestionBusiness) SuggestPurchaseOrders(
 	req *procurementv1.SuggestPurchaseOrdersRequest,
 ) ([]*procurementv1.PurchaseOrderSuggestion, error) {
 	if req.GetPlanId() == "" {
-		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("plan_id is required"))
+		return nil, connect.NewError(connect.CodeInvalidArgument, "plan_id is required")
 	}
 	if sb.source == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented,
-			errors.New("manufacturing is not configured, so plan shortages are unavailable"))
+			"manufacturing is not configured, so plan shortages are unavailable")
 	}
 	shortages, err := sb.source.PlanShortages(ctx, req.GetPropertyId(), req.GetPlanId())
 	if err != nil {
 		if errors.Is(err, ErrPlanNotInProperty) {
-			return nil, connect.NewError(connect.CodeNotFound, errors.New("production plan not found"))
+			return nil, connect.NewError(connect.CodeNotFound, "production plan not found")
 		}
 		return nil, err
 	}

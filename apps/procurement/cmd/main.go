@@ -19,19 +19,20 @@ import (
 	"fmt"
 	"net/http"
 
-	"buf.build/gen/go/antinvestor/manufacturing/connectrpc/go/v1/manufacturingv1connect"
-	"buf.build/gen/go/antinvestor/procurement/connectrpc/go/v1/procurementv1connect"
+	"buf.build/gen/go/antinvestor/manufacturing/connectrpc/go/v2/v1/manufacturingv1connect"
+	"buf.build/gen/go/antinvestor/procurement/connectrpc/go/v2/v1/procurementv1connect"
 	procurementpb "buf.build/gen/go/antinvestor/procurement/protocolbuffers/go/v1"
-	"connectrpc.com/connect"
-	"github.com/antinvestor/common/v2"
-	"github.com/antinvestor/common/v2/connection"
-	"github.com/antinvestor/common/v2/permissions"
-	"github.com/antinvestor/common/v2/servicecatalog"
-	"github.com/pitabwire/frame/v2"
-	"github.com/pitabwire/frame/v2/config"
-	"github.com/pitabwire/frame/v2/security/authorizer"
-	connectInterceptors "github.com/pitabwire/frame/v2/security/interceptors/connect"
-	"github.com/pitabwire/frame/v2/setup"
+	"connectrpc.com/connect/v2"
+	"connectrpc.com/connect/v2/connecthttp"
+	"github.com/antinvestor/common/v3"
+	"github.com/antinvestor/common/v3/connection"
+	"github.com/antinvestor/common/v3/permissions"
+	"github.com/antinvestor/common/v3/servicecatalog"
+	"github.com/pitabwire/frame/v3"
+	"github.com/pitabwire/frame/v3/config"
+	"github.com/pitabwire/frame/v3/security/authorizer"
+	connectInterceptors "github.com/pitabwire/frame/v3/security/interceptors/connect"
+	"github.com/pitabwire/frame/v3/setup"
 	"github.com/pitabwire/util"
 
 	aconfig "github.com/antinvestor/service-commerce/apps/procurement/config"
@@ -121,11 +122,11 @@ func setupConnectServer(ctx context.Context, svc *frame.Service, materials busin
 	authzMiddleware := authz.NewMiddleware(securityMan.GetAuthorizer(ctx))
 	implementation := handlers.NewProcurementServer(ctx, svc, authzMiddleware, materials)
 
-	_, serverHandler := procurementv1connect.NewProcurementServiceHandler(
-		implementation, connect.WithInterceptors(defaultInterceptorList...))
+	server := connect.NewServer(defaultInterceptorList...)
+	procurementv1connect.RegisterProcurementServiceHandler(server, implementation)
 
 	mux := http.NewServeMux()
-	mux.Handle("/", serverHandler)
+	connecthttp.Mount(mux, server)
 
 	return mux
 }

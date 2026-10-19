@@ -16,14 +16,13 @@ package handlers
 
 import (
 	"context"
-	"errors"
 	"slices"
 
-	"connectrpc.com/connect"
-	"github.com/pitabwire/frame/v2"
-	"github.com/pitabwire/frame/v2/datastore"
-	"github.com/pitabwire/frame/v2/security"
-	"github.com/pitabwire/frame/v2/security/authorizer"
+	"connectrpc.com/connect/v2"
+	"github.com/pitabwire/frame/v3"
+	"github.com/pitabwire/frame/v3/datastore"
+	"github.com/pitabwire/frame/v3/security"
+	"github.com/pitabwire/frame/v3/security/authorizer"
 
 	commercev1 "github.com/antinvestor/service-commerce/gen/go/commerce/v1"
 	"github.com/antinvestor/service-commerce/gen/go/commerce/v1/commercev1connect"
@@ -156,67 +155,67 @@ func NewCommerceServer(
 
 func (cs *CommerceServer) CreateShop(
 	ctx context.Context,
-	req *connect.Request[commercev1.CreateShopRequest],
-) (*connect.Response[commercev1.CreateShopResponse], error) {
+	req *commercev1.CreateShopRequest,
+) (*commercev1.CreateShopResponse, error) {
 	// Tenant-level shop_create is enforced by the FunctionAccessInterceptor.
 	// The business layer grants ownership to the caller and rolls back the
 	// shop if that grant fails.
-	shop, err := cs.shopBusiness.CreateShop(ctx, req.Msg)
+	shop, err := cs.shopBusiness.CreateShop(ctx, req)
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
-	return connect.NewResponse(&commercev1.CreateShopResponse{Shop: shop}), nil
+	return &commercev1.CreateShopResponse{Shop: shop}, nil
 }
 
 func (cs *CommerceServer) GetShop(
 	ctx context.Context,
-	req *connect.Request[commercev1.GetShopRequest],
-) (*connect.Response[commercev1.GetShopResponse], error) {
-	if err := cs.authz.CanShopView(ctx, req.Msg.GetId()); err != nil {
+	req *commercev1.GetShopRequest,
+) (*commercev1.GetShopResponse, error) {
+	if err := cs.authz.CanShopView(ctx, req.GetId()); err != nil {
 		return nil, authorizer.ToConnectError(err)
 	}
-	shop, err := cs.shopBusiness.GetShop(ctx, req.Msg.GetId())
+	shop, err := cs.shopBusiness.GetShop(ctx, req.GetId())
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
-	return connect.NewResponse(&commercev1.GetShopResponse{Shop: shop}), nil
+	return &commercev1.GetShopResponse{Shop: shop}, nil
 }
 
 func (cs *CommerceServer) UpdateShop(
 	ctx context.Context,
-	req *connect.Request[commercev1.UpdateShopRequest],
-) (*connect.Response[commercev1.UpdateShopResponse], error) {
-	if err := cs.authz.CanShopUpdate(ctx, req.Msg.GetId()); err != nil {
+	req *commercev1.UpdateShopRequest,
+) (*commercev1.UpdateShopResponse, error) {
+	if err := cs.authz.CanShopUpdate(ctx, req.GetId()); err != nil {
 		return nil, authorizer.ToConnectError(err)
 	}
-	shop, err := cs.shopBusiness.UpdateShop(ctx, req.Msg)
+	shop, err := cs.shopBusiness.UpdateShop(ctx, req)
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
-	return connect.NewResponse(&commercev1.UpdateShopResponse{Shop: shop}), nil
+	return &commercev1.UpdateShopResponse{Shop: shop}, nil
 }
 
 func (cs *CommerceServer) ListShops(
 	ctx context.Context,
-	req *connect.Request[commercev1.ListShopsRequest],
-) (*connect.Response[commercev1.ListShopsResponse], error) {
+	req *commercev1.ListShopsRequest,
+) (*commercev1.ListShopsResponse, error) {
 	// Tenant-level shops_list is enforced by the interceptor; shops are
 	// partition-scoped so every member may see the partition's shops.
-	page, err := cs.shopBusiness.ListShops(ctx, req.Msg)
+	page, err := cs.shopBusiness.ListShops(ctx, req)
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
-	return connect.NewResponse(&commercev1.ListShopsResponse{Shops: page.Shops, NextPage: page.NextPage}), nil
+	return &commercev1.ListShopsResponse{Shops: page.Shops, NextPage: page.NextPage}, nil
 }
 
 // ResolveDefaultCurrency tells the console which currency to offer when the
 // caller sets up a shop. shops_list is enforced by the interceptor.
 func (cs *CommerceServer) ResolveDefaultCurrency(
 	ctx context.Context,
-	_ *connect.Request[commercev1.ResolveDefaultCurrencyRequest],
-) (*connect.Response[commercev1.ResolveDefaultCurrencyResponse], error) {
+	_ *commercev1.ResolveDefaultCurrencyRequest,
+) (*commercev1.ResolveDefaultCurrencyResponse, error) {
 	code, source := cs.currencies.DefaultCurrency(ctx)
-	return connect.NewResponse(&commercev1.ResolveDefaultCurrencyResponse{Currency: code, Source: source}), nil
+	return &commercev1.ResolveDefaultCurrencyResponse{Currency: code, Source: source}, nil
 }
 
 // ----------------------
@@ -225,87 +224,83 @@ func (cs *CommerceServer) ResolveDefaultCurrency(
 
 func (cs *CommerceServer) CreateProduct(
 	ctx context.Context,
-	req *connect.Request[commercev1.CreateProductRequest],
-) (*connect.Response[commercev1.CreateProductResponse], error) {
-	if err := cs.authz.CanProductsManage(ctx, req.Msg.GetShopId()); err != nil {
+	req *commercev1.CreateProductRequest,
+) (*commercev1.CreateProductResponse, error) {
+	if err := cs.authz.CanProductsManage(ctx, req.GetShopId()); err != nil {
 		return nil, authorizer.ToConnectError(err)
 	}
-	product, err := cs.catalogBusiness.CreateProduct(ctx, req.Msg)
+	product, err := cs.catalogBusiness.CreateProduct(ctx, req)
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
-	return connect.NewResponse(&commercev1.CreateProductResponse{Product: product}), nil
+	return &commercev1.CreateProductResponse{Product: product}, nil
 }
 
 func (cs *CommerceServer) GetProduct(
 	ctx context.Context,
-	req *connect.Request[commercev1.GetProductRequest],
-) (*connect.Response[commercev1.GetProductResponse], error) {
-	product, err := cs.catalogBusiness.GetProduct(ctx, req.Msg.GetId())
+	req *commercev1.GetProductRequest,
+) (*commercev1.GetProductResponse, error) {
+	product, err := cs.catalogBusiness.GetProduct(ctx, req.GetId())
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
 	if authzErr := cs.authz.CanProductsView(ctx, product.GetShopId()); authzErr != nil {
 		return nil, authorizer.ToConnectError(authzErr)
 	}
-	return connect.NewResponse(&commercev1.GetProductResponse{Product: product}), nil
+	return &commercev1.GetProductResponse{Product: product}, nil
 }
 
 func (cs *CommerceServer) ListProducts(
 	ctx context.Context,
-	req *connect.Request[commercev1.ListProductsRequest],
-) (*connect.Response[commercev1.ListProductsResponse], error) {
-	if err := cs.authz.CanProductsView(ctx, req.Msg.GetShopId()); err != nil {
+	req *commercev1.ListProductsRequest,
+) (*commercev1.ListProductsResponse, error) {
+	if err := cs.authz.CanProductsView(ctx, req.GetShopId()); err != nil {
 		return nil, authorizer.ToConnectError(err)
 	}
-	page, err := cs.catalogBusiness.ListProducts(ctx, req.Msg)
+	page, err := cs.catalogBusiness.ListProducts(ctx, req)
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
-	return connect.NewResponse(&commercev1.ListProductsResponse{
+	return &commercev1.ListProductsResponse{
 		Products: page.Products,
 		NextPage: page.NextPage,
-	}), nil
+	}, nil
 }
 
 func (cs *CommerceServer) CreateProductVariant(
 	ctx context.Context,
-	req *connect.Request[commercev1.CreateProductVariantRequest],
-) (*connect.Response[commercev1.CreateProductVariantResponse], error) {
-	product, err := cs.catalogBusiness.GetProduct(ctx, req.Msg.GetProductId())
+	req *commercev1.CreateProductVariantRequest,
+) (*commercev1.CreateProductVariantResponse, error) {
+	product, err := cs.catalogBusiness.GetProduct(ctx, req.GetProductId())
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
 	if authzErr := cs.authz.CanProductsManage(ctx, product.GetShopId()); authzErr != nil {
 		return nil, authorizer.ToConnectError(authzErr)
 	}
-	variant, err := cs.catalogBusiness.CreateProductVariant(ctx, req.Msg)
+	variant, err := cs.catalogBusiness.CreateProductVariant(ctx, req)
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
-	return connect.NewResponse(
-		&commercev1.CreateProductVariantResponse{ProductVariant: variant},
-	), nil
+	return &commercev1.CreateProductVariantResponse{ProductVariant: variant}, nil
 }
 
 func (cs *CommerceServer) UpdateProductVariant(
 	ctx context.Context,
-	req *connect.Request[commercev1.UpdateProductVariantRequest],
-) (*connect.Response[commercev1.UpdateProductVariantResponse], error) {
-	shopID, err := cs.catalogBusiness.GetShopIDForVariant(ctx, req.Msg.GetVariantId())
+	req *commercev1.UpdateProductVariantRequest,
+) (*commercev1.UpdateProductVariantResponse, error) {
+	shopID, err := cs.catalogBusiness.GetShopIDForVariant(ctx, req.GetVariantId())
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
 	if authzErr := cs.authz.CanProductsManage(ctx, shopID); authzErr != nil {
 		return nil, authorizer.ToConnectError(authzErr)
 	}
-	variant, err := cs.catalogBusiness.UpdateProductVariant(ctx, req.Msg)
+	variant, err := cs.catalogBusiness.UpdateProductVariant(ctx, req)
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
-	return connect.NewResponse(
-		&commercev1.UpdateProductVariantResponse{ProductVariant: variant},
-	), nil
+	return &commercev1.UpdateProductVariantResponse{ProductVariant: variant}, nil
 }
 
 // ----------------------
@@ -317,73 +312,73 @@ func (cs *CommerceServer) UpdateProductVariant(
 
 func (cs *CommerceServer) CreateCart(
 	ctx context.Context,
-	req *connect.Request[commercev1.CreateCartRequest],
-) (*connect.Response[commercev1.CreateCartResponse], error) {
+	req *commercev1.CreateCartRequest,
+) (*commercev1.CreateCartResponse, error) {
 	caller := callerSubject(ctx)
 	switch {
-	case req.Msg.GetProfileId() == "":
+	case req.GetProfileId() == "":
 		if caller == "" {
-			return nil, connect.NewError(connect.CodeUnauthenticated, errors.New("cart needs an owner"))
+			return nil, connect.NewError(connect.CodeUnauthenticated, "cart needs an owner")
 		}
-		req.Msg.SetProfileId(caller)
-		if err := cs.authz.CanProductsView(ctx, req.Msg.GetShopId()); err != nil {
+		req.SetProfileId(caller)
+		if err := cs.authz.CanProductsView(ctx, req.GetShopId()); err != nil {
 			return nil, authorizer.ToConnectError(err)
 		}
-	case req.Msg.GetProfileId() == caller:
-		if err := cs.authz.CanProductsView(ctx, req.Msg.GetShopId()); err != nil {
+	case req.GetProfileId() == caller:
+		if err := cs.authz.CanProductsView(ctx, req.GetShopId()); err != nil {
 			return nil, authorizer.ToConnectError(err)
 		}
 	default:
 		// Creating a cart on behalf of someone else is a staff action.
-		if err := cs.authz.CanOrdersManage(ctx, req.Msg.GetShopId()); err != nil {
+		if err := cs.authz.CanOrdersManage(ctx, req.GetShopId()); err != nil {
 			return nil, authorizer.ToConnectError(err)
 		}
 	}
 
-	cart, err := cs.cartBusiness.CreateCart(ctx, req.Msg)
+	cart, err := cs.cartBusiness.CreateCart(ctx, req)
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
-	return connect.NewResponse(&commercev1.CreateCartResponse{Cart: cart}), nil
+	return &commercev1.CreateCartResponse{Cart: cart}, nil
 }
 
 func (cs *CommerceServer) GetCart(
 	ctx context.Context,
-	req *connect.Request[commercev1.GetCartRequest],
-) (*connect.Response[commercev1.GetCartResponse], error) {
-	cart, err := cs.authorizedCart(ctx, req.Msg.GetId(), false)
+	req *commercev1.GetCartRequest,
+) (*commercev1.GetCartResponse, error) {
+	cart, err := cs.authorizedCart(ctx, req.GetId(), false)
 	if err != nil {
 		return nil, err
 	}
-	return connect.NewResponse(&commercev1.GetCartResponse{Cart: cart}), nil
+	return &commercev1.GetCartResponse{Cart: cart}, nil
 }
 
 func (cs *CommerceServer) AddCartLine(
 	ctx context.Context,
-	req *connect.Request[commercev1.AddCartLineRequest],
-) (*connect.Response[commercev1.AddCartLineResponse], error) {
-	if _, err := cs.authorizedCart(ctx, req.Msg.GetCartId(), true); err != nil {
+	req *commercev1.AddCartLineRequest,
+) (*commercev1.AddCartLineResponse, error) {
+	if _, err := cs.authorizedCart(ctx, req.GetCartId(), true); err != nil {
 		return nil, err
 	}
-	cart, err := cs.cartBusiness.AddCartLine(ctx, req.Msg)
+	cart, err := cs.cartBusiness.AddCartLine(ctx, req)
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
-	return connect.NewResponse(&commercev1.AddCartLineResponse{Cart: cart}), nil
+	return &commercev1.AddCartLineResponse{Cart: cart}, nil
 }
 
 func (cs *CommerceServer) RemoveCartLine(
 	ctx context.Context,
-	req *connect.Request[commercev1.RemoveCartLineRequest],
-) (*connect.Response[commercev1.RemoveCartLineResponse], error) {
-	if _, err := cs.authorizedCart(ctx, req.Msg.GetCartId(), true); err != nil {
+	req *commercev1.RemoveCartLineRequest,
+) (*commercev1.RemoveCartLineResponse, error) {
+	if _, err := cs.authorizedCart(ctx, req.GetCartId(), true); err != nil {
 		return nil, err
 	}
-	cart, err := cs.cartBusiness.RemoveCartLine(ctx, req.Msg)
+	cart, err := cs.cartBusiness.RemoveCartLine(ctx, req)
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
-	return connect.NewResponse(&commercev1.RemoveCartLineResponse{Cart: cart}), nil
+	return &commercev1.RemoveCartLineResponse{Cart: cart}, nil
 }
 
 // ----------------------
@@ -392,38 +387,38 @@ func (cs *CommerceServer) RemoveCartLine(
 
 func (cs *CommerceServer) CreateOrderFromCart(
 	ctx context.Context,
-	req *connect.Request[commercev1.CreateOrderFromCartRequest],
-) (*connect.Response[commercev1.CreateOrderFromCartResponse], error) {
-	if _, err := cs.authorizedCart(ctx, req.Msg.GetCartId(), true); err != nil {
+	req *commercev1.CreateOrderFromCartRequest,
+) (*commercev1.CreateOrderFromCartResponse, error) {
+	if _, err := cs.authorizedCart(ctx, req.GetCartId(), true); err != nil {
 		return nil, err
 	}
-	order, err := cs.orderBusiness.CreateOrderFromCart(ctx, req.Msg)
+	order, err := cs.orderBusiness.CreateOrderFromCart(ctx, req)
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
-	return connect.NewResponse(&commercev1.CreateOrderFromCartResponse{Order: order}), nil
+	return &commercev1.CreateOrderFromCartResponse{Order: order}, nil
 }
 
 func (cs *CommerceServer) CreateOrder(
 	ctx context.Context,
-	req *connect.Request[commercev1.CreateOrderRequest],
-) (*connect.Response[commercev1.CreateOrderResponse], error) {
+	req *commercev1.CreateOrderRequest,
+) (*commercev1.CreateOrderResponse, error) {
 	// Direct order creation is a staff action on the shop.
-	if err := cs.authz.CanOrdersManage(ctx, req.Msg.GetShopId()); err != nil {
+	if err := cs.authz.CanOrdersManage(ctx, req.GetShopId()); err != nil {
 		return nil, authorizer.ToConnectError(err)
 	}
-	order, err := cs.orderBusiness.CreateOrder(ctx, req.Msg)
+	order, err := cs.orderBusiness.CreateOrder(ctx, req)
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
-	return connect.NewResponse(&commercev1.CreateOrderResponse{Order: order}), nil
+	return &commercev1.CreateOrderResponse{Order: order}, nil
 }
 
 func (cs *CommerceServer) GetOrder(
 	ctx context.Context,
-	req *connect.Request[commercev1.GetOrderRequest],
-) (*connect.Response[commercev1.GetOrderResponse], error) {
-	order, err := cs.orderBusiness.GetOrder(ctx, req.Msg.GetId())
+	req *commercev1.GetOrderRequest,
+) (*commercev1.GetOrderResponse, error) {
+	order, err := cs.orderBusiness.GetOrder(ctx, req.GetId())
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
@@ -432,34 +427,34 @@ func (cs *CommerceServer) GetOrder(
 			return nil, authorizer.ToConnectError(authzErr)
 		}
 	}
-	return connect.NewResponse(&commercev1.GetOrderResponse{Order: order}), nil
+	return &commercev1.GetOrderResponse{Order: order}, nil
 }
 
 // ListOrders lists a shop's orders for staff. A caller without orders_view on
 // the shop gets their own orders instead, so buyers can see their history.
 func (cs *CommerceServer) ListOrders(
 	ctx context.Context,
-	req *connect.Request[commercev1.ListOrdersRequest],
-) (*connect.Response[commercev1.ListOrdersResponse], error) {
+	req *commercev1.ListOrdersRequest,
+) (*commercev1.ListOrdersResponse, error) {
 	var page *business.OrderPage
 	var err error
 
-	if authzErr := cs.authz.CanOrdersView(ctx, req.Msg.GetShopId()); authzErr == nil {
-		page, err = cs.orderBusiness.ListOrders(ctx, req.Msg)
+	if authzErr := cs.authz.CanOrdersView(ctx, req.GetShopId()); authzErr == nil {
+		page, err = cs.orderBusiness.ListOrders(ctx, req)
 	} else {
 		caller := callerSubject(ctx)
 		if caller == "" {
 			return nil, authorizer.ToConnectError(authzErr)
 		}
-		page, err = cs.orderBusiness.ListOrdersForProfile(ctx, caller, req.Msg)
+		page, err = cs.orderBusiness.ListOrdersForProfile(ctx, caller, req)
 	}
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
-	return connect.NewResponse(&commercev1.ListOrdersResponse{
+	return &commercev1.ListOrdersResponse{
 		Orders:   page.Orders,
 		NextPage: page.NextPage,
-	}), nil
+	}, nil
 }
 
 // ----------------------
@@ -470,92 +465,92 @@ func (cs *CommerceServer) ListOrders(
 // staff who manage orders.
 func (cs *CommerceServer) CheckoutOrder(
 	ctx context.Context,
-	req *connect.Request[commercev1.CheckoutOrderRequest],
-) (*connect.Response[commercev1.CheckoutOrderResponse], error) {
-	if _, err := cs.authorizedOrder(ctx, req.Msg.GetOrderId(), cs.authz.CanOrdersManage); err != nil {
+	req *commercev1.CheckoutOrderRequest,
+) (*commercev1.CheckoutOrderResponse, error) {
+	if _, err := cs.authorizedOrder(ctx, req.GetOrderId(), cs.authz.CanOrdersManage); err != nil {
 		return nil, err
 	}
-	result, err := cs.paymentBusiness.CheckoutOrder(ctx, req.Msg)
+	result, err := cs.paymentBusiness.CheckoutOrder(ctx, req)
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
-	return connect.NewResponse(&commercev1.CheckoutOrderResponse{
+	return &commercev1.CheckoutOrderResponse{
 		Order:       result.Order,
 		CheckoutUrl: result.Order.GetCheckoutUrl(),
 		SessionRef:  result.Order.GetPaymentSessionRef(),
 		Amount:      result.Amount,
-	}), nil
+	}, nil
 }
 
 func (cs *CommerceServer) ConfirmOrderPayment(
 	ctx context.Context,
-	req *connect.Request[commercev1.ConfirmOrderPaymentRequest],
-) (*connect.Response[commercev1.ConfirmOrderPaymentResponse], error) {
-	if _, err := cs.authorizedOrder(ctx, req.Msg.GetOrderId(), cs.authz.CanOrdersManage); err != nil {
+	req *commercev1.ConfirmOrderPaymentRequest,
+) (*commercev1.ConfirmOrderPaymentResponse, error) {
+	if _, err := cs.authorizedOrder(ctx, req.GetOrderId(), cs.authz.CanOrdersManage); err != nil {
 		return nil, err
 	}
-	order, err := cs.paymentBusiness.ConfirmOrderPayment(ctx, req.Msg.GetOrderId())
+	order, err := cs.paymentBusiness.ConfirmOrderPayment(ctx, req.GetOrderId())
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
-	return connect.NewResponse(&commercev1.ConfirmOrderPaymentResponse{Order: order}), nil
+	return &commercev1.ConfirmOrderPaymentResponse{Order: order}, nil
 }
 
 func (cs *CommerceServer) CancelOrder(
 	ctx context.Context,
-	req *connect.Request[commercev1.CancelOrderRequest],
-) (*connect.Response[commercev1.CancelOrderResponse], error) {
-	existing, err := cs.authorizedOrder(ctx, req.Msg.GetOrderId(), cs.authz.CanOrdersManage)
+	req *commercev1.CancelOrderRequest,
+) (*commercev1.CancelOrderResponse, error) {
+	existing, err := cs.authorizedOrder(ctx, req.GetOrderId(), cs.authz.CanOrdersManage)
 	if err != nil {
 		return nil, err
 	}
 	staff := cs.authz.CanOrdersManage(ctx, existing.GetShopId()) == nil
-	order, err := cs.paymentBusiness.CancelOrder(ctx, req.Msg.GetOrderId(), req.Msg.GetReason(), staff)
+	order, err := cs.paymentBusiness.CancelOrder(ctx, req.GetOrderId(), req.GetReason(), staff)
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
-	return connect.NewResponse(&commercev1.CancelOrderResponse{Order: order}), nil
+	return &commercev1.CancelOrderResponse{Order: order}, nil
 }
 
 // ReconcilePayments is a scheduled, partition-wide operation. The tenant
 // level ledger_post permission (owner, admin, service) gates it.
 func (cs *CommerceServer) ReconcilePayments(
 	ctx context.Context,
-	req *connect.Request[commercev1.ReconcilePaymentsRequest],
-) (*connect.Response[commercev1.ReconcilePaymentsResponse], error) {
-	if shopID := req.Msg.GetShopId(); shopID != "" {
+	req *commercev1.ReconcilePaymentsRequest,
+) (*commercev1.ReconcilePaymentsResponse, error) {
+	if shopID := req.GetShopId(); shopID != "" {
 		if err := cs.authz.CanOrdersManage(ctx, shopID); err != nil {
 			return nil, authorizer.ToConnectError(err)
 		}
 	}
-	summary, err := cs.paymentBusiness.ReconcilePayments(ctx, req.Msg.GetShopId(), int(req.Msg.GetLimit()))
+	summary, err := cs.paymentBusiness.ReconcilePayments(ctx, req.GetShopId(), int(req.GetLimit()))
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
-	return connect.NewResponse(&commercev1.ReconcilePaymentsResponse{
+	return &commercev1.ReconcilePaymentsResponse{
 		Examined:        summary.Examined,
 		Paid:            summary.Paid,
 		Expired:         summary.Expired,
 		Failed:          summary.Failed,
 		Overdue:         summary.Overdue,
 		EventsDelivered: summary.EventsDelivered,
-	}), nil
+	}, nil
 }
 
 func (cs *CommerceServer) RunEndOfDayLedger(
 	ctx context.Context,
-	req *connect.Request[commercev1.RunEndOfDayLedgerRequest],
-) (*connect.Response[commercev1.RunEndOfDayLedgerResponse], error) {
-	if shopID := req.Msg.GetShopId(); shopID != "" {
+	req *commercev1.RunEndOfDayLedgerRequest,
+) (*commercev1.RunEndOfDayLedgerResponse, error) {
+	if shopID := req.GetShopId(); shopID != "" {
 		if err := cs.authz.CanOrdersManage(ctx, shopID); err != nil {
 			return nil, authorizer.ToConnectError(err)
 		}
 	}
-	postings, err := cs.ledgerBusiness.RunEndOfDayLedger(ctx, req.Msg.GetShopId(), req.Msg.GetDate())
+	postings, err := cs.ledgerBusiness.RunEndOfDayLedger(ctx, req.GetShopId(), req.GetDate())
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
-	return connect.NewResponse(&commercev1.RunEndOfDayLedgerResponse{Postings: postings}), nil
+	return &commercev1.RunEndOfDayLedgerResponse{Postings: postings}, nil
 }
 
 // ----------------------
@@ -564,41 +559,41 @@ func (cs *CommerceServer) RunEndOfDayLedger(
 
 func (cs *CommerceServer) CreateFulfilment(
 	ctx context.Context,
-	req *connect.Request[commercev1.CreateFulfilmentRequest],
-) (*connect.Response[commercev1.CreateFulfilmentResponse], error) {
-	if err := cs.requireOrderPermission(ctx, req.Msg.GetOrderId(), cs.authz.CanFulfilmentManage); err != nil {
+	req *commercev1.CreateFulfilmentRequest,
+) (*commercev1.CreateFulfilmentResponse, error) {
+	if err := cs.requireOrderPermission(ctx, req.GetOrderId(), cs.authz.CanFulfilmentManage); err != nil {
 		return nil, err
 	}
-	fulfilment, err := cs.fulfilmentBusiness.CreateFulfilment(ctx, req.Msg)
+	fulfilment, err := cs.fulfilmentBusiness.CreateFulfilment(ctx, req)
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
-	return connect.NewResponse(&commercev1.CreateFulfilmentResponse{Fulfilment: fulfilment}), nil
+	return &commercev1.CreateFulfilmentResponse{Fulfilment: fulfilment}, nil
 }
 
 func (cs *CommerceServer) UpdateFulfilment(
 	ctx context.Context,
-	req *connect.Request[commercev1.UpdateFulfilmentRequest],
-) (*connect.Response[commercev1.UpdateFulfilmentResponse], error) {
-	existing, err := cs.fulfilmentBusiness.GetFulfilment(ctx, req.Msg.GetId())
+	req *commercev1.UpdateFulfilmentRequest,
+) (*commercev1.UpdateFulfilmentResponse, error) {
+	existing, err := cs.fulfilmentBusiness.GetFulfilment(ctx, req.GetId())
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
 	if permErr := cs.requireOrderPermission(ctx, existing.GetOrderId(), cs.authz.CanFulfilmentManage); permErr != nil {
 		return nil, permErr
 	}
-	fulfilment, err := cs.fulfilmentBusiness.UpdateFulfilment(ctx, req.Msg)
+	fulfilment, err := cs.fulfilmentBusiness.UpdateFulfilment(ctx, req)
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
-	return connect.NewResponse(&commercev1.UpdateFulfilmentResponse{Fulfilment: fulfilment}), nil
+	return &commercev1.UpdateFulfilmentResponse{Fulfilment: fulfilment}, nil
 }
 
 func (cs *CommerceServer) GetFulfilment(
 	ctx context.Context,
-	req *connect.Request[commercev1.GetFulfilmentRequest],
-) (*connect.Response[commercev1.GetFulfilmentResponse], error) {
-	fulfilment, err := cs.fulfilmentBusiness.GetFulfilment(ctx, req.Msg.GetId())
+	req *commercev1.GetFulfilmentRequest,
+) (*commercev1.GetFulfilmentResponse, error) {
+	fulfilment, err := cs.fulfilmentBusiness.GetFulfilment(ctx, req.GetId())
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
@@ -612,7 +607,7 @@ func (cs *CommerceServer) GetFulfilment(
 			return nil, authorizer.ToConnectError(authzErr)
 		}
 	}
-	return connect.NewResponse(&commercev1.GetFulfilmentResponse{Fulfilment: fulfilment}), nil
+	return &commercev1.GetFulfilmentResponse{Fulfilment: fulfilment}, nil
 }
 
 // ----------------------
@@ -621,12 +616,12 @@ func (cs *CommerceServer) GetFulfilment(
 
 func (cs *CommerceServer) PriceListSave(
 	ctx context.Context,
-	req *connect.Request[commercev1.PriceListSaveRequest],
-) (*connect.Response[commercev1.PriceListSaveResponse], error) {
-	shopID := req.Msg.GetShopId()
-	if req.Msg.GetId() != "" {
+	req *commercev1.PriceListSaveRequest,
+) (*commercev1.PriceListSaveResponse, error) {
+	shopID := req.GetShopId()
+	if req.GetId() != "" {
 		// Updates are scoped by the stored shop, not whatever the client sent.
-		existing, err := cs.pricingBusiness.GetPriceList(ctx, req.Msg.GetId())
+		existing, err := cs.pricingBusiness.GetPriceList(ctx, req.GetId())
 		if err != nil {
 			return nil, errorutil.CleanErr(err)
 		}
@@ -635,156 +630,148 @@ func (cs *CommerceServer) PriceListSave(
 	if err := cs.authz.CanPriceListManage(ctx, shopID); err != nil {
 		return nil, authorizer.ToConnectError(err)
 	}
-	pl, err := cs.pricingBusiness.SavePriceList(ctx, req.Msg)
+	pl, err := cs.pricingBusiness.SavePriceList(ctx, req)
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
-	return connect.NewResponse(&commercev1.PriceListSaveResponse{PriceList: pl}), nil
+	return &commercev1.PriceListSaveResponse{PriceList: pl}, nil
 }
 
 func (cs *CommerceServer) PriceListGet(
 	ctx context.Context,
-	req *connect.Request[commercev1.PriceListGetRequest],
-) (*connect.Response[commercev1.PriceListGetResponse], error) {
-	pl, err := cs.pricingBusiness.GetPriceList(ctx, req.Msg.GetId())
+	req *commercev1.PriceListGetRequest,
+) (*commercev1.PriceListGetResponse, error) {
+	pl, err := cs.pricingBusiness.GetPriceList(ctx, req.GetId())
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
 	if authzErr := cs.authz.CanPriceListView(ctx, pl.GetShopId()); authzErr != nil {
 		return nil, authorizer.ToConnectError(authzErr)
 	}
-	return connect.NewResponse(&commercev1.PriceListGetResponse{PriceList: pl}), nil
+	return &commercev1.PriceListGetResponse{PriceList: pl}, nil
 }
 
 func (cs *CommerceServer) PriceListSearch(
 	ctx context.Context,
-	req *connect.Request[commercev1.PriceListSearchRequest],
-) (*connect.Response[commercev1.PriceListSearchResponse], error) {
-	if err := cs.authz.CanPriceListView(ctx, req.Msg.GetShopId()); err != nil {
+	req *commercev1.PriceListSearchRequest,
+) (*commercev1.PriceListSearchResponse, error) {
+	if err := cs.authz.CanPriceListView(ctx, req.GetShopId()); err != nil {
 		return nil, authorizer.ToConnectError(err)
 	}
-	page, err := cs.pricingBusiness.SearchPriceLists(ctx, req.Msg)
+	page, err := cs.pricingBusiness.SearchPriceLists(ctx, req)
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
-	return connect.NewResponse(&commercev1.PriceListSearchResponse{
+	return &commercev1.PriceListSearchResponse{
 		PriceLists: page.Items,
 		NextPage:   page.NextPage,
-	}), nil
+	}, nil
 }
 
 func (cs *CommerceServer) PriceListEntryBatchSave(
 	ctx context.Context,
-	req *connect.Request[commercev1.PriceListEntryBatchSaveRequest],
-) (*connect.Response[commercev1.PriceListEntryBatchSaveResponse], error) {
-	pl, plErr := cs.pricingBusiness.GetPriceList(ctx, req.Msg.GetPriceListId())
+	req *commercev1.PriceListEntryBatchSaveRequest,
+) (*commercev1.PriceListEntryBatchSaveResponse, error) {
+	pl, plErr := cs.pricingBusiness.GetPriceList(ctx, req.GetPriceListId())
 	if plErr != nil {
 		return nil, errorutil.CleanErr(plErr)
 	}
 	if err := cs.authz.CanPriceListManage(ctx, pl.GetShopId()); err != nil {
 		return nil, authorizer.ToConnectError(err)
 	}
-	entries, err := cs.pricingBusiness.BatchSavePriceListEntries(ctx, req.Msg)
+	entries, err := cs.pricingBusiness.BatchSavePriceListEntries(ctx, req)
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
-	return connect.NewResponse(&commercev1.PriceListEntryBatchSaveResponse{Entries: entries}), nil
+	return &commercev1.PriceListEntryBatchSaveResponse{Entries: entries}, nil
 }
 
 func (cs *CommerceServer) CustomerPriceListAssignmentSave(
 	ctx context.Context,
-	req *connect.Request[commercev1.CustomerPriceListAssignmentSaveRequest],
-) (*connect.Response[commercev1.CustomerPriceListAssignmentSaveResponse], error) {
-	if req.Msg.GetPriceListId() == "" {
+	req *commercev1.CustomerPriceListAssignmentSaveRequest,
+) (*commercev1.CustomerPriceListAssignmentSaveResponse, error) {
+	if req.GetPriceListId() == "" {
 		return nil, connect.NewError(connect.CodeInvalidArgument,
-			errors.New("price_list_id is required"))
+			"price_list_id is required")
 	}
-	pl, plErr := cs.pricingBusiness.GetPriceList(ctx, req.Msg.GetPriceListId())
+	pl, plErr := cs.pricingBusiness.GetPriceList(ctx, req.GetPriceListId())
 	if plErr != nil {
 		return nil, errorutil.CleanErr(plErr)
 	}
 	if err := cs.authz.CanPriceListManage(ctx, pl.GetShopId()); err != nil {
 		return nil, authorizer.ToConnectError(err)
 	}
-	assignment, err := cs.pricingBusiness.SaveCustomerPriceListAssignment(ctx, req.Msg)
+	assignment, err := cs.pricingBusiness.SaveCustomerPriceListAssignment(ctx, req)
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
-	return connect.NewResponse(
-		&commercev1.CustomerPriceListAssignmentSaveResponse{Assignment: assignment},
-	), nil
+	return &commercev1.CustomerPriceListAssignmentSaveResponse{Assignment: assignment}, nil
 }
 
 func (cs *CommerceServer) CustomerPriceListAssignmentSearch(
 	ctx context.Context,
-	req *connect.Request[commercev1.CustomerPriceListAssignmentSearchRequest],
-) (*connect.Response[commercev1.CustomerPriceListAssignmentSearchResponse], error) {
-	if authzErr := cs.checkAssignmentSearchAuthz(ctx, req.Msg); authzErr != nil {
+	req *commercev1.CustomerPriceListAssignmentSearchRequest,
+) (*commercev1.CustomerPriceListAssignmentSearchResponse, error) {
+	if authzErr := cs.checkAssignmentSearchAuthz(ctx, req); authzErr != nil {
 		return nil, authzErr
 	}
-	page, err := cs.pricingBusiness.SearchCustomerPriceListAssignments(ctx, req.Msg)
+	page, err := cs.pricingBusiness.SearchCustomerPriceListAssignments(ctx, req)
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
-	return connect.NewResponse(
-		&commercev1.CustomerPriceListAssignmentSearchResponse{
-			Assignments: page.Items,
-			NextPage:    page.NextPage,
-		},
-	), nil
+	return &commercev1.CustomerPriceListAssignmentSearchResponse{
+		Assignments: page.Items,
+		NextPage:    page.NextPage,
+	}, nil
 }
 
 func (cs *CommerceServer) CustomerPriceOverrideSave(
 	ctx context.Context,
-	req *connect.Request[commercev1.CustomerPriceOverrideSaveRequest],
-) (*connect.Response[commercev1.CustomerPriceOverrideSaveResponse], error) {
-	if req.Msg.GetProductVariantId() == "" {
+	req *commercev1.CustomerPriceOverrideSaveRequest,
+) (*commercev1.CustomerPriceOverrideSaveResponse, error) {
+	if req.GetProductVariantId() == "" {
 		return nil, connect.NewError(connect.CodeInvalidArgument,
-			errors.New("product_variant_id is required"))
+			"product_variant_id is required")
 	}
-	shopID, shopErr := cs.pricingBusiness.GetShopIDForVariant(ctx, req.Msg.GetProductVariantId())
+	shopID, shopErr := cs.pricingBusiness.GetShopIDForVariant(ctx, req.GetProductVariantId())
 	if shopErr != nil {
 		return nil, errorutil.CleanErr(shopErr)
 	}
 	if err := cs.authz.CanCustomerPriceOverride(ctx, shopID); err != nil {
 		return nil, authorizer.ToConnectError(err)
 	}
-	override, err := cs.pricingBusiness.SaveCustomerPriceOverride(ctx, req.Msg)
+	override, err := cs.pricingBusiness.SaveCustomerPriceOverride(ctx, req)
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
-	return connect.NewResponse(
-		&commercev1.CustomerPriceOverrideSaveResponse{Override: override},
-	), nil
+	return &commercev1.CustomerPriceOverrideSaveResponse{Override: override}, nil
 }
 
 func (cs *CommerceServer) CustomerPriceOverrideSearch(
 	ctx context.Context,
-	req *connect.Request[commercev1.CustomerPriceOverrideSearchRequest],
-) (*connect.Response[commercev1.CustomerPriceOverrideSearchResponse], error) {
-	if authzErr := cs.checkOverrideSearchAuthz(ctx, req.Msg); authzErr != nil {
+	req *commercev1.CustomerPriceOverrideSearchRequest,
+) (*commercev1.CustomerPriceOverrideSearchResponse, error) {
+	if authzErr := cs.checkOverrideSearchAuthz(ctx, req); authzErr != nil {
 		return nil, authzErr
 	}
-	page, err := cs.pricingBusiness.SearchCustomerPriceOverrides(ctx, req.Msg)
+	page, err := cs.pricingBusiness.SearchCustomerPriceOverrides(ctx, req)
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
-	return connect.NewResponse(
-		&commercev1.CustomerPriceOverrideSearchResponse{
-			Overrides: page.Items,
-			NextPage:  page.NextPage,
-		},
-	), nil
+	return &commercev1.CustomerPriceOverrideSearchResponse{
+		Overrides: page.Items,
+		NextPage:  page.NextPage,
+	}, nil
 }
 
 func (cs *CommerceServer) DiscountRuleSave(
 	ctx context.Context,
-	req *connect.Request[commercev1.DiscountRuleSaveRequest],
-) (*connect.Response[commercev1.DiscountRuleSaveResponse], error) {
-	shopID := req.Msg.GetShopId()
-	if req.Msg.GetId() != "" {
+	req *commercev1.DiscountRuleSaveRequest,
+) (*commercev1.DiscountRuleSaveResponse, error) {
+	shopID := req.GetShopId()
+	if req.GetId() != "" {
 		// Updates are scoped by the stored shop, not whatever the client sent.
-		stored, err := cs.pricingBusiness.GetDiscountRuleShopID(ctx, req.Msg.GetId())
+		stored, err := cs.pricingBusiness.GetDiscountRuleShopID(ctx, req.GetId())
 		if err != nil {
 			return nil, errorutil.CleanErr(err)
 		}
@@ -794,47 +781,47 @@ func (cs *CommerceServer) DiscountRuleSave(
 		return nil, authorizer.ToConnectError(err)
 	}
 	// Waiving a rule's approval requirement is an approver's decision.
-	if req.Msg.GetId() != "" && !req.Msg.GetRequiresApproval() &&
-		slices.Contains(req.Msg.GetUpdateMask().GetPaths(), "requires_approval") {
+	if req.GetId() != "" && !req.GetRequiresApproval() &&
+		slices.Contains(req.GetUpdateMask().GetPaths(), "requires_approval") {
 		if err := cs.authz.CanDiscountApprove(ctx, shopID); err != nil {
 			return nil, authorizer.ToConnectError(err)
 		}
 	}
-	rule, err := cs.pricingBusiness.SaveDiscountRule(ctx, req.Msg)
+	rule, err := cs.pricingBusiness.SaveDiscountRule(ctx, req)
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
-	return connect.NewResponse(&commercev1.DiscountRuleSaveResponse{DiscountRule: rule}), nil
+	return &commercev1.DiscountRuleSaveResponse{DiscountRule: rule}, nil
 }
 
 func (cs *CommerceServer) DiscountRuleSearch(
 	ctx context.Context,
-	req *connect.Request[commercev1.DiscountRuleSearchRequest],
-) (*connect.Response[commercev1.DiscountRuleSearchResponse], error) {
-	if err := cs.authz.CanPriceListView(ctx, req.Msg.GetShopId()); err != nil {
+	req *commercev1.DiscountRuleSearchRequest,
+) (*commercev1.DiscountRuleSearchResponse, error) {
+	if err := cs.authz.CanPriceListView(ctx, req.GetShopId()); err != nil {
 		return nil, authorizer.ToConnectError(err)
 	}
-	page, err := cs.pricingBusiness.SearchDiscountRules(ctx, req.Msg)
+	page, err := cs.pricingBusiness.SearchDiscountRules(ctx, req)
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
-	return connect.NewResponse(&commercev1.DiscountRuleSearchResponse{
+	return &commercev1.DiscountRuleSearchResponse{
 		DiscountRules: page.Items,
 		NextPage:      page.NextPage,
-	}), nil
+	}, nil
 }
 
 func (cs *CommerceServer) ResolvePrice(
 	ctx context.Context,
-	req *connect.Request[commercev1.ResolvePriceRequest],
-) (*connect.Response[commercev1.ResolvePriceResponse], error) {
+	req *commercev1.ResolvePriceRequest,
+) (*commercev1.ResolvePriceResponse, error) {
 	// Non-privileged callers always resolve for their own identity; shop staff
 	// with price_list_view may resolve for any customer.
 	callerID := callerSubject(ctx)
-	requestedCustomer := req.Msg.GetCustomerId()
+	requestedCustomer := req.GetCustomerId()
 	if requestedCustomer != "" && requestedCustomer != callerID {
 		shopID, shopErr := cs.pricingBusiness.GetShopIDForVariant(
-			ctx, req.Msg.GetProductVariantId(),
+			ctx, req.GetProductVariantId(),
 		)
 		if shopErr != nil {
 			return nil, errorutil.CleanErr(shopErr)
@@ -843,14 +830,14 @@ func (cs *CommerceServer) ResolvePrice(
 			return nil, authorizer.ToConnectError(err)
 		}
 	} else if requestedCustomer == "" && callerID != "" {
-		req.Msg.SetCustomerId(callerID)
+		req.SetCustomerId(callerID)
 	}
 
-	resolved, err := cs.pricingBusiness.ResolvePrice(ctx, req.Msg)
+	resolved, err := cs.pricingBusiness.ResolvePrice(ctx, req)
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
-	return connect.NewResponse(&commercev1.ResolvePriceResponse{ResolvedPrice: resolved}), nil
+	return &commercev1.ResolvePriceResponse{ResolvedPrice: resolved}, nil
 }
 
 // ----------------------
@@ -941,7 +928,7 @@ func (cs *CommerceServer) checkAssignmentSearchAuthz(
 	}
 	if msg.GetPriceListId() == "" {
 		return connect.NewError(connect.CodePermissionDenied,
-			errors.New("price_list_id required for cross-customer search"))
+			"price_list_id required for cross-customer search")
 	}
 	pl, plErr := cs.pricingBusiness.GetPriceList(ctx, msg.GetPriceListId())
 	if plErr != nil {
@@ -960,7 +947,7 @@ func (cs *CommerceServer) checkOverrideSearchAuthz(
 	}
 	if msg.GetProductVariantId() == "" {
 		return connect.NewError(connect.CodePermissionDenied,
-			errors.New("product_variant_id required for cross-customer search"))
+			"product_variant_id required for cross-customer search")
 	}
 	shopID, shopErr := cs.pricingBusiness.GetShopIDForVariant(ctx, msg.GetProductVariantId())
 	if shopErr != nil {
@@ -973,31 +960,31 @@ func (cs *CommerceServer) checkOverrideSearchAuthz(
 // unlike checkout, a buyer cannot vouch for their own payment.
 func (cs *CommerceServer) RecordOrderPayment(
 	ctx context.Context,
-	req *connect.Request[commercev1.RecordOrderPaymentRequest],
-) (*connect.Response[commercev1.RecordOrderPaymentResponse], error) {
-	if err := cs.requireOrderPermission(ctx, req.Msg.GetOrderId(), cs.authz.CanOrdersManage); err != nil {
+	req *commercev1.RecordOrderPaymentRequest,
+) (*commercev1.RecordOrderPaymentResponse, error) {
+	if err := cs.requireOrderPermission(ctx, req.GetOrderId(), cs.authz.CanOrdersManage); err != nil {
 		return nil, err
 	}
 	order, err := cs.paymentBusiness.RecordOrderPayment(ctx, business.RecordedPayment{
-		OrderID:    req.Msg.GetOrderId(),
-		Amount:     req.Msg.GetAmount(),
-		Reference:  req.Msg.GetReference(),
-		Note:       req.Msg.GetNote(),
+		OrderID:    req.GetOrderId(),
+		Amount:     req.GetAmount(),
+		Reference:  req.GetReference(),
+		Note:       req.GetNote(),
 		RecordedBy: callerSubject(ctx),
 	})
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
-	return connect.NewResponse(&commercev1.RecordOrderPaymentResponse{Order: order}), nil
+	return &commercev1.RecordOrderPaymentResponse{Order: order}, nil
 }
 
 // ListOrderEvents serves an order's signals to its buyer or to staff, and a
 // shop's to staff.
 func (cs *CommerceServer) ListOrderEvents(
 	ctx context.Context,
-	req *connect.Request[commercev1.ListOrderEventsRequest],
-) (*connect.Response[commercev1.ListOrderEventsResponse], error) {
-	shopID, orderID := req.Msg.GetShopId(), req.Msg.GetOrderId()
+	req *commercev1.ListOrderEventsRequest,
+) (*commercev1.ListOrderEventsResponse, error) {
+	shopID, orderID := req.GetShopId(), req.GetOrderId()
 	switch {
 	case orderID != "":
 		order, err := cs.authorizedOrder(ctx, orderID, cs.authz.CanOrdersView)
@@ -1005,7 +992,7 @@ func (cs *CommerceServer) ListOrderEvents(
 			return nil, err
 		}
 		if shopID != "" && shopID != order.GetShopId() {
-			return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("order is not in that shop"))
+			return nil, connect.NewError(connect.CodeInvalidArgument, "order is not in that shop")
 		}
 		shopID = ""
 	case shopID != "":
@@ -1013,9 +1000,9 @@ func (cs *CommerceServer) ListOrderEvents(
 			return nil, authorizer.ToConnectError(err)
 		}
 	default:
-		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("shop_id or order_id is required"))
+		return nil, connect.NewError(connect.CodeInvalidArgument, "shop_id or order_id is required")
 	}
-	page, err := business.PageFromSearch(req.Msg.GetSearch())
+	page, err := business.PageFromSearch(req.GetSearch())
 	if err != nil {
 		return nil, err
 	}
@@ -1023,58 +1010,58 @@ func (cs *CommerceServer) ListOrderEvents(
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
-	return connect.NewResponse(&commercev1.ListOrderEventsResponse{
+	return &commercev1.ListOrderEventsResponse{
 		Events: events.Events, NextPage: events.NextPage,
-	}), nil
+	}, nil
 }
 
 func (cs *CommerceServer) UpdateProduct(
 	ctx context.Context,
-	req *connect.Request[commercev1.UpdateProductRequest],
-) (*connect.Response[commercev1.UpdateProductResponse], error) {
-	existing, err := cs.catalogBusiness.GetProduct(ctx, req.Msg.GetId())
+	req *commercev1.UpdateProductRequest,
+) (*commercev1.UpdateProductResponse, error) {
+	existing, err := cs.catalogBusiness.GetProduct(ctx, req.GetId())
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
 	if authzErr := cs.authz.CanProductsManage(ctx, existing.GetShopId()); authzErr != nil {
 		return nil, authorizer.ToConnectError(authzErr)
 	}
-	product, err := cs.catalogBusiness.UpdateProduct(ctx, req.Msg)
+	product, err := cs.catalogBusiness.UpdateProduct(ctx, req)
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
-	return connect.NewResponse(&commercev1.UpdateProductResponse{Product: product}), nil
+	return &commercev1.UpdateProductResponse{Product: product}, nil
 }
 
 // ListFulfilments lets a buyer track their own order and staff see any.
 func (cs *CommerceServer) ListFulfilments(
 	ctx context.Context,
-	req *connect.Request[commercev1.ListFulfilmentsRequest],
-) (*connect.Response[commercev1.ListFulfilmentsResponse], error) {
-	if _, err := cs.authorizedOrder(ctx, req.Msg.GetOrderId(), cs.authz.CanOrdersView); err != nil {
+	req *commercev1.ListFulfilmentsRequest,
+) (*commercev1.ListFulfilmentsResponse, error) {
+	if _, err := cs.authorizedOrder(ctx, req.GetOrderId(), cs.authz.CanOrdersView); err != nil {
 		return nil, err
 	}
-	fulfilments, err := cs.fulfilmentBusiness.ListFulfilments(ctx, req.Msg.GetOrderId())
+	fulfilments, err := cs.fulfilmentBusiness.ListFulfilments(ctx, req.GetOrderId())
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
-	return connect.NewResponse(&commercev1.ListFulfilmentsResponse{Fulfilments: fulfilments}), nil
+	return &commercev1.ListFulfilmentsResponse{Fulfilments: fulfilments}, nil
 }
 
 func (cs *CommerceServer) DiscountRuleApprove(
 	ctx context.Context,
-	req *connect.Request[commercev1.DiscountRuleApproveRequest],
-) (*connect.Response[commercev1.DiscountRuleApproveResponse], error) {
-	shopID, err := cs.pricingBusiness.GetDiscountRuleShopID(ctx, req.Msg.GetId())
+	req *commercev1.DiscountRuleApproveRequest,
+) (*commercev1.DiscountRuleApproveResponse, error) {
+	shopID, err := cs.pricingBusiness.GetDiscountRuleShopID(ctx, req.GetId())
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
 	if authzErr := cs.authz.CanDiscountApprove(ctx, shopID); authzErr != nil {
 		return nil, authorizer.ToConnectError(authzErr)
 	}
-	rule, err := cs.pricingBusiness.ApproveDiscountRule(ctx, req.Msg.GetId())
+	rule, err := cs.pricingBusiness.ApproveDiscountRule(ctx, req.GetId())
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
-	return connect.NewResponse(&commercev1.DiscountRuleApproveResponse{DiscountRule: rule}), nil
+	return &commercev1.DiscountRuleApproveResponse{DiscountRule: rule}, nil
 }

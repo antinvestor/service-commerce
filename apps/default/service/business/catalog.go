@@ -16,11 +16,10 @@ package business
 
 import (
 	"context"
-	"errors"
 	"strings"
 
-	"connectrpc.com/connect"
-	"github.com/pitabwire/frame/v2/data"
+	"connectrpc.com/connect/v2"
+	"github.com/pitabwire/frame/v3/data"
 
 	commercev1 "github.com/antinvestor/service-commerce/gen/go/commerce/v1"
 
@@ -83,11 +82,11 @@ func (cb *catalogBusiness) CreateProduct(
 ) (*commercev1.Product, error) {
 	name := strings.TrimSpace(req.GetName())
 	if name == "" {
-		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("product name is required"))
+		return nil, connect.NewError(connect.CodeInvalidArgument, "product name is required")
 	}
 
 	if _, err := cb.shopRepo.GetByID(ctx, req.GetShopId()); err != nil {
-		return nil, connect.NewError(connect.CodeNotFound, errors.New("shop not found"))
+		return nil, connect.NewError(connect.CodeNotFound, "shop not found")
 	}
 	if err := validatePaymentPolicy(req.GetPaymentPolicy()); err != nil {
 		return nil, err
@@ -167,18 +166,18 @@ func (cb *catalogBusiness) CreateProductVariant(
 	req *commercev1.CreateProductVariantRequest,
 ) (*commercev1.ProductVariant, error) {
 	if _, err := cb.productRepo.GetByID(ctx, req.GetProductId()); err != nil {
-		return nil, connect.NewError(connect.CodeNotFound, errors.New("product not found"))
+		return nil, connect.NewError(connect.CodeNotFound, "product not found")
 	}
 	if strings.TrimSpace(req.GetSku()) == "" {
-		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("sku is required"))
+		return nil, connect.NewError(connect.CodeInvalidArgument, "sku is required")
 	}
 	if req.GetStockQuantity() < 0 {
-		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("stock quantity must not be negative"))
+		return nil, connect.NewError(connect.CodeInvalidArgument, "stock quantity must not be negative")
 	}
 
 	currency, units, nanos := models.MoneyFromProto(req.GetPrice())
 	if currency == "" {
-		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("price with currency is required"))
+		return nil, connect.NewError(connect.CodeInvalidArgument, "price with currency is required")
 	}
 
 	variant := &models.ProductVariant{
@@ -220,14 +219,14 @@ func (cb *catalogBusiness) ListProductVariants(
 func (cb *catalogBusiness) GetShopIDForVariant(ctx context.Context, variantID string) (string, error) {
 	variant, err := cb.variantRepo.GetByID(ctx, variantID)
 	if err != nil {
-		return "", connect.NewError(connect.CodeNotFound, errors.New("product variant not found"))
+		return "", connect.NewError(connect.CodeNotFound, "product variant not found")
 	}
 	if variant.Product != nil && variant.Product.ShopID != "" {
 		return variant.Product.ShopID, nil
 	}
 	product, err := cb.productRepo.GetByID(ctx, variant.ProductID)
 	if err != nil {
-		return "", connect.NewError(connect.CodeNotFound, errors.New("product for variant not found"))
+		return "", connect.NewError(connect.CodeNotFound, "product for variant not found")
 	}
 	return product.ShopID, nil
 }
@@ -288,7 +287,7 @@ func applyVariantFields(
 			}
 			if req.GetStockQuantity() < 0 {
 				return nil, false, connect.NewError(connect.CodeInvalidArgument,
-					errors.New("stock quantity must not be negative"))
+					"stock quantity must not be negative")
 			}
 			setStock = true
 			continue
@@ -325,7 +324,7 @@ func applyVariantField(
 		}
 		currency, units, nanos := models.MoneyFromProto(req.GetPrice())
 		if currency == "" {
-			return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("price currency is required"))
+			return nil, connect.NewError(connect.CodeInvalidArgument, "price currency is required")
 		}
 		variant.CurrencyCode = currency
 		variant.PriceUnits = units

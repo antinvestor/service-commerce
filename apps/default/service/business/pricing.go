@@ -17,16 +17,15 @@ package business
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"math"
 	"slices"
 	"sort"
 	"time"
 
 	commonv1 "buf.build/gen/go/antinvestor/common/protocolbuffers/go/common/v1"
-	"connectrpc.com/connect"
-	"github.com/pitabwire/frame/v2/data"
-	"github.com/pitabwire/frame/v2/security"
+	"connectrpc.com/connect/v2"
+	"github.com/pitabwire/frame/v3/data"
+	"github.com/pitabwire/frame/v3/security"
 
 	commercev1 "github.com/antinvestor/service-commerce/gen/go/commerce/v1"
 
@@ -182,15 +181,15 @@ func (pb *pricingBusiness) createPriceList(
 	req *commercev1.PriceListSaveRequest,
 ) (*commercev1.PriceList, error) {
 	if req.GetShopId() == "" {
-		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("shop_id is required"))
+		return nil, connect.NewError(connect.CodeInvalidArgument, "shop_id is required")
 	}
 	if req.GetName() == "" {
-		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("name is required"))
+		return nil, connect.NewError(connect.CodeInvalidArgument, "name is required")
 	}
 
 	_, err := pb.shopRepo.GetByID(ctx, req.GetShopId())
 	if err != nil {
-		return nil, connect.NewError(connect.CodeNotFound, errors.New("shop not found"))
+		return nil, connect.NewError(connect.CodeNotFound, "shop not found")
 	}
 
 	pl := &models.PriceList{
@@ -281,15 +280,14 @@ func (pb *pricingBusiness) GetShopIDForVariant(
 ) (string, error) {
 	variant, err := pb.variantRepo.GetByID(ctx, variantID)
 	if err != nil {
-		return "", connect.NewError(connect.CodeNotFound, errors.New("product variant not found"))
+		return "", connect.NewError(connect.CodeNotFound, "product variant not found")
 	}
 
 	product, err := pb.productRepo.GetByID(ctx, variant.ProductID)
 	if err != nil {
 		return "", connect.NewError(
 			connect.CodeInternal,
-			errors.New("could not resolve product for variant"),
-		)
+			"could not resolve product for variant")
 	}
 	return product.ShopID, nil
 }
@@ -322,31 +320,30 @@ func (pb *pricingBusiness) BatchSavePriceListEntries(
 	if req.GetPriceListId() == "" {
 		return nil, connect.NewError(
 			connect.CodeInvalidArgument,
-			errors.New("price_list_id is required"),
-		)
+			"price_list_id is required")
 	}
 
 	// Validate price list exists
 	_, err := pb.priceListRepo.GetByID(ctx, req.GetPriceListId())
 	if err != nil {
-		return nil, connect.NewError(connect.CodeNotFound, errors.New("price list not found"))
+		return nil, connect.NewError(connect.CodeNotFound, "price list not found")
 	}
 
 	entries := make([]*models.PriceListEntry, 0, len(req.GetEntries()))
 	for _, entry := range req.GetEntries() {
 		if entry.GetProductVariantId() == "" {
 			return nil, connect.NewError(connect.CodeInvalidArgument,
-				errors.New("every entry needs a product_variant_id"))
+				"every entry needs a product_variant_id")
 		}
 		currency, units, nanos := models.MoneyFromProto(entry.GetUnitPrice())
 		if currency == "" {
 			return nil, connect.NewError(connect.CodeInvalidArgument,
-				errors.New("every entry needs a unit_price with currency"))
+				"every entry needs a unit_price with currency")
 		}
 		if entry.GetMinQuantity() < 0 || entry.GetMaxQuantity() < 0 ||
 			(entry.GetMaxQuantity() > 0 && entry.GetMaxQuantity() < entry.GetMinQuantity()) {
 			return nil, connect.NewError(connect.CodeInvalidArgument,
-				errors.New("entry quantity band is invalid"))
+				"entry quantity band is invalid")
 		}
 		entries = append(entries, &models.PriceListEntry{
 			PriceListID:      req.GetPriceListId(),
@@ -391,20 +388,18 @@ func (pb *pricingBusiness) createAssignment(
 	if req.GetCustomerId() == "" {
 		return nil, connect.NewError(
 			connect.CodeInvalidArgument,
-			errors.New("customer_id is required"),
-		)
+			"customer_id is required")
 	}
 	if req.GetPriceListId() == "" {
 		return nil, connect.NewError(
 			connect.CodeInvalidArgument,
-			errors.New("price_list_id is required"),
-		)
+			"price_list_id is required")
 	}
 
 	// Validate price list exists
 	_, err := pb.priceListRepo.GetByID(ctx, req.GetPriceListId())
 	if err != nil {
-		return nil, connect.NewError(connect.CodeNotFound, errors.New("price list not found"))
+		return nil, connect.NewError(connect.CodeNotFound, "price list not found")
 	}
 
 	// Check for duplicate
@@ -416,8 +411,7 @@ func (pb *pricingBusiness) createAssignment(
 	if existErr == nil && existing != nil && existing.ID != "" {
 		return nil, connect.NewError(
 			connect.CodeAlreadyExists,
-			errors.New("assignment already exists"),
-		)
+			"assignment already exists")
 	}
 
 	a := &models.CustomerPriceListAssignment{
@@ -449,7 +443,7 @@ func (pb *pricingBusiness) updateAssignment(
 	// The caller was authorised against the request's price list; an
 	// assignment on another list is not theirs to change.
 	if a.PriceListID != req.GetPriceListId() {
-		return nil, connect.NewError(connect.CodeNotFound, errors.New("assignment not found"))
+		return nil, connect.NewError(connect.CodeNotFound, "assignment not found")
 	}
 
 	updateColumns := make([]string, 0)
@@ -511,14 +505,12 @@ func (pb *pricingBusiness) createOverride(
 	if req.GetCustomerId() == "" {
 		return nil, connect.NewError(
 			connect.CodeInvalidArgument,
-			errors.New("customer_id is required"),
-		)
+			"customer_id is required")
 	}
 	if req.GetProductVariantId() == "" {
 		return nil, connect.NewError(
 			connect.CodeInvalidArgument,
-			errors.New("product_variant_id is required"),
-		)
+			"product_variant_id is required")
 	}
 
 	currency, units, nanos := models.MoneyFromProto(req.GetUnitPrice())
@@ -563,7 +555,7 @@ func (pb *pricingBusiness) updateOverride(
 	// The caller was authorised against the request's variant (and so its
 	// shop); an override on another variant is not theirs to change.
 	if o.ProductVariantID != req.GetProductVariantId() {
-		return nil, connect.NewError(connect.CodeNotFound, errors.New("override not found"))
+		return nil, connect.NewError(connect.CodeNotFound, "override not found")
 	}
 
 	updateColumns := make([]string, 0)
@@ -645,15 +637,15 @@ func (pb *pricingBusiness) createDiscountRule(
 	req *commercev1.DiscountRuleSaveRequest,
 ) (*commercev1.DiscountRule, error) {
 	if req.GetShopId() == "" {
-		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("shop_id is required"))
+		return nil, connect.NewError(connect.CodeInvalidArgument, "shop_id is required")
 	}
 	if req.GetName() == "" {
-		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("name is required"))
+		return nil, connect.NewError(connect.CodeInvalidArgument, "name is required")
 	}
 
 	_, err := pb.shopRepo.GetByID(ctx, req.GetShopId())
 	if err != nil {
-		return nil, connect.NewError(connect.CodeNotFound, errors.New("shop not found"))
+		return nil, connect.NewError(connect.CodeNotFound, "shop not found")
 	}
 
 	conditions := data.JSONMap{}
@@ -790,14 +782,13 @@ func (pb *pricingBusiness) ResolvePrice(
 	if req.GetProductVariantId() == "" {
 		return nil, connect.NewError(
 			connect.CodeInvalidArgument,
-			errors.New("product_variant_id is required"),
-		)
+			"product_variant_id is required")
 	}
 
 	// Get the base variant for catalog price fallback
 	variant, err := pb.variantRepo.GetByID(ctx, req.GetProductVariantId())
 	if err != nil {
-		return nil, connect.NewError(connect.CodeNotFound, errors.New("product variant not found"))
+		return nil, connect.NewError(connect.CodeNotFound, "product variant not found")
 	}
 
 	// Resolve the shop ID through the product
@@ -805,8 +796,7 @@ func (pb *pricingBusiness) ResolvePrice(
 	if productErr != nil {
 		return nil, connect.NewError(
 			connect.CodeInternal,
-			errors.New("could not resolve product for variant"),
-		)
+			"could not resolve product for variant")
 	}
 	shopID := product.ShopID
 	target := discountTarget{
@@ -1168,15 +1158,14 @@ func (pb *pricingBusiness) ApproveDiscountRule(ctx context.Context, id string) (
 	if !dr.RequiresApproval {
 		return nil, connect.NewError(
 			connect.CodeFailedPrecondition,
-			errors.New("discount rule does not require approval"),
-		)
+			"discount rule does not require approval")
 	}
 	if dr.ApprovedAt != nil {
 		return dr.ToAPI(), nil
 	}
 	approver := subjectFromContext(ctx)
 	if approver == "" {
-		return nil, connect.NewError(connect.CodeUnauthenticated, errors.New("an approver is required"))
+		return nil, connect.NewError(connect.CodeUnauthenticated, "an approver is required")
 	}
 	now := time.Now()
 	dr.ApprovedAt = &now

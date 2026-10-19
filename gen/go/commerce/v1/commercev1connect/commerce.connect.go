@@ -19,1453 +19,1773 @@
 package commercev1connect
 
 import (
-	connect "connectrpc.com/connect"
+	connect "connectrpc.com/connect/v2"
 	context "context"
-	errors "errors"
 	v1 "github.com/antinvestor/service-commerce/gen/go/commerce/v1"
-	http "net/http"
-	strings "strings"
+	sync "sync"
 )
-
-// This is a compile-time assertion to ensure that this generated file and the connect package are
-// compatible. If you get a compiler error that this constant is not defined, this code was
-// generated with a version of connect newer than the one compiled into your binary. You can fix the
-// problem by either regenerating this code with an older version of connect or updating the connect
-// version compiled into your binary.
-const _ = connect.IsAtLeastVersion1_13_0
 
 const (
 	// CommerceServiceName is the fully-qualified name of the CommerceService service.
 	CommerceServiceName = "commerce.v1.CommerceService"
 )
 
-// These constants are the fully-qualified names of the RPCs defined in this package. They're
-// exposed at runtime as Spec.Procedure and as the final two segments of the HTTP route.
+// These constants are the procedure names of the RPCs defined in this package. They're exposed at
+// runtime as Spec.Procedure and as the final two segments of the HTTP route.
 //
 // Note that these are different from the fully-qualified method names used by
 // google.golang.org/protobuf/reflect/protoreflect. To convert from these constants to
 // reflection-formatted method names, remove the leading slash and convert the remaining slash to a
 // period.
 const (
-	// CommerceServiceCreateShopProcedure is the fully-qualified name of the CommerceService's
-	// CreateShop RPC.
+	// CommerceServiceCreateShopProcedure is the procedure name of the CommerceService's CreateShop RPC.
 	CommerceServiceCreateShopProcedure = "/commerce.v1.CommerceService/CreateShop"
-	// CommerceServiceGetShopProcedure is the fully-qualified name of the CommerceService's GetShop RPC.
+	// CommerceServiceGetShopProcedure is the procedure name of the CommerceService's GetShop RPC.
 	CommerceServiceGetShopProcedure = "/commerce.v1.CommerceService/GetShop"
-	// CommerceServiceUpdateShopProcedure is the fully-qualified name of the CommerceService's
-	// UpdateShop RPC.
+	// CommerceServiceUpdateShopProcedure is the procedure name of the CommerceService's UpdateShop RPC.
 	CommerceServiceUpdateShopProcedure = "/commerce.v1.CommerceService/UpdateShop"
-	// CommerceServiceListShopsProcedure is the fully-qualified name of the CommerceService's ListShops
-	// RPC.
+	// CommerceServiceListShopsProcedure is the procedure name of the CommerceService's ListShops RPC.
 	CommerceServiceListShopsProcedure = "/commerce.v1.CommerceService/ListShops"
-	// CommerceServiceResolveDefaultCurrencyProcedure is the fully-qualified name of the
-	// CommerceService's ResolveDefaultCurrency RPC.
+	// CommerceServiceResolveDefaultCurrencyProcedure is the procedure name of the CommerceService's
+	// ResolveDefaultCurrency RPC.
 	CommerceServiceResolveDefaultCurrencyProcedure = "/commerce.v1.CommerceService/ResolveDefaultCurrency"
-	// CommerceServiceCreateProductProcedure is the fully-qualified name of the CommerceService's
+	// CommerceServiceCreateProductProcedure is the procedure name of the CommerceService's
 	// CreateProduct RPC.
 	CommerceServiceCreateProductProcedure = "/commerce.v1.CommerceService/CreateProduct"
-	// CommerceServiceGetProductProcedure is the fully-qualified name of the CommerceService's
-	// GetProduct RPC.
+	// CommerceServiceGetProductProcedure is the procedure name of the CommerceService's GetProduct RPC.
 	CommerceServiceGetProductProcedure = "/commerce.v1.CommerceService/GetProduct"
-	// CommerceServiceListProductsProcedure is the fully-qualified name of the CommerceService's
-	// ListProducts RPC.
+	// CommerceServiceListProductsProcedure is the procedure name of the CommerceService's ListProducts
+	// RPC.
 	CommerceServiceListProductsProcedure = "/commerce.v1.CommerceService/ListProducts"
-	// CommerceServiceCreateProductVariantProcedure is the fully-qualified name of the CommerceService's
+	// CommerceServiceCreateProductVariantProcedure is the procedure name of the CommerceService's
 	// CreateProductVariant RPC.
 	CommerceServiceCreateProductVariantProcedure = "/commerce.v1.CommerceService/CreateProductVariant"
-	// CommerceServiceUpdateProductVariantProcedure is the fully-qualified name of the CommerceService's
+	// CommerceServiceUpdateProductVariantProcedure is the procedure name of the CommerceService's
 	// UpdateProductVariant RPC.
 	CommerceServiceUpdateProductVariantProcedure = "/commerce.v1.CommerceService/UpdateProductVariant"
-	// CommerceServiceUpdateProductProcedure is the fully-qualified name of the CommerceService's
+	// CommerceServiceUpdateProductProcedure is the procedure name of the CommerceService's
 	// UpdateProduct RPC.
 	CommerceServiceUpdateProductProcedure = "/commerce.v1.CommerceService/UpdateProduct"
-	// CommerceServiceListProductVariantsProcedure is the fully-qualified name of the CommerceService's
+	// CommerceServiceListProductVariantsProcedure is the procedure name of the CommerceService's
 	// ListProductVariants RPC.
 	CommerceServiceListProductVariantsProcedure = "/commerce.v1.CommerceService/ListProductVariants"
-	// CommerceServiceCreateCartProcedure is the fully-qualified name of the CommerceService's
-	// CreateCart RPC.
+	// CommerceServiceCreateCartProcedure is the procedure name of the CommerceService's CreateCart RPC.
 	CommerceServiceCreateCartProcedure = "/commerce.v1.CommerceService/CreateCart"
-	// CommerceServiceGetCartProcedure is the fully-qualified name of the CommerceService's GetCart RPC.
+	// CommerceServiceGetCartProcedure is the procedure name of the CommerceService's GetCart RPC.
 	CommerceServiceGetCartProcedure = "/commerce.v1.CommerceService/GetCart"
-	// CommerceServiceAddCartLineProcedure is the fully-qualified name of the CommerceService's
-	// AddCartLine RPC.
+	// CommerceServiceAddCartLineProcedure is the procedure name of the CommerceService's AddCartLine
+	// RPC.
 	CommerceServiceAddCartLineProcedure = "/commerce.v1.CommerceService/AddCartLine"
-	// CommerceServiceRemoveCartLineProcedure is the fully-qualified name of the CommerceService's
+	// CommerceServiceRemoveCartLineProcedure is the procedure name of the CommerceService's
 	// RemoveCartLine RPC.
 	CommerceServiceRemoveCartLineProcedure = "/commerce.v1.CommerceService/RemoveCartLine"
-	// CommerceServiceCreateOrderFromCartProcedure is the fully-qualified name of the CommerceService's
+	// CommerceServiceCreateOrderFromCartProcedure is the procedure name of the CommerceService's
 	// CreateOrderFromCart RPC.
 	CommerceServiceCreateOrderFromCartProcedure = "/commerce.v1.CommerceService/CreateOrderFromCart"
-	// CommerceServiceCreateOrderProcedure is the fully-qualified name of the CommerceService's
-	// CreateOrder RPC.
-	CommerceServiceCreateOrderProcedure = "/commerce.v1.CommerceService/CreateOrder"
-	// CommerceServiceGetOrderProcedure is the fully-qualified name of the CommerceService's GetOrder
+	// CommerceServiceCreateOrderProcedure is the procedure name of the CommerceService's CreateOrder
 	// RPC.
+	CommerceServiceCreateOrderProcedure = "/commerce.v1.CommerceService/CreateOrder"
+	// CommerceServiceGetOrderProcedure is the procedure name of the CommerceService's GetOrder RPC.
 	CommerceServiceGetOrderProcedure = "/commerce.v1.CommerceService/GetOrder"
-	// CommerceServiceListOrdersProcedure is the fully-qualified name of the CommerceService's
-	// ListOrders RPC.
+	// CommerceServiceListOrdersProcedure is the procedure name of the CommerceService's ListOrders RPC.
 	CommerceServiceListOrdersProcedure = "/commerce.v1.CommerceService/ListOrders"
-	// CommerceServiceCheckoutOrderProcedure is the fully-qualified name of the CommerceService's
+	// CommerceServiceCheckoutOrderProcedure is the procedure name of the CommerceService's
 	// CheckoutOrder RPC.
 	CommerceServiceCheckoutOrderProcedure = "/commerce.v1.CommerceService/CheckoutOrder"
-	// CommerceServiceConfirmOrderPaymentProcedure is the fully-qualified name of the CommerceService's
+	// CommerceServiceConfirmOrderPaymentProcedure is the procedure name of the CommerceService's
 	// ConfirmOrderPayment RPC.
 	CommerceServiceConfirmOrderPaymentProcedure = "/commerce.v1.CommerceService/ConfirmOrderPayment"
-	// CommerceServiceCancelOrderProcedure is the fully-qualified name of the CommerceService's
-	// CancelOrder RPC.
+	// CommerceServiceCancelOrderProcedure is the procedure name of the CommerceService's CancelOrder
+	// RPC.
 	CommerceServiceCancelOrderProcedure = "/commerce.v1.CommerceService/CancelOrder"
-	// CommerceServiceRecordOrderPaymentProcedure is the fully-qualified name of the CommerceService's
+	// CommerceServiceRecordOrderPaymentProcedure is the procedure name of the CommerceService's
 	// RecordOrderPayment RPC.
 	CommerceServiceRecordOrderPaymentProcedure = "/commerce.v1.CommerceService/RecordOrderPayment"
-	// CommerceServiceListOrderEventsProcedure is the fully-qualified name of the CommerceService's
+	// CommerceServiceListOrderEventsProcedure is the procedure name of the CommerceService's
 	// ListOrderEvents RPC.
 	CommerceServiceListOrderEventsProcedure = "/commerce.v1.CommerceService/ListOrderEvents"
-	// CommerceServiceReconcilePaymentsProcedure is the fully-qualified name of the CommerceService's
+	// CommerceServiceReconcilePaymentsProcedure is the procedure name of the CommerceService's
 	// ReconcilePayments RPC.
 	CommerceServiceReconcilePaymentsProcedure = "/commerce.v1.CommerceService/ReconcilePayments"
-	// CommerceServiceRunEndOfDayLedgerProcedure is the fully-qualified name of the CommerceService's
+	// CommerceServiceRunEndOfDayLedgerProcedure is the procedure name of the CommerceService's
 	// RunEndOfDayLedger RPC.
 	CommerceServiceRunEndOfDayLedgerProcedure = "/commerce.v1.CommerceService/RunEndOfDayLedger"
-	// CommerceServiceCreateFulfilmentProcedure is the fully-qualified name of the CommerceService's
+	// CommerceServiceCreateFulfilmentProcedure is the procedure name of the CommerceService's
 	// CreateFulfilment RPC.
 	CommerceServiceCreateFulfilmentProcedure = "/commerce.v1.CommerceService/CreateFulfilment"
-	// CommerceServiceUpdateFulfilmentProcedure is the fully-qualified name of the CommerceService's
+	// CommerceServiceUpdateFulfilmentProcedure is the procedure name of the CommerceService's
 	// UpdateFulfilment RPC.
 	CommerceServiceUpdateFulfilmentProcedure = "/commerce.v1.CommerceService/UpdateFulfilment"
-	// CommerceServiceGetFulfilmentProcedure is the fully-qualified name of the CommerceService's
+	// CommerceServiceGetFulfilmentProcedure is the procedure name of the CommerceService's
 	// GetFulfilment RPC.
 	CommerceServiceGetFulfilmentProcedure = "/commerce.v1.CommerceService/GetFulfilment"
-	// CommerceServiceListFulfilmentsProcedure is the fully-qualified name of the CommerceService's
+	// CommerceServiceListFulfilmentsProcedure is the procedure name of the CommerceService's
 	// ListFulfilments RPC.
 	CommerceServiceListFulfilmentsProcedure = "/commerce.v1.CommerceService/ListFulfilments"
-	// CommerceServicePriceListSaveProcedure is the fully-qualified name of the CommerceService's
+	// CommerceServicePriceListSaveProcedure is the procedure name of the CommerceService's
 	// PriceListSave RPC.
 	CommerceServicePriceListSaveProcedure = "/commerce.v1.CommerceService/PriceListSave"
-	// CommerceServicePriceListGetProcedure is the fully-qualified name of the CommerceService's
-	// PriceListGet RPC.
+	// CommerceServicePriceListGetProcedure is the procedure name of the CommerceService's PriceListGet
+	// RPC.
 	CommerceServicePriceListGetProcedure = "/commerce.v1.CommerceService/PriceListGet"
-	// CommerceServicePriceListSearchProcedure is the fully-qualified name of the CommerceService's
+	// CommerceServicePriceListSearchProcedure is the procedure name of the CommerceService's
 	// PriceListSearch RPC.
 	CommerceServicePriceListSearchProcedure = "/commerce.v1.CommerceService/PriceListSearch"
-	// CommerceServicePriceListEntryBatchSaveProcedure is the fully-qualified name of the
-	// CommerceService's PriceListEntryBatchSave RPC.
+	// CommerceServicePriceListEntryBatchSaveProcedure is the procedure name of the CommerceService's
+	// PriceListEntryBatchSave RPC.
 	CommerceServicePriceListEntryBatchSaveProcedure = "/commerce.v1.CommerceService/PriceListEntryBatchSave"
-	// CommerceServiceCustomerPriceListAssignmentSaveProcedure is the fully-qualified name of the
+	// CommerceServiceCustomerPriceListAssignmentSaveProcedure is the procedure name of the
 	// CommerceService's CustomerPriceListAssignmentSave RPC.
 	CommerceServiceCustomerPriceListAssignmentSaveProcedure = "/commerce.v1.CommerceService/CustomerPriceListAssignmentSave"
-	// CommerceServiceCustomerPriceListAssignmentSearchProcedure is the fully-qualified name of the
+	// CommerceServiceCustomerPriceListAssignmentSearchProcedure is the procedure name of the
 	// CommerceService's CustomerPriceListAssignmentSearch RPC.
 	CommerceServiceCustomerPriceListAssignmentSearchProcedure = "/commerce.v1.CommerceService/CustomerPriceListAssignmentSearch"
-	// CommerceServiceCustomerPriceOverrideSaveProcedure is the fully-qualified name of the
-	// CommerceService's CustomerPriceOverrideSave RPC.
+	// CommerceServiceCustomerPriceOverrideSaveProcedure is the procedure name of the CommerceService's
+	// CustomerPriceOverrideSave RPC.
 	CommerceServiceCustomerPriceOverrideSaveProcedure = "/commerce.v1.CommerceService/CustomerPriceOverrideSave"
-	// CommerceServiceCustomerPriceOverrideSearchProcedure is the fully-qualified name of the
+	// CommerceServiceCustomerPriceOverrideSearchProcedure is the procedure name of the
 	// CommerceService's CustomerPriceOverrideSearch RPC.
 	CommerceServiceCustomerPriceOverrideSearchProcedure = "/commerce.v1.CommerceService/CustomerPriceOverrideSearch"
-	// CommerceServiceDiscountRuleSaveProcedure is the fully-qualified name of the CommerceService's
+	// CommerceServiceDiscountRuleSaveProcedure is the procedure name of the CommerceService's
 	// DiscountRuleSave RPC.
 	CommerceServiceDiscountRuleSaveProcedure = "/commerce.v1.CommerceService/DiscountRuleSave"
-	// CommerceServiceDiscountRuleSearchProcedure is the fully-qualified name of the CommerceService's
+	// CommerceServiceDiscountRuleSearchProcedure is the procedure name of the CommerceService's
 	// DiscountRuleSearch RPC.
 	CommerceServiceDiscountRuleSearchProcedure = "/commerce.v1.CommerceService/DiscountRuleSearch"
-	// CommerceServiceDiscountRuleApproveProcedure is the fully-qualified name of the CommerceService's
+	// CommerceServiceDiscountRuleApproveProcedure is the procedure name of the CommerceService's
 	// DiscountRuleApprove RPC.
 	CommerceServiceDiscountRuleApproveProcedure = "/commerce.v1.CommerceService/DiscountRuleApprove"
-	// CommerceServiceResolvePriceProcedure is the fully-qualified name of the CommerceService's
-	// ResolvePrice RPC.
+	// CommerceServiceResolvePriceProcedure is the procedure name of the CommerceService's ResolvePrice
+	// RPC.
 	CommerceServiceResolvePriceProcedure = "/commerce.v1.CommerceService/ResolvePrice"
+)
+
+var (
+	commerceServiceCreateShopSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_commerce_proto.Services().ByName("CommerceService").Methods().ByName("CreateShop"),
+			Procedure:  CommerceServiceCreateShopProcedure,
+		}
+	})
+	commerceServiceGetShopSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_commerce_proto.Services().ByName("CommerceService").Methods().ByName("GetShop"),
+			Procedure:  CommerceServiceGetShopProcedure,
+		}
+	})
+	commerceServiceUpdateShopSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_commerce_proto.Services().ByName("CommerceService").Methods().ByName("UpdateShop"),
+			Procedure:  CommerceServiceUpdateShopProcedure,
+		}
+	})
+	commerceServiceListShopsSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_commerce_proto.Services().ByName("CommerceService").Methods().ByName("ListShops"),
+			Procedure:  CommerceServiceListShopsProcedure,
+		}
+	})
+	commerceServiceResolveDefaultCurrencySpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_commerce_proto.Services().ByName("CommerceService").Methods().ByName("ResolveDefaultCurrency"),
+			Procedure:  CommerceServiceResolveDefaultCurrencyProcedure,
+		}
+	})
+	commerceServiceCreateProductSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_commerce_proto.Services().ByName("CommerceService").Methods().ByName("CreateProduct"),
+			Procedure:  CommerceServiceCreateProductProcedure,
+		}
+	})
+	commerceServiceGetProductSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_commerce_proto.Services().ByName("CommerceService").Methods().ByName("GetProduct"),
+			Procedure:  CommerceServiceGetProductProcedure,
+		}
+	})
+	commerceServiceListProductsSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_commerce_proto.Services().ByName("CommerceService").Methods().ByName("ListProducts"),
+			Procedure:  CommerceServiceListProductsProcedure,
+		}
+	})
+	commerceServiceCreateProductVariantSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_commerce_proto.Services().ByName("CommerceService").Methods().ByName("CreateProductVariant"),
+			Procedure:  CommerceServiceCreateProductVariantProcedure,
+		}
+	})
+	commerceServiceUpdateProductVariantSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_commerce_proto.Services().ByName("CommerceService").Methods().ByName("UpdateProductVariant"),
+			Procedure:  CommerceServiceUpdateProductVariantProcedure,
+		}
+	})
+	commerceServiceUpdateProductSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_commerce_proto.Services().ByName("CommerceService").Methods().ByName("UpdateProduct"),
+			Procedure:  CommerceServiceUpdateProductProcedure,
+		}
+	})
+	commerceServiceListProductVariantsSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_commerce_proto.Services().ByName("CommerceService").Methods().ByName("ListProductVariants"),
+			Procedure:  CommerceServiceListProductVariantsProcedure,
+		}
+	})
+	commerceServiceCreateCartSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_commerce_proto.Services().ByName("CommerceService").Methods().ByName("CreateCart"),
+			Procedure:  CommerceServiceCreateCartProcedure,
+		}
+	})
+	commerceServiceGetCartSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_commerce_proto.Services().ByName("CommerceService").Methods().ByName("GetCart"),
+			Procedure:  CommerceServiceGetCartProcedure,
+		}
+	})
+	commerceServiceAddCartLineSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_commerce_proto.Services().ByName("CommerceService").Methods().ByName("AddCartLine"),
+			Procedure:  CommerceServiceAddCartLineProcedure,
+		}
+	})
+	commerceServiceRemoveCartLineSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_commerce_proto.Services().ByName("CommerceService").Methods().ByName("RemoveCartLine"),
+			Procedure:  CommerceServiceRemoveCartLineProcedure,
+		}
+	})
+	commerceServiceCreateOrderFromCartSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_commerce_proto.Services().ByName("CommerceService").Methods().ByName("CreateOrderFromCart"),
+			Procedure:  CommerceServiceCreateOrderFromCartProcedure,
+		}
+	})
+	commerceServiceCreateOrderSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_commerce_proto.Services().ByName("CommerceService").Methods().ByName("CreateOrder"),
+			Procedure:  CommerceServiceCreateOrderProcedure,
+		}
+	})
+	commerceServiceGetOrderSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_commerce_proto.Services().ByName("CommerceService").Methods().ByName("GetOrder"),
+			Procedure:  CommerceServiceGetOrderProcedure,
+		}
+	})
+	commerceServiceListOrdersSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_commerce_proto.Services().ByName("CommerceService").Methods().ByName("ListOrders"),
+			Procedure:  CommerceServiceListOrdersProcedure,
+		}
+	})
+	commerceServiceCheckoutOrderSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_commerce_proto.Services().ByName("CommerceService").Methods().ByName("CheckoutOrder"),
+			Procedure:  CommerceServiceCheckoutOrderProcedure,
+		}
+	})
+	commerceServiceConfirmOrderPaymentSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_commerce_proto.Services().ByName("CommerceService").Methods().ByName("ConfirmOrderPayment"),
+			Procedure:  CommerceServiceConfirmOrderPaymentProcedure,
+		}
+	})
+	commerceServiceCancelOrderSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_commerce_proto.Services().ByName("CommerceService").Methods().ByName("CancelOrder"),
+			Procedure:  CommerceServiceCancelOrderProcedure,
+		}
+	})
+	commerceServiceRecordOrderPaymentSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_commerce_proto.Services().ByName("CommerceService").Methods().ByName("RecordOrderPayment"),
+			Procedure:  CommerceServiceRecordOrderPaymentProcedure,
+		}
+	})
+	commerceServiceListOrderEventsSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_commerce_proto.Services().ByName("CommerceService").Methods().ByName("ListOrderEvents"),
+			Procedure:  CommerceServiceListOrderEventsProcedure,
+		}
+	})
+	commerceServiceReconcilePaymentsSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_commerce_proto.Services().ByName("CommerceService").Methods().ByName("ReconcilePayments"),
+			Procedure:  CommerceServiceReconcilePaymentsProcedure,
+		}
+	})
+	commerceServiceRunEndOfDayLedgerSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_commerce_proto.Services().ByName("CommerceService").Methods().ByName("RunEndOfDayLedger"),
+			Procedure:  CommerceServiceRunEndOfDayLedgerProcedure,
+		}
+	})
+	commerceServiceCreateFulfilmentSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_commerce_proto.Services().ByName("CommerceService").Methods().ByName("CreateFulfilment"),
+			Procedure:  CommerceServiceCreateFulfilmentProcedure,
+		}
+	})
+	commerceServiceUpdateFulfilmentSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_commerce_proto.Services().ByName("CommerceService").Methods().ByName("UpdateFulfilment"),
+			Procedure:  CommerceServiceUpdateFulfilmentProcedure,
+		}
+	})
+	commerceServiceGetFulfilmentSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_commerce_proto.Services().ByName("CommerceService").Methods().ByName("GetFulfilment"),
+			Procedure:  CommerceServiceGetFulfilmentProcedure,
+		}
+	})
+	commerceServiceListFulfilmentsSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_commerce_proto.Services().ByName("CommerceService").Methods().ByName("ListFulfilments"),
+			Procedure:  CommerceServiceListFulfilmentsProcedure,
+		}
+	})
+	commerceServicePriceListSaveSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_commerce_proto.Services().ByName("CommerceService").Methods().ByName("PriceListSave"),
+			Procedure:  CommerceServicePriceListSaveProcedure,
+		}
+	})
+	commerceServicePriceListGetSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_commerce_proto.Services().ByName("CommerceService").Methods().ByName("PriceListGet"),
+			Procedure:  CommerceServicePriceListGetProcedure,
+		}
+	})
+	commerceServicePriceListSearchSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_commerce_proto.Services().ByName("CommerceService").Methods().ByName("PriceListSearch"),
+			Procedure:  CommerceServicePriceListSearchProcedure,
+		}
+	})
+	commerceServicePriceListEntryBatchSaveSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_commerce_proto.Services().ByName("CommerceService").Methods().ByName("PriceListEntryBatchSave"),
+			Procedure:  CommerceServicePriceListEntryBatchSaveProcedure,
+		}
+	})
+	commerceServiceCustomerPriceListAssignmentSaveSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_commerce_proto.Services().ByName("CommerceService").Methods().ByName("CustomerPriceListAssignmentSave"),
+			Procedure:  CommerceServiceCustomerPriceListAssignmentSaveProcedure,
+		}
+	})
+	commerceServiceCustomerPriceListAssignmentSearchSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_commerce_proto.Services().ByName("CommerceService").Methods().ByName("CustomerPriceListAssignmentSearch"),
+			Procedure:  CommerceServiceCustomerPriceListAssignmentSearchProcedure,
+		}
+	})
+	commerceServiceCustomerPriceOverrideSaveSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_commerce_proto.Services().ByName("CommerceService").Methods().ByName("CustomerPriceOverrideSave"),
+			Procedure:  CommerceServiceCustomerPriceOverrideSaveProcedure,
+		}
+	})
+	commerceServiceCustomerPriceOverrideSearchSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_commerce_proto.Services().ByName("CommerceService").Methods().ByName("CustomerPriceOverrideSearch"),
+			Procedure:  CommerceServiceCustomerPriceOverrideSearchProcedure,
+		}
+	})
+	commerceServiceDiscountRuleSaveSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_commerce_proto.Services().ByName("CommerceService").Methods().ByName("DiscountRuleSave"),
+			Procedure:  CommerceServiceDiscountRuleSaveProcedure,
+		}
+	})
+	commerceServiceDiscountRuleSearchSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_commerce_proto.Services().ByName("CommerceService").Methods().ByName("DiscountRuleSearch"),
+			Procedure:  CommerceServiceDiscountRuleSearchProcedure,
+		}
+	})
+	commerceServiceDiscountRuleApproveSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_commerce_proto.Services().ByName("CommerceService").Methods().ByName("DiscountRuleApprove"),
+			Procedure:  CommerceServiceDiscountRuleApproveProcedure,
+		}
+	})
+	commerceServiceResolvePriceSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_commerce_proto.Services().ByName("CommerceService").Methods().ByName("ResolvePrice"),
+			Procedure:  CommerceServiceResolvePriceProcedure,
+		}
+	})
 )
 
 // CommerceServiceClient is a client for the commerce.v1.CommerceService service.
 type CommerceServiceClient interface {
 	// Creates a new shop. The authenticated user becomes the admin.
-	CreateShop(context.Context, *connect.Request[v1.CreateShopRequest]) (*connect.Response[v1.CreateShopResponse], error)
+	CreateShop(context.Context, *v1.CreateShopRequest) (*v1.CreateShopResponse, error)
 	// Retrieves shop details by ID.
-	GetShop(context.Context, *connect.Request[v1.GetShopRequest]) (*connect.Response[v1.GetShopResponse], error)
+	GetShop(context.Context, *v1.GetShopRequest) (*v1.GetShopResponse, error)
 	// Updates shop details.
-	UpdateShop(context.Context, *connect.Request[v1.UpdateShopRequest]) (*connect.Response[v1.UpdateShopResponse], error)
+	UpdateShop(context.Context, *v1.UpdateShopRequest) (*v1.UpdateShopResponse, error)
 	// Lists the shops in the caller's partition.
-	ListShops(context.Context, *connect.Request[v1.ListShopsRequest]) (*connect.Response[v1.ListShopsResponse], error)
+	ListShops(context.Context, *v1.ListShopsRequest) (*v1.ListShopsResponse, error)
 	// Resolves the currency the caller most likely trades in: their currency
 	// setting, else the locale of the device they are signed in on, else the
 	// country of their first profile address. CreateShop applies the same
 	// default when no currency is given.
-	ResolveDefaultCurrency(context.Context, *connect.Request[v1.ResolveDefaultCurrencyRequest]) (*connect.Response[v1.ResolveDefaultCurrencyResponse], error)
+	ResolveDefaultCurrency(context.Context, *v1.ResolveDefaultCurrencyRequest) (*v1.ResolveDefaultCurrencyResponse, error)
 	// Creates a new product in the catalog.
-	CreateProduct(context.Context, *connect.Request[v1.CreateProductRequest]) (*connect.Response[v1.CreateProductResponse], error)
+	CreateProduct(context.Context, *v1.CreateProductRequest) (*v1.CreateProductResponse, error)
 	// Retrieves a product by its ID.
-	GetProduct(context.Context, *connect.Request[v1.GetProductRequest]) (*connect.Response[v1.GetProductResponse], error)
+	GetProduct(context.Context, *v1.GetProductRequest) (*v1.GetProductResponse, error)
 	// Lists products belonging to a shop, with optional search and filtering.
-	ListProducts(context.Context, *connect.Request[v1.ListProductsRequest]) (*connect.Response[v1.ListProductsResponse], error)
+	ListProducts(context.Context, *v1.ListProductsRequest) (*v1.ListProductsResponse, error)
 	// Creates a new variant for a product.
-	CreateProductVariant(context.Context, *connect.Request[v1.CreateProductVariantRequest]) (*connect.Response[v1.CreateProductVariantResponse], error)
+	CreateProductVariant(context.Context, *v1.CreateProductVariantRequest) (*v1.CreateProductVariantResponse, error)
 	// Updates an existing product variant.
-	UpdateProductVariant(context.Context, *connect.Request[v1.UpdateProductVariantRequest]) (*connect.Response[v1.UpdateProductVariantResponse], error)
+	UpdateProductVariant(context.Context, *v1.UpdateProductVariantRequest) (*v1.UpdateProductVariantResponse, error)
 	// Updates a product: details, fulfilment type, status, and its payment
 	// policy override.
-	UpdateProduct(context.Context, *connect.Request[v1.UpdateProductRequest]) (*connect.Response[v1.UpdateProductResponse], error)
+	UpdateProduct(context.Context, *v1.UpdateProductRequest) (*v1.UpdateProductResponse, error)
 	// Lists the variants of a product.
-	ListProductVariants(context.Context, *connect.Request[v1.ListProductVariantsRequest]) (*connect.Response[v1.ListProductVariantsResponse], error)
-	CreateCart(context.Context, *connect.Request[v1.CreateCartRequest]) (*connect.Response[v1.CreateCartResponse], error)
-	GetCart(context.Context, *connect.Request[v1.GetCartRequest]) (*connect.Response[v1.GetCartResponse], error)
-	AddCartLine(context.Context, *connect.Request[v1.AddCartLineRequest]) (*connect.Response[v1.AddCartLineResponse], error)
-	RemoveCartLine(context.Context, *connect.Request[v1.RemoveCartLineRequest]) (*connect.Response[v1.RemoveCartLineResponse], error)
-	CreateOrderFromCart(context.Context, *connect.Request[v1.CreateOrderFromCartRequest]) (*connect.Response[v1.CreateOrderFromCartResponse], error)
-	// Creates an order and reserves stock atomically.
+	ListProductVariants(context.Context, *v1.ListProductVariantsRequest) (*v1.ListProductVariantsResponse, error)
+	CreateCart(context.Context, *v1.CreateCartRequest) (*v1.CreateCartResponse, error)
+	GetCart(context.Context, *v1.GetCartRequest) (*v1.GetCartResponse, error)
+	AddCartLine(context.Context, *v1.AddCartLineRequest) (*v1.AddCartLineResponse, error)
+	RemoveCartLine(context.Context, *v1.RemoveCartLineRequest) (*v1.RemoveCartLineResponse, error)
+	CreateOrderFromCart(context.Context, *v1.CreateOrderFromCartRequest) (*v1.CreateOrderFromCartResponse, error)
 	//
-	// The server MUST:
-	// - validate all variants belong to the shop
-	// - validate sufficient stock
-	// - decrement stock
-	// - snapshot price and name
-	// - compute totals
+	//Creates an order and reserves stock atomically.
 	//
-	// The order is created in CONFIRMED state
-	// (since this API does not handle payments).
-	CreateOrder(context.Context, *connect.Request[v1.CreateOrderRequest]) (*connect.Response[v1.CreateOrderResponse], error)
+	//The server MUST:
+	//- validate all variants belong to the shop
+	//- validate sufficient stock
+	//- decrement stock
+	//- snapshot price and name
+	//- compute totals
+	//
+	//The order is created in CONFIRMED state
+	//(since this API does not handle payments).
+	CreateOrder(context.Context, *v1.CreateOrderRequest) (*v1.CreateOrderResponse, error)
 	// Retrieves an order by ID.
-	GetOrder(context.Context, *connect.Request[v1.GetOrderRequest]) (*connect.Response[v1.GetOrderResponse], error)
+	GetOrder(context.Context, *v1.GetOrderRequest) (*v1.GetOrderResponse, error)
 	// Lists orders for a shop, with optional search and filtering.
-	ListOrders(context.Context, *connect.Request[v1.ListOrdersRequest]) (*connect.Response[v1.ListOrdersResponse], error)
+	ListOrders(context.Context, *v1.ListOrdersRequest) (*v1.ListOrdersResponse, error)
 	// Starts payment for an order: creates a hosted checkout session and
 	// returns the page the buyer should be sent to. Idempotent per order.
-	CheckoutOrder(context.Context, *connect.Request[v1.CheckoutOrderRequest]) (*connect.Response[v1.CheckoutOrderResponse], error)
+	CheckoutOrder(context.Context, *v1.CheckoutOrderRequest) (*v1.CheckoutOrderResponse, error)
 	// Marks an order paid after verifying the checkout session with the
 	// payment service. Safe to call repeatedly; used by staff and by the
 	// scheduled reconciler.
-	ConfirmOrderPayment(context.Context, *connect.Request[v1.ConfirmOrderPaymentRequest]) (*connect.Response[v1.ConfirmOrderPaymentResponse], error)
+	ConfirmOrderPayment(context.Context, *v1.ConfirmOrderPaymentRequest) (*v1.ConfirmOrderPaymentResponse, error)
 	// Cancels an unfulfilled order and returns its stock. Buyers may cancel
 	// their own unpaid orders; staff may cancel any unfulfilled order.
-	CancelOrder(context.Context, *connect.Request[v1.CancelOrderRequest]) (*connect.Response[v1.CancelOrderResponse], error)
+	CancelOrder(context.Context, *v1.CancelOrderRequest) (*v1.CancelOrderResponse, error)
 	// Records a payment the shop took itself (cash, bank transfer, a till) as
 	// an instalment against the order. Staff only. A reference already
 	// recorded on the order is returned as-is, so retries are safe.
-	RecordOrderPayment(context.Context, *connect.Request[v1.RecordOrderPaymentRequest]) (*connect.Response[v1.RecordOrderPaymentResponse], error)
+	RecordOrderPayment(context.Context, *v1.RecordOrderPaymentRequest) (*v1.RecordOrderPaymentResponse, error)
 	// Lists payment and lifecycle signals for an order, or for every order in
 	// a shop, oldest first. The same events are pushed to the shop's webhook.
-	ListOrderEvents(context.Context, *connect.Request[v1.ListOrderEventsRequest]) (*connect.Response[v1.ListOrderEventsResponse], error)
+	ListOrderEvents(context.Context, *v1.ListOrderEventsRequest) (*v1.ListOrderEventsResponse, error)
 	// Reconciles orders awaiting payment against the payment service and
 	// expires reservations whose payment window has lapsed. Scheduled.
-	ReconcilePayments(context.Context, *connect.Request[v1.ReconcilePaymentsRequest]) (*connect.Response[v1.ReconcilePaymentsResponse], error)
+	ReconcilePayments(context.Context, *v1.ReconcilePaymentsRequest) (*v1.ReconcilePaymentsResponse, error)
 	// Posts one balanced ledger transaction per shop for a trading day,
 	// merging that day's paid and refunded orders. Scheduled end of day.
-	RunEndOfDayLedger(context.Context, *connect.Request[v1.RunEndOfDayLedgerRequest]) (*connect.Response[v1.RunEndOfDayLedgerResponse], error)
-	// Creates a fulfilment for an order.
+	RunEndOfDayLedger(context.Context, *v1.RunEndOfDayLedgerRequest) (*v1.RunEndOfDayLedgerResponse, error)
 	//
-	// A fulfilment may contain a subset of order lines.
-	// Quantity per line MUST NOT exceed remaining unfulfilled quantity.
-	CreateFulfilment(context.Context, *connect.Request[v1.CreateFulfilmentRequest]) (*connect.Response[v1.CreateFulfilmentResponse], error)
+	//Creates a fulfilment for an order.
+	//
+	//A fulfilment may contain a subset of order lines.
+	//Quantity per line MUST NOT exceed remaining unfulfilled quantity.
+	CreateFulfilment(context.Context, *v1.CreateFulfilmentRequest) (*v1.CreateFulfilmentResponse, error)
 	// Updates a fulfilment (e.g. adding tracking number, marking as shipped).
-	UpdateFulfilment(context.Context, *connect.Request[v1.UpdateFulfilmentRequest]) (*connect.Response[v1.UpdateFulfilmentResponse], error)
+	UpdateFulfilment(context.Context, *v1.UpdateFulfilmentRequest) (*v1.UpdateFulfilmentResponse, error)
 	// Retrieves a fulfilment by ID.
-	GetFulfilment(context.Context, *connect.Request[v1.GetFulfilmentRequest]) (*connect.Response[v1.GetFulfilmentResponse], error)
+	GetFulfilment(context.Context, *v1.GetFulfilmentRequest) (*v1.GetFulfilmentResponse, error)
 	// Lists an order's fulfilments, oldest first.
-	ListFulfilments(context.Context, *connect.Request[v1.ListFulfilmentsRequest]) (*connect.Response[v1.ListFulfilmentsResponse], error)
+	ListFulfilments(context.Context, *v1.ListFulfilmentsRequest) (*v1.ListFulfilmentsResponse, error)
 	// Creates or updates a price list.
-	PriceListSave(context.Context, *connect.Request[v1.PriceListSaveRequest]) (*connect.Response[v1.PriceListSaveResponse], error)
+	PriceListSave(context.Context, *v1.PriceListSaveRequest) (*v1.PriceListSaveResponse, error)
 	// Retrieves a price list by ID.
-	PriceListGet(context.Context, *connect.Request[v1.PriceListGetRequest]) (*connect.Response[v1.PriceListGetResponse], error)
+	PriceListGet(context.Context, *v1.PriceListGetRequest) (*v1.PriceListGetResponse, error)
 	// Searches price lists for a shop.
-	PriceListSearch(context.Context, *connect.Request[v1.PriceListSearchRequest]) (*connect.Response[v1.PriceListSearchResponse], error)
+	PriceListSearch(context.Context, *v1.PriceListSearchRequest) (*v1.PriceListSearchResponse, error)
 	// Replaces all entries for the given variants in a price list.
-	PriceListEntryBatchSave(context.Context, *connect.Request[v1.PriceListEntryBatchSaveRequest]) (*connect.Response[v1.PriceListEntryBatchSaveResponse], error)
+	PriceListEntryBatchSave(context.Context, *v1.PriceListEntryBatchSaveRequest) (*v1.PriceListEntryBatchSaveResponse, error)
 	// Creates or updates a customer-to-price-list assignment.
-	CustomerPriceListAssignmentSave(context.Context, *connect.Request[v1.CustomerPriceListAssignmentSaveRequest]) (*connect.Response[v1.CustomerPriceListAssignmentSaveResponse], error)
+	CustomerPriceListAssignmentSave(context.Context, *v1.CustomerPriceListAssignmentSaveRequest) (*v1.CustomerPriceListAssignmentSaveResponse, error)
 	// Searches customer price list assignments.
-	CustomerPriceListAssignmentSearch(context.Context, *connect.Request[v1.CustomerPriceListAssignmentSearchRequest]) (*connect.Response[v1.CustomerPriceListAssignmentSearchResponse], error)
+	CustomerPriceListAssignmentSearch(context.Context, *v1.CustomerPriceListAssignmentSearchRequest) (*v1.CustomerPriceListAssignmentSearchResponse, error)
 	// Creates or updates a customer price override for a specific variant.
-	CustomerPriceOverrideSave(context.Context, *connect.Request[v1.CustomerPriceOverrideSaveRequest]) (*connect.Response[v1.CustomerPriceOverrideSaveResponse], error)
+	CustomerPriceOverrideSave(context.Context, *v1.CustomerPriceOverrideSaveRequest) (*v1.CustomerPriceOverrideSaveResponse, error)
 	// Searches customer price overrides.
-	CustomerPriceOverrideSearch(context.Context, *connect.Request[v1.CustomerPriceOverrideSearchRequest]) (*connect.Response[v1.CustomerPriceOverrideSearchResponse], error)
+	CustomerPriceOverrideSearch(context.Context, *v1.CustomerPriceOverrideSearchRequest) (*v1.CustomerPriceOverrideSearchResponse, error)
 	// Creates or updates a discount rule.
-	DiscountRuleSave(context.Context, *connect.Request[v1.DiscountRuleSaveRequest]) (*connect.Response[v1.DiscountRuleSaveResponse], error)
+	DiscountRuleSave(context.Context, *v1.DiscountRuleSaveRequest) (*v1.DiscountRuleSaveResponse, error)
 	// Searches discount rules for a shop.
-	DiscountRuleSearch(context.Context, *connect.Request[v1.DiscountRuleSearchRequest]) (*connect.Response[v1.DiscountRuleSearchResponse], error)
+	DiscountRuleSearch(context.Context, *v1.DiscountRuleSearchRequest) (*v1.DiscountRuleSearchResponse, error)
 	// Approves a discount rule that requires approval, so pricing may apply
 	// it automatically.
-	DiscountRuleApprove(context.Context, *connect.Request[v1.DiscountRuleApproveRequest]) (*connect.Response[v1.DiscountRuleApproveResponse], error)
+	DiscountRuleApprove(context.Context, *v1.DiscountRuleApproveRequest) (*v1.DiscountRuleApproveResponse, error)
 	// Resolves the effective price for a variant given customer and quantity context.
-	ResolvePrice(context.Context, *connect.Request[v1.ResolvePriceRequest]) (*connect.Response[v1.ResolvePriceResponse], error)
+	ResolvePrice(context.Context, *v1.ResolvePriceRequest) (*v1.ResolvePriceResponse, error)
 }
 
-// NewCommerceServiceClient constructs a client for the commerce.v1.CommerceService service. By
-// default, it uses the Connect protocol with the binary Protobuf Codec, asks for gzipped responses,
-// and sends uncompressed requests. To use the gRPC or gRPC-Web protocols, supply the
-// connect.WithGRPC() or connect.WithGRPCWeb() options.
-//
-// The URL supplied here should be the base URL for the Connect or gRPC server (for example,
-// http://api.acme.com or https://acme.com/grpc).
-func NewCommerceServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) CommerceServiceClient {
-	baseURL = strings.TrimRight(baseURL, "/")
-	commerceServiceMethods := v1.File_v1_commerce_proto.Services().ByName("CommerceService").Methods()
-	return &commerceServiceClient{
-		createShop: connect.NewClient[v1.CreateShopRequest, v1.CreateShopResponse](
-			httpClient,
-			baseURL+CommerceServiceCreateShopProcedure,
-			connect.WithSchema(commerceServiceMethods.ByName("CreateShop")),
-			connect.WithClientOptions(opts...),
-		),
-		getShop: connect.NewClient[v1.GetShopRequest, v1.GetShopResponse](
-			httpClient,
-			baseURL+CommerceServiceGetShopProcedure,
-			connect.WithSchema(commerceServiceMethods.ByName("GetShop")),
-			connect.WithClientOptions(opts...),
-		),
-		updateShop: connect.NewClient[v1.UpdateShopRequest, v1.UpdateShopResponse](
-			httpClient,
-			baseURL+CommerceServiceUpdateShopProcedure,
-			connect.WithSchema(commerceServiceMethods.ByName("UpdateShop")),
-			connect.WithClientOptions(opts...),
-		),
-		listShops: connect.NewClient[v1.ListShopsRequest, v1.ListShopsResponse](
-			httpClient,
-			baseURL+CommerceServiceListShopsProcedure,
-			connect.WithSchema(commerceServiceMethods.ByName("ListShops")),
-			connect.WithClientOptions(opts...),
-		),
-		resolveDefaultCurrency: connect.NewClient[v1.ResolveDefaultCurrencyRequest, v1.ResolveDefaultCurrencyResponse](
-			httpClient,
-			baseURL+CommerceServiceResolveDefaultCurrencyProcedure,
-			connect.WithSchema(commerceServiceMethods.ByName("ResolveDefaultCurrency")),
-			connect.WithClientOptions(opts...),
-		),
-		createProduct: connect.NewClient[v1.CreateProductRequest, v1.CreateProductResponse](
-			httpClient,
-			baseURL+CommerceServiceCreateProductProcedure,
-			connect.WithSchema(commerceServiceMethods.ByName("CreateProduct")),
-			connect.WithClientOptions(opts...),
-		),
-		getProduct: connect.NewClient[v1.GetProductRequest, v1.GetProductResponse](
-			httpClient,
-			baseURL+CommerceServiceGetProductProcedure,
-			connect.WithSchema(commerceServiceMethods.ByName("GetProduct")),
-			connect.WithClientOptions(opts...),
-		),
-		listProducts: connect.NewClient[v1.ListProductsRequest, v1.ListProductsResponse](
-			httpClient,
-			baseURL+CommerceServiceListProductsProcedure,
-			connect.WithSchema(commerceServiceMethods.ByName("ListProducts")),
-			connect.WithClientOptions(opts...),
-		),
-		createProductVariant: connect.NewClient[v1.CreateProductVariantRequest, v1.CreateProductVariantResponse](
-			httpClient,
-			baseURL+CommerceServiceCreateProductVariantProcedure,
-			connect.WithSchema(commerceServiceMethods.ByName("CreateProductVariant")),
-			connect.WithClientOptions(opts...),
-		),
-		updateProductVariant: connect.NewClient[v1.UpdateProductVariantRequest, v1.UpdateProductVariantResponse](
-			httpClient,
-			baseURL+CommerceServiceUpdateProductVariantProcedure,
-			connect.WithSchema(commerceServiceMethods.ByName("UpdateProductVariant")),
-			connect.WithClientOptions(opts...),
-		),
-		updateProduct: connect.NewClient[v1.UpdateProductRequest, v1.UpdateProductResponse](
-			httpClient,
-			baseURL+CommerceServiceUpdateProductProcedure,
-			connect.WithSchema(commerceServiceMethods.ByName("UpdateProduct")),
-			connect.WithClientOptions(opts...),
-		),
-		listProductVariants: connect.NewClient[v1.ListProductVariantsRequest, v1.ListProductVariantsResponse](
-			httpClient,
-			baseURL+CommerceServiceListProductVariantsProcedure,
-			connect.WithSchema(commerceServiceMethods.ByName("ListProductVariants")),
-			connect.WithClientOptions(opts...),
-		),
-		createCart: connect.NewClient[v1.CreateCartRequest, v1.CreateCartResponse](
-			httpClient,
-			baseURL+CommerceServiceCreateCartProcedure,
-			connect.WithSchema(commerceServiceMethods.ByName("CreateCart")),
-			connect.WithClientOptions(opts...),
-		),
-		getCart: connect.NewClient[v1.GetCartRequest, v1.GetCartResponse](
-			httpClient,
-			baseURL+CommerceServiceGetCartProcedure,
-			connect.WithSchema(commerceServiceMethods.ByName("GetCart")),
-			connect.WithClientOptions(opts...),
-		),
-		addCartLine: connect.NewClient[v1.AddCartLineRequest, v1.AddCartLineResponse](
-			httpClient,
-			baseURL+CommerceServiceAddCartLineProcedure,
-			connect.WithSchema(commerceServiceMethods.ByName("AddCartLine")),
-			connect.WithClientOptions(opts...),
-		),
-		removeCartLine: connect.NewClient[v1.RemoveCartLineRequest, v1.RemoveCartLineResponse](
-			httpClient,
-			baseURL+CommerceServiceRemoveCartLineProcedure,
-			connect.WithSchema(commerceServiceMethods.ByName("RemoveCartLine")),
-			connect.WithClientOptions(opts...),
-		),
-		createOrderFromCart: connect.NewClient[v1.CreateOrderFromCartRequest, v1.CreateOrderFromCartResponse](
-			httpClient,
-			baseURL+CommerceServiceCreateOrderFromCartProcedure,
-			connect.WithSchema(commerceServiceMethods.ByName("CreateOrderFromCart")),
-			connect.WithClientOptions(opts...),
-		),
-		createOrder: connect.NewClient[v1.CreateOrderRequest, v1.CreateOrderResponse](
-			httpClient,
-			baseURL+CommerceServiceCreateOrderProcedure,
-			connect.WithSchema(commerceServiceMethods.ByName("CreateOrder")),
-			connect.WithClientOptions(opts...),
-		),
-		getOrder: connect.NewClient[v1.GetOrderRequest, v1.GetOrderResponse](
-			httpClient,
-			baseURL+CommerceServiceGetOrderProcedure,
-			connect.WithSchema(commerceServiceMethods.ByName("GetOrder")),
-			connect.WithClientOptions(opts...),
-		),
-		listOrders: connect.NewClient[v1.ListOrdersRequest, v1.ListOrdersResponse](
-			httpClient,
-			baseURL+CommerceServiceListOrdersProcedure,
-			connect.WithSchema(commerceServiceMethods.ByName("ListOrders")),
-			connect.WithClientOptions(opts...),
-		),
-		checkoutOrder: connect.NewClient[v1.CheckoutOrderRequest, v1.CheckoutOrderResponse](
-			httpClient,
-			baseURL+CommerceServiceCheckoutOrderProcedure,
-			connect.WithSchema(commerceServiceMethods.ByName("CheckoutOrder")),
-			connect.WithClientOptions(opts...),
-		),
-		confirmOrderPayment: connect.NewClient[v1.ConfirmOrderPaymentRequest, v1.ConfirmOrderPaymentResponse](
-			httpClient,
-			baseURL+CommerceServiceConfirmOrderPaymentProcedure,
-			connect.WithSchema(commerceServiceMethods.ByName("ConfirmOrderPayment")),
-			connect.WithClientOptions(opts...),
-		),
-		cancelOrder: connect.NewClient[v1.CancelOrderRequest, v1.CancelOrderResponse](
-			httpClient,
-			baseURL+CommerceServiceCancelOrderProcedure,
-			connect.WithSchema(commerceServiceMethods.ByName("CancelOrder")),
-			connect.WithClientOptions(opts...),
-		),
-		recordOrderPayment: connect.NewClient[v1.RecordOrderPaymentRequest, v1.RecordOrderPaymentResponse](
-			httpClient,
-			baseURL+CommerceServiceRecordOrderPaymentProcedure,
-			connect.WithSchema(commerceServiceMethods.ByName("RecordOrderPayment")),
-			connect.WithClientOptions(opts...),
-		),
-		listOrderEvents: connect.NewClient[v1.ListOrderEventsRequest, v1.ListOrderEventsResponse](
-			httpClient,
-			baseURL+CommerceServiceListOrderEventsProcedure,
-			connect.WithSchema(commerceServiceMethods.ByName("ListOrderEvents")),
-			connect.WithClientOptions(opts...),
-		),
-		reconcilePayments: connect.NewClient[v1.ReconcilePaymentsRequest, v1.ReconcilePaymentsResponse](
-			httpClient,
-			baseURL+CommerceServiceReconcilePaymentsProcedure,
-			connect.WithSchema(commerceServiceMethods.ByName("ReconcilePayments")),
-			connect.WithClientOptions(opts...),
-		),
-		runEndOfDayLedger: connect.NewClient[v1.RunEndOfDayLedgerRequest, v1.RunEndOfDayLedgerResponse](
-			httpClient,
-			baseURL+CommerceServiceRunEndOfDayLedgerProcedure,
-			connect.WithSchema(commerceServiceMethods.ByName("RunEndOfDayLedger")),
-			connect.WithClientOptions(opts...),
-		),
-		createFulfilment: connect.NewClient[v1.CreateFulfilmentRequest, v1.CreateFulfilmentResponse](
-			httpClient,
-			baseURL+CommerceServiceCreateFulfilmentProcedure,
-			connect.WithSchema(commerceServiceMethods.ByName("CreateFulfilment")),
-			connect.WithClientOptions(opts...),
-		),
-		updateFulfilment: connect.NewClient[v1.UpdateFulfilmentRequest, v1.UpdateFulfilmentResponse](
-			httpClient,
-			baseURL+CommerceServiceUpdateFulfilmentProcedure,
-			connect.WithSchema(commerceServiceMethods.ByName("UpdateFulfilment")),
-			connect.WithClientOptions(opts...),
-		),
-		getFulfilment: connect.NewClient[v1.GetFulfilmentRequest, v1.GetFulfilmentResponse](
-			httpClient,
-			baseURL+CommerceServiceGetFulfilmentProcedure,
-			connect.WithSchema(commerceServiceMethods.ByName("GetFulfilment")),
-			connect.WithClientOptions(opts...),
-		),
-		listFulfilments: connect.NewClient[v1.ListFulfilmentsRequest, v1.ListFulfilmentsResponse](
-			httpClient,
-			baseURL+CommerceServiceListFulfilmentsProcedure,
-			connect.WithSchema(commerceServiceMethods.ByName("ListFulfilments")),
-			connect.WithClientOptions(opts...),
-		),
-		priceListSave: connect.NewClient[v1.PriceListSaveRequest, v1.PriceListSaveResponse](
-			httpClient,
-			baseURL+CommerceServicePriceListSaveProcedure,
-			connect.WithSchema(commerceServiceMethods.ByName("PriceListSave")),
-			connect.WithClientOptions(opts...),
-		),
-		priceListGet: connect.NewClient[v1.PriceListGetRequest, v1.PriceListGetResponse](
-			httpClient,
-			baseURL+CommerceServicePriceListGetProcedure,
-			connect.WithSchema(commerceServiceMethods.ByName("PriceListGet")),
-			connect.WithClientOptions(opts...),
-		),
-		priceListSearch: connect.NewClient[v1.PriceListSearchRequest, v1.PriceListSearchResponse](
-			httpClient,
-			baseURL+CommerceServicePriceListSearchProcedure,
-			connect.WithSchema(commerceServiceMethods.ByName("PriceListSearch")),
-			connect.WithClientOptions(opts...),
-		),
-		priceListEntryBatchSave: connect.NewClient[v1.PriceListEntryBatchSaveRequest, v1.PriceListEntryBatchSaveResponse](
-			httpClient,
-			baseURL+CommerceServicePriceListEntryBatchSaveProcedure,
-			connect.WithSchema(commerceServiceMethods.ByName("PriceListEntryBatchSave")),
-			connect.WithClientOptions(opts...),
-		),
-		customerPriceListAssignmentSave: connect.NewClient[v1.CustomerPriceListAssignmentSaveRequest, v1.CustomerPriceListAssignmentSaveResponse](
-			httpClient,
-			baseURL+CommerceServiceCustomerPriceListAssignmentSaveProcedure,
-			connect.WithSchema(commerceServiceMethods.ByName("CustomerPriceListAssignmentSave")),
-			connect.WithClientOptions(opts...),
-		),
-		customerPriceListAssignmentSearch: connect.NewClient[v1.CustomerPriceListAssignmentSearchRequest, v1.CustomerPriceListAssignmentSearchResponse](
-			httpClient,
-			baseURL+CommerceServiceCustomerPriceListAssignmentSearchProcedure,
-			connect.WithSchema(commerceServiceMethods.ByName("CustomerPriceListAssignmentSearch")),
-			connect.WithClientOptions(opts...),
-		),
-		customerPriceOverrideSave: connect.NewClient[v1.CustomerPriceOverrideSaveRequest, v1.CustomerPriceOverrideSaveResponse](
-			httpClient,
-			baseURL+CommerceServiceCustomerPriceOverrideSaveProcedure,
-			connect.WithSchema(commerceServiceMethods.ByName("CustomerPriceOverrideSave")),
-			connect.WithClientOptions(opts...),
-		),
-		customerPriceOverrideSearch: connect.NewClient[v1.CustomerPriceOverrideSearchRequest, v1.CustomerPriceOverrideSearchResponse](
-			httpClient,
-			baseURL+CommerceServiceCustomerPriceOverrideSearchProcedure,
-			connect.WithSchema(commerceServiceMethods.ByName("CustomerPriceOverrideSearch")),
-			connect.WithClientOptions(opts...),
-		),
-		discountRuleSave: connect.NewClient[v1.DiscountRuleSaveRequest, v1.DiscountRuleSaveResponse](
-			httpClient,
-			baseURL+CommerceServiceDiscountRuleSaveProcedure,
-			connect.WithSchema(commerceServiceMethods.ByName("DiscountRuleSave")),
-			connect.WithClientOptions(opts...),
-		),
-		discountRuleSearch: connect.NewClient[v1.DiscountRuleSearchRequest, v1.DiscountRuleSearchResponse](
-			httpClient,
-			baseURL+CommerceServiceDiscountRuleSearchProcedure,
-			connect.WithSchema(commerceServiceMethods.ByName("DiscountRuleSearch")),
-			connect.WithClientOptions(opts...),
-		),
-		discountRuleApprove: connect.NewClient[v1.DiscountRuleApproveRequest, v1.DiscountRuleApproveResponse](
-			httpClient,
-			baseURL+CommerceServiceDiscountRuleApproveProcedure,
-			connect.WithSchema(commerceServiceMethods.ByName("DiscountRuleApprove")),
-			connect.WithClientOptions(opts...),
-		),
-		resolvePrice: connect.NewClient[v1.ResolvePriceRequest, v1.ResolvePriceResponse](
-			httpClient,
-			baseURL+CommerceServiceResolvePriceProcedure,
-			connect.WithSchema(commerceServiceMethods.ByName("ResolvePrice")),
-			connect.WithClientOptions(opts...),
-		),
-	}
-}
-
-// commerceServiceClient implements CommerceServiceClient.
-type commerceServiceClient struct {
-	createShop                        *connect.Client[v1.CreateShopRequest, v1.CreateShopResponse]
-	getShop                           *connect.Client[v1.GetShopRequest, v1.GetShopResponse]
-	updateShop                        *connect.Client[v1.UpdateShopRequest, v1.UpdateShopResponse]
-	listShops                         *connect.Client[v1.ListShopsRequest, v1.ListShopsResponse]
-	resolveDefaultCurrency            *connect.Client[v1.ResolveDefaultCurrencyRequest, v1.ResolveDefaultCurrencyResponse]
-	createProduct                     *connect.Client[v1.CreateProductRequest, v1.CreateProductResponse]
-	getProduct                        *connect.Client[v1.GetProductRequest, v1.GetProductResponse]
-	listProducts                      *connect.Client[v1.ListProductsRequest, v1.ListProductsResponse]
-	createProductVariant              *connect.Client[v1.CreateProductVariantRequest, v1.CreateProductVariantResponse]
-	updateProductVariant              *connect.Client[v1.UpdateProductVariantRequest, v1.UpdateProductVariantResponse]
-	updateProduct                     *connect.Client[v1.UpdateProductRequest, v1.UpdateProductResponse]
-	listProductVariants               *connect.Client[v1.ListProductVariantsRequest, v1.ListProductVariantsResponse]
-	createCart                        *connect.Client[v1.CreateCartRequest, v1.CreateCartResponse]
-	getCart                           *connect.Client[v1.GetCartRequest, v1.GetCartResponse]
-	addCartLine                       *connect.Client[v1.AddCartLineRequest, v1.AddCartLineResponse]
-	removeCartLine                    *connect.Client[v1.RemoveCartLineRequest, v1.RemoveCartLineResponse]
-	createOrderFromCart               *connect.Client[v1.CreateOrderFromCartRequest, v1.CreateOrderFromCartResponse]
-	createOrder                       *connect.Client[v1.CreateOrderRequest, v1.CreateOrderResponse]
-	getOrder                          *connect.Client[v1.GetOrderRequest, v1.GetOrderResponse]
-	listOrders                        *connect.Client[v1.ListOrdersRequest, v1.ListOrdersResponse]
-	checkoutOrder                     *connect.Client[v1.CheckoutOrderRequest, v1.CheckoutOrderResponse]
-	confirmOrderPayment               *connect.Client[v1.ConfirmOrderPaymentRequest, v1.ConfirmOrderPaymentResponse]
-	cancelOrder                       *connect.Client[v1.CancelOrderRequest, v1.CancelOrderResponse]
-	recordOrderPayment                *connect.Client[v1.RecordOrderPaymentRequest, v1.RecordOrderPaymentResponse]
-	listOrderEvents                   *connect.Client[v1.ListOrderEventsRequest, v1.ListOrderEventsResponse]
-	reconcilePayments                 *connect.Client[v1.ReconcilePaymentsRequest, v1.ReconcilePaymentsResponse]
-	runEndOfDayLedger                 *connect.Client[v1.RunEndOfDayLedgerRequest, v1.RunEndOfDayLedgerResponse]
-	createFulfilment                  *connect.Client[v1.CreateFulfilmentRequest, v1.CreateFulfilmentResponse]
-	updateFulfilment                  *connect.Client[v1.UpdateFulfilmentRequest, v1.UpdateFulfilmentResponse]
-	getFulfilment                     *connect.Client[v1.GetFulfilmentRequest, v1.GetFulfilmentResponse]
-	listFulfilments                   *connect.Client[v1.ListFulfilmentsRequest, v1.ListFulfilmentsResponse]
-	priceListSave                     *connect.Client[v1.PriceListSaveRequest, v1.PriceListSaveResponse]
-	priceListGet                      *connect.Client[v1.PriceListGetRequest, v1.PriceListGetResponse]
-	priceListSearch                   *connect.Client[v1.PriceListSearchRequest, v1.PriceListSearchResponse]
-	priceListEntryBatchSave           *connect.Client[v1.PriceListEntryBatchSaveRequest, v1.PriceListEntryBatchSaveResponse]
-	customerPriceListAssignmentSave   *connect.Client[v1.CustomerPriceListAssignmentSaveRequest, v1.CustomerPriceListAssignmentSaveResponse]
-	customerPriceListAssignmentSearch *connect.Client[v1.CustomerPriceListAssignmentSearchRequest, v1.CustomerPriceListAssignmentSearchResponse]
-	customerPriceOverrideSave         *connect.Client[v1.CustomerPriceOverrideSaveRequest, v1.CustomerPriceOverrideSaveResponse]
-	customerPriceOverrideSearch       *connect.Client[v1.CustomerPriceOverrideSearchRequest, v1.CustomerPriceOverrideSearchResponse]
-	discountRuleSave                  *connect.Client[v1.DiscountRuleSaveRequest, v1.DiscountRuleSaveResponse]
-	discountRuleSearch                *connect.Client[v1.DiscountRuleSearchRequest, v1.DiscountRuleSearchResponse]
-	discountRuleApprove               *connect.Client[v1.DiscountRuleApproveRequest, v1.DiscountRuleApproveResponse]
-	resolvePrice                      *connect.Client[v1.ResolvePriceRequest, v1.ResolvePriceResponse]
-}
-
-// CreateShop calls commerce.v1.CommerceService.CreateShop.
-func (c *commerceServiceClient) CreateShop(ctx context.Context, req *connect.Request[v1.CreateShopRequest]) (*connect.Response[v1.CreateShopResponse], error) {
-	return c.createShop.CallUnary(ctx, req)
-}
-
-// GetShop calls commerce.v1.CommerceService.GetShop.
-func (c *commerceServiceClient) GetShop(ctx context.Context, req *connect.Request[v1.GetShopRequest]) (*connect.Response[v1.GetShopResponse], error) {
-	return c.getShop.CallUnary(ctx, req)
-}
-
-// UpdateShop calls commerce.v1.CommerceService.UpdateShop.
-func (c *commerceServiceClient) UpdateShop(ctx context.Context, req *connect.Request[v1.UpdateShopRequest]) (*connect.Response[v1.UpdateShopResponse], error) {
-	return c.updateShop.CallUnary(ctx, req)
-}
-
-// ListShops calls commerce.v1.CommerceService.ListShops.
-func (c *commerceServiceClient) ListShops(ctx context.Context, req *connect.Request[v1.ListShopsRequest]) (*connect.Response[v1.ListShopsResponse], error) {
-	return c.listShops.CallUnary(ctx, req)
-}
-
-// ResolveDefaultCurrency calls commerce.v1.CommerceService.ResolveDefaultCurrency.
-func (c *commerceServiceClient) ResolveDefaultCurrency(ctx context.Context, req *connect.Request[v1.ResolveDefaultCurrencyRequest]) (*connect.Response[v1.ResolveDefaultCurrencyResponse], error) {
-	return c.resolveDefaultCurrency.CallUnary(ctx, req)
-}
-
-// CreateProduct calls commerce.v1.CommerceService.CreateProduct.
-func (c *commerceServiceClient) CreateProduct(ctx context.Context, req *connect.Request[v1.CreateProductRequest]) (*connect.Response[v1.CreateProductResponse], error) {
-	return c.createProduct.CallUnary(ctx, req)
-}
-
-// GetProduct calls commerce.v1.CommerceService.GetProduct.
-func (c *commerceServiceClient) GetProduct(ctx context.Context, req *connect.Request[v1.GetProductRequest]) (*connect.Response[v1.GetProductResponse], error) {
-	return c.getProduct.CallUnary(ctx, req)
-}
-
-// ListProducts calls commerce.v1.CommerceService.ListProducts.
-func (c *commerceServiceClient) ListProducts(ctx context.Context, req *connect.Request[v1.ListProductsRequest]) (*connect.Response[v1.ListProductsResponse], error) {
-	return c.listProducts.CallUnary(ctx, req)
-}
-
-// CreateProductVariant calls commerce.v1.CommerceService.CreateProductVariant.
-func (c *commerceServiceClient) CreateProductVariant(ctx context.Context, req *connect.Request[v1.CreateProductVariantRequest]) (*connect.Response[v1.CreateProductVariantResponse], error) {
-	return c.createProductVariant.CallUnary(ctx, req)
-}
-
-// UpdateProductVariant calls commerce.v1.CommerceService.UpdateProductVariant.
-func (c *commerceServiceClient) UpdateProductVariant(ctx context.Context, req *connect.Request[v1.UpdateProductVariantRequest]) (*connect.Response[v1.UpdateProductVariantResponse], error) {
-	return c.updateProductVariant.CallUnary(ctx, req)
-}
-
-// UpdateProduct calls commerce.v1.CommerceService.UpdateProduct.
-func (c *commerceServiceClient) UpdateProduct(ctx context.Context, req *connect.Request[v1.UpdateProductRequest]) (*connect.Response[v1.UpdateProductResponse], error) {
-	return c.updateProduct.CallUnary(ctx, req)
-}
-
-// ListProductVariants calls commerce.v1.CommerceService.ListProductVariants.
-func (c *commerceServiceClient) ListProductVariants(ctx context.Context, req *connect.Request[v1.ListProductVariantsRequest]) (*connect.Response[v1.ListProductVariantsResponse], error) {
-	return c.listProductVariants.CallUnary(ctx, req)
-}
-
-// CreateCart calls commerce.v1.CommerceService.CreateCart.
-func (c *commerceServiceClient) CreateCart(ctx context.Context, req *connect.Request[v1.CreateCartRequest]) (*connect.Response[v1.CreateCartResponse], error) {
-	return c.createCart.CallUnary(ctx, req)
-}
-
-// GetCart calls commerce.v1.CommerceService.GetCart.
-func (c *commerceServiceClient) GetCart(ctx context.Context, req *connect.Request[v1.GetCartRequest]) (*connect.Response[v1.GetCartResponse], error) {
-	return c.getCart.CallUnary(ctx, req)
-}
-
-// AddCartLine calls commerce.v1.CommerceService.AddCartLine.
-func (c *commerceServiceClient) AddCartLine(ctx context.Context, req *connect.Request[v1.AddCartLineRequest]) (*connect.Response[v1.AddCartLineResponse], error) {
-	return c.addCartLine.CallUnary(ctx, req)
-}
-
-// RemoveCartLine calls commerce.v1.CommerceService.RemoveCartLine.
-func (c *commerceServiceClient) RemoveCartLine(ctx context.Context, req *connect.Request[v1.RemoveCartLineRequest]) (*connect.Response[v1.RemoveCartLineResponse], error) {
-	return c.removeCartLine.CallUnary(ctx, req)
-}
-
-// CreateOrderFromCart calls commerce.v1.CommerceService.CreateOrderFromCart.
-func (c *commerceServiceClient) CreateOrderFromCart(ctx context.Context, req *connect.Request[v1.CreateOrderFromCartRequest]) (*connect.Response[v1.CreateOrderFromCartResponse], error) {
-	return c.createOrderFromCart.CallUnary(ctx, req)
-}
-
-// CreateOrder calls commerce.v1.CommerceService.CreateOrder.
-func (c *commerceServiceClient) CreateOrder(ctx context.Context, req *connect.Request[v1.CreateOrderRequest]) (*connect.Response[v1.CreateOrderResponse], error) {
-	return c.createOrder.CallUnary(ctx, req)
-}
-
-// GetOrder calls commerce.v1.CommerceService.GetOrder.
-func (c *commerceServiceClient) GetOrder(ctx context.Context, req *connect.Request[v1.GetOrderRequest]) (*connect.Response[v1.GetOrderResponse], error) {
-	return c.getOrder.CallUnary(ctx, req)
-}
-
-// ListOrders calls commerce.v1.CommerceService.ListOrders.
-func (c *commerceServiceClient) ListOrders(ctx context.Context, req *connect.Request[v1.ListOrdersRequest]) (*connect.Response[v1.ListOrdersResponse], error) {
-	return c.listOrders.CallUnary(ctx, req)
-}
-
-// CheckoutOrder calls commerce.v1.CommerceService.CheckoutOrder.
-func (c *commerceServiceClient) CheckoutOrder(ctx context.Context, req *connect.Request[v1.CheckoutOrderRequest]) (*connect.Response[v1.CheckoutOrderResponse], error) {
-	return c.checkoutOrder.CallUnary(ctx, req)
-}
-
-// ConfirmOrderPayment calls commerce.v1.CommerceService.ConfirmOrderPayment.
-func (c *commerceServiceClient) ConfirmOrderPayment(ctx context.Context, req *connect.Request[v1.ConfirmOrderPaymentRequest]) (*connect.Response[v1.ConfirmOrderPaymentResponse], error) {
-	return c.confirmOrderPayment.CallUnary(ctx, req)
-}
-
-// CancelOrder calls commerce.v1.CommerceService.CancelOrder.
-func (c *commerceServiceClient) CancelOrder(ctx context.Context, req *connect.Request[v1.CancelOrderRequest]) (*connect.Response[v1.CancelOrderResponse], error) {
-	return c.cancelOrder.CallUnary(ctx, req)
-}
-
-// RecordOrderPayment calls commerce.v1.CommerceService.RecordOrderPayment.
-func (c *commerceServiceClient) RecordOrderPayment(ctx context.Context, req *connect.Request[v1.RecordOrderPaymentRequest]) (*connect.Response[v1.RecordOrderPaymentResponse], error) {
-	return c.recordOrderPayment.CallUnary(ctx, req)
-}
-
-// ListOrderEvents calls commerce.v1.CommerceService.ListOrderEvents.
-func (c *commerceServiceClient) ListOrderEvents(ctx context.Context, req *connect.Request[v1.ListOrderEventsRequest]) (*connect.Response[v1.ListOrderEventsResponse], error) {
-	return c.listOrderEvents.CallUnary(ctx, req)
-}
-
-// ReconcilePayments calls commerce.v1.CommerceService.ReconcilePayments.
-func (c *commerceServiceClient) ReconcilePayments(ctx context.Context, req *connect.Request[v1.ReconcilePaymentsRequest]) (*connect.Response[v1.ReconcilePaymentsResponse], error) {
-	return c.reconcilePayments.CallUnary(ctx, req)
-}
-
-// RunEndOfDayLedger calls commerce.v1.CommerceService.RunEndOfDayLedger.
-func (c *commerceServiceClient) RunEndOfDayLedger(ctx context.Context, req *connect.Request[v1.RunEndOfDayLedgerRequest]) (*connect.Response[v1.RunEndOfDayLedgerResponse], error) {
-	return c.runEndOfDayLedger.CallUnary(ctx, req)
-}
-
-// CreateFulfilment calls commerce.v1.CommerceService.CreateFulfilment.
-func (c *commerceServiceClient) CreateFulfilment(ctx context.Context, req *connect.Request[v1.CreateFulfilmentRequest]) (*connect.Response[v1.CreateFulfilmentResponse], error) {
-	return c.createFulfilment.CallUnary(ctx, req)
-}
-
-// UpdateFulfilment calls commerce.v1.CommerceService.UpdateFulfilment.
-func (c *commerceServiceClient) UpdateFulfilment(ctx context.Context, req *connect.Request[v1.UpdateFulfilmentRequest]) (*connect.Response[v1.UpdateFulfilmentResponse], error) {
-	return c.updateFulfilment.CallUnary(ctx, req)
-}
-
-// GetFulfilment calls commerce.v1.CommerceService.GetFulfilment.
-func (c *commerceServiceClient) GetFulfilment(ctx context.Context, req *connect.Request[v1.GetFulfilmentRequest]) (*connect.Response[v1.GetFulfilmentResponse], error) {
-	return c.getFulfilment.CallUnary(ctx, req)
-}
-
-// ListFulfilments calls commerce.v1.CommerceService.ListFulfilments.
-func (c *commerceServiceClient) ListFulfilments(ctx context.Context, req *connect.Request[v1.ListFulfilmentsRequest]) (*connect.Response[v1.ListFulfilmentsResponse], error) {
-	return c.listFulfilments.CallUnary(ctx, req)
-}
-
-// PriceListSave calls commerce.v1.CommerceService.PriceListSave.
-func (c *commerceServiceClient) PriceListSave(ctx context.Context, req *connect.Request[v1.PriceListSaveRequest]) (*connect.Response[v1.PriceListSaveResponse], error) {
-	return c.priceListSave.CallUnary(ctx, req)
-}
-
-// PriceListGet calls commerce.v1.CommerceService.PriceListGet.
-func (c *commerceServiceClient) PriceListGet(ctx context.Context, req *connect.Request[v1.PriceListGetRequest]) (*connect.Response[v1.PriceListGetResponse], error) {
-	return c.priceListGet.CallUnary(ctx, req)
-}
-
-// PriceListSearch calls commerce.v1.CommerceService.PriceListSearch.
-func (c *commerceServiceClient) PriceListSearch(ctx context.Context, req *connect.Request[v1.PriceListSearchRequest]) (*connect.Response[v1.PriceListSearchResponse], error) {
-	return c.priceListSearch.CallUnary(ctx, req)
-}
-
-// PriceListEntryBatchSave calls commerce.v1.CommerceService.PriceListEntryBatchSave.
-func (c *commerceServiceClient) PriceListEntryBatchSave(ctx context.Context, req *connect.Request[v1.PriceListEntryBatchSaveRequest]) (*connect.Response[v1.PriceListEntryBatchSaveResponse], error) {
-	return c.priceListEntryBatchSave.CallUnary(ctx, req)
-}
-
-// CustomerPriceListAssignmentSave calls
-// commerce.v1.CommerceService.CustomerPriceListAssignmentSave.
-func (c *commerceServiceClient) CustomerPriceListAssignmentSave(ctx context.Context, req *connect.Request[v1.CustomerPriceListAssignmentSaveRequest]) (*connect.Response[v1.CustomerPriceListAssignmentSaveResponse], error) {
-	return c.customerPriceListAssignmentSave.CallUnary(ctx, req)
-}
-
-// CustomerPriceListAssignmentSearch calls
-// commerce.v1.CommerceService.CustomerPriceListAssignmentSearch.
-func (c *commerceServiceClient) CustomerPriceListAssignmentSearch(ctx context.Context, req *connect.Request[v1.CustomerPriceListAssignmentSearchRequest]) (*connect.Response[v1.CustomerPriceListAssignmentSearchResponse], error) {
-	return c.customerPriceListAssignmentSearch.CallUnary(ctx, req)
-}
-
-// CustomerPriceOverrideSave calls commerce.v1.CommerceService.CustomerPriceOverrideSave.
-func (c *commerceServiceClient) CustomerPriceOverrideSave(ctx context.Context, req *connect.Request[v1.CustomerPriceOverrideSaveRequest]) (*connect.Response[v1.CustomerPriceOverrideSaveResponse], error) {
-	return c.customerPriceOverrideSave.CallUnary(ctx, req)
-}
-
-// CustomerPriceOverrideSearch calls commerce.v1.CommerceService.CustomerPriceOverrideSearch.
-func (c *commerceServiceClient) CustomerPriceOverrideSearch(ctx context.Context, req *connect.Request[v1.CustomerPriceOverrideSearchRequest]) (*connect.Response[v1.CustomerPriceOverrideSearchResponse], error) {
-	return c.customerPriceOverrideSearch.CallUnary(ctx, req)
-}
-
-// DiscountRuleSave calls commerce.v1.CommerceService.DiscountRuleSave.
-func (c *commerceServiceClient) DiscountRuleSave(ctx context.Context, req *connect.Request[v1.DiscountRuleSaveRequest]) (*connect.Response[v1.DiscountRuleSaveResponse], error) {
-	return c.discountRuleSave.CallUnary(ctx, req)
-}
-
-// DiscountRuleSearch calls commerce.v1.CommerceService.DiscountRuleSearch.
-func (c *commerceServiceClient) DiscountRuleSearch(ctx context.Context, req *connect.Request[v1.DiscountRuleSearchRequest]) (*connect.Response[v1.DiscountRuleSearchResponse], error) {
-	return c.discountRuleSearch.CallUnary(ctx, req)
-}
-
-// DiscountRuleApprove calls commerce.v1.CommerceService.DiscountRuleApprove.
-func (c *commerceServiceClient) DiscountRuleApprove(ctx context.Context, req *connect.Request[v1.DiscountRuleApproveRequest]) (*connect.Response[v1.DiscountRuleApproveResponse], error) {
-	return c.discountRuleApprove.CallUnary(ctx, req)
-}
-
-// ResolvePrice calls commerce.v1.CommerceService.ResolvePrice.
-func (c *commerceServiceClient) ResolvePrice(ctx context.Context, req *connect.Request[v1.ResolvePriceRequest]) (*connect.Response[v1.ResolvePriceResponse], error) {
-	return c.resolvePrice.CallUnary(ctx, req)
+// NewCommerceServiceClient constructs a client for the commerce.v1.CommerceService service.
+// Multiple service clients may share a single connect.Client.
+func NewCommerceServiceClient(client *connect.Client) CommerceServiceClient {
+	return &commerceServiceClient{client: client}
 }
 
 // CommerceServiceHandler is an implementation of the commerce.v1.CommerceService service.
 type CommerceServiceHandler interface {
 	// Creates a new shop. The authenticated user becomes the admin.
-	CreateShop(context.Context, *connect.Request[v1.CreateShopRequest]) (*connect.Response[v1.CreateShopResponse], error)
+	CreateShop(context.Context, *v1.CreateShopRequest) (*v1.CreateShopResponse, error)
 	// Retrieves shop details by ID.
-	GetShop(context.Context, *connect.Request[v1.GetShopRequest]) (*connect.Response[v1.GetShopResponse], error)
+	GetShop(context.Context, *v1.GetShopRequest) (*v1.GetShopResponse, error)
 	// Updates shop details.
-	UpdateShop(context.Context, *connect.Request[v1.UpdateShopRequest]) (*connect.Response[v1.UpdateShopResponse], error)
+	UpdateShop(context.Context, *v1.UpdateShopRequest) (*v1.UpdateShopResponse, error)
 	// Lists the shops in the caller's partition.
-	ListShops(context.Context, *connect.Request[v1.ListShopsRequest]) (*connect.Response[v1.ListShopsResponse], error)
+	ListShops(context.Context, *v1.ListShopsRequest) (*v1.ListShopsResponse, error)
 	// Resolves the currency the caller most likely trades in: their currency
 	// setting, else the locale of the device they are signed in on, else the
 	// country of their first profile address. CreateShop applies the same
 	// default when no currency is given.
-	ResolveDefaultCurrency(context.Context, *connect.Request[v1.ResolveDefaultCurrencyRequest]) (*connect.Response[v1.ResolveDefaultCurrencyResponse], error)
+	ResolveDefaultCurrency(context.Context, *v1.ResolveDefaultCurrencyRequest) (*v1.ResolveDefaultCurrencyResponse, error)
 	// Creates a new product in the catalog.
-	CreateProduct(context.Context, *connect.Request[v1.CreateProductRequest]) (*connect.Response[v1.CreateProductResponse], error)
+	CreateProduct(context.Context, *v1.CreateProductRequest) (*v1.CreateProductResponse, error)
 	// Retrieves a product by its ID.
-	GetProduct(context.Context, *connect.Request[v1.GetProductRequest]) (*connect.Response[v1.GetProductResponse], error)
+	GetProduct(context.Context, *v1.GetProductRequest) (*v1.GetProductResponse, error)
 	// Lists products belonging to a shop, with optional search and filtering.
-	ListProducts(context.Context, *connect.Request[v1.ListProductsRequest]) (*connect.Response[v1.ListProductsResponse], error)
+	ListProducts(context.Context, *v1.ListProductsRequest) (*v1.ListProductsResponse, error)
 	// Creates a new variant for a product.
-	CreateProductVariant(context.Context, *connect.Request[v1.CreateProductVariantRequest]) (*connect.Response[v1.CreateProductVariantResponse], error)
+	CreateProductVariant(context.Context, *v1.CreateProductVariantRequest) (*v1.CreateProductVariantResponse, error)
 	// Updates an existing product variant.
-	UpdateProductVariant(context.Context, *connect.Request[v1.UpdateProductVariantRequest]) (*connect.Response[v1.UpdateProductVariantResponse], error)
+	UpdateProductVariant(context.Context, *v1.UpdateProductVariantRequest) (*v1.UpdateProductVariantResponse, error)
 	// Updates a product: details, fulfilment type, status, and its payment
 	// policy override.
-	UpdateProduct(context.Context, *connect.Request[v1.UpdateProductRequest]) (*connect.Response[v1.UpdateProductResponse], error)
+	UpdateProduct(context.Context, *v1.UpdateProductRequest) (*v1.UpdateProductResponse, error)
 	// Lists the variants of a product.
-	ListProductVariants(context.Context, *connect.Request[v1.ListProductVariantsRequest]) (*connect.Response[v1.ListProductVariantsResponse], error)
-	CreateCart(context.Context, *connect.Request[v1.CreateCartRequest]) (*connect.Response[v1.CreateCartResponse], error)
-	GetCart(context.Context, *connect.Request[v1.GetCartRequest]) (*connect.Response[v1.GetCartResponse], error)
-	AddCartLine(context.Context, *connect.Request[v1.AddCartLineRequest]) (*connect.Response[v1.AddCartLineResponse], error)
-	RemoveCartLine(context.Context, *connect.Request[v1.RemoveCartLineRequest]) (*connect.Response[v1.RemoveCartLineResponse], error)
-	CreateOrderFromCart(context.Context, *connect.Request[v1.CreateOrderFromCartRequest]) (*connect.Response[v1.CreateOrderFromCartResponse], error)
-	// Creates an order and reserves stock atomically.
+	ListProductVariants(context.Context, *v1.ListProductVariantsRequest) (*v1.ListProductVariantsResponse, error)
+	CreateCart(context.Context, *v1.CreateCartRequest) (*v1.CreateCartResponse, error)
+	GetCart(context.Context, *v1.GetCartRequest) (*v1.GetCartResponse, error)
+	AddCartLine(context.Context, *v1.AddCartLineRequest) (*v1.AddCartLineResponse, error)
+	RemoveCartLine(context.Context, *v1.RemoveCartLineRequest) (*v1.RemoveCartLineResponse, error)
+	CreateOrderFromCart(context.Context, *v1.CreateOrderFromCartRequest) (*v1.CreateOrderFromCartResponse, error)
 	//
-	// The server MUST:
-	// - validate all variants belong to the shop
-	// - validate sufficient stock
-	// - decrement stock
-	// - snapshot price and name
-	// - compute totals
+	//Creates an order and reserves stock atomically.
 	//
-	// The order is created in CONFIRMED state
-	// (since this API does not handle payments).
-	CreateOrder(context.Context, *connect.Request[v1.CreateOrderRequest]) (*connect.Response[v1.CreateOrderResponse], error)
+	//The server MUST:
+	//- validate all variants belong to the shop
+	//- validate sufficient stock
+	//- decrement stock
+	//- snapshot price and name
+	//- compute totals
+	//
+	//The order is created in CONFIRMED state
+	//(since this API does not handle payments).
+	CreateOrder(context.Context, *v1.CreateOrderRequest) (*v1.CreateOrderResponse, error)
 	// Retrieves an order by ID.
-	GetOrder(context.Context, *connect.Request[v1.GetOrderRequest]) (*connect.Response[v1.GetOrderResponse], error)
+	GetOrder(context.Context, *v1.GetOrderRequest) (*v1.GetOrderResponse, error)
 	// Lists orders for a shop, with optional search and filtering.
-	ListOrders(context.Context, *connect.Request[v1.ListOrdersRequest]) (*connect.Response[v1.ListOrdersResponse], error)
+	ListOrders(context.Context, *v1.ListOrdersRequest) (*v1.ListOrdersResponse, error)
 	// Starts payment for an order: creates a hosted checkout session and
 	// returns the page the buyer should be sent to. Idempotent per order.
-	CheckoutOrder(context.Context, *connect.Request[v1.CheckoutOrderRequest]) (*connect.Response[v1.CheckoutOrderResponse], error)
+	CheckoutOrder(context.Context, *v1.CheckoutOrderRequest) (*v1.CheckoutOrderResponse, error)
 	// Marks an order paid after verifying the checkout session with the
 	// payment service. Safe to call repeatedly; used by staff and by the
 	// scheduled reconciler.
-	ConfirmOrderPayment(context.Context, *connect.Request[v1.ConfirmOrderPaymentRequest]) (*connect.Response[v1.ConfirmOrderPaymentResponse], error)
+	ConfirmOrderPayment(context.Context, *v1.ConfirmOrderPaymentRequest) (*v1.ConfirmOrderPaymentResponse, error)
 	// Cancels an unfulfilled order and returns its stock. Buyers may cancel
 	// their own unpaid orders; staff may cancel any unfulfilled order.
-	CancelOrder(context.Context, *connect.Request[v1.CancelOrderRequest]) (*connect.Response[v1.CancelOrderResponse], error)
+	CancelOrder(context.Context, *v1.CancelOrderRequest) (*v1.CancelOrderResponse, error)
 	// Records a payment the shop took itself (cash, bank transfer, a till) as
 	// an instalment against the order. Staff only. A reference already
 	// recorded on the order is returned as-is, so retries are safe.
-	RecordOrderPayment(context.Context, *connect.Request[v1.RecordOrderPaymentRequest]) (*connect.Response[v1.RecordOrderPaymentResponse], error)
+	RecordOrderPayment(context.Context, *v1.RecordOrderPaymentRequest) (*v1.RecordOrderPaymentResponse, error)
 	// Lists payment and lifecycle signals for an order, or for every order in
 	// a shop, oldest first. The same events are pushed to the shop's webhook.
-	ListOrderEvents(context.Context, *connect.Request[v1.ListOrderEventsRequest]) (*connect.Response[v1.ListOrderEventsResponse], error)
+	ListOrderEvents(context.Context, *v1.ListOrderEventsRequest) (*v1.ListOrderEventsResponse, error)
 	// Reconciles orders awaiting payment against the payment service and
 	// expires reservations whose payment window has lapsed. Scheduled.
-	ReconcilePayments(context.Context, *connect.Request[v1.ReconcilePaymentsRequest]) (*connect.Response[v1.ReconcilePaymentsResponse], error)
+	ReconcilePayments(context.Context, *v1.ReconcilePaymentsRequest) (*v1.ReconcilePaymentsResponse, error)
 	// Posts one balanced ledger transaction per shop for a trading day,
 	// merging that day's paid and refunded orders. Scheduled end of day.
-	RunEndOfDayLedger(context.Context, *connect.Request[v1.RunEndOfDayLedgerRequest]) (*connect.Response[v1.RunEndOfDayLedgerResponse], error)
-	// Creates a fulfilment for an order.
+	RunEndOfDayLedger(context.Context, *v1.RunEndOfDayLedgerRequest) (*v1.RunEndOfDayLedgerResponse, error)
 	//
-	// A fulfilment may contain a subset of order lines.
-	// Quantity per line MUST NOT exceed remaining unfulfilled quantity.
-	CreateFulfilment(context.Context, *connect.Request[v1.CreateFulfilmentRequest]) (*connect.Response[v1.CreateFulfilmentResponse], error)
+	//Creates a fulfilment for an order.
+	//
+	//A fulfilment may contain a subset of order lines.
+	//Quantity per line MUST NOT exceed remaining unfulfilled quantity.
+	CreateFulfilment(context.Context, *v1.CreateFulfilmentRequest) (*v1.CreateFulfilmentResponse, error)
 	// Updates a fulfilment (e.g. adding tracking number, marking as shipped).
-	UpdateFulfilment(context.Context, *connect.Request[v1.UpdateFulfilmentRequest]) (*connect.Response[v1.UpdateFulfilmentResponse], error)
+	UpdateFulfilment(context.Context, *v1.UpdateFulfilmentRequest) (*v1.UpdateFulfilmentResponse, error)
 	// Retrieves a fulfilment by ID.
-	GetFulfilment(context.Context, *connect.Request[v1.GetFulfilmentRequest]) (*connect.Response[v1.GetFulfilmentResponse], error)
+	GetFulfilment(context.Context, *v1.GetFulfilmentRequest) (*v1.GetFulfilmentResponse, error)
 	// Lists an order's fulfilments, oldest first.
-	ListFulfilments(context.Context, *connect.Request[v1.ListFulfilmentsRequest]) (*connect.Response[v1.ListFulfilmentsResponse], error)
+	ListFulfilments(context.Context, *v1.ListFulfilmentsRequest) (*v1.ListFulfilmentsResponse, error)
 	// Creates or updates a price list.
-	PriceListSave(context.Context, *connect.Request[v1.PriceListSaveRequest]) (*connect.Response[v1.PriceListSaveResponse], error)
+	PriceListSave(context.Context, *v1.PriceListSaveRequest) (*v1.PriceListSaveResponse, error)
 	// Retrieves a price list by ID.
-	PriceListGet(context.Context, *connect.Request[v1.PriceListGetRequest]) (*connect.Response[v1.PriceListGetResponse], error)
+	PriceListGet(context.Context, *v1.PriceListGetRequest) (*v1.PriceListGetResponse, error)
 	// Searches price lists for a shop.
-	PriceListSearch(context.Context, *connect.Request[v1.PriceListSearchRequest]) (*connect.Response[v1.PriceListSearchResponse], error)
+	PriceListSearch(context.Context, *v1.PriceListSearchRequest) (*v1.PriceListSearchResponse, error)
 	// Replaces all entries for the given variants in a price list.
-	PriceListEntryBatchSave(context.Context, *connect.Request[v1.PriceListEntryBatchSaveRequest]) (*connect.Response[v1.PriceListEntryBatchSaveResponse], error)
+	PriceListEntryBatchSave(context.Context, *v1.PriceListEntryBatchSaveRequest) (*v1.PriceListEntryBatchSaveResponse, error)
 	// Creates or updates a customer-to-price-list assignment.
-	CustomerPriceListAssignmentSave(context.Context, *connect.Request[v1.CustomerPriceListAssignmentSaveRequest]) (*connect.Response[v1.CustomerPriceListAssignmentSaveResponse], error)
+	CustomerPriceListAssignmentSave(context.Context, *v1.CustomerPriceListAssignmentSaveRequest) (*v1.CustomerPriceListAssignmentSaveResponse, error)
 	// Searches customer price list assignments.
-	CustomerPriceListAssignmentSearch(context.Context, *connect.Request[v1.CustomerPriceListAssignmentSearchRequest]) (*connect.Response[v1.CustomerPriceListAssignmentSearchResponse], error)
+	CustomerPriceListAssignmentSearch(context.Context, *v1.CustomerPriceListAssignmentSearchRequest) (*v1.CustomerPriceListAssignmentSearchResponse, error)
 	// Creates or updates a customer price override for a specific variant.
-	CustomerPriceOverrideSave(context.Context, *connect.Request[v1.CustomerPriceOverrideSaveRequest]) (*connect.Response[v1.CustomerPriceOverrideSaveResponse], error)
+	CustomerPriceOverrideSave(context.Context, *v1.CustomerPriceOverrideSaveRequest) (*v1.CustomerPriceOverrideSaveResponse, error)
 	// Searches customer price overrides.
-	CustomerPriceOverrideSearch(context.Context, *connect.Request[v1.CustomerPriceOverrideSearchRequest]) (*connect.Response[v1.CustomerPriceOverrideSearchResponse], error)
+	CustomerPriceOverrideSearch(context.Context, *v1.CustomerPriceOverrideSearchRequest) (*v1.CustomerPriceOverrideSearchResponse, error)
 	// Creates or updates a discount rule.
-	DiscountRuleSave(context.Context, *connect.Request[v1.DiscountRuleSaveRequest]) (*connect.Response[v1.DiscountRuleSaveResponse], error)
+	DiscountRuleSave(context.Context, *v1.DiscountRuleSaveRequest) (*v1.DiscountRuleSaveResponse, error)
 	// Searches discount rules for a shop.
-	DiscountRuleSearch(context.Context, *connect.Request[v1.DiscountRuleSearchRequest]) (*connect.Response[v1.DiscountRuleSearchResponse], error)
+	DiscountRuleSearch(context.Context, *v1.DiscountRuleSearchRequest) (*v1.DiscountRuleSearchResponse, error)
 	// Approves a discount rule that requires approval, so pricing may apply
 	// it automatically.
-	DiscountRuleApprove(context.Context, *connect.Request[v1.DiscountRuleApproveRequest]) (*connect.Response[v1.DiscountRuleApproveResponse], error)
+	DiscountRuleApprove(context.Context, *v1.DiscountRuleApproveRequest) (*v1.DiscountRuleApproveResponse, error)
 	// Resolves the effective price for a variant given customer and quantity context.
-	ResolvePrice(context.Context, *connect.Request[v1.ResolvePriceRequest]) (*connect.Response[v1.ResolvePriceResponse], error)
+	ResolvePrice(context.Context, *v1.ResolvePriceRequest) (*v1.ResolvePriceResponse, error)
 }
 
-// NewCommerceServiceHandler builds an HTTP handler from the service implementation. It returns the
-// path on which to mount the handler and the handler itself.
-//
-// By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
-// and JSON codecs. They also support gzip compression.
-func NewCommerceServiceHandler(svc CommerceServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
-	commerceServiceMethods := v1.File_v1_commerce_proto.Services().ByName("CommerceService").Methods()
-	commerceServiceCreateShopHandler := connect.NewUnaryHandler(
-		CommerceServiceCreateShopProcedure,
-		svc.CreateShop,
-		connect.WithSchema(commerceServiceMethods.ByName("CreateShop")),
-		connect.WithHandlerOptions(opts...),
+// RegisterCommerceServiceHandler registers svc as the commerce.v1.CommerceService implementation on
+// server.
+func RegisterCommerceServiceHandler(server *connect.Server, svc CommerceServiceHandler) {
+	adapter := commerceServiceHandler{svc: svc}
+	server.Register(
+		connect.Method{Spec: commerceServiceCreateShopSpec(), Handler: adapter.createShop},
+		connect.Method{Spec: commerceServiceGetShopSpec(), Handler: adapter.getShop},
+		connect.Method{Spec: commerceServiceUpdateShopSpec(), Handler: adapter.updateShop},
+		connect.Method{Spec: commerceServiceListShopsSpec(), Handler: adapter.listShops},
+		connect.Method{Spec: commerceServiceResolveDefaultCurrencySpec(), Handler: adapter.resolveDefaultCurrency},
+		connect.Method{Spec: commerceServiceCreateProductSpec(), Handler: adapter.createProduct},
+		connect.Method{Spec: commerceServiceGetProductSpec(), Handler: adapter.getProduct},
+		connect.Method{Spec: commerceServiceListProductsSpec(), Handler: adapter.listProducts},
+		connect.Method{Spec: commerceServiceCreateProductVariantSpec(), Handler: adapter.createProductVariant},
+		connect.Method{Spec: commerceServiceUpdateProductVariantSpec(), Handler: adapter.updateProductVariant},
+		connect.Method{Spec: commerceServiceUpdateProductSpec(), Handler: adapter.updateProduct},
+		connect.Method{Spec: commerceServiceListProductVariantsSpec(), Handler: adapter.listProductVariants},
+		connect.Method{Spec: commerceServiceCreateCartSpec(), Handler: adapter.createCart},
+		connect.Method{Spec: commerceServiceGetCartSpec(), Handler: adapter.getCart},
+		connect.Method{Spec: commerceServiceAddCartLineSpec(), Handler: adapter.addCartLine},
+		connect.Method{Spec: commerceServiceRemoveCartLineSpec(), Handler: adapter.removeCartLine},
+		connect.Method{Spec: commerceServiceCreateOrderFromCartSpec(), Handler: adapter.createOrderFromCart},
+		connect.Method{Spec: commerceServiceCreateOrderSpec(), Handler: adapter.createOrder},
+		connect.Method{Spec: commerceServiceGetOrderSpec(), Handler: adapter.getOrder},
+		connect.Method{Spec: commerceServiceListOrdersSpec(), Handler: adapter.listOrders},
+		connect.Method{Spec: commerceServiceCheckoutOrderSpec(), Handler: adapter.checkoutOrder},
+		connect.Method{Spec: commerceServiceConfirmOrderPaymentSpec(), Handler: adapter.confirmOrderPayment},
+		connect.Method{Spec: commerceServiceCancelOrderSpec(), Handler: adapter.cancelOrder},
+		connect.Method{Spec: commerceServiceRecordOrderPaymentSpec(), Handler: adapter.recordOrderPayment},
+		connect.Method{Spec: commerceServiceListOrderEventsSpec(), Handler: adapter.listOrderEvents},
+		connect.Method{Spec: commerceServiceReconcilePaymentsSpec(), Handler: adapter.reconcilePayments},
+		connect.Method{Spec: commerceServiceRunEndOfDayLedgerSpec(), Handler: adapter.runEndOfDayLedger},
+		connect.Method{Spec: commerceServiceCreateFulfilmentSpec(), Handler: adapter.createFulfilment},
+		connect.Method{Spec: commerceServiceUpdateFulfilmentSpec(), Handler: adapter.updateFulfilment},
+		connect.Method{Spec: commerceServiceGetFulfilmentSpec(), Handler: adapter.getFulfilment},
+		connect.Method{Spec: commerceServiceListFulfilmentsSpec(), Handler: adapter.listFulfilments},
+		connect.Method{Spec: commerceServicePriceListSaveSpec(), Handler: adapter.priceListSave},
+		connect.Method{Spec: commerceServicePriceListGetSpec(), Handler: adapter.priceListGet},
+		connect.Method{Spec: commerceServicePriceListSearchSpec(), Handler: adapter.priceListSearch},
+		connect.Method{Spec: commerceServicePriceListEntryBatchSaveSpec(), Handler: adapter.priceListEntryBatchSave},
+		connect.Method{Spec: commerceServiceCustomerPriceListAssignmentSaveSpec(), Handler: adapter.customerPriceListAssignmentSave},
+		connect.Method{Spec: commerceServiceCustomerPriceListAssignmentSearchSpec(), Handler: adapter.customerPriceListAssignmentSearch},
+		connect.Method{Spec: commerceServiceCustomerPriceOverrideSaveSpec(), Handler: adapter.customerPriceOverrideSave},
+		connect.Method{Spec: commerceServiceCustomerPriceOverrideSearchSpec(), Handler: adapter.customerPriceOverrideSearch},
+		connect.Method{Spec: commerceServiceDiscountRuleSaveSpec(), Handler: adapter.discountRuleSave},
+		connect.Method{Spec: commerceServiceDiscountRuleSearchSpec(), Handler: adapter.discountRuleSearch},
+		connect.Method{Spec: commerceServiceDiscountRuleApproveSpec(), Handler: adapter.discountRuleApprove},
+		connect.Method{Spec: commerceServiceResolvePriceSpec(), Handler: adapter.resolvePrice},
 	)
-	commerceServiceGetShopHandler := connect.NewUnaryHandler(
-		CommerceServiceGetShopProcedure,
-		svc.GetShop,
-		connect.WithSchema(commerceServiceMethods.ByName("GetShop")),
-		connect.WithHandlerOptions(opts...),
-	)
-	commerceServiceUpdateShopHandler := connect.NewUnaryHandler(
-		CommerceServiceUpdateShopProcedure,
-		svc.UpdateShop,
-		connect.WithSchema(commerceServiceMethods.ByName("UpdateShop")),
-		connect.WithHandlerOptions(opts...),
-	)
-	commerceServiceListShopsHandler := connect.NewUnaryHandler(
-		CommerceServiceListShopsProcedure,
-		svc.ListShops,
-		connect.WithSchema(commerceServiceMethods.ByName("ListShops")),
-		connect.WithHandlerOptions(opts...),
-	)
-	commerceServiceResolveDefaultCurrencyHandler := connect.NewUnaryHandler(
-		CommerceServiceResolveDefaultCurrencyProcedure,
-		svc.ResolveDefaultCurrency,
-		connect.WithSchema(commerceServiceMethods.ByName("ResolveDefaultCurrency")),
-		connect.WithHandlerOptions(opts...),
-	)
-	commerceServiceCreateProductHandler := connect.NewUnaryHandler(
-		CommerceServiceCreateProductProcedure,
-		svc.CreateProduct,
-		connect.WithSchema(commerceServiceMethods.ByName("CreateProduct")),
-		connect.WithHandlerOptions(opts...),
-	)
-	commerceServiceGetProductHandler := connect.NewUnaryHandler(
-		CommerceServiceGetProductProcedure,
-		svc.GetProduct,
-		connect.WithSchema(commerceServiceMethods.ByName("GetProduct")),
-		connect.WithHandlerOptions(opts...),
-	)
-	commerceServiceListProductsHandler := connect.NewUnaryHandler(
-		CommerceServiceListProductsProcedure,
-		svc.ListProducts,
-		connect.WithSchema(commerceServiceMethods.ByName("ListProducts")),
-		connect.WithHandlerOptions(opts...),
-	)
-	commerceServiceCreateProductVariantHandler := connect.NewUnaryHandler(
-		CommerceServiceCreateProductVariantProcedure,
-		svc.CreateProductVariant,
-		connect.WithSchema(commerceServiceMethods.ByName("CreateProductVariant")),
-		connect.WithHandlerOptions(opts...),
-	)
-	commerceServiceUpdateProductVariantHandler := connect.NewUnaryHandler(
-		CommerceServiceUpdateProductVariantProcedure,
-		svc.UpdateProductVariant,
-		connect.WithSchema(commerceServiceMethods.ByName("UpdateProductVariant")),
-		connect.WithHandlerOptions(opts...),
-	)
-	commerceServiceUpdateProductHandler := connect.NewUnaryHandler(
-		CommerceServiceUpdateProductProcedure,
-		svc.UpdateProduct,
-		connect.WithSchema(commerceServiceMethods.ByName("UpdateProduct")),
-		connect.WithHandlerOptions(opts...),
-	)
-	commerceServiceListProductVariantsHandler := connect.NewUnaryHandler(
-		CommerceServiceListProductVariantsProcedure,
-		svc.ListProductVariants,
-		connect.WithSchema(commerceServiceMethods.ByName("ListProductVariants")),
-		connect.WithHandlerOptions(opts...),
-	)
-	commerceServiceCreateCartHandler := connect.NewUnaryHandler(
-		CommerceServiceCreateCartProcedure,
-		svc.CreateCart,
-		connect.WithSchema(commerceServiceMethods.ByName("CreateCart")),
-		connect.WithHandlerOptions(opts...),
-	)
-	commerceServiceGetCartHandler := connect.NewUnaryHandler(
-		CommerceServiceGetCartProcedure,
-		svc.GetCart,
-		connect.WithSchema(commerceServiceMethods.ByName("GetCart")),
-		connect.WithHandlerOptions(opts...),
-	)
-	commerceServiceAddCartLineHandler := connect.NewUnaryHandler(
-		CommerceServiceAddCartLineProcedure,
-		svc.AddCartLine,
-		connect.WithSchema(commerceServiceMethods.ByName("AddCartLine")),
-		connect.WithHandlerOptions(opts...),
-	)
-	commerceServiceRemoveCartLineHandler := connect.NewUnaryHandler(
-		CommerceServiceRemoveCartLineProcedure,
-		svc.RemoveCartLine,
-		connect.WithSchema(commerceServiceMethods.ByName("RemoveCartLine")),
-		connect.WithHandlerOptions(opts...),
-	)
-	commerceServiceCreateOrderFromCartHandler := connect.NewUnaryHandler(
-		CommerceServiceCreateOrderFromCartProcedure,
-		svc.CreateOrderFromCart,
-		connect.WithSchema(commerceServiceMethods.ByName("CreateOrderFromCart")),
-		connect.WithHandlerOptions(opts...),
-	)
-	commerceServiceCreateOrderHandler := connect.NewUnaryHandler(
-		CommerceServiceCreateOrderProcedure,
-		svc.CreateOrder,
-		connect.WithSchema(commerceServiceMethods.ByName("CreateOrder")),
-		connect.WithHandlerOptions(opts...),
-	)
-	commerceServiceGetOrderHandler := connect.NewUnaryHandler(
-		CommerceServiceGetOrderProcedure,
-		svc.GetOrder,
-		connect.WithSchema(commerceServiceMethods.ByName("GetOrder")),
-		connect.WithHandlerOptions(opts...),
-	)
-	commerceServiceListOrdersHandler := connect.NewUnaryHandler(
-		CommerceServiceListOrdersProcedure,
-		svc.ListOrders,
-		connect.WithSchema(commerceServiceMethods.ByName("ListOrders")),
-		connect.WithHandlerOptions(opts...),
-	)
-	commerceServiceCheckoutOrderHandler := connect.NewUnaryHandler(
-		CommerceServiceCheckoutOrderProcedure,
-		svc.CheckoutOrder,
-		connect.WithSchema(commerceServiceMethods.ByName("CheckoutOrder")),
-		connect.WithHandlerOptions(opts...),
-	)
-	commerceServiceConfirmOrderPaymentHandler := connect.NewUnaryHandler(
-		CommerceServiceConfirmOrderPaymentProcedure,
-		svc.ConfirmOrderPayment,
-		connect.WithSchema(commerceServiceMethods.ByName("ConfirmOrderPayment")),
-		connect.WithHandlerOptions(opts...),
-	)
-	commerceServiceCancelOrderHandler := connect.NewUnaryHandler(
-		CommerceServiceCancelOrderProcedure,
-		svc.CancelOrder,
-		connect.WithSchema(commerceServiceMethods.ByName("CancelOrder")),
-		connect.WithHandlerOptions(opts...),
-	)
-	commerceServiceRecordOrderPaymentHandler := connect.NewUnaryHandler(
-		CommerceServiceRecordOrderPaymentProcedure,
-		svc.RecordOrderPayment,
-		connect.WithSchema(commerceServiceMethods.ByName("RecordOrderPayment")),
-		connect.WithHandlerOptions(opts...),
-	)
-	commerceServiceListOrderEventsHandler := connect.NewUnaryHandler(
-		CommerceServiceListOrderEventsProcedure,
-		svc.ListOrderEvents,
-		connect.WithSchema(commerceServiceMethods.ByName("ListOrderEvents")),
-		connect.WithHandlerOptions(opts...),
-	)
-	commerceServiceReconcilePaymentsHandler := connect.NewUnaryHandler(
-		CommerceServiceReconcilePaymentsProcedure,
-		svc.ReconcilePayments,
-		connect.WithSchema(commerceServiceMethods.ByName("ReconcilePayments")),
-		connect.WithHandlerOptions(opts...),
-	)
-	commerceServiceRunEndOfDayLedgerHandler := connect.NewUnaryHandler(
-		CommerceServiceRunEndOfDayLedgerProcedure,
-		svc.RunEndOfDayLedger,
-		connect.WithSchema(commerceServiceMethods.ByName("RunEndOfDayLedger")),
-		connect.WithHandlerOptions(opts...),
-	)
-	commerceServiceCreateFulfilmentHandler := connect.NewUnaryHandler(
-		CommerceServiceCreateFulfilmentProcedure,
-		svc.CreateFulfilment,
-		connect.WithSchema(commerceServiceMethods.ByName("CreateFulfilment")),
-		connect.WithHandlerOptions(opts...),
-	)
-	commerceServiceUpdateFulfilmentHandler := connect.NewUnaryHandler(
-		CommerceServiceUpdateFulfilmentProcedure,
-		svc.UpdateFulfilment,
-		connect.WithSchema(commerceServiceMethods.ByName("UpdateFulfilment")),
-		connect.WithHandlerOptions(opts...),
-	)
-	commerceServiceGetFulfilmentHandler := connect.NewUnaryHandler(
-		CommerceServiceGetFulfilmentProcedure,
-		svc.GetFulfilment,
-		connect.WithSchema(commerceServiceMethods.ByName("GetFulfilment")),
-		connect.WithHandlerOptions(opts...),
-	)
-	commerceServiceListFulfilmentsHandler := connect.NewUnaryHandler(
-		CommerceServiceListFulfilmentsProcedure,
-		svc.ListFulfilments,
-		connect.WithSchema(commerceServiceMethods.ByName("ListFulfilments")),
-		connect.WithHandlerOptions(opts...),
-	)
-	commerceServicePriceListSaveHandler := connect.NewUnaryHandler(
-		CommerceServicePriceListSaveProcedure,
-		svc.PriceListSave,
-		connect.WithSchema(commerceServiceMethods.ByName("PriceListSave")),
-		connect.WithHandlerOptions(opts...),
-	)
-	commerceServicePriceListGetHandler := connect.NewUnaryHandler(
-		CommerceServicePriceListGetProcedure,
-		svc.PriceListGet,
-		connect.WithSchema(commerceServiceMethods.ByName("PriceListGet")),
-		connect.WithHandlerOptions(opts...),
-	)
-	commerceServicePriceListSearchHandler := connect.NewUnaryHandler(
-		CommerceServicePriceListSearchProcedure,
-		svc.PriceListSearch,
-		connect.WithSchema(commerceServiceMethods.ByName("PriceListSearch")),
-		connect.WithHandlerOptions(opts...),
-	)
-	commerceServicePriceListEntryBatchSaveHandler := connect.NewUnaryHandler(
-		CommerceServicePriceListEntryBatchSaveProcedure,
-		svc.PriceListEntryBatchSave,
-		connect.WithSchema(commerceServiceMethods.ByName("PriceListEntryBatchSave")),
-		connect.WithHandlerOptions(opts...),
-	)
-	commerceServiceCustomerPriceListAssignmentSaveHandler := connect.NewUnaryHandler(
-		CommerceServiceCustomerPriceListAssignmentSaveProcedure,
-		svc.CustomerPriceListAssignmentSave,
-		connect.WithSchema(commerceServiceMethods.ByName("CustomerPriceListAssignmentSave")),
-		connect.WithHandlerOptions(opts...),
-	)
-	commerceServiceCustomerPriceListAssignmentSearchHandler := connect.NewUnaryHandler(
-		CommerceServiceCustomerPriceListAssignmentSearchProcedure,
-		svc.CustomerPriceListAssignmentSearch,
-		connect.WithSchema(commerceServiceMethods.ByName("CustomerPriceListAssignmentSearch")),
-		connect.WithHandlerOptions(opts...),
-	)
-	commerceServiceCustomerPriceOverrideSaveHandler := connect.NewUnaryHandler(
-		CommerceServiceCustomerPriceOverrideSaveProcedure,
-		svc.CustomerPriceOverrideSave,
-		connect.WithSchema(commerceServiceMethods.ByName("CustomerPriceOverrideSave")),
-		connect.WithHandlerOptions(opts...),
-	)
-	commerceServiceCustomerPriceOverrideSearchHandler := connect.NewUnaryHandler(
-		CommerceServiceCustomerPriceOverrideSearchProcedure,
-		svc.CustomerPriceOverrideSearch,
-		connect.WithSchema(commerceServiceMethods.ByName("CustomerPriceOverrideSearch")),
-		connect.WithHandlerOptions(opts...),
-	)
-	commerceServiceDiscountRuleSaveHandler := connect.NewUnaryHandler(
-		CommerceServiceDiscountRuleSaveProcedure,
-		svc.DiscountRuleSave,
-		connect.WithSchema(commerceServiceMethods.ByName("DiscountRuleSave")),
-		connect.WithHandlerOptions(opts...),
-	)
-	commerceServiceDiscountRuleSearchHandler := connect.NewUnaryHandler(
-		CommerceServiceDiscountRuleSearchProcedure,
-		svc.DiscountRuleSearch,
-		connect.WithSchema(commerceServiceMethods.ByName("DiscountRuleSearch")),
-		connect.WithHandlerOptions(opts...),
-	)
-	commerceServiceDiscountRuleApproveHandler := connect.NewUnaryHandler(
-		CommerceServiceDiscountRuleApproveProcedure,
-		svc.DiscountRuleApprove,
-		connect.WithSchema(commerceServiceMethods.ByName("DiscountRuleApprove")),
-		connect.WithHandlerOptions(opts...),
-	)
-	commerceServiceResolvePriceHandler := connect.NewUnaryHandler(
-		CommerceServiceResolvePriceProcedure,
-		svc.ResolvePrice,
-		connect.WithSchema(commerceServiceMethods.ByName("ResolvePrice")),
-		connect.WithHandlerOptions(opts...),
-	)
-	return "/commerce.v1.CommerceService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch r.URL.Path {
-		case CommerceServiceCreateShopProcedure:
-			commerceServiceCreateShopHandler.ServeHTTP(w, r)
-		case CommerceServiceGetShopProcedure:
-			commerceServiceGetShopHandler.ServeHTTP(w, r)
-		case CommerceServiceUpdateShopProcedure:
-			commerceServiceUpdateShopHandler.ServeHTTP(w, r)
-		case CommerceServiceListShopsProcedure:
-			commerceServiceListShopsHandler.ServeHTTP(w, r)
-		case CommerceServiceResolveDefaultCurrencyProcedure:
-			commerceServiceResolveDefaultCurrencyHandler.ServeHTTP(w, r)
-		case CommerceServiceCreateProductProcedure:
-			commerceServiceCreateProductHandler.ServeHTTP(w, r)
-		case CommerceServiceGetProductProcedure:
-			commerceServiceGetProductHandler.ServeHTTP(w, r)
-		case CommerceServiceListProductsProcedure:
-			commerceServiceListProductsHandler.ServeHTTP(w, r)
-		case CommerceServiceCreateProductVariantProcedure:
-			commerceServiceCreateProductVariantHandler.ServeHTTP(w, r)
-		case CommerceServiceUpdateProductVariantProcedure:
-			commerceServiceUpdateProductVariantHandler.ServeHTTP(w, r)
-		case CommerceServiceUpdateProductProcedure:
-			commerceServiceUpdateProductHandler.ServeHTTP(w, r)
-		case CommerceServiceListProductVariantsProcedure:
-			commerceServiceListProductVariantsHandler.ServeHTTP(w, r)
-		case CommerceServiceCreateCartProcedure:
-			commerceServiceCreateCartHandler.ServeHTTP(w, r)
-		case CommerceServiceGetCartProcedure:
-			commerceServiceGetCartHandler.ServeHTTP(w, r)
-		case CommerceServiceAddCartLineProcedure:
-			commerceServiceAddCartLineHandler.ServeHTTP(w, r)
-		case CommerceServiceRemoveCartLineProcedure:
-			commerceServiceRemoveCartLineHandler.ServeHTTP(w, r)
-		case CommerceServiceCreateOrderFromCartProcedure:
-			commerceServiceCreateOrderFromCartHandler.ServeHTTP(w, r)
-		case CommerceServiceCreateOrderProcedure:
-			commerceServiceCreateOrderHandler.ServeHTTP(w, r)
-		case CommerceServiceGetOrderProcedure:
-			commerceServiceGetOrderHandler.ServeHTTP(w, r)
-		case CommerceServiceListOrdersProcedure:
-			commerceServiceListOrdersHandler.ServeHTTP(w, r)
-		case CommerceServiceCheckoutOrderProcedure:
-			commerceServiceCheckoutOrderHandler.ServeHTTP(w, r)
-		case CommerceServiceConfirmOrderPaymentProcedure:
-			commerceServiceConfirmOrderPaymentHandler.ServeHTTP(w, r)
-		case CommerceServiceCancelOrderProcedure:
-			commerceServiceCancelOrderHandler.ServeHTTP(w, r)
-		case CommerceServiceRecordOrderPaymentProcedure:
-			commerceServiceRecordOrderPaymentHandler.ServeHTTP(w, r)
-		case CommerceServiceListOrderEventsProcedure:
-			commerceServiceListOrderEventsHandler.ServeHTTP(w, r)
-		case CommerceServiceReconcilePaymentsProcedure:
-			commerceServiceReconcilePaymentsHandler.ServeHTTP(w, r)
-		case CommerceServiceRunEndOfDayLedgerProcedure:
-			commerceServiceRunEndOfDayLedgerHandler.ServeHTTP(w, r)
-		case CommerceServiceCreateFulfilmentProcedure:
-			commerceServiceCreateFulfilmentHandler.ServeHTTP(w, r)
-		case CommerceServiceUpdateFulfilmentProcedure:
-			commerceServiceUpdateFulfilmentHandler.ServeHTTP(w, r)
-		case CommerceServiceGetFulfilmentProcedure:
-			commerceServiceGetFulfilmentHandler.ServeHTTP(w, r)
-		case CommerceServiceListFulfilmentsProcedure:
-			commerceServiceListFulfilmentsHandler.ServeHTTP(w, r)
-		case CommerceServicePriceListSaveProcedure:
-			commerceServicePriceListSaveHandler.ServeHTTP(w, r)
-		case CommerceServicePriceListGetProcedure:
-			commerceServicePriceListGetHandler.ServeHTTP(w, r)
-		case CommerceServicePriceListSearchProcedure:
-			commerceServicePriceListSearchHandler.ServeHTTP(w, r)
-		case CommerceServicePriceListEntryBatchSaveProcedure:
-			commerceServicePriceListEntryBatchSaveHandler.ServeHTTP(w, r)
-		case CommerceServiceCustomerPriceListAssignmentSaveProcedure:
-			commerceServiceCustomerPriceListAssignmentSaveHandler.ServeHTTP(w, r)
-		case CommerceServiceCustomerPriceListAssignmentSearchProcedure:
-			commerceServiceCustomerPriceListAssignmentSearchHandler.ServeHTTP(w, r)
-		case CommerceServiceCustomerPriceOverrideSaveProcedure:
-			commerceServiceCustomerPriceOverrideSaveHandler.ServeHTTP(w, r)
-		case CommerceServiceCustomerPriceOverrideSearchProcedure:
-			commerceServiceCustomerPriceOverrideSearchHandler.ServeHTTP(w, r)
-		case CommerceServiceDiscountRuleSaveProcedure:
-			commerceServiceDiscountRuleSaveHandler.ServeHTTP(w, r)
-		case CommerceServiceDiscountRuleSearchProcedure:
-			commerceServiceDiscountRuleSearchHandler.ServeHTTP(w, r)
-		case CommerceServiceDiscountRuleApproveProcedure:
-			commerceServiceDiscountRuleApproveHandler.ServeHTTP(w, r)
-		case CommerceServiceResolvePriceProcedure:
-			commerceServiceResolvePriceHandler.ServeHTTP(w, r)
-		default:
-			http.NotFound(w, r)
-		}
-	})
 }
 
 // UnimplementedCommerceServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedCommerceServiceHandler struct{}
 
-func (UnimplementedCommerceServiceHandler) CreateShop(context.Context, *connect.Request[v1.CreateShopRequest]) (*connect.Response[v1.CreateShopResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("commerce.v1.CommerceService.CreateShop is not implemented"))
+func (UnimplementedCommerceServiceHandler) CreateShop(context.Context, *v1.CreateShopRequest) (*v1.CreateShopResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "commerce.v1.CommerceService.CreateShop is not implemented")
 }
 
-func (UnimplementedCommerceServiceHandler) GetShop(context.Context, *connect.Request[v1.GetShopRequest]) (*connect.Response[v1.GetShopResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("commerce.v1.CommerceService.GetShop is not implemented"))
+func (UnimplementedCommerceServiceHandler) GetShop(context.Context, *v1.GetShopRequest) (*v1.GetShopResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "commerce.v1.CommerceService.GetShop is not implemented")
 }
 
-func (UnimplementedCommerceServiceHandler) UpdateShop(context.Context, *connect.Request[v1.UpdateShopRequest]) (*connect.Response[v1.UpdateShopResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("commerce.v1.CommerceService.UpdateShop is not implemented"))
+func (UnimplementedCommerceServiceHandler) UpdateShop(context.Context, *v1.UpdateShopRequest) (*v1.UpdateShopResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "commerce.v1.CommerceService.UpdateShop is not implemented")
 }
 
-func (UnimplementedCommerceServiceHandler) ListShops(context.Context, *connect.Request[v1.ListShopsRequest]) (*connect.Response[v1.ListShopsResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("commerce.v1.CommerceService.ListShops is not implemented"))
+func (UnimplementedCommerceServiceHandler) ListShops(context.Context, *v1.ListShopsRequest) (*v1.ListShopsResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "commerce.v1.CommerceService.ListShops is not implemented")
 }
 
-func (UnimplementedCommerceServiceHandler) ResolveDefaultCurrency(context.Context, *connect.Request[v1.ResolveDefaultCurrencyRequest]) (*connect.Response[v1.ResolveDefaultCurrencyResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("commerce.v1.CommerceService.ResolveDefaultCurrency is not implemented"))
+func (UnimplementedCommerceServiceHandler) ResolveDefaultCurrency(context.Context, *v1.ResolveDefaultCurrencyRequest) (*v1.ResolveDefaultCurrencyResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "commerce.v1.CommerceService.ResolveDefaultCurrency is not implemented")
 }
 
-func (UnimplementedCommerceServiceHandler) CreateProduct(context.Context, *connect.Request[v1.CreateProductRequest]) (*connect.Response[v1.CreateProductResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("commerce.v1.CommerceService.CreateProduct is not implemented"))
+func (UnimplementedCommerceServiceHandler) CreateProduct(context.Context, *v1.CreateProductRequest) (*v1.CreateProductResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "commerce.v1.CommerceService.CreateProduct is not implemented")
 }
 
-func (UnimplementedCommerceServiceHandler) GetProduct(context.Context, *connect.Request[v1.GetProductRequest]) (*connect.Response[v1.GetProductResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("commerce.v1.CommerceService.GetProduct is not implemented"))
+func (UnimplementedCommerceServiceHandler) GetProduct(context.Context, *v1.GetProductRequest) (*v1.GetProductResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "commerce.v1.CommerceService.GetProduct is not implemented")
 }
 
-func (UnimplementedCommerceServiceHandler) ListProducts(context.Context, *connect.Request[v1.ListProductsRequest]) (*connect.Response[v1.ListProductsResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("commerce.v1.CommerceService.ListProducts is not implemented"))
+func (UnimplementedCommerceServiceHandler) ListProducts(context.Context, *v1.ListProductsRequest) (*v1.ListProductsResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "commerce.v1.CommerceService.ListProducts is not implemented")
 }
 
-func (UnimplementedCommerceServiceHandler) CreateProductVariant(context.Context, *connect.Request[v1.CreateProductVariantRequest]) (*connect.Response[v1.CreateProductVariantResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("commerce.v1.CommerceService.CreateProductVariant is not implemented"))
+func (UnimplementedCommerceServiceHandler) CreateProductVariant(context.Context, *v1.CreateProductVariantRequest) (*v1.CreateProductVariantResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "commerce.v1.CommerceService.CreateProductVariant is not implemented")
 }
 
-func (UnimplementedCommerceServiceHandler) UpdateProductVariant(context.Context, *connect.Request[v1.UpdateProductVariantRequest]) (*connect.Response[v1.UpdateProductVariantResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("commerce.v1.CommerceService.UpdateProductVariant is not implemented"))
+func (UnimplementedCommerceServiceHandler) UpdateProductVariant(context.Context, *v1.UpdateProductVariantRequest) (*v1.UpdateProductVariantResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "commerce.v1.CommerceService.UpdateProductVariant is not implemented")
 }
 
-func (UnimplementedCommerceServiceHandler) UpdateProduct(context.Context, *connect.Request[v1.UpdateProductRequest]) (*connect.Response[v1.UpdateProductResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("commerce.v1.CommerceService.UpdateProduct is not implemented"))
+func (UnimplementedCommerceServiceHandler) UpdateProduct(context.Context, *v1.UpdateProductRequest) (*v1.UpdateProductResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "commerce.v1.CommerceService.UpdateProduct is not implemented")
 }
 
-func (UnimplementedCommerceServiceHandler) ListProductVariants(context.Context, *connect.Request[v1.ListProductVariantsRequest]) (*connect.Response[v1.ListProductVariantsResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("commerce.v1.CommerceService.ListProductVariants is not implemented"))
+func (UnimplementedCommerceServiceHandler) ListProductVariants(context.Context, *v1.ListProductVariantsRequest) (*v1.ListProductVariantsResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "commerce.v1.CommerceService.ListProductVariants is not implemented")
 }
 
-func (UnimplementedCommerceServiceHandler) CreateCart(context.Context, *connect.Request[v1.CreateCartRequest]) (*connect.Response[v1.CreateCartResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("commerce.v1.CommerceService.CreateCart is not implemented"))
+func (UnimplementedCommerceServiceHandler) CreateCart(context.Context, *v1.CreateCartRequest) (*v1.CreateCartResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "commerce.v1.CommerceService.CreateCart is not implemented")
 }
 
-func (UnimplementedCommerceServiceHandler) GetCart(context.Context, *connect.Request[v1.GetCartRequest]) (*connect.Response[v1.GetCartResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("commerce.v1.CommerceService.GetCart is not implemented"))
+func (UnimplementedCommerceServiceHandler) GetCart(context.Context, *v1.GetCartRequest) (*v1.GetCartResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "commerce.v1.CommerceService.GetCart is not implemented")
 }
 
-func (UnimplementedCommerceServiceHandler) AddCartLine(context.Context, *connect.Request[v1.AddCartLineRequest]) (*connect.Response[v1.AddCartLineResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("commerce.v1.CommerceService.AddCartLine is not implemented"))
+func (UnimplementedCommerceServiceHandler) AddCartLine(context.Context, *v1.AddCartLineRequest) (*v1.AddCartLineResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "commerce.v1.CommerceService.AddCartLine is not implemented")
 }
 
-func (UnimplementedCommerceServiceHandler) RemoveCartLine(context.Context, *connect.Request[v1.RemoveCartLineRequest]) (*connect.Response[v1.RemoveCartLineResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("commerce.v1.CommerceService.RemoveCartLine is not implemented"))
+func (UnimplementedCommerceServiceHandler) RemoveCartLine(context.Context, *v1.RemoveCartLineRequest) (*v1.RemoveCartLineResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "commerce.v1.CommerceService.RemoveCartLine is not implemented")
 }
 
-func (UnimplementedCommerceServiceHandler) CreateOrderFromCart(context.Context, *connect.Request[v1.CreateOrderFromCartRequest]) (*connect.Response[v1.CreateOrderFromCartResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("commerce.v1.CommerceService.CreateOrderFromCart is not implemented"))
+func (UnimplementedCommerceServiceHandler) CreateOrderFromCart(context.Context, *v1.CreateOrderFromCartRequest) (*v1.CreateOrderFromCartResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "commerce.v1.CommerceService.CreateOrderFromCart is not implemented")
 }
 
-func (UnimplementedCommerceServiceHandler) CreateOrder(context.Context, *connect.Request[v1.CreateOrderRequest]) (*connect.Response[v1.CreateOrderResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("commerce.v1.CommerceService.CreateOrder is not implemented"))
+func (UnimplementedCommerceServiceHandler) CreateOrder(context.Context, *v1.CreateOrderRequest) (*v1.CreateOrderResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "commerce.v1.CommerceService.CreateOrder is not implemented")
 }
 
-func (UnimplementedCommerceServiceHandler) GetOrder(context.Context, *connect.Request[v1.GetOrderRequest]) (*connect.Response[v1.GetOrderResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("commerce.v1.CommerceService.GetOrder is not implemented"))
+func (UnimplementedCommerceServiceHandler) GetOrder(context.Context, *v1.GetOrderRequest) (*v1.GetOrderResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "commerce.v1.CommerceService.GetOrder is not implemented")
 }
 
-func (UnimplementedCommerceServiceHandler) ListOrders(context.Context, *connect.Request[v1.ListOrdersRequest]) (*connect.Response[v1.ListOrdersResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("commerce.v1.CommerceService.ListOrders is not implemented"))
+func (UnimplementedCommerceServiceHandler) ListOrders(context.Context, *v1.ListOrdersRequest) (*v1.ListOrdersResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "commerce.v1.CommerceService.ListOrders is not implemented")
 }
 
-func (UnimplementedCommerceServiceHandler) CheckoutOrder(context.Context, *connect.Request[v1.CheckoutOrderRequest]) (*connect.Response[v1.CheckoutOrderResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("commerce.v1.CommerceService.CheckoutOrder is not implemented"))
+func (UnimplementedCommerceServiceHandler) CheckoutOrder(context.Context, *v1.CheckoutOrderRequest) (*v1.CheckoutOrderResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "commerce.v1.CommerceService.CheckoutOrder is not implemented")
 }
 
-func (UnimplementedCommerceServiceHandler) ConfirmOrderPayment(context.Context, *connect.Request[v1.ConfirmOrderPaymentRequest]) (*connect.Response[v1.ConfirmOrderPaymentResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("commerce.v1.CommerceService.ConfirmOrderPayment is not implemented"))
+func (UnimplementedCommerceServiceHandler) ConfirmOrderPayment(context.Context, *v1.ConfirmOrderPaymentRequest) (*v1.ConfirmOrderPaymentResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "commerce.v1.CommerceService.ConfirmOrderPayment is not implemented")
 }
 
-func (UnimplementedCommerceServiceHandler) CancelOrder(context.Context, *connect.Request[v1.CancelOrderRequest]) (*connect.Response[v1.CancelOrderResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("commerce.v1.CommerceService.CancelOrder is not implemented"))
+func (UnimplementedCommerceServiceHandler) CancelOrder(context.Context, *v1.CancelOrderRequest) (*v1.CancelOrderResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "commerce.v1.CommerceService.CancelOrder is not implemented")
 }
 
-func (UnimplementedCommerceServiceHandler) RecordOrderPayment(context.Context, *connect.Request[v1.RecordOrderPaymentRequest]) (*connect.Response[v1.RecordOrderPaymentResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("commerce.v1.CommerceService.RecordOrderPayment is not implemented"))
+func (UnimplementedCommerceServiceHandler) RecordOrderPayment(context.Context, *v1.RecordOrderPaymentRequest) (*v1.RecordOrderPaymentResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "commerce.v1.CommerceService.RecordOrderPayment is not implemented")
 }
 
-func (UnimplementedCommerceServiceHandler) ListOrderEvents(context.Context, *connect.Request[v1.ListOrderEventsRequest]) (*connect.Response[v1.ListOrderEventsResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("commerce.v1.CommerceService.ListOrderEvents is not implemented"))
+func (UnimplementedCommerceServiceHandler) ListOrderEvents(context.Context, *v1.ListOrderEventsRequest) (*v1.ListOrderEventsResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "commerce.v1.CommerceService.ListOrderEvents is not implemented")
 }
 
-func (UnimplementedCommerceServiceHandler) ReconcilePayments(context.Context, *connect.Request[v1.ReconcilePaymentsRequest]) (*connect.Response[v1.ReconcilePaymentsResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("commerce.v1.CommerceService.ReconcilePayments is not implemented"))
+func (UnimplementedCommerceServiceHandler) ReconcilePayments(context.Context, *v1.ReconcilePaymentsRequest) (*v1.ReconcilePaymentsResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "commerce.v1.CommerceService.ReconcilePayments is not implemented")
 }
 
-func (UnimplementedCommerceServiceHandler) RunEndOfDayLedger(context.Context, *connect.Request[v1.RunEndOfDayLedgerRequest]) (*connect.Response[v1.RunEndOfDayLedgerResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("commerce.v1.CommerceService.RunEndOfDayLedger is not implemented"))
+func (UnimplementedCommerceServiceHandler) RunEndOfDayLedger(context.Context, *v1.RunEndOfDayLedgerRequest) (*v1.RunEndOfDayLedgerResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "commerce.v1.CommerceService.RunEndOfDayLedger is not implemented")
 }
 
-func (UnimplementedCommerceServiceHandler) CreateFulfilment(context.Context, *connect.Request[v1.CreateFulfilmentRequest]) (*connect.Response[v1.CreateFulfilmentResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("commerce.v1.CommerceService.CreateFulfilment is not implemented"))
+func (UnimplementedCommerceServiceHandler) CreateFulfilment(context.Context, *v1.CreateFulfilmentRequest) (*v1.CreateFulfilmentResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "commerce.v1.CommerceService.CreateFulfilment is not implemented")
 }
 
-func (UnimplementedCommerceServiceHandler) UpdateFulfilment(context.Context, *connect.Request[v1.UpdateFulfilmentRequest]) (*connect.Response[v1.UpdateFulfilmentResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("commerce.v1.CommerceService.UpdateFulfilment is not implemented"))
+func (UnimplementedCommerceServiceHandler) UpdateFulfilment(context.Context, *v1.UpdateFulfilmentRequest) (*v1.UpdateFulfilmentResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "commerce.v1.CommerceService.UpdateFulfilment is not implemented")
 }
 
-func (UnimplementedCommerceServiceHandler) GetFulfilment(context.Context, *connect.Request[v1.GetFulfilmentRequest]) (*connect.Response[v1.GetFulfilmentResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("commerce.v1.CommerceService.GetFulfilment is not implemented"))
+func (UnimplementedCommerceServiceHandler) GetFulfilment(context.Context, *v1.GetFulfilmentRequest) (*v1.GetFulfilmentResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "commerce.v1.CommerceService.GetFulfilment is not implemented")
 }
 
-func (UnimplementedCommerceServiceHandler) ListFulfilments(context.Context, *connect.Request[v1.ListFulfilmentsRequest]) (*connect.Response[v1.ListFulfilmentsResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("commerce.v1.CommerceService.ListFulfilments is not implemented"))
+func (UnimplementedCommerceServiceHandler) ListFulfilments(context.Context, *v1.ListFulfilmentsRequest) (*v1.ListFulfilmentsResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "commerce.v1.CommerceService.ListFulfilments is not implemented")
 }
 
-func (UnimplementedCommerceServiceHandler) PriceListSave(context.Context, *connect.Request[v1.PriceListSaveRequest]) (*connect.Response[v1.PriceListSaveResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("commerce.v1.CommerceService.PriceListSave is not implemented"))
+func (UnimplementedCommerceServiceHandler) PriceListSave(context.Context, *v1.PriceListSaveRequest) (*v1.PriceListSaveResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "commerce.v1.CommerceService.PriceListSave is not implemented")
 }
 
-func (UnimplementedCommerceServiceHandler) PriceListGet(context.Context, *connect.Request[v1.PriceListGetRequest]) (*connect.Response[v1.PriceListGetResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("commerce.v1.CommerceService.PriceListGet is not implemented"))
+func (UnimplementedCommerceServiceHandler) PriceListGet(context.Context, *v1.PriceListGetRequest) (*v1.PriceListGetResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "commerce.v1.CommerceService.PriceListGet is not implemented")
 }
 
-func (UnimplementedCommerceServiceHandler) PriceListSearch(context.Context, *connect.Request[v1.PriceListSearchRequest]) (*connect.Response[v1.PriceListSearchResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("commerce.v1.CommerceService.PriceListSearch is not implemented"))
+func (UnimplementedCommerceServiceHandler) PriceListSearch(context.Context, *v1.PriceListSearchRequest) (*v1.PriceListSearchResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "commerce.v1.CommerceService.PriceListSearch is not implemented")
 }
 
-func (UnimplementedCommerceServiceHandler) PriceListEntryBatchSave(context.Context, *connect.Request[v1.PriceListEntryBatchSaveRequest]) (*connect.Response[v1.PriceListEntryBatchSaveResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("commerce.v1.CommerceService.PriceListEntryBatchSave is not implemented"))
+func (UnimplementedCommerceServiceHandler) PriceListEntryBatchSave(context.Context, *v1.PriceListEntryBatchSaveRequest) (*v1.PriceListEntryBatchSaveResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "commerce.v1.CommerceService.PriceListEntryBatchSave is not implemented")
 }
 
-func (UnimplementedCommerceServiceHandler) CustomerPriceListAssignmentSave(context.Context, *connect.Request[v1.CustomerPriceListAssignmentSaveRequest]) (*connect.Response[v1.CustomerPriceListAssignmentSaveResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("commerce.v1.CommerceService.CustomerPriceListAssignmentSave is not implemented"))
+func (UnimplementedCommerceServiceHandler) CustomerPriceListAssignmentSave(context.Context, *v1.CustomerPriceListAssignmentSaveRequest) (*v1.CustomerPriceListAssignmentSaveResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "commerce.v1.CommerceService.CustomerPriceListAssignmentSave is not implemented")
 }
 
-func (UnimplementedCommerceServiceHandler) CustomerPriceListAssignmentSearch(context.Context, *connect.Request[v1.CustomerPriceListAssignmentSearchRequest]) (*connect.Response[v1.CustomerPriceListAssignmentSearchResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("commerce.v1.CommerceService.CustomerPriceListAssignmentSearch is not implemented"))
+func (UnimplementedCommerceServiceHandler) CustomerPriceListAssignmentSearch(context.Context, *v1.CustomerPriceListAssignmentSearchRequest) (*v1.CustomerPriceListAssignmentSearchResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "commerce.v1.CommerceService.CustomerPriceListAssignmentSearch is not implemented")
 }
 
-func (UnimplementedCommerceServiceHandler) CustomerPriceOverrideSave(context.Context, *connect.Request[v1.CustomerPriceOverrideSaveRequest]) (*connect.Response[v1.CustomerPriceOverrideSaveResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("commerce.v1.CommerceService.CustomerPriceOverrideSave is not implemented"))
+func (UnimplementedCommerceServiceHandler) CustomerPriceOverrideSave(context.Context, *v1.CustomerPriceOverrideSaveRequest) (*v1.CustomerPriceOverrideSaveResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "commerce.v1.CommerceService.CustomerPriceOverrideSave is not implemented")
 }
 
-func (UnimplementedCommerceServiceHandler) CustomerPriceOverrideSearch(context.Context, *connect.Request[v1.CustomerPriceOverrideSearchRequest]) (*connect.Response[v1.CustomerPriceOverrideSearchResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("commerce.v1.CommerceService.CustomerPriceOverrideSearch is not implemented"))
+func (UnimplementedCommerceServiceHandler) CustomerPriceOverrideSearch(context.Context, *v1.CustomerPriceOverrideSearchRequest) (*v1.CustomerPriceOverrideSearchResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "commerce.v1.CommerceService.CustomerPriceOverrideSearch is not implemented")
 }
 
-func (UnimplementedCommerceServiceHandler) DiscountRuleSave(context.Context, *connect.Request[v1.DiscountRuleSaveRequest]) (*connect.Response[v1.DiscountRuleSaveResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("commerce.v1.CommerceService.DiscountRuleSave is not implemented"))
+func (UnimplementedCommerceServiceHandler) DiscountRuleSave(context.Context, *v1.DiscountRuleSaveRequest) (*v1.DiscountRuleSaveResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "commerce.v1.CommerceService.DiscountRuleSave is not implemented")
 }
 
-func (UnimplementedCommerceServiceHandler) DiscountRuleSearch(context.Context, *connect.Request[v1.DiscountRuleSearchRequest]) (*connect.Response[v1.DiscountRuleSearchResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("commerce.v1.CommerceService.DiscountRuleSearch is not implemented"))
+func (UnimplementedCommerceServiceHandler) DiscountRuleSearch(context.Context, *v1.DiscountRuleSearchRequest) (*v1.DiscountRuleSearchResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "commerce.v1.CommerceService.DiscountRuleSearch is not implemented")
 }
 
-func (UnimplementedCommerceServiceHandler) DiscountRuleApprove(context.Context, *connect.Request[v1.DiscountRuleApproveRequest]) (*connect.Response[v1.DiscountRuleApproveResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("commerce.v1.CommerceService.DiscountRuleApprove is not implemented"))
+func (UnimplementedCommerceServiceHandler) DiscountRuleApprove(context.Context, *v1.DiscountRuleApproveRequest) (*v1.DiscountRuleApproveResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "commerce.v1.CommerceService.DiscountRuleApprove is not implemented")
 }
 
-func (UnimplementedCommerceServiceHandler) ResolvePrice(context.Context, *connect.Request[v1.ResolvePriceRequest]) (*connect.Response[v1.ResolvePriceResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("commerce.v1.CommerceService.ResolvePrice is not implemented"))
+func (UnimplementedCommerceServiceHandler) ResolvePrice(context.Context, *v1.ResolvePriceRequest) (*v1.ResolvePriceResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "commerce.v1.CommerceService.ResolvePrice is not implemented")
+}
+
+type commerceServiceClient struct {
+	client *connect.Client
+}
+
+func (c *commerceServiceClient) CreateShop(ctx context.Context, req *v1.CreateShopRequest) (*v1.CreateShopResponse, error) {
+	var res v1.CreateShopResponse
+	if err := c.client.CallUnary(ctx, commerceServiceCreateShopSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *commerceServiceClient) GetShop(ctx context.Context, req *v1.GetShopRequest) (*v1.GetShopResponse, error) {
+	var res v1.GetShopResponse
+	if err := c.client.CallUnary(ctx, commerceServiceGetShopSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *commerceServiceClient) UpdateShop(ctx context.Context, req *v1.UpdateShopRequest) (*v1.UpdateShopResponse, error) {
+	var res v1.UpdateShopResponse
+	if err := c.client.CallUnary(ctx, commerceServiceUpdateShopSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *commerceServiceClient) ListShops(ctx context.Context, req *v1.ListShopsRequest) (*v1.ListShopsResponse, error) {
+	var res v1.ListShopsResponse
+	if err := c.client.CallUnary(ctx, commerceServiceListShopsSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *commerceServiceClient) ResolveDefaultCurrency(ctx context.Context, req *v1.ResolveDefaultCurrencyRequest) (*v1.ResolveDefaultCurrencyResponse, error) {
+	var res v1.ResolveDefaultCurrencyResponse
+	if err := c.client.CallUnary(ctx, commerceServiceResolveDefaultCurrencySpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *commerceServiceClient) CreateProduct(ctx context.Context, req *v1.CreateProductRequest) (*v1.CreateProductResponse, error) {
+	var res v1.CreateProductResponse
+	if err := c.client.CallUnary(ctx, commerceServiceCreateProductSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *commerceServiceClient) GetProduct(ctx context.Context, req *v1.GetProductRequest) (*v1.GetProductResponse, error) {
+	var res v1.GetProductResponse
+	if err := c.client.CallUnary(ctx, commerceServiceGetProductSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *commerceServiceClient) ListProducts(ctx context.Context, req *v1.ListProductsRequest) (*v1.ListProductsResponse, error) {
+	var res v1.ListProductsResponse
+	if err := c.client.CallUnary(ctx, commerceServiceListProductsSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *commerceServiceClient) CreateProductVariant(ctx context.Context, req *v1.CreateProductVariantRequest) (*v1.CreateProductVariantResponse, error) {
+	var res v1.CreateProductVariantResponse
+	if err := c.client.CallUnary(ctx, commerceServiceCreateProductVariantSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *commerceServiceClient) UpdateProductVariant(ctx context.Context, req *v1.UpdateProductVariantRequest) (*v1.UpdateProductVariantResponse, error) {
+	var res v1.UpdateProductVariantResponse
+	if err := c.client.CallUnary(ctx, commerceServiceUpdateProductVariantSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *commerceServiceClient) UpdateProduct(ctx context.Context, req *v1.UpdateProductRequest) (*v1.UpdateProductResponse, error) {
+	var res v1.UpdateProductResponse
+	if err := c.client.CallUnary(ctx, commerceServiceUpdateProductSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *commerceServiceClient) ListProductVariants(ctx context.Context, req *v1.ListProductVariantsRequest) (*v1.ListProductVariantsResponse, error) {
+	var res v1.ListProductVariantsResponse
+	if err := c.client.CallUnary(ctx, commerceServiceListProductVariantsSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *commerceServiceClient) CreateCart(ctx context.Context, req *v1.CreateCartRequest) (*v1.CreateCartResponse, error) {
+	var res v1.CreateCartResponse
+	if err := c.client.CallUnary(ctx, commerceServiceCreateCartSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *commerceServiceClient) GetCart(ctx context.Context, req *v1.GetCartRequest) (*v1.GetCartResponse, error) {
+	var res v1.GetCartResponse
+	if err := c.client.CallUnary(ctx, commerceServiceGetCartSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *commerceServiceClient) AddCartLine(ctx context.Context, req *v1.AddCartLineRequest) (*v1.AddCartLineResponse, error) {
+	var res v1.AddCartLineResponse
+	if err := c.client.CallUnary(ctx, commerceServiceAddCartLineSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *commerceServiceClient) RemoveCartLine(ctx context.Context, req *v1.RemoveCartLineRequest) (*v1.RemoveCartLineResponse, error) {
+	var res v1.RemoveCartLineResponse
+	if err := c.client.CallUnary(ctx, commerceServiceRemoveCartLineSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *commerceServiceClient) CreateOrderFromCart(ctx context.Context, req *v1.CreateOrderFromCartRequest) (*v1.CreateOrderFromCartResponse, error) {
+	var res v1.CreateOrderFromCartResponse
+	if err := c.client.CallUnary(ctx, commerceServiceCreateOrderFromCartSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *commerceServiceClient) CreateOrder(ctx context.Context, req *v1.CreateOrderRequest) (*v1.CreateOrderResponse, error) {
+	var res v1.CreateOrderResponse
+	if err := c.client.CallUnary(ctx, commerceServiceCreateOrderSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *commerceServiceClient) GetOrder(ctx context.Context, req *v1.GetOrderRequest) (*v1.GetOrderResponse, error) {
+	var res v1.GetOrderResponse
+	if err := c.client.CallUnary(ctx, commerceServiceGetOrderSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *commerceServiceClient) ListOrders(ctx context.Context, req *v1.ListOrdersRequest) (*v1.ListOrdersResponse, error) {
+	var res v1.ListOrdersResponse
+	if err := c.client.CallUnary(ctx, commerceServiceListOrdersSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *commerceServiceClient) CheckoutOrder(ctx context.Context, req *v1.CheckoutOrderRequest) (*v1.CheckoutOrderResponse, error) {
+	var res v1.CheckoutOrderResponse
+	if err := c.client.CallUnary(ctx, commerceServiceCheckoutOrderSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *commerceServiceClient) ConfirmOrderPayment(ctx context.Context, req *v1.ConfirmOrderPaymentRequest) (*v1.ConfirmOrderPaymentResponse, error) {
+	var res v1.ConfirmOrderPaymentResponse
+	if err := c.client.CallUnary(ctx, commerceServiceConfirmOrderPaymentSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *commerceServiceClient) CancelOrder(ctx context.Context, req *v1.CancelOrderRequest) (*v1.CancelOrderResponse, error) {
+	var res v1.CancelOrderResponse
+	if err := c.client.CallUnary(ctx, commerceServiceCancelOrderSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *commerceServiceClient) RecordOrderPayment(ctx context.Context, req *v1.RecordOrderPaymentRequest) (*v1.RecordOrderPaymentResponse, error) {
+	var res v1.RecordOrderPaymentResponse
+	if err := c.client.CallUnary(ctx, commerceServiceRecordOrderPaymentSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *commerceServiceClient) ListOrderEvents(ctx context.Context, req *v1.ListOrderEventsRequest) (*v1.ListOrderEventsResponse, error) {
+	var res v1.ListOrderEventsResponse
+	if err := c.client.CallUnary(ctx, commerceServiceListOrderEventsSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *commerceServiceClient) ReconcilePayments(ctx context.Context, req *v1.ReconcilePaymentsRequest) (*v1.ReconcilePaymentsResponse, error) {
+	var res v1.ReconcilePaymentsResponse
+	if err := c.client.CallUnary(ctx, commerceServiceReconcilePaymentsSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *commerceServiceClient) RunEndOfDayLedger(ctx context.Context, req *v1.RunEndOfDayLedgerRequest) (*v1.RunEndOfDayLedgerResponse, error) {
+	var res v1.RunEndOfDayLedgerResponse
+	if err := c.client.CallUnary(ctx, commerceServiceRunEndOfDayLedgerSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *commerceServiceClient) CreateFulfilment(ctx context.Context, req *v1.CreateFulfilmentRequest) (*v1.CreateFulfilmentResponse, error) {
+	var res v1.CreateFulfilmentResponse
+	if err := c.client.CallUnary(ctx, commerceServiceCreateFulfilmentSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *commerceServiceClient) UpdateFulfilment(ctx context.Context, req *v1.UpdateFulfilmentRequest) (*v1.UpdateFulfilmentResponse, error) {
+	var res v1.UpdateFulfilmentResponse
+	if err := c.client.CallUnary(ctx, commerceServiceUpdateFulfilmentSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *commerceServiceClient) GetFulfilment(ctx context.Context, req *v1.GetFulfilmentRequest) (*v1.GetFulfilmentResponse, error) {
+	var res v1.GetFulfilmentResponse
+	if err := c.client.CallUnary(ctx, commerceServiceGetFulfilmentSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *commerceServiceClient) ListFulfilments(ctx context.Context, req *v1.ListFulfilmentsRequest) (*v1.ListFulfilmentsResponse, error) {
+	var res v1.ListFulfilmentsResponse
+	if err := c.client.CallUnary(ctx, commerceServiceListFulfilmentsSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *commerceServiceClient) PriceListSave(ctx context.Context, req *v1.PriceListSaveRequest) (*v1.PriceListSaveResponse, error) {
+	var res v1.PriceListSaveResponse
+	if err := c.client.CallUnary(ctx, commerceServicePriceListSaveSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *commerceServiceClient) PriceListGet(ctx context.Context, req *v1.PriceListGetRequest) (*v1.PriceListGetResponse, error) {
+	var res v1.PriceListGetResponse
+	if err := c.client.CallUnary(ctx, commerceServicePriceListGetSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *commerceServiceClient) PriceListSearch(ctx context.Context, req *v1.PriceListSearchRequest) (*v1.PriceListSearchResponse, error) {
+	var res v1.PriceListSearchResponse
+	if err := c.client.CallUnary(ctx, commerceServicePriceListSearchSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *commerceServiceClient) PriceListEntryBatchSave(ctx context.Context, req *v1.PriceListEntryBatchSaveRequest) (*v1.PriceListEntryBatchSaveResponse, error) {
+	var res v1.PriceListEntryBatchSaveResponse
+	if err := c.client.CallUnary(ctx, commerceServicePriceListEntryBatchSaveSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *commerceServiceClient) CustomerPriceListAssignmentSave(ctx context.Context, req *v1.CustomerPriceListAssignmentSaveRequest) (*v1.CustomerPriceListAssignmentSaveResponse, error) {
+	var res v1.CustomerPriceListAssignmentSaveResponse
+	if err := c.client.CallUnary(ctx, commerceServiceCustomerPriceListAssignmentSaveSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *commerceServiceClient) CustomerPriceListAssignmentSearch(ctx context.Context, req *v1.CustomerPriceListAssignmentSearchRequest) (*v1.CustomerPriceListAssignmentSearchResponse, error) {
+	var res v1.CustomerPriceListAssignmentSearchResponse
+	if err := c.client.CallUnary(ctx, commerceServiceCustomerPriceListAssignmentSearchSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *commerceServiceClient) CustomerPriceOverrideSave(ctx context.Context, req *v1.CustomerPriceOverrideSaveRequest) (*v1.CustomerPriceOverrideSaveResponse, error) {
+	var res v1.CustomerPriceOverrideSaveResponse
+	if err := c.client.CallUnary(ctx, commerceServiceCustomerPriceOverrideSaveSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *commerceServiceClient) CustomerPriceOverrideSearch(ctx context.Context, req *v1.CustomerPriceOverrideSearchRequest) (*v1.CustomerPriceOverrideSearchResponse, error) {
+	var res v1.CustomerPriceOverrideSearchResponse
+	if err := c.client.CallUnary(ctx, commerceServiceCustomerPriceOverrideSearchSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *commerceServiceClient) DiscountRuleSave(ctx context.Context, req *v1.DiscountRuleSaveRequest) (*v1.DiscountRuleSaveResponse, error) {
+	var res v1.DiscountRuleSaveResponse
+	if err := c.client.CallUnary(ctx, commerceServiceDiscountRuleSaveSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *commerceServiceClient) DiscountRuleSearch(ctx context.Context, req *v1.DiscountRuleSearchRequest) (*v1.DiscountRuleSearchResponse, error) {
+	var res v1.DiscountRuleSearchResponse
+	if err := c.client.CallUnary(ctx, commerceServiceDiscountRuleSearchSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *commerceServiceClient) DiscountRuleApprove(ctx context.Context, req *v1.DiscountRuleApproveRequest) (*v1.DiscountRuleApproveResponse, error) {
+	var res v1.DiscountRuleApproveResponse
+	if err := c.client.CallUnary(ctx, commerceServiceDiscountRuleApproveSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *commerceServiceClient) ResolvePrice(ctx context.Context, req *v1.ResolvePriceRequest) (*v1.ResolvePriceResponse, error) {
+	var res v1.ResolvePriceResponse
+	if err := c.client.CallUnary(ctx, commerceServiceResolvePriceSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+type commerceServiceHandler struct{ svc CommerceServiceHandler }
+
+func (h commerceServiceHandler) createShop(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.CreateShopRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.CreateShop(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h commerceServiceHandler) getShop(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.GetShopRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.GetShop(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h commerceServiceHandler) updateShop(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.UpdateShopRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.UpdateShop(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h commerceServiceHandler) listShops(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.ListShopsRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.ListShops(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h commerceServiceHandler) resolveDefaultCurrency(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.ResolveDefaultCurrencyRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.ResolveDefaultCurrency(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h commerceServiceHandler) createProduct(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.CreateProductRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.CreateProduct(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h commerceServiceHandler) getProduct(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.GetProductRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.GetProduct(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h commerceServiceHandler) listProducts(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.ListProductsRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.ListProducts(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h commerceServiceHandler) createProductVariant(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.CreateProductVariantRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.CreateProductVariant(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h commerceServiceHandler) updateProductVariant(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.UpdateProductVariantRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.UpdateProductVariant(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h commerceServiceHandler) updateProduct(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.UpdateProductRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.UpdateProduct(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h commerceServiceHandler) listProductVariants(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.ListProductVariantsRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.ListProductVariants(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h commerceServiceHandler) createCart(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.CreateCartRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.CreateCart(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h commerceServiceHandler) getCart(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.GetCartRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.GetCart(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h commerceServiceHandler) addCartLine(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.AddCartLineRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.AddCartLine(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h commerceServiceHandler) removeCartLine(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.RemoveCartLineRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.RemoveCartLine(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h commerceServiceHandler) createOrderFromCart(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.CreateOrderFromCartRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.CreateOrderFromCart(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h commerceServiceHandler) createOrder(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.CreateOrderRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.CreateOrder(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h commerceServiceHandler) getOrder(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.GetOrderRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.GetOrder(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h commerceServiceHandler) listOrders(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.ListOrdersRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.ListOrders(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h commerceServiceHandler) checkoutOrder(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.CheckoutOrderRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.CheckoutOrder(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h commerceServiceHandler) confirmOrderPayment(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.ConfirmOrderPaymentRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.ConfirmOrderPayment(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h commerceServiceHandler) cancelOrder(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.CancelOrderRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.CancelOrder(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h commerceServiceHandler) recordOrderPayment(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.RecordOrderPaymentRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.RecordOrderPayment(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h commerceServiceHandler) listOrderEvents(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.ListOrderEventsRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.ListOrderEvents(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h commerceServiceHandler) reconcilePayments(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.ReconcilePaymentsRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.ReconcilePayments(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h commerceServiceHandler) runEndOfDayLedger(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.RunEndOfDayLedgerRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.RunEndOfDayLedger(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h commerceServiceHandler) createFulfilment(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.CreateFulfilmentRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.CreateFulfilment(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h commerceServiceHandler) updateFulfilment(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.UpdateFulfilmentRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.UpdateFulfilment(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h commerceServiceHandler) getFulfilment(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.GetFulfilmentRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.GetFulfilment(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h commerceServiceHandler) listFulfilments(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.ListFulfilmentsRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.ListFulfilments(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h commerceServiceHandler) priceListSave(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.PriceListSaveRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.PriceListSave(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h commerceServiceHandler) priceListGet(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.PriceListGetRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.PriceListGet(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h commerceServiceHandler) priceListSearch(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.PriceListSearchRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.PriceListSearch(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h commerceServiceHandler) priceListEntryBatchSave(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.PriceListEntryBatchSaveRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.PriceListEntryBatchSave(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h commerceServiceHandler) customerPriceListAssignmentSave(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.CustomerPriceListAssignmentSaveRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.CustomerPriceListAssignmentSave(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h commerceServiceHandler) customerPriceListAssignmentSearch(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.CustomerPriceListAssignmentSearchRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.CustomerPriceListAssignmentSearch(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h commerceServiceHandler) customerPriceOverrideSave(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.CustomerPriceOverrideSaveRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.CustomerPriceOverrideSave(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h commerceServiceHandler) customerPriceOverrideSearch(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.CustomerPriceOverrideSearchRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.CustomerPriceOverrideSearch(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h commerceServiceHandler) discountRuleSave(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.DiscountRuleSaveRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.DiscountRuleSave(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h commerceServiceHandler) discountRuleSearch(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.DiscountRuleSearchRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.DiscountRuleSearch(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h commerceServiceHandler) discountRuleApprove(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.DiscountRuleApproveRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.DiscountRuleApprove(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h commerceServiceHandler) resolvePrice(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.ResolvePriceRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.ResolvePrice(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
 }

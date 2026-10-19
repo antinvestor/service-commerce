@@ -217,6 +217,8 @@ func (lb *ledgerBusiness) postShopDay(
 	posting := existing
 	if posting == nil {
 		posting = &models.LedgerPosting{ShopID: shop.GetID(), TradingDay: day}
+		// The scheduler runs as a service account; postings belong to the shop.
+		posting.CopyPartitionInfo(&shop.BaseModel)
 	}
 	posting.Currency, posting.SalesNanos, posting.RefundNanos, err = sumDay(paid, payments, refunded)
 	if err != nil {
@@ -402,6 +404,8 @@ func (lb *ledgerBusiness) recordFailure(
 	posting := existing
 	if posting == nil {
 		posting = &models.LedgerPosting{ShopID: shop.GetID(), TradingDay: day, Currency: shop.Currency}
+		// The scheduler runs as a service account; postings belong to the shop.
+		posting.CopyPartitionInfo(&shop.BaseModel)
 	}
 	posting.Status = models.LedgerPostingFailed
 	posting.Error = cause.Error()

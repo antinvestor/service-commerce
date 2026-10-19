@@ -139,7 +139,7 @@ func newOrderEvent(
 	if shop != nil && shop.WebhookURL != "" {
 		delivery = models.EventDeliveryPending
 	}
-	return &models.OrderEvent{
+	event := &models.OrderEvent{
 		ShopID:          order.ShopID,
 		OrderID:         order.GetID(),
 		OrderNumber:     order.OrderNumber,
@@ -151,6 +151,10 @@ func newOrderEvent(
 		PaymentNanos:    paymentNanos,
 		Delivery:        delivery,
 	}
+	// The event belongs to the order's tenant whoever raised it: a buyer, the
+	// payment return page, or the reconciler running as a service account.
+	event.CopyPartitionInfo(&order.BaseModel)
+	return event
 }
 
 // paymentTransition moves an order forward after an instalment and lists

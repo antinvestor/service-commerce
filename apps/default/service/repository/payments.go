@@ -99,6 +99,8 @@ func (r *orderRepository) applyPaymentOnce(
 
 		payment.OrderID = orderID
 		payment.ShopID = order.ShopID
+		// The payment belongs to the order's tenant, whoever applies it.
+		payment.CopyPartitionInfo(&order.BaseModel)
 		if err := tx.Create(&payment).Error; err != nil {
 			return fmt.Errorf("record payment: %w", err)
 		}

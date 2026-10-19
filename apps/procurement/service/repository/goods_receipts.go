@@ -86,23 +86,36 @@ func (r *goodsReceiptRepository) CreateWithLines(
 			result := tx.Model(&models.PurchaseOrderLine{}).
 				Where("id = ? AND status <> ? AND received_quantity + ? <= ordered_quantity",
 					line.PurchaseOrderLineID, poLineStatusCancelled, line.ReceivedQuantity).
-				UpdateColumns(map[string]any{
-					"received_quantity": gorm.Expr("received_quantity + ?", line.ReceivedQuantity),
-					"status": gorm.Expr(
-						"CASE WHEN received_quantity + ? >= ordered_quantity THEN ?::integer ELSE ?::integer END",
-						line.ReceivedQuantity, poLineStatusReceived, poLineStatusPartial,
-					),
-				})
+				UpdateColumn("received_quantity", gorm.Expr("received_quantity + ?", line.ReceivedQuantity))
 			if result.Error != nil {
 				return fmt.Errorf("receive purchase order line %s: %w", line.PurchaseOrderLineID, result.Error)
 			}
 			if result.RowsAffected == 0 {
 				return fmt.Errorf("%w: purchase order line %s", ErrOverReceipt, line.PurchaseOrderLineID)
 			}
+			if err := markLineReceiptStatus(tx, line.PurchaseOrderLineID); err != nil {
+				return err
+			}
 		}
 
 		return rollUpPurchaseOrderStatus(tx, gr.PurchaseOrderID)
 	})
+}
+
+// markLineReceiptStatus sets a line received or partially received from its
+// quantities. Two conditional updates keep it plain, portable SQL.
+func markLineReceiptStatus(tx *gorm.DB, lineID string) error {
+	if err := tx.Model(&models.PurchaseOrderLine{}).
+		Where("id = ? AND received_quantity >= ordered_quantity", lineID).
+		UpdateColumn("status", poLineStatusReceived).Error; err != nil {
+		return fmt.Errorf("mark purchase order line %s received: %w", lineID, err)
+	}
+	if err := tx.Model(&models.PurchaseOrderLine{}).
+		Where("id = ? AND received_quantity < ordered_quantity", lineID).
+		UpdateColumn("status", poLineStatusPartial).Error; err != nil {
+		return fmt.Errorf("mark purchase order line %s partially received: %w", lineID, err)
+	}
+	return nil
 }
 
 // rollUpPurchaseOrderStatus derives the PO status from its live lines.

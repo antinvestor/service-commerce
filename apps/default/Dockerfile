@@ -18,6 +18,8 @@ RUN go mod download
 COPY ./apps/default ./apps/default
 COPY ./pkg ./pkg
 COPY ./gen ./gen
+# Trustage workflow definitions are embedded into the binary.
+COPY ./workflows ./workflows
 
 # Build static binary for target platform
 RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
@@ -53,8 +55,6 @@ WORKDIR /
 # Copy from builder stage
 COPY --from=builder /app/binary /default
 COPY --from=builder /app/apps/default/migrations /migrations
-# Scheduled workflow definitions registered by the setup job (WORKFLOWS_PATH).
-COPY ./workflows /workflows
 
 # Run the binary
 ENTRYPOINT ["/default"]

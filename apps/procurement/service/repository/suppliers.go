@@ -115,6 +115,7 @@ func (r *supplierItemRepository) ListByInventoryItemID(
 ) ([]*models.SupplierItem, error) {
 	var items []*models.SupplierItem
 	err := r.Pool().DB(ctx, true).
+		Preload("Supplier").
 		Where("inventory_item_id = ?", inventoryItemID).
 		Find(&items).Error
 	return items, err

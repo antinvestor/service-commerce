@@ -37,6 +37,12 @@ const (
 	OrderShipped         = "template.commerce.fulfilment.shipped"
 	OrderDelivered       = "template.commerce.fulfilment.delivered"
 	LedgerDayPosted      = "template.commerce.ledger.day_posted"
+
+	InstalmentReceivedBuyer  = "template.commerce.order.instalment_buyer"
+	InstalmentReceivedSeller = "template.commerce.order.instalment_seller"
+	PaymentThresholdSeller   = "template.commerce.order.threshold_seller"
+	BalanceOverdueBuyer      = "template.commerce.order.overdue_buyer"
+	BalanceOverdueSeller     = "template.commerce.order.overdue_seller"
 )
 
 // Payload keys shared by the templates.
@@ -53,6 +59,12 @@ const (
 	VarOrderCount   = "order_count"
 	VarSalesAmount  = "sales_amount"
 	VarRefundAmount = "refund_amount"
+
+	VarPaymentAmount = "payment_amount"
+	VarAmountPaid    = "amount_paid"
+	VarBalance       = "balance"
+	VarBalanceDue    = "balance_due"
+	VarThreshold     = "threshold"
 )
 
 //nolint:gochecknoglobals // template registry is declared once at package init
@@ -63,11 +75,14 @@ func init() {
 	for _, name := range []string{
 		OrderPlacedBuyer, OrderPlacedSeller, OrderPaidBuyer, OrderPaidSeller, OrderPaymentExpired,
 		OrderCancelledBuyer, OrderCancelledSeller, OrderShipped, OrderDelivered, LedgerDayPosted,
+		InstalmentReceivedBuyer, InstalmentReceivedSeller, PaymentThresholdSeller,
+		BalanceOverdueBuyer, BalanceOverdueSeller,
 	} {
 		if err := notification.ValidateName(name); err != nil {
 			panic(err)
 		}
 	}
+	registry.MustAdd(instalmentTemplates()...)
 	registry.MustAdd(
 		notification.New(OrderPlacedBuyer,
 			"Order {{.order_number}} at {{.shop_name}}",
@@ -144,3 +159,76 @@ func init() {
 
 // Registry returns the template catalogue for setup-time registration.
 func Registry() *notification.Registry { return registry }
+
+// instalmentTemplates are the messages for orders paid in instalments.
+func instalmentTemplates() []notification.Template {
+	return []notification.Template{
+		notification.New(
+			InstalmentReceivedBuyer,
+			"Payment received for {{.order_number}}",
+			"{{.shop_name}}: {{.currency}} {{.payment_amount}} received for order {{.order_number}}. "+
+				"Paid {{.amount_paid}} of {{.amount}}, balance {{.balance}}{{if .balance_due}} due {{.balance_due}}{{end}}.",
+			"We received {{.currency}} {{.payment_amount}} for order {{.order_number}} at {{.shop_name}}.\n\n"+
+				"Paid so far: {{.currency}} {{.amount_paid}} of {{.amount}}\n"+
+				"Balance: {{.currency}} {{.balance}}\n"+
+				"{{if .balance_due}}Please pay the balance by {{.balance_due}}.\n{{end}}",
+			VarShopName,
+			VarOrderNumber,
+			VarAmount,
+			VarCurrency,
+			VarPaymentAmount,
+			VarAmountPaid,
+			VarBalance,
+			VarBalanceDue,
+		),
+		notification.New(
+			InstalmentReceivedSeller,
+			"Instalment on order {{.order_number}}",
+			"{{.shop_name}}: {{.currency}} {{.payment_amount}} paid on order {{.order_number}}, "+
+				"{{.amount_paid}} of {{.amount}} so far.",
+			"An instalment of {{.currency}} {{.payment_amount}} was paid on order {{.order_number}} at {{.shop_name}}.\n\n"+
+				"Paid so far: {{.currency}} {{.amount_paid}} of {{.amount}}\nBalance: {{.currency}} {{.balance}}\n",
+			VarShopName,
+			VarOrderNumber,
+			VarAmount,
+			VarCurrency,
+			VarPaymentAmount,
+			VarAmountPaid,
+			VarBalance,
+		),
+		notification.New(
+			PaymentThresholdSeller,
+			"Order {{.order_number}} is {{.threshold}}% paid",
+			"{{.shop_name}}: order {{.order_number}} reached {{.threshold}}% paid ({{.currency}} {{.amount_paid}} of {{.amount}}).",
+			"Order {{.order_number}} at {{.shop_name}} has reached {{.threshold}}% paid.\n\n"+
+				"Paid so far: {{.currency}} {{.amount_paid}} of {{.amount}}\nBalance: {{.currency}} {{.balance}}\n",
+			VarShopName,
+			VarOrderNumber,
+			VarAmount,
+			VarCurrency,
+			VarAmountPaid,
+			VarBalance,
+			VarThreshold,
+		),
+		notification.New(
+			BalanceOverdueBuyer,
+			"Balance overdue on {{.order_number}}",
+			"{{.shop_name}}: the balance of {{.currency}} {{.balance}} on order {{.order_number}} was due {{.balance_due}}.",
+			"The balance of {{.currency}} {{.balance}} on order {{.order_number}} at {{.shop_name}} "+
+				"was due on {{.balance_due}}.\n\nPaid so far: {{.currency}} {{.amount_paid}} of {{.amount}}\n",
+			VarShopName,
+			VarOrderNumber,
+			VarAmount,
+			VarCurrency,
+			VarAmountPaid,
+			VarBalance,
+			VarBalanceDue,
+		),
+		notification.New(BalanceOverdueSeller,
+			"Balance overdue on {{.order_number}}",
+			"{{.shop_name}}: order {{.order_number}} is overdue with {{.currency}} {{.balance}} unpaid.",
+			"Order {{.order_number}} at {{.shop_name}} passed its balance deadline ({{.balance_due}}) "+
+				"with {{.currency}} {{.balance}} unpaid.\n",
+			VarShopName, VarOrderNumber, VarAmount, VarCurrency, VarAmountPaid, VarBalance, VarBalanceDue),
+	}
+}

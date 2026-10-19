@@ -36,6 +36,7 @@ type ProcurementServer struct {
 	supplierBusiness      business.SupplierBusiness
 	purchaseOrderBusiness business.PurchaseOrderBusiness
 	goodsReceiptBusiness  business.GoodsReceiptBusiness
+	suggestionBusiness    business.SuggestionBusiness
 
 	procurementv1connect.UnimplementedProcurementServiceHandler
 }
@@ -44,6 +45,7 @@ func NewProcurementServer(
 	ctx context.Context,
 	svc *frame.Service,
 	authzMiddleware authz.Middleware,
+	materials business.MaterialSource,
 ) *ProcurementServer {
 	workMan := svc.WorkManager()
 	dbPool := svc.DatastoreManager().GetPool(ctx, datastore.DefaultPoolName)
@@ -60,6 +62,7 @@ func NewProcurementServer(
 		supplierBusiness:      business.NewSupplierBusiness(ctx, supplierRepo, supplierItemRepo),
 		purchaseOrderBusiness: business.NewPurchaseOrderBusiness(ctx, poRepo, polRepo, supplierItemRepo),
 		goodsReceiptBusiness:  business.NewGoodsReceiptBusiness(ctx, grRepo, grlRepo, poRepo, polRepo),
+		suggestionBusiness:    business.NewSuggestionBusiness(materials, supplierItemRepo),
 	}
 }
 
@@ -232,10 +235,11 @@ func (ps *ProcurementServer) SuggestPurchaseOrders(
 		return nil, authorizer.ToConnectError(err)
 	}
 
-	// Placeholder: returns empty suggestions for now
-	return connect.NewResponse(&procurementv1.SuggestPurchaseOrdersResponse{
-		Suggestions: nil,
-	}), nil
+	suggestions, err := ps.suggestionBusiness.SuggestPurchaseOrders(ctx, req.Msg)
+	if err != nil {
+		return nil, errorutil.CleanErr(err)
+	}
+	return connect.NewResponse(&procurementv1.SuggestPurchaseOrdersResponse{Suggestions: suggestions}), nil
 }
 
 // ----------------------

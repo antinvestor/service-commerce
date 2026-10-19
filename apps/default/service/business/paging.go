@@ -38,6 +38,11 @@ func pageFromSearch(search *commonv1.SearchRequest) (repository.Page, error) {
 	return page, nil
 }
 
+// PageFromSearch is pageFromSearch for handlers.
+func PageFromSearch(search *commonv1.SearchRequest) (repository.Page, error) {
+	return pageFromSearch(search)
+}
+
 // nextCursor encodes the key of the next page, or "" on the last page.
 func nextCursor(key *repository.PageKey) string {
 	return repository.EncodePageKey(key)

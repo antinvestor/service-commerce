@@ -54,9 +54,11 @@ type allBiz struct {
 	returnPaymentBiz business.PaymentBusiness
 	pricingBiz       business.PricingBusiness
 	ledgerBiz        business.LedgerBusiness
+	eventBiz         business.EventBusiness
 	checkout         *fakeCheckout
 	ledger           *fakeLedger
 	notifier         *recordingNotifier
+	webhooks         *fakeWebhooks
 }
 
 func (bts *BusinessTestSuite) getBusiness(ctx context.Context, svc *frame.Service) allBiz {
@@ -88,13 +90,16 @@ func (bts *BusinessTestSuite) getBusiness(ctx context.Context, svc *frame.Servic
 	checkout := newFakeCheckout()
 	ledger := newFakeLedger()
 	notifier := &recordingNotifier{}
+	webhooks := &fakeWebhooks{}
+	eventBiz := business.NewEventBusiness(
+		repository.NewOrderEventRepository(ctx, dbPool, workMan), shopRepo, notifier, webhooks, nil)
 	paymentPolicy := business.PaymentPolicy{
 		DefaultReturnURL: "https://shop.example/orders/{order_id}",
 		PaymentWindow:    30 * time.Minute,
 	}
 
 	return allBiz{
-		shopBiz:    business.NewShopBusiness(ctx, shopRepo, nil),
+		shopBiz:    business.NewShopBusiness(ctx, shopRepo, nil, nil, nil),
 		catalogBiz: business.NewCatalogBusiness(ctx, productRepo, variantRepo, shopRepo),
 		cartBiz:    business.NewCartBusiness(ctx, cartRepo, cartLineRepo, variantRepo),
 		orderBiz: business.NewOrderBusiness(
@@ -118,8 +123,8 @@ func (bts *BusinessTestSuite) getBusiness(ctx context.Context, svc *frame.Servic
 			shopRepo,
 			notifier,
 		),
-		paymentBiz: business.NewPaymentBusiness(ctx, orderRepo, shopRepo, checkout, notifier, paymentPolicy),
-		returnPaymentBiz: business.NewPaymentBusiness(ctx, orderRepo, shopRepo, checkout, notifier,
+		paymentBiz: business.NewPaymentBusiness(ctx, orderRepo, shopRepo, checkout, notifier, eventBiz, paymentPolicy),
+		returnPaymentBiz: business.NewPaymentBusiness(ctx, orderRepo, shopRepo, checkout, notifier, eventBiz,
 			business.PaymentPolicy{
 				DefaultReturnURL: paymentPolicy.DefaultReturnURL,
 				ReturnBaseURL:    "https://api.example/commerce/",
@@ -128,9 +133,11 @@ func (bts *BusinessTestSuite) getBusiness(ctx context.Context, svc *frame.Servic
 		pricingBiz: pricingBiz,
 		ledgerBiz: business.NewLedgerBusiness(ctx, orderRepo, shopRepo, postingRepo, ledger, notifier,
 			business.LedgerPolicy{BookType: "merchant", Timezone: "UTC"}),
+		eventBiz: eventBiz,
 		checkout: checkout,
 		ledger:   ledger,
 		notifier: notifier,
+		webhooks: webhooks,
 	}
 }
 
@@ -138,7 +145,7 @@ func (bts *BusinessTestSuite) getBusiness(ctx context.Context, svc *frame.Servic
 // it creates the session, completes it, and confirms the payment.
 func (bts *BusinessTestSuite) payOrder(ctx context.Context, biz allBiz, orderID string) *commercev1.Order {
 	t := bts.T()
-	checked, err := biz.paymentBiz.CheckoutOrder(ctx, &commercev1.CheckoutOrderRequest{OrderId: orderID})
+	checked, err := checkoutOrder(ctx, biz.paymentBiz, &commercev1.CheckoutOrderRequest{OrderId: orderID})
 	require.NoError(t, err)
 	require.NotEmpty(t, checked.GetCheckoutUrl())
 	biz.checkout.complete(checked.GetPaymentSessionRef(), "pay-"+util.RandomAlphaNumericString(6))

@@ -150,6 +150,10 @@ type DiscountRule struct {
 	ValidFrom          *time.Time
 	ValidUntil         *time.Time
 	Status             int32 `gorm:"default:1"`
+	// ApprovedBy and ApprovedAt are set by DiscountRuleApprove. A rule that
+	// requires approval is applied automatically only once approved.
+	ApprovedBy string `gorm:"type:varchar(50)"`
+	ApprovedAt *time.Time
 
 	Shop *Shop `gorm:"foreignKey:ShopID"`
 }
@@ -173,6 +177,10 @@ func (dr *DiscountRule) ToAPI() *commercev1.DiscountRule {
 	}
 	if dr.ValidUntil != nil {
 		api.ValidUntil = timestamppb.New(*dr.ValidUntil)
+	}
+	api.ApprovedBy = dr.ApprovedBy
+	if dr.ApprovedAt != nil {
+		api.ApprovedAt = timestamppb.New(*dr.ApprovedAt)
 	}
 	return api
 }

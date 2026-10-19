@@ -191,8 +191,6 @@ func (lb *ledgerBusiness) postShopDay(
 	day string,
 	from, to time.Time,
 ) *models.LedgerPosting {
-	log := util.Log(ctx).WithFields(map[string]any{metadataShopID: shop.GetID(), metadataTradingDay: day})
-
 	existing, err := lb.postingRepo.GetByShopAndDay(ctx, shop.GetID(), day)
 	if err == nil && existing.Status != models.LedgerPostingFailed {
 		return existing
@@ -208,6 +206,10 @@ func (lb *ledgerBusiness) postShopDay(
 	if err != nil {
 		return lb.recordFailure(ctx, shop, day, existing, fmt.Errorf("list paid orders: %w", err))
 	}
+	payments, err := lb.orderRepo.ListPaymentsBetween(ctx, shop.GetID(), from, to)
+	if err != nil {
+		return lb.recordFailure(ctx, shop, day, existing, fmt.Errorf("list instalments: %w", err))
+	}
 	refunded, err := lb.orderRepo.ListRefundedBetween(ctx, shop.GetID(), from, to)
 	if err != nil {
 		return lb.recordFailure(ctx, shop, day, existing, fmt.Errorf("list refunded orders: %w", err))
@@ -217,11 +219,11 @@ func (lb *ledgerBusiness) postShopDay(
 	if posting == nil {
 		posting = &models.LedgerPosting{ShopID: shop.GetID(), TradingDay: day}
 	}
-	posting.Currency, posting.SalesNanos, posting.RefundNanos, err = sumOrders(paid, refunded)
+	posting.Currency, posting.SalesNanos, posting.RefundNanos, err = sumDay(paid, payments, refunded)
 	if err != nil {
 		return lb.recordFailure(ctx, shop, day, existing, err)
 	}
-	posting.OrderCount = int32(distinctOrders(paid, refunded)) //nolint:gosec // bounded by a day's orders
+	posting.OrderCount = int32(distinctOrders(payments, paid, refunded)) //nolint:gosec // bounded by a day's orders
 	posting.Error = ""
 
 	if posting.SalesNanos == 0 && posting.RefundNanos == 0 {
@@ -247,29 +249,33 @@ func (lb *ledgerBusiness) postShopDay(
 	posting.Status = models.LedgerPostingPosted
 	lb.save(ctx, posting, existing != nil)
 
-	// Stamp both sides so neither the sale nor the refund is merged twice,
-	// even when they fall on different trading days.
-	if stampErr := lb.orderRepo.SetLedgerTransaction(ctx, orderIDs(paid), txnID); stampErr != nil {
-		log.WithError(stampErr).Error("posted to ledger but could not stamp paid orders")
-	}
-	if stampErr := lb.orderRepo.SetRefundLedgerTransaction(ctx, orderIDs(refunded), txnID); stampErr != nil {
-		log.WithError(stampErr).Error("posted to ledger but could not stamp refunded orders")
-	}
+	lb.stamp(ctx, shop, day, paid, payments, refunded, txnID)
 
 	lb.notifier.LedgerDayPosted(ctx, shop, posting)
 	return posting
 }
 
 // distinctOrders counts orders touched by the day, so a sale refunded the
-// same day is one order, not two.
-func distinctOrders(groups ...[]*models.Order) int {
+// same day, or several instalments on one order, count once.
+func distinctOrders(payments []*models.OrderPayment, groups ...[]*models.Order) int {
 	seen := map[string]struct{}{}
+	for _, p := range payments {
+		seen[p.OrderID] = struct{}{}
+	}
 	for _, g := range groups {
 		for _, o := range g {
 			seen[o.GetID()] = struct{}{}
 		}
 	}
 	return len(seen)
+}
+
+func paymentIDs(payments []*models.OrderPayment) []string {
+	ids := make([]string, 0, len(payments))
+	for _, p := range payments {
+		ids = append(ids, p.GetID())
+	}
+	return ids
 }
 
 func orderIDs(orders []*models.Order) []string {
@@ -280,38 +286,54 @@ func orderIDs(orders []*models.Order) []string {
 	return ids
 }
 
-// sumOrders totals sales and refunds in nanos and rejects mixed currencies,
-// which would make a single balanced transaction meaningless.
-func sumOrders(paid, refunded []*models.Order) (string, int64, int64, error) {
+// sumDay totals the money received (legacy whole-order payments plus
+// instalments) and refunded in nanos, and rejects mixed currencies, which
+// would make a single balanced transaction meaningless.
+func sumDay(
+	paid []*models.Order,
+	payments []*models.OrderPayment,
+	refunded []*models.Order,
+) (string, int64, int64, error) {
 	currency := ""
+	same := func(c, what string) error {
+		if currency == "" {
+			currency = c
+			return nil
+		}
+		if c != currency {
+			return fmt.Errorf("%s is in %s but the day is in %s", what, c, currency)
+		}
+		return nil
+	}
 	var sales, refunds int64
 	for _, o := range paid {
-		if currency == "" {
-			currency = o.TotalCurrency
-		} else if o.TotalCurrency != currency {
-			return "", 0, 0, fmt.Errorf(
-				"order %s is in %s but the day is in %s",
-				o.OrderNumber,
-				o.TotalCurrency,
-				currency,
-			)
+		if err := same(o.TotalCurrency, "order "+o.OrderNumber); err != nil {
+			return "", 0, 0, err
 		}
 		sales += o.TotalNanosValue()
 	}
-	for _, o := range refunded {
-		if currency == "" {
-			currency = o.TotalCurrency
-		} else if o.TotalCurrency != currency {
-			return "", 0, 0, fmt.Errorf(
-				"order %s is in %s but the day is in %s",
-				o.OrderNumber,
-				o.TotalCurrency,
-				currency,
-			)
+	for _, p := range payments {
+		if err := same(p.Currency, "instalment "+p.Reference); err != nil {
+			return "", 0, 0, err
 		}
-		refunds += o.TotalNanosValue()
+		sales += p.AmountNanos
+	}
+	for _, o := range refunded {
+		if err := same(o.TotalCurrency, "order "+o.OrderNumber); err != nil {
+			return "", 0, 0, err
+		}
+		refunds += refundedNanos(o)
 	}
 	return currency, sales, refunds, nil
+}
+
+// refundedNanos is what a refunded order gives back: what was actually paid,
+// or the total for orders paid in full before instalments existed.
+func refundedNanos(o *models.Order) int64 {
+	if o.AmountPaidNanos > 0 {
+		return o.AmountPaidNanos
+	}
+	return o.TotalNanosValue()
 }
 
 // buildDayTransaction debits the receivable account and credits sales with
@@ -526,4 +548,36 @@ func (g *connectLedgerGateway) PostTransaction(
 
 func isAlreadyExists(err error) bool {
 	return connect.CodeOf(err) == connect.CodeAlreadyExists || data.ErrorIsDuplicateKey(err)
+}
+
+// stamp marks everything merged into txnID so neither a sale nor a refund is
+// merged twice, even when they fall on different trading days. Failures are
+// logged: the posting itself has already succeeded.
+func (lb *ledgerBusiness) stamp(
+	ctx context.Context,
+	shop *models.Shop,
+	day string,
+	paid []*models.Order,
+	payments []*models.OrderPayment,
+	refunded []*models.Order,
+	txnID string,
+) {
+	log := util.Log(ctx).WithFields(map[string]any{
+		metadataShopID: shop.GetID(), metadataTradingDay: day, "transaction_id": txnID,
+	})
+	// An order paid in instalments carries the transaction of its latest
+	// instalment; the instalments themselves carry their own.
+	saleOrders := orderIDs(paid)
+	for _, p := range payments {
+		saleOrders = append(saleOrders, p.OrderID)
+	}
+	if stampErr := lb.orderRepo.SetLedgerTransaction(ctx, saleOrders, txnID); stampErr != nil {
+		log.WithError(stampErr).Error("posted to ledger but could not stamp paid orders")
+	}
+	if stampErr := lb.orderRepo.SetPaymentLedgerTransaction(ctx, paymentIDs(payments), txnID); stampErr != nil {
+		log.WithError(stampErr).Error("posted to ledger but could not stamp instalments")
+	}
+	if stampErr := lb.orderRepo.SetRefundLedgerTransaction(ctx, orderIDs(refunded), txnID); stampErr != nil {
+		log.WithError(stampErr).Error("posted to ledger but could not stamp refunded orders")
+	}
 }

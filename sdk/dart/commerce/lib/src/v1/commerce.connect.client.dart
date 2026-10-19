@@ -80,6 +80,27 @@ extension type CommerceServiceClient (connect.Transport _transport) {
     );
   }
 
+  /// Resolves the currency the caller most likely trades in: their currency
+  /// setting, else the locale of the device they are signed in on, else the
+  /// country of their first profile address. CreateShop applies the same
+  /// default when no currency is given.
+  Future<v1commerce.ResolveDefaultCurrencyResponse> resolveDefaultCurrency(
+    v1commerce.ResolveDefaultCurrencyRequest input, {
+    connect.Headers? headers,
+    connect.AbortSignal? signal,
+    Function(connect.Headers)? onHeader,
+    Function(connect.Headers)? onTrailer,
+  }) {
+    return connect.Client(_transport).unary(
+      specs.CommerceService.resolveDefaultCurrency,
+      input,
+      signal: signal,
+      headers: headers,
+      onHeader: onHeader,
+      onTrailer: onTrailer,
+    );
+  }
+
   /// Creates a new product in the catalog.
   Future<v1commerce.CreateProductResponse> createProduct(
     v1commerce.CreateProductRequest input, {
@@ -162,6 +183,25 @@ extension type CommerceServiceClient (connect.Transport _transport) {
   }) {
     return connect.Client(_transport).unary(
       specs.CommerceService.updateProductVariant,
+      input,
+      signal: signal,
+      headers: headers,
+      onHeader: onHeader,
+      onTrailer: onTrailer,
+    );
+  }
+
+  /// Updates a product: details, fulfilment type, status, and its payment
+  /// policy override.
+  Future<v1commerce.UpdateProductResponse> updateProduct(
+    v1commerce.UpdateProductRequest input, {
+    connect.Headers? headers,
+    connect.AbortSignal? signal,
+    Function(connect.Headers)? onHeader,
+    Function(connect.Headers)? onTrailer,
+  }) {
+    return connect.Client(_transport).unary(
+      specs.CommerceService.updateProduct,
       input,
       signal: signal,
       headers: headers,
@@ -393,6 +433,45 @@ extension type CommerceServiceClient (connect.Transport _transport) {
     );
   }
 
+  /// Records a payment the shop took itself (cash, bank transfer, a till) as
+  /// an instalment against the order. Staff only. A reference already
+  /// recorded on the order is returned as-is, so retries are safe.
+  Future<v1commerce.RecordOrderPaymentResponse> recordOrderPayment(
+    v1commerce.RecordOrderPaymentRequest input, {
+    connect.Headers? headers,
+    connect.AbortSignal? signal,
+    Function(connect.Headers)? onHeader,
+    Function(connect.Headers)? onTrailer,
+  }) {
+    return connect.Client(_transport).unary(
+      specs.CommerceService.recordOrderPayment,
+      input,
+      signal: signal,
+      headers: headers,
+      onHeader: onHeader,
+      onTrailer: onTrailer,
+    );
+  }
+
+  /// Lists payment and lifecycle signals for an order, or for every order in
+  /// a shop, oldest first. The same events are pushed to the shop's webhook.
+  Future<v1commerce.ListOrderEventsResponse> listOrderEvents(
+    v1commerce.ListOrderEventsRequest input, {
+    connect.Headers? headers,
+    connect.AbortSignal? signal,
+    Function(connect.Headers)? onHeader,
+    Function(connect.Headers)? onTrailer,
+  }) {
+    return connect.Client(_transport).unary(
+      specs.CommerceService.listOrderEvents,
+      input,
+      signal: signal,
+      headers: headers,
+      onHeader: onHeader,
+      onTrailer: onTrailer,
+    );
+  }
+
   /// Reconciles orders awaiting payment against the payment service and
   /// expires reservations whose payment window has lapsed. Scheduled.
   Future<v1commerce.ReconcilePaymentsResponse> reconcilePayments(
@@ -479,6 +558,24 @@ extension type CommerceServiceClient (connect.Transport _transport) {
   }) {
     return connect.Client(_transport).unary(
       specs.CommerceService.getFulfilment,
+      input,
+      signal: signal,
+      headers: headers,
+      onHeader: onHeader,
+      onTrailer: onTrailer,
+    );
+  }
+
+  /// Lists an order's fulfilments, oldest first.
+  Future<v1commerce.ListFulfilmentsResponse> listFulfilments(
+    v1commerce.ListFulfilmentsRequest input, {
+    connect.Headers? headers,
+    connect.AbortSignal? signal,
+    Function(connect.Headers)? onHeader,
+    Function(connect.Headers)? onTrailer,
+  }) {
+    return connect.Client(_transport).unary(
+      specs.CommerceService.listFulfilments,
       input,
       signal: signal,
       headers: headers,
@@ -659,6 +756,25 @@ extension type CommerceServiceClient (connect.Transport _transport) {
   }) {
     return connect.Client(_transport).unary(
       specs.CommerceService.discountRuleSearch,
+      input,
+      signal: signal,
+      headers: headers,
+      onHeader: onHeader,
+      onTrailer: onTrailer,
+    );
+  }
+
+  /// Approves a discount rule that requires approval, so pricing may apply
+  /// it automatically.
+  Future<v1commerce.DiscountRuleApproveResponse> discountRuleApprove(
+    v1commerce.DiscountRuleApproveRequest input, {
+    connect.Headers? headers,
+    connect.AbortSignal? signal,
+    Function(connect.Headers)? onHeader,
+    Function(connect.Headers)? onTrailer,
+  }) {
+    return connect.Client(_transport).unary(
+      specs.CommerceService.discountRuleApprove,
       input,
       signal: signal,
       headers: headers,

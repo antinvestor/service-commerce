@@ -79,7 +79,9 @@ func (r *fulfilmentRepository) ListByOrderID(ctx context.Context, orderID string
 	var fulfilments []*models.Fulfilment
 	err := r.Pool().DB(ctx, true).
 		Preload(clause.Associations).
-		Where("order_id = ?", orderID).Find(&fulfilments).Error
+		Where("order_id = ?", orderID).
+		Order("created_at ASC").
+		Find(&fulfilments).Error
 	return fulfilments, err
 }
 

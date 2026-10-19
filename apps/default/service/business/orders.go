@@ -143,7 +143,7 @@ func (ob *orderBusiness) createOrder(
 		return nil, connect.NewError(connect.CodeFailedPrecondition, errors.New("shop is not active"))
 	}
 
-	orderLines, subtotalCurrency, subtotalUnits, subtotalNanos, err := ob.buildOrderLines(
+	orderLines, linePolicies, subtotalCurrency, subtotalUnits, subtotalNanos, err := ob.buildOrderLines(
 		ctx,
 		req.GetShopId(),
 		req.GetProfileId(),
@@ -170,6 +170,7 @@ func (ob *orderBusiness) createOrder(
 
 	order := &models.Order{
 		ShopID:           req.GetShopId(),
+		PaymentPolicy:    orderPolicy(shop, linePolicies),
 		IdempotencyKey:   idempotencyKey,
 		RequestHash:      requestHash,
 		Status:           int32(status),
@@ -360,57 +361,58 @@ func (ob *orderBusiness) buildOrderLines(
 	ctx context.Context,
 	shopID, customerID string,
 	lines []*commercev1.CreateOrderLine,
-) ([]*models.OrderLine, string, int64, int32, error) {
+) ([]*models.OrderLine, []*models.PaymentPolicy, string, int64, int32, error) {
 	var orderLines []*models.OrderLine
+	var policies []*models.PaymentPolicy
 	var subtotalCurrency string
 	var subtotalUnits int64
 	var subtotalNanos int64
 
 	for _, line := range lines {
 		if line.GetQuantity() <= 0 {
-			return nil, "", 0, 0, connect.NewError(connect.CodeInvalidArgument,
+			return nil, nil, "", 0, 0, connect.NewError(connect.CodeInvalidArgument,
 				fmt.Errorf("quantity must be positive for variant %s", line.GetVariantId()))
 		}
 
 		variant, err := ob.variantRepo.GetByID(ctx, line.GetVariantId())
 		if err != nil {
-			return nil, "", 0, 0, connect.NewError(connect.CodeNotFound,
+			return nil, nil, "", 0, 0, connect.NewError(connect.CodeNotFound,
 				fmt.Errorf("variant %s not found", line.GetVariantId()))
 		}
 		if variant.Status != int32(commercev1.ProductVariantStatus_PRODUCT_VARIANT_STATUS_ACTIVE) {
-			return nil, "", 0, 0, connect.NewError(connect.CodeFailedPrecondition,
+			return nil, nil, "", 0, 0, connect.NewError(connect.CodeFailedPrecondition,
 				fmt.Errorf("variant %s is not available for sale", line.GetVariantId()))
 		}
 
-		productShopID, productStatus, shopErr := ob.variantProduct(ctx, variant)
+		product, shopErr := ob.variantProduct(ctx, variant)
 		if shopErr != nil {
-			return nil, "", 0, 0, shopErr
+			return nil, nil, "", 0, 0, shopErr
 		}
-		if productShopID != shopID {
-			return nil, "", 0, 0, connect.NewError(connect.CodeInvalidArgument,
+		if product.ShopID != shopID {
+			return nil, nil, "", 0, 0, connect.NewError(connect.CodeInvalidArgument,
 				fmt.Errorf("variant %s does not belong to shop %s", line.GetVariantId(), shopID))
 		}
-		if productStatus != int32(commercev1.ProductStatus_PRODUCT_STATUS_ACTIVE) {
-			return nil, "", 0, 0, connect.NewError(connect.CodeFailedPrecondition,
+		if product.Status != int32(commercev1.ProductStatus_PRODUCT_STATUS_ACTIVE) {
+			return nil, nil, "", 0, 0, connect.NewError(connect.CodeFailedPrecondition,
 				fmt.Errorf("product for variant %s is not available for sale", line.GetVariantId()))
 		}
 
 		currency, unitUnits, unitNanos, err := ob.unitPrice(ctx, variant, customerID, line.GetQuantity())
 		if err != nil {
-			return nil, "", 0, 0, err
+			return nil, nil, "", 0, 0, err
 		}
 
 		if subtotalCurrency == "" {
 			subtotalCurrency = currency
 		} else if currency != subtotalCurrency {
-			return nil, "", 0, 0, connect.NewError(connect.CodeInvalidArgument,
+			return nil, nil, "", 0, 0, connect.NewError(connect.CodeInvalidArgument,
 				fmt.Errorf("variant %s is priced in %s but the order is in %s",
 					line.GetVariantId(), currency, subtotalCurrency))
 		}
 
 		// Advisory stock check; CreateWithLinesAndStock re-checks under row update.
 		if variant.StockQuantity < line.GetQuantity() {
-			return nil, "", 0, 0, connect.NewError(connect.CodeFailedPrecondition,
+			return nil, nil, "", 0, 0, connect.NewError(connect.CodeFailedPrecondition,
 				fmt.Errorf("insufficient stock for variant %s: requested %d, available %d",
 					line.GetVariantId(), line.GetQuantity(), variant.StockQuantity))
 		}
@@ -419,6 +421,7 @@ func (ob *orderBusiness) buildOrderLines(
 		lineTotalUnits := unitUnits*line.GetQuantity() + lineTotalNanos/nanosPerUnit
 		lineTotalNanos %= nanosPerUnit
 
+		policies = append(policies, product.PaymentPolicy)
 		orderLines = append(orderLines, &models.OrderLine{
 			ProductVariantID:   variant.GetID(),
 			SKUSnapshot:        variant.SKU,
@@ -438,7 +441,7 @@ func (ob *orderBusiness) buildOrderLines(
 		subtotalNanos %= nanosPerUnit
 	}
 
-	return orderLines, subtotalCurrency, subtotalUnits, int32(subtotalNanos), nil
+	return orderLines, policies, subtotalCurrency, subtotalUnits, int32(subtotalNanos), nil
 }
 
 // unitPrice is what customerID pays per unit of variant at quantity, rounded
@@ -474,17 +477,29 @@ func (ob *orderBusiness) unitPrice(
 func (ob *orderBusiness) variantProduct(
 	ctx context.Context,
 	variant *models.ProductVariant,
-) (string, int32, error) {
+) (*models.Product, error) {
 	if variant.Product != nil && variant.Product.ShopID != "" {
-		return variant.Product.ShopID, variant.Product.Status, nil
+		return variant.Product, nil
 	}
-
 	product, err := ob.productRepo.GetByID(ctx, variant.ProductID)
 	if err != nil {
-		return "", 0, connect.NewError(connect.CodeNotFound,
+		return nil, connect.NewError(connect.CodeNotFound,
 			fmt.Errorf("product for variant %s not found", variant.GetID()))
 	}
-	return product.ShopID, product.Status, nil
+	return product, nil
+}
+
+// orderPolicy is the payment policy fixed on a new order: each line's
+// product override, else the shop's, merged into the strictest.
+func orderPolicy(shop *models.Shop, productPolicies []*models.PaymentPolicy) *models.PaymentPolicy {
+	lines := make([]*models.PaymentPolicy, len(productPolicies))
+	for i, p := range productPolicies {
+		lines[i] = p
+		if p == nil {
+			lines[i] = shop.PaymentPolicy
+		}
+	}
+	return mergePolicies(lines)
 }
 
 // orderRequestHash fingerprints the parts of a create request that define the

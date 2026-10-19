@@ -37,6 +37,10 @@ type ProductPage struct {
 type CatalogBusiness interface {
 	CreateProduct(ctx context.Context, req *commercev1.CreateProductRequest) (*commercev1.Product, error)
 	GetProduct(ctx context.Context, id string) (*commercev1.Product, error)
+	// UpdateProduct applies the masked fields. Without a mask only fields
+	// carrying a value are applied; the payment policy override is removed
+	// only when "payment_policy" is masked and unset.
+	UpdateProduct(ctx context.Context, req *commercev1.UpdateProductRequest) (*commercev1.Product, error)
 	// ListProducts pages products for a shop. Archived products are excluded
 	// unless the search query is "status:archived"; "status:active" limits to
 	// active products only.
@@ -85,15 +89,19 @@ func (cb *catalogBusiness) CreateProduct(
 	if _, err := cb.shopRepo.GetByID(ctx, req.GetShopId()); err != nil {
 		return nil, connect.NewError(connect.CodeNotFound, errors.New("shop not found"))
 	}
+	if err := validatePaymentPolicy(req.GetPaymentPolicy()); err != nil {
+		return nil, err
+	}
 
 	product := &models.Product{
 		ShopID:         req.GetShopId(),
 		Name:           name,
 		Description:    req.GetDescription(),
 		Attributes:     models.MapToJSONMap(req.GetAttributes()),
-		FulfilmentType: 0,
+		FulfilmentType: int32(req.GetFulfilmentType()),
 		Status:         int32(commercev1.ProductStatus_PRODUCT_STATUS_ACTIVE),
 		MediaIDs:       models.StringArray(req.GetMediaIds()),
+		PaymentPolicy:  models.PaymentPolicyFromAPI(req.GetPaymentPolicy()),
 	}
 
 	if createErr := cb.productRepo.Create(ctx, product); createErr != nil {
@@ -340,4 +348,83 @@ func applyVariantField(
 		}
 	}
 	return nil, nil
+}
+
+func (cb *catalogBusiness) UpdateProduct(
+	ctx context.Context,
+	req *commercev1.UpdateProductRequest,
+) (*commercev1.Product, error) {
+	if err := validatePaymentPolicy(req.GetPaymentPolicy()); err != nil {
+		return nil, err
+	}
+	product, err := cb.productRepo.GetByID(ctx, req.GetId())
+	if err != nil {
+		return nil, data.ErrorConvertToAPI(err)
+	}
+	fields := req.GetUpdateMask().GetPaths()
+	explicitMask := len(fields) > 0
+	if !explicitMask {
+		fields = []string{
+			fieldName, fieldDescription, fieldAttributes, fieldFulfilmentType,
+			fieldStatus, fieldMediaIDs, fieldPaymentPolicy,
+		}
+	}
+	columns := make([]string, 0, len(fields))
+	for _, field := range fields {
+		if column, ok := applyProductField(product, req, field, explicitMask); ok {
+			columns = append(columns, column)
+		}
+	}
+	if len(columns) > 0 {
+		if _, updateErr := cb.productRepo.Update(ctx, product, columns...); updateErr != nil {
+			return nil, data.ErrorConvertToAPI(updateErr)
+		}
+	}
+	return product.ToAPI(), nil
+}
+
+func applyProductField(
+	product *models.Product,
+	req *commercev1.UpdateProductRequest,
+	field string,
+	explicitMask bool,
+) (string, bool) {
+	switch field {
+	case fieldName:
+		if name := strings.TrimSpace(req.GetName()); name != "" {
+			product.Name = name
+			return fieldName, true
+		}
+	case fieldDescription:
+		if explicitMask || req.GetDescription() != "" {
+			product.Description = req.GetDescription()
+			return fieldDescription, true
+		}
+	case fieldAttributes:
+		if explicitMask || len(req.GetAttributes()) > 0 {
+			product.Attributes = models.MapToJSONMap(req.GetAttributes())
+			return fieldAttributes, true
+		}
+	case fieldFulfilmentType:
+		if explicitMask || req.GetFulfilmentType() != commercev1.FulfilmentType_FULFILMENT_TYPE_UNSPECIFIED {
+			product.FulfilmentType = int32(req.GetFulfilmentType())
+			return fieldFulfilmentType, true
+		}
+	case fieldStatus:
+		if req.GetStatus() != commercev1.ProductStatus_PRODUCT_STATUS_UNSPECIFIED {
+			product.Status = int32(req.GetStatus())
+			return fieldStatus, true
+		}
+	case fieldMediaIDs:
+		if explicitMask || len(req.GetMediaIds()) > 0 {
+			product.MediaIDs = models.StringArray(req.GetMediaIds())
+			return fieldMediaIDs, true
+		}
+	case fieldPaymentPolicy:
+		if explicitMask || req.GetPaymentPolicy() != nil {
+			product.PaymentPolicy = models.PaymentPolicyFromAPI(req.GetPaymentPolicy())
+			return fieldPaymentPolicy, true
+		}
+	}
+	return "", false
 }

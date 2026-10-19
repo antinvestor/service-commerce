@@ -35,6 +35,8 @@ type FulfilmentBusiness interface {
 	CreateFulfilment(ctx context.Context, req *commercev1.CreateFulfilmentRequest) (*commercev1.Fulfilment, error)
 	UpdateFulfilment(ctx context.Context, req *commercev1.UpdateFulfilmentRequest) (*commercev1.Fulfilment, error)
 	GetFulfilment(ctx context.Context, id string) (*commercev1.Fulfilment, error)
+	// ListFulfilments returns an order's fulfilments, oldest first.
+	ListFulfilments(ctx context.Context, orderID string) ([]*commercev1.Fulfilment, error)
 }
 
 func NewFulfilmentBusiness(
@@ -82,6 +84,14 @@ func (fb *fulfilmentBusiness) CreateFulfilment(
 	}
 	if order.Status == int32(commercev1.OrderStatus_ORDER_STATUS_PENDING_PAYMENT) {
 		return nil, connect.NewError(connect.CodeFailedPrecondition, errors.New("order has not been paid"))
+	}
+	// A part-paid order ships only once the policy's share is paid.
+	if order.PaymentStatus == int32(commercev1.PaymentStatus_PAYMENT_STATUS_PARTIALLY_PAID) {
+		if mark := fulfilMark(order.PaymentPolicy); order.PaidPercent() < mark {
+			return nil, connect.NewError(connect.CodeFailedPrecondition,
+				fmt.Errorf("order is %d%% paid; %d%% must be paid before it can be fulfilled",
+					order.PaidPercent(), mark))
+		}
 	}
 
 	if len(req.GetLines()) == 0 {
@@ -389,4 +399,16 @@ func (fb *fulfilmentBusiness) setOrderFulfilment(
 		util.Log(ctx).WithField("order_id", order.GetID()).
 			Debug("order status changed concurrently; fulfilment status sync skipped")
 	}
+}
+
+func (fb *fulfilmentBusiness) ListFulfilments(ctx context.Context, orderID string) ([]*commercev1.Fulfilment, error) {
+	fulfilments, err := fb.fulfilmentRepo.ListByOrderID(ctx, orderID)
+	if err != nil {
+		return nil, data.ErrorConvertToAPI(err)
+	}
+	result := make([]*commercev1.Fulfilment, 0, len(fulfilments))
+	for _, f := range fulfilments {
+		result = append(result, f.ToAPI())
+	}
+	return result, nil
 }

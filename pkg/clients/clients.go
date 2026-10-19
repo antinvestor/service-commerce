@@ -22,8 +22,11 @@ import (
 	"context"
 	"fmt"
 
+	"buf.build/gen/go/antinvestor/device/connectrpc/go/device/v1/devicev1connect"
 	"buf.build/gen/go/antinvestor/ledger/connectrpc/go/v1/ledgerv1connect"
 	"buf.build/gen/go/antinvestor/payment/connectrpc/go/checkout/v1/checkoutv1connect"
+	"buf.build/gen/go/antinvestor/profile/connectrpc/go/profile/v1/profilev1connect"
+	"buf.build/gen/go/antinvestor/settingz/connectrpc/go/settings/v1/settingsv1connect"
 	"buf.build/gen/go/antinvestor/workflow/connectrpc/go/v1/workflowv1connect"
 	"github.com/antinvestor/common/notification"
 	"github.com/antinvestor/common/v2"
@@ -44,7 +47,9 @@ type Platform struct {
 	Checkout     checkoutv1connect.CheckoutServiceClient
 	Ledger       ledgerv1connect.LedgerServiceClient
 	Notification notification.Sender
-	Workflow     workflowv1connect.WorkflowServiceClient
+	Settings     settingsv1connect.SettingsServiceClient
+	Devices      devicev1connect.DeviceServiceClient
+	Profiles     profilev1connect.ProfileServiceClient
 }
 
 // New builds the platform clients that have an endpoint configured.
@@ -90,19 +95,56 @@ func New(ctx context.Context, cfg *aconfig.CommerceConfig) (*Platform, error) {
 		log.Warn("notification service not configured; buyer and seller messages are disabled")
 	}
 
-	if cfg.TrustageEnabled() {
-		cli, err := connection.NewServiceClient(ctx, cfg, common.ServiceTarget{
-			ServiceID:             servicecatalog.ServiceTrustage,
-			Endpoint:              cfg.TrustageServiceURI,
-			WorkloadAPITargetPath: cfg.TrustageServiceWorkloadAPITargetPath,
-		}, workflowv1connect.NewWorkflowServiceClient)
-		if err != nil {
-			return nil, fmt.Errorf("workflow client: %w", err)
-		}
-		p.Workflow = cli
+	if err := addCurrencySources(ctx, cfg, p); err != nil {
+		return nil, err
 	}
 
 	return p, nil
+}
+
+// addCurrencySources builds the profile-side clients a caller's default
+// currency is read from. Any of them may be absent.
+func addCurrencySources(ctx context.Context, cfg *aconfig.CommerceConfig, p *Platform) error {
+	if cfg.SettingsServiceURI != "" {
+		cli, err := connection.NewServiceClient(ctx, cfg, common.ServiceTarget{
+			ServiceID:             servicecatalog.ServiceSettings,
+			Endpoint:              cfg.SettingsServiceURI,
+			WorkloadAPITargetPath: cfg.SettingsServiceWorkloadAPITargetPath,
+		}, settingsv1connect.NewSettingsServiceClient)
+		if err != nil {
+			return fmt.Errorf("settings client: %w", err)
+		}
+		p.Settings = cli
+	}
+
+	if cfg.DeviceServiceURI != "" {
+		cli, err := connection.NewServiceClient(ctx, cfg, common.ServiceTarget{
+			ServiceID:             servicecatalog.ServiceDevices,
+			Endpoint:              cfg.DeviceServiceURI,
+			WorkloadAPITargetPath: cfg.DeviceServiceWorkloadAPITargetPath,
+		}, devicev1connect.NewDeviceServiceClient)
+		if err != nil {
+			return fmt.Errorf("device client: %w", err)
+		}
+		p.Devices = cli
+	}
+
+	if cfg.ProfileServiceURI != "" {
+		cli, err := connection.NewServiceClient(ctx, cfg, common.ServiceTarget{
+			ServiceID:             servicecatalog.ServiceProfile,
+			Endpoint:              cfg.ProfileServiceURI,
+			WorkloadAPITargetPath: cfg.ProfileServiceWorkloadAPITargetPath,
+		}, profilev1connect.NewProfileServiceClient)
+		if err != nil {
+			return fmt.Errorf("profile client: %w", err)
+		}
+		p.Profiles = cli
+	}
+
+	if p.Settings == nil && p.Devices == nil && p.Profiles == nil {
+		util.Log(ctx).Warn("no profile services configured; new shops default to the platform currency")
+	}
+	return nil
 }
 
 // NotificationTarget describes the notification service for the shared
@@ -112,4 +154,25 @@ func NotificationTarget(cfg *aconfig.CommerceConfig) notification.Target {
 		Endpoint:              cfg.NotificationServiceURI,
 		WorkloadAPITargetPath: cfg.NotificationServiceWorkloadAPITargetPath,
 	}
+}
+
+// NewWorkflowClient builds the trustage client the setup job registers
+// scheduled workflows with. It returns nil when trustage is not configured;
+// the sync then logs and skips. The runtime never talks to trustage.
+func NewWorkflowClient(
+	ctx context.Context,
+	cfg *aconfig.CommerceConfig,
+) (workflowv1connect.WorkflowServiceClient, error) {
+	if !cfg.TrustageEnabled() {
+		return nil, nil //nolint:nilnil // not configured is a valid state
+	}
+	cli, err := connection.NewServiceClient(ctx, cfg, common.ServiceTarget{
+		ServiceID:             servicecatalog.ServiceTrustage,
+		Endpoint:              cfg.TrustageServiceURI,
+		WorkloadAPITargetPath: cfg.TrustageServiceWorkloadAPITargetPath,
+	}, workflowv1connect.NewWorkflowServiceClient)
+	if err != nil {
+		return nil, fmt.Errorf("workflow client: %w", err)
+	}
+	return cli, nil
 }

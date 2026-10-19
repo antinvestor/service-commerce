@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"slices"
 	"strings"
 
 	"connectrpc.com/connect"
@@ -45,19 +46,34 @@ type ShopBusiness interface {
 	// and bridges the partition's staff roles onto the shop so employees
 	// managed through the identity service can work in it. If the grants
 	// cannot be written the shop is removed again and the error returned.
+	// Without a currency the caller's default currency is used.
 	CreateShop(ctx context.Context, req *commercev1.CreateShopRequest) (*commercev1.Shop, error)
 	GetShop(ctx context.Context, id string) (*commercev1.Shop, error)
 	UpdateShop(ctx context.Context, req *commercev1.UpdateShopRequest) (*commercev1.Shop, error)
 	ListShops(ctx context.Context, req *commercev1.ListShopsRequest) (*ShopPage, error)
 }
 
-func NewShopBusiness(_ context.Context, shopRepo repository.ShopRepository, authzMw authz.Middleware) ShopBusiness {
-	return &shopBusiness{shopRepo: shopRepo, authz: authzMw}
+func NewShopBusiness(
+	_ context.Context,
+	shopRepo repository.ShopRepository,
+	authzMw authz.Middleware,
+	currencies CurrencyResolver,
+	secrets SecretBox,
+) ShopBusiness {
+	if currencies == nil {
+		currencies = NewCurrencyResolver(nil)
+	}
+	if secrets == nil {
+		secrets = plainBox{}
+	}
+	return &shopBusiness{shopRepo: shopRepo, authz: authzMw, currencies: currencies, secrets: secrets}
 }
 
 type shopBusiness struct {
-	shopRepo repository.ShopRepository
-	authz    authz.Middleware
+	shopRepo   repository.ShopRepository
+	authz      authz.Middleware
+	currencies CurrencyResolver
+	secrets    SecretBox
 }
 
 func (sb *shopBusiness) CreateShop(ctx context.Context, req *commercev1.CreateShopRequest) (*commercev1.Shop, error) {
@@ -67,6 +83,13 @@ func (sb *shopBusiness) CreateShop(ctx context.Context, req *commercev1.CreateSh
 	}
 
 	if err := validateShopInput(name, req.GetCheckoutReturnUrl()); err != nil {
+		return nil, err
+	}
+	if err := validatePaymentPolicy(req.GetPaymentPolicy()); err != nil {
+		return nil, err
+	}
+	webhookURL := strings.TrimSpace(req.GetWebhookUrl())
+	if err := validateWebhookURL(webhookURL); err != nil {
 		return nil, err
 	}
 
@@ -86,7 +109,7 @@ func (sb *shopBusiness) CreateShop(ctx context.Context, req *commercev1.CreateSh
 
 	currency := strings.ToUpper(strings.TrimSpace(req.GetCurrency()))
 	if currency == "" {
-		currency = defaultShopCurrency
+		currency, _ = sb.currencies.DefaultCurrency(ctx)
 	}
 	if len(currency) != currencyCodeLength {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("currency must be an ISO 4217 code"))
@@ -102,6 +125,11 @@ func (sb *shopBusiness) CreateShop(ctx context.Context, req *commercev1.CreateSh
 		CheckoutReturnURL: strings.TrimSpace(req.GetCheckoutReturnUrl()),
 		MediaIDs:          models.StringArray(req.GetMediaIds()),
 		Properties:        data.JSONMap{},
+		PaymentPolicy:     models.PaymentPolicyFromAPI(req.GetPaymentPolicy()),
+		WebhookURL:        webhookURL,
+	}
+	if shop.WebhookSecret, err = sb.secrets.Seal(strings.TrimSpace(req.GetWebhookSecret())); err != nil {
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("seal webhook secret: %w", err))
 	}
 
 	if createErr := sb.shopRepo.Create(ctx, shop); createErr != nil {
@@ -199,12 +227,23 @@ func (sb *shopBusiness) UpdateShop(ctx context.Context, req *commercev1.UpdateSh
 	if err := validateShopInput(strings.TrimSpace(req.GetName()), req.GetCheckoutReturnUrl()); err != nil {
 		return nil, err
 	}
+	if err := validatePaymentPolicy(req.GetPaymentPolicy()); err != nil {
+		return nil, err
+	}
+	if err := validateWebhookURL(strings.TrimSpace(req.GetWebhookUrl())); err != nil {
+		return nil, err
+	}
 	shop, err := sb.shopRepo.GetByID(ctx, req.GetId())
 	if err != nil {
 		return nil, data.ErrorConvertToAPI(err)
 	}
 
 	updateColumns := applyShopFields(shop, req)
+	if slices.Contains(updateColumns, fieldWebhookSecret) {
+		if shop.WebhookSecret, err = sb.secrets.Seal(shop.WebhookSecret); err != nil {
+			return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("seal webhook secret: %w", err))
+		}
+	}
 	if len(updateColumns) > 0 {
 		if _, updateErr := sb.shopRepo.Update(ctx, shop, updateColumns...); updateErr != nil {
 			return nil, data.ErrorConvertToAPI(updateErr)
@@ -224,6 +263,7 @@ func applyShopFields(shop *models.Shop, req *commercev1.UpdateShopRequest) []str
 		fields = []string{
 			fieldName, fieldDescription, fieldMediaIDs, fieldStatus, "extra",
 			fieldCurrency, fieldContactID, fieldCheckoutReturnURL,
+			fieldPaymentPolicy, fieldWebhookURL, fieldWebhookSecret,
 		}
 	}
 
@@ -271,6 +311,8 @@ func applyShopField(
 		}
 	case fieldCurrency, fieldContactID, fieldCheckoutReturnURL:
 		return applyShopSettingField(shop, req, field, explicitMask)
+	case fieldPaymentPolicy, fieldWebhookURL, fieldWebhookSecret:
+		return applyShopPaymentField(shop, req, field, explicitMask)
 	}
 	return "", false
 }
@@ -298,6 +340,35 @@ func applyShopSettingField(
 		if explicitMask || req.GetCheckoutReturnUrl() != "" {
 			shop.CheckoutReturnURL = strings.TrimSpace(req.GetCheckoutReturnUrl())
 			return fieldCheckoutReturnURL, true
+		}
+	}
+	return "", false
+}
+
+// applyShopPaymentField handles the payment policy and the webhook the
+// shop's order signals are delivered to. Without a mask a field is applied
+// only when it carries a value, so a partial update never clears them.
+func applyShopPaymentField(
+	shop *models.Shop,
+	req *commercev1.UpdateShopRequest,
+	field string,
+	explicitMask bool,
+) (string, bool) {
+	switch field {
+	case fieldPaymentPolicy:
+		if explicitMask || req.GetPaymentPolicy() != nil {
+			shop.PaymentPolicy = models.PaymentPolicyFromAPI(req.GetPaymentPolicy())
+			return fieldPaymentPolicy, true
+		}
+	case fieldWebhookURL:
+		if explicitMask || req.GetWebhookUrl() != "" {
+			shop.WebhookURL = strings.TrimSpace(req.GetWebhookUrl())
+			return fieldWebhookURL, true
+		}
+	case fieldWebhookSecret:
+		if explicitMask || req.GetWebhookSecret() != "" {
+			shop.WebhookSecret = strings.TrimSpace(req.GetWebhookSecret())
+			return fieldWebhookSecret, true
 		}
 	}
 	return "", false

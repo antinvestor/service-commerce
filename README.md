@@ -50,6 +50,60 @@ Flutter widget packages and console (`ui/`), a Hugo storefront module
 
 Back-office sales (`CreateOrder`) start confirmed and skip the payment window.
 
+## Paying in instalments
+
+A shop's `PaymentPolicy` (overridable per product) lets buyers pay in
+instalments: a minimum deposit and instalment share, days to pay the balance,
+the share that must be paid before fulfilment, signal thresholds, and whether
+to cancel when the balance is overdue. An order fixes the strictest policy of
+its lines when it is placed.
+
+- `CheckoutOrder.amount` pays the next instalment (empty pays the balance);
+  staff record cash or transfers with `RecordOrderPayment`. Each instalment is
+  an `OrderPayment`; `Order.amount_paid` and `Order.balance` track progress.
+- The first instalment confirms the order (`PARTIALLY_PAID`) and holds stock
+  until the balance deadline instead of the payment window.
+- Every step raises an `OrderEvent` in the same transaction: payment received,
+  deposit paid, threshold crossed, fulfilment released, fully paid, overpaid,
+  balance overdue, cancelled, expired. Events are POSTed to the shop's
+  `webhook_url` signed with `X-Commerce-Signature: sha256=<HMAC of the body>`
+  (https to public hosts only, retried with backoff by the reconciler), drive
+  buyer/seller notifications, and are listed by `ListOrderEvents`.
+- End of day books each instalment on the day it was received.
+
+Payments are applied with optimistic concurrency (a version check plus a
+unique payment reference per order), not row locks, so the repository layer
+stays portable across the databases GORM supports.
+
+## Discount approval
+
+A rule with `requires_approval` is applied automatically only after
+`DiscountRuleApprove` (`discount_approve` on the shop). Changing what an
+approved rule gives away clears the approval. Waiving the requirement is an
+explicit update (`update_mask: ["requires_approval"]`) that also needs
+`discount_approve`. Pricing updates are always authorised against the record's
+stored shop, price list or variant, never the one the client sends.
+
+## Purchase order suggestions
+
+Procurement's `SuggestPurchaseOrders` reads a production plan and its material
+shortages from manufacturing (`MANUFACTURING_SERVICE_URI` on the procurement
+app; the plan must belong to the requested property). Each shortage is bought
+from its cheapest active supplier item (shorter lead time breaks ties),
+raised to the supplier's minimum order, and grouped by supplier with an
+estimated total. Shortages nobody supplies come back in a suggestion with no
+supplier. The console turns a suggestion into a draft purchase order linked
+to the plan. Calling manufacturing needs `common/v2` v2.0.9, whose service
+catalog knows the `/manufacturing` audience.
+
+## Default currency
+
+`CreateShop` without a currency, and `ResolveDefaultCurrency`, use the
+caller's `currency` setting (settings service, `object=profile`), else the
+locale of the device they are signed in on, else the country of their first
+profile address, else KES. Variants and price lists default to the shop's
+currency.
+
 ## Authorization
 
 Three layers, in order:
@@ -84,7 +138,8 @@ Standard Frame settings apply. Commerce adds:
 | `PAYMENT_RECONCILE_BATCH_SIZE` | Orders examined per reconcile run (default 200). |
 | `LEDGER_BOOK_TYPE` | Book type for shop books (default `merchant`). |
 | `LEDGER_TIMEZONE` | Trading-day boundary (default `Africa/Nairobi`). |
-| `WORKFLOWS_PATH` | Directory of workflow DSL files (default `./workflows`). |
+| `WEBHOOK_SECRET_KEY` | Base64 of 32 random bytes; seals shop webhook secrets at rest (AES-256-GCM). Empty stores them unencrypted and logs a warning. Rotating it means shops set their secrets again. |
+| `SETTINGS_SERVICE_URI`, `DEVICE_SERVICE_URI`, `PROFILE_SERVICE_URI` | Where a caller's default currency is read from (see below). Each is optional; with none, new shops default to KES. |
 
 Service-to-service calls use the platform's standard mechanism: each service
 authenticates outbound requests with its own OAuth2 service account, and the
@@ -98,6 +153,9 @@ in service-authentication's tenancy migrations (`service_commerce`,
 | commerce | `/ledger` | `service_ledger` | ledger, account, transaction, and book view and manage |
 | commerce | `/notification` | `service_notification` | `notification_send`, `template_manage`, `template_view` |
 | commerce | `/trustage` | `service_trustage` | `workflow_view`, `workflow_manage` |
+| commerce | `/settings` | `service_setting` | `setting_view` |
+| commerce | `/devices` | `service_device` | `device_view` |
+| commerce | `/profile` | `service_profile` | `profile_view` |
 | trustage | `/commerce` | `service_commerce` | `ledger_post`, `shops_list` |
 
 Nothing is stored in trustage for this: its scheduled `http.request` steps
@@ -108,8 +166,11 @@ carry trustage's own token, so the `service_commerce` grant above is what lets
 
 The same binary runs as a setup job (`DO_SETUP=true`) and as the server. The
 setup job migrates the schema, publishes the permission manifest, registers
-the notification templates from `pkg/messages`, and registers the workflows
-under `workflows/`. The runtime serves Connect RPC only.
+the notification templates from `pkg/messages`, and registers the trustage
+workflows embedded from `workflows/` (archiving retired `commerce.*` ones);
+it builds only the notification and trustage clients. Template and workflow
+registration are warn-only so a peer outage never blocks a rollout. The
+runtime serves Connect RPC only.
 
 ## Development
 

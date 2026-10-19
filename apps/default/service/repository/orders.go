@@ -48,7 +48,9 @@ func NewOrderRepository(ctx context.Context, dbPool pool.Pool, workMan workerpoo
 func (r *orderRepository) GetWithLines(ctx context.Context, id string) (*models.Order, error) {
 	order := &models.Order{}
 	err := r.Pool().DB(ctx, true).
-		Preload(clause.Associations).
+		Preload("Lines").
+		Preload("Shop").
+		Preload("Payments", func(db *gorm.DB) *gorm.DB { return db.Order("paid_at ASC") }).
 		First(order, "id = ?", id).Error
 	return order, err
 }
@@ -210,6 +212,7 @@ func (r *orderRepository) UpdateStatus(
 		UpdateColumns(map[string]any{
 			columnStatus:        newStatus,
 			"fulfilment_status": fulfilmentStatus,
+			columnVersion:       bumpVersion(),
 		})
 	if result.Error != nil {
 		return false, fmt.Errorf("update order status: %w", result.Error)
@@ -226,27 +229,16 @@ const (
 	paymentStatusPaid         int32 = 2
 	paymentStatusRefunded     int32 = 4
 
-	columnStatus = "status"
+	columnStatus     = "status"
+	columnVersion    = "version"
+	columnModifiedAt = "modified_at"
 )
 
-func (r *orderRepository) ListPendingPayment(
-	ctx context.Context,
-	shopID string,
-	limit int,
-) ([]*models.Order, error) {
-	var orders []*models.Order
-	query := r.Pool().DB(ctx, true).
-		Preload(clause.Associations).
-		Where("status = ? AND payment_status = ?", orderStatusPendingPayment, paymentStatusPending).
-		Order("created_at ASC")
-	if shopID != "" {
-		query = query.Where("shop_id = ?", shopID)
-	}
-	if limit > 0 {
-		query = query.Limit(limit)
-	}
-	err := query.Find(&orders).Error
-	return orders, err
+// bumpVersion advances an order's version in the same statement that
+// changes its state, so a concurrent optimistic writer (ApplyPayment) sees
+// the change and retries instead of overwriting it.
+func bumpVersion() clause.Expr {
+	return gorm.Expr("version + 1")
 }
 
 func (r *orderRepository) ListPaidBetween(
@@ -256,7 +248,9 @@ func (r *orderRepository) ListPaidBetween(
 ) ([]*models.Order, error) {
 	var orders []*models.Order
 	err := r.Pool().DB(ctx, true).
-		Where("shop_id = ? AND payment_status IN ? AND paid_at >= ? AND paid_at < ? AND ledger_transaction_id = ''",
+		// Orders paid through instalments are booked per payment instead.
+		Where("shop_id = ? AND payment_status IN ? AND paid_at >= ? AND paid_at < ? AND ledger_transaction_id = '' "+
+			"AND amount_paid_nanos = 0",
 			shopID, []int32{paymentStatusPaid, paymentStatusRefunded}, from, to).
 		Order("paid_at ASC").
 		Find(&orders).Error
@@ -277,27 +271,6 @@ func (r *orderRepository) ListRefundedBetween(
 	return orders, err
 }
 
-func (r *orderRepository) MarkPaid(
-	ctx context.Context,
-	orderID, paymentID string,
-	paidAt time.Time,
-) (bool, error) {
-	result := r.Pool().DB(ctx, false).
-		Model(&models.Order{}).
-		Where("id = ? AND status = ? AND payment_status = ?",
-			orderID, orderStatusPendingPayment, paymentStatusPending).
-		UpdateColumns(map[string]any{
-			columnStatus:     1, // confirmed
-			"payment_status": paymentStatusPaid,
-			"payment_id":     paymentID,
-			"paid_at":        paidAt,
-		})
-	if result.Error != nil {
-		return false, fmt.Errorf("mark order paid: %w", result.Error)
-	}
-	return result.RowsAffected > 0, nil
-}
-
 func (r *orderRepository) CancelAndRestock(
 	ctx context.Context,
 	orderID string,
@@ -305,6 +278,7 @@ func (r *orderRepository) CancelAndRestock(
 	paymentStatus int32,
 	reason string,
 	cancelledAt time.Time,
+	events []*models.OrderEvent,
 ) (bool, error) {
 	transitioned := false
 	err := r.Pool().DB(ctx, false).Transaction(func(tx *gorm.DB) error {
@@ -312,6 +286,7 @@ func (r *orderRepository) CancelAndRestock(
 			columnStatus:    orderStatusCancelled,
 			"cancel_reason": reason,
 			"cancelled_at":  cancelledAt,
+			columnVersion:   bumpVersion(),
 		}
 		if paymentStatus != 0 {
 			updates["payment_status"] = paymentStatus
@@ -338,12 +313,16 @@ func (r *orderRepository) CancelAndRestock(
 				return fmt.Errorf("restock variant %s: %w", line.ProductVariantID, err)
 			}
 		}
-		return nil
+		return createEvents(tx, events)
 	})
 	return transitioned, err
 }
 
-func (r *orderRepository) AttachPaymentSession(ctx context.Context, orderID, ref, checkoutURL string) error {
+func (r *orderRepository) AttachPaymentSession(
+	ctx context.Context,
+	orderID, ref, checkoutURL string,
+	amountNanos int64,
+) error {
 	return r.Pool().DB(ctx, false).Transaction(func(tx *gorm.DB) error {
 		result := tx.Model(&models.Order{}).
 			Where("id = ?", orderID).
@@ -357,25 +336,12 @@ func (r *orderRepository) AttachPaymentSession(ctx context.Context, orderID, ref
 		if result.RowsAffected == 0 {
 			return fmt.Errorf("attach payment session: order %s: %w", orderID, gorm.ErrRecordNotFound)
 		}
-		session := &models.OrderPaymentSession{OrderID: orderID, SessionRef: ref}
+		session := &models.OrderPaymentSession{OrderID: orderID, SessionRef: ref, AmountNanos: amountNanos}
 		if err := tx.Create(session).Error; err != nil {
 			return fmt.Errorf("record payment session: %w", err)
 		}
 		return nil
 	})
-}
-
-func (r *orderRepository) ListPaymentSessionRefs(ctx context.Context, orderID string) ([]string, error) {
-	var refs []string
-	err := r.Pool().DB(ctx, true).
-		Model(&models.OrderPaymentSession{}).
-		Where("order_id = ?", orderID).
-		Order("created_at ASC").
-		Pluck("session_ref", &refs).Error
-	if err != nil {
-		return nil, fmt.Errorf("list payment sessions: %w", err)
-	}
-	return refs, nil
 }
 
 func (r *orderRepository) SetLedgerTransaction(ctx context.Context, orderIDs []string, transactionID string) error {
@@ -407,44 +373,48 @@ func formatOrderNumber(seq int64) string {
 	return fmt.Sprintf("ORD-%0*d", orderNumberWidth, seq)
 }
 
-// nextOrderSequence advances the per-shop counter under a row lock. The first
-// order for a shop inserts the row; a concurrent first insert is resolved by
-// the unique index and retried once as a locked read.
+// nextOrderSequence advances the per-shop counter with a single atomic
+// increment, which every database serialises on the row it writes; no
+// explicit lock is taken. A shop's first order creates the row inside a
+// savepoint, so losing that race to a concurrent first order leaves the
+// transaction usable and simply increments the winner's row.
 func nextOrderSequence(tx *gorm.DB, shopID string) (int64, error) {
-	seq := &models.OrderSequence{}
-	err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
-		Where("shop_id = ?", shopID).
-		First(seq).Error
-	switch {
-	case err == nil:
-		seq.LastNumber++
-		if updErr := tx.Model(seq).UpdateColumn("last_number", seq.LastNumber).Error; updErr != nil {
-			return 0, fmt.Errorf("advance order sequence: %w", updErr)
-		}
-		return seq.LastNumber, nil
-	case errors.Is(err, gorm.ErrRecordNotFound):
-		seq = &models.OrderSequence{ShopID: shopID, LastNumber: 1}
-		if createErr := tx.Create(seq).Error; createErr != nil {
-			// Lost the race on first insert; take the row lock and advance.
-			return retryOrderSequence(tx, shopID, createErr)
-		}
-		return 1, nil
-	default:
-		return 0, fmt.Errorf("read order sequence: %w", err)
+	advanced, err := advanceOrderSequence(tx, shopID)
+	if err != nil || advanced > 0 {
+		return advanced, err
 	}
+
+	createErr := tx.Transaction(func(sp *gorm.DB) error {
+		return sp.Create(&models.OrderSequence{ShopID: shopID, LastNumber: 1}).Error
+	})
+	if createErr == nil {
+		return 1, nil
+	}
+	advanced, err = advanceOrderSequence(tx, shopID)
+	if err != nil {
+		return 0, err
+	}
+	if advanced == 0 {
+		return 0, fmt.Errorf("create order sequence: %w", createErr)
+	}
+	return advanced, nil
 }
 
-func retryOrderSequence(tx *gorm.DB, shopID string, cause error) (int64, error) {
-	seq := &models.OrderSequence{}
-	err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+// advanceOrderSequence increments the shop's counter and returns the new
+// value, or 0 when the shop has no counter yet.
+func advanceOrderSequence(tx *gorm.DB, shopID string) (int64, error) {
+	result := tx.Model(&models.OrderSequence{}).
 		Where("shop_id = ?", shopID).
-		First(seq).Error
-	if err != nil {
-		return 0, fmt.Errorf("create order sequence: %w (retry: %w)", cause, err)
+		UpdateColumn("last_number", gorm.Expr("last_number + 1"))
+	if result.Error != nil {
+		return 0, fmt.Errorf("advance order sequence: %w", result.Error)
 	}
-	seq.LastNumber++
-	if updErr := tx.Model(seq).UpdateColumn("last_number", seq.LastNumber).Error; updErr != nil {
-		return 0, fmt.Errorf("advance order sequence: %w", updErr)
+	if result.RowsAffected == 0 {
+		return 0, nil
+	}
+	seq := &models.OrderSequence{}
+	if err := tx.Where("shop_id = ?", shopID).First(seq).Error; err != nil {
+		return 0, fmt.Errorf("read order sequence: %w", err)
 	}
 	return seq.LastNumber, nil
 }

@@ -40,14 +40,14 @@ func (bts *BusinessTestSuite) TestCheckoutOrder_FailedAttemptKeepsSession() {
 		_, variant := bts.createTestProductWithVariant(ctx, biz, shop.GetId())
 		order := bts.buyerOrder(ctx, biz, shop.GetId(), variant.GetId(), "buyer-f", 1)
 
-		first, err := biz.paymentBiz.CheckoutOrder(ctx, &commercev1.CheckoutOrderRequest{OrderId: order.GetId()})
+		first, err := checkoutOrder(ctx, biz.paymentBiz, &commercev1.CheckoutOrderRequest{OrderId: order.GetId()})
 		require.NoError(t, err)
 		biz.checkout.attempt(first.GetPaymentSessionRef(), "prompt-1")
 		biz.checkout.fail(first.GetPaymentSessionRef())
 
 		// The hosted page lets the buyer retry a declined attempt, so the
 		// same session is handed back rather than a second one.
-		again, err := biz.paymentBiz.CheckoutOrder(ctx, &commercev1.CheckoutOrderRequest{OrderId: order.GetId()})
+		again, err := checkoutOrder(ctx, biz.paymentBiz, &commercev1.CheckoutOrderRequest{OrderId: order.GetId()})
 		require.NoError(t, err)
 		require.Equal(t, first.GetPaymentSessionRef(), again.GetPaymentSessionRef())
 		require.Equal(t, 1, biz.checkout.createdSessions())
@@ -64,16 +64,16 @@ func (bts *BusinessTestSuite) TestCheckoutOrder_UnreadableSessionIsNotReplaced()
 		_, variant := bts.createTestProductWithVariant(ctx, biz, shop.GetId())
 		order := bts.buyerOrder(ctx, biz, shop.GetId(), variant.GetId(), "buyer-u", 1)
 
-		first, err := biz.paymentBiz.CheckoutOrder(ctx, &commercev1.CheckoutOrderRequest{OrderId: order.GetId()})
+		first, err := checkoutOrder(ctx, biz.paymentBiz, &commercev1.CheckoutOrderRequest{OrderId: order.GetId()})
 		require.NoError(t, err)
 
 		biz.checkout.setGetErr(connect.NewError(connect.CodeUnavailable, errors.New("checkout down")))
-		_, err = biz.paymentBiz.CheckoutOrder(ctx, &commercev1.CheckoutOrderRequest{OrderId: order.GetId()})
+		_, err = checkoutOrder(ctx, biz.paymentBiz, &commercev1.CheckoutOrderRequest{OrderId: order.GetId()})
 		require.Equal(t, connect.CodeUnavailable, connect.CodeOf(err))
 		require.Equal(t, 1, biz.checkout.createdSessions())
 
 		biz.checkout.setGetErr(nil)
-		again, err := biz.paymentBiz.CheckoutOrder(ctx, &commercev1.CheckoutOrderRequest{OrderId: order.GetId()})
+		again, err := checkoutOrder(ctx, biz.paymentBiz, &commercev1.CheckoutOrderRequest{OrderId: order.GetId()})
 		require.NoError(t, err)
 		require.Equal(t, first.GetPaymentSessionRef(), again.GetPaymentSessionRef())
 	})
@@ -89,11 +89,11 @@ func (bts *BusinessTestSuite) TestPayment_SupersededSessionStillSettles() {
 		_, variant := bts.createTestProductWithVariant(ctx, biz, shop.GetId())
 		order := bts.buyerOrder(ctx, biz, shop.GetId(), variant.GetId(), "buyer-s", 1)
 
-		first, err := biz.paymentBiz.CheckoutOrder(ctx, &commercev1.CheckoutOrderRequest{OrderId: order.GetId()})
+		first, err := checkoutOrder(ctx, biz.paymentBiz, &commercev1.CheckoutOrderRequest{OrderId: order.GetId()})
 		require.NoError(t, err)
 		biz.checkout.expire(first.GetPaymentSessionRef())
 
-		second, err := biz.paymentBiz.CheckoutOrder(ctx, &commercev1.CheckoutOrderRequest{OrderId: order.GetId()})
+		second, err := checkoutOrder(ctx, biz.paymentBiz, &commercev1.CheckoutOrderRequest{OrderId: order.GetId()})
 		require.NoError(t, err)
 		require.NotEqual(t, first.GetPaymentSessionRef(), second.GetPaymentSessionRef())
 
@@ -122,7 +122,7 @@ func (bts *BusinessTestSuite) TestPayment_AmountMismatchIsNotSettled() {
 		_, variant := bts.createTestProductWithVariant(ctx, biz, shop.GetId())
 		order := bts.buyerOrder(ctx, biz, shop.GetId(), variant.GetId(), "buyer-m", 2)
 
-		checked, err := biz.paymentBiz.CheckoutOrder(ctx, &commercev1.CheckoutOrderRequest{OrderId: order.GetId()})
+		checked, err := checkoutOrder(ctx, biz.paymentBiz, &commercev1.CheckoutOrderRequest{OrderId: order.GetId()})
 		require.NoError(t, err)
 		ref := checked.GetPaymentSessionRef()
 
@@ -160,7 +160,7 @@ func (bts *BusinessTestSuite) TestReconcile_InFlightPromptDelaysExpiry() {
 		_, variant := bts.createTestProductWithVariant(ctx, biz, shop.GetId())
 		order := bts.buyerOrder(ctx, biz, shop.GetId(), variant.GetId(), "buyer-i", 5)
 
-		checked, err := biz.paymentBiz.CheckoutOrder(ctx, &commercev1.CheckoutOrderRequest{OrderId: order.GetId()})
+		checked, err := checkoutOrder(ctx, biz.paymentBiz, &commercev1.CheckoutOrderRequest{OrderId: order.GetId()})
 		require.NoError(t, err)
 		biz.checkout.attempt(checked.GetPaymentSessionRef(), "prompt-slow")
 
@@ -190,7 +190,7 @@ func (bts *BusinessTestSuite) TestReconcile_UnreadableSessionNeverExpires() {
 		_, variant := bts.createTestProductWithVariant(ctx, biz, shop.GetId())
 		order := bts.buyerOrder(ctx, biz, shop.GetId(), variant.GetId(), "buyer-x", 1)
 
-		_, err := biz.paymentBiz.CheckoutOrder(ctx, &commercev1.CheckoutOrderRequest{OrderId: order.GetId()})
+		_, err := checkoutOrder(ctx, biz.paymentBiz, &commercev1.CheckoutOrderRequest{OrderId: order.GetId()})
 		require.NoError(t, err)
 		bts.backdatePaymentDue(ctx, svc, order.GetId(), -3*time.Hour)
 
@@ -216,7 +216,7 @@ func (bts *BusinessTestSuite) TestCancelOrder_PaidAtCheckoutIsNotLost() {
 		_, variant := bts.createTestProductWithVariant(ctx, biz, shop.GetId())
 		order := bts.buyerOrder(ctx, biz, shop.GetId(), variant.GetId(), "buyer-c", 1)
 
-		checked, err := biz.paymentBiz.CheckoutOrder(ctx, &commercev1.CheckoutOrderRequest{OrderId: order.GetId()})
+		checked, err := checkoutOrder(ctx, biz.paymentBiz, &commercev1.CheckoutOrderRequest{OrderId: order.GetId()})
 		require.NoError(t, err)
 		biz.checkout.complete(checked.GetPaymentSessionRef(), "pay-race")
 
@@ -240,7 +240,7 @@ func (bts *BusinessTestSuite) TestPaymentReturn_VerifiesAndForwards() {
 		_, variant := bts.createTestProductWithVariant(ctx, biz, shop.GetId())
 		order := bts.buyerOrder(ctx, biz, shop.GetId(), variant.GetId(), "buyer-r", 1)
 
-		checked, err := biz.returnPaymentBiz.CheckoutOrder(ctx, &commercev1.CheckoutOrderRequest{
+		checked, err := checkoutOrder(ctx, biz.returnPaymentBiz, &commercev1.CheckoutOrderRequest{
 			OrderId:   order.GetId(),
 			ReturnUrl: "https://store.example/thanks/{order_id}",
 		})
@@ -286,7 +286,7 @@ func (bts *BusinessTestSuite) TestCheckoutOrder_LongShopNameFitsSessionLimits() 
 		_, variant := bts.createTestProductWithVariant(ctx, biz, shop.GetId())
 		order := bts.buyerOrder(ctx, biz, shop.GetId(), variant.GetId(), "buyer-l", 1)
 
-		checked, err := biz.paymentBiz.CheckoutOrder(ctx, &commercev1.CheckoutOrderRequest{OrderId: order.GetId()})
+		checked, err := checkoutOrder(ctx, biz.paymentBiz, &commercev1.CheckoutOrderRequest{OrderId: order.GetId()})
 		require.NoError(t, err)
 		session := biz.checkout.session(checked.GetPaymentSessionRef())
 		require.LessOrEqual(t, len([]rune(session.GetName())), 100)

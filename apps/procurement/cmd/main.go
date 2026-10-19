@@ -16,12 +16,17 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
+	"buf.build/gen/go/antinvestor/manufacturing/connectrpc/go/v1/manufacturingv1connect"
 	"buf.build/gen/go/antinvestor/procurement/connectrpc/go/v1/procurementv1connect"
 	procurementpb "buf.build/gen/go/antinvestor/procurement/protocolbuffers/go/v1"
 	"connectrpc.com/connect"
+	"github.com/antinvestor/common/v2"
+	"github.com/antinvestor/common/v2/connection"
 	"github.com/antinvestor/common/v2/permissions"
+	"github.com/antinvestor/common/v2/servicecatalog"
 	"github.com/pitabwire/frame/v2"
 	"github.com/pitabwire/frame/v2/config"
 	"github.com/pitabwire/frame/v2/security/authorizer"
@@ -31,6 +36,7 @@ import (
 
 	aconfig "github.com/antinvestor/service-commerce/apps/procurement/config"
 	"github.com/antinvestor/service-commerce/apps/procurement/service/authz"
+	"github.com/antinvestor/service-commerce/apps/procurement/service/business"
 	"github.com/antinvestor/service-commerce/apps/procurement/service/handlers"
 	"github.com/antinvestor/service-commerce/apps/procurement/service/repository"
 )
@@ -74,7 +80,11 @@ func main() {
 	}
 
 	// Runtime: HTTP only — no WithPermissionRegistration.
-	connectHandler := setupConnectServer(ctx, svc)
+	manufacturing, err := newManufacturingClient(ctx, &cfg)
+	if err != nil {
+		log.WithError(err).Fatal("could not build the manufacturing client")
+	}
+	connectHandler := setupConnectServer(ctx, svc, business.NewManufacturingMaterialSource(manufacturing))
 	svc.Init(ctx, frame.WithHTTPHandler(connectHandler))
 
 	err = svc.Run(ctx, "")
@@ -84,7 +94,7 @@ func main() {
 }
 
 // setupConnectServer initializes and configures the gRPC server.
-func setupConnectServer(ctx context.Context, svc *frame.Service) http.Handler {
+func setupConnectServer(ctx context.Context, svc *frame.Service, materials business.MaterialSource) http.Handler {
 	securityMan := svc.SecurityManager()
 
 	auth := securityMan.GetAuthorizer(ctx)
@@ -109,7 +119,7 @@ func setupConnectServer(ctx context.Context, svc *frame.Service) http.Handler {
 
 	// Property-level permissions middleware.
 	authzMiddleware := authz.NewMiddleware(securityMan.GetAuthorizer(ctx))
-	implementation := handlers.NewProcurementServer(ctx, svc, authzMiddleware)
+	implementation := handlers.NewProcurementServer(ctx, svc, authzMiddleware, materials)
 
 	_, serverHandler := procurementv1connect.NewProcurementServiceHandler(
 		implementation, connect.WithInterceptors(defaultInterceptorList...))
@@ -118,4 +128,28 @@ func setupConnectServer(ctx context.Context, svc *frame.Service) http.Handler {
 	mux.Handle("/", serverHandler)
 
 	return mux
+}
+
+// newManufacturingClient builds the client purchase order suggestions read
+// plan shortages through. It returns nil when manufacturing is not
+// configured, which leaves suggestions unavailable.
+func newManufacturingClient(
+	ctx context.Context,
+	cfg *aconfig.ProcurementConfig,
+) (business.ManufacturingClient, error) {
+	if cfg.ManufacturingServiceURI == "" {
+		util.Log(ctx).Warn("manufacturing service not configured; purchase order suggestions are unavailable")
+		return nil, nil //nolint:nilnil // not configured is a valid state
+	}
+	cli, err := connection.NewServiceClient(ctx, cfg, common.ServiceTarget{
+		// servicecatalog.ServiceManufacturing from common v2.0.9; the catalog
+		// must know the ID to issue a /manufacturing token audience.
+		ServiceID:             servicecatalog.ServiceID("manufacturing"),
+		Endpoint:              cfg.ManufacturingServiceURI,
+		WorkloadAPITargetPath: cfg.ManufacturingServiceWorkloadAPITargetPath,
+	}, manufacturingv1connect.NewManufacturingServiceClient)
+	if err != nil {
+		return nil, fmt.Errorf("manufacturing client: %w", err)
+	}
+	return cli, nil
 }

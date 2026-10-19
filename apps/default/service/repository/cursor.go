@@ -97,7 +97,10 @@ func DecodePageKey(cursor string) (*PageKey, error) {
 func applyKeyset(query *gorm.DB, page Page) *gorm.DB {
 	query = query.Order("created_at DESC, id DESC").Limit(page.NormalisedLimit() + 1)
 	if page.After != nil {
-		query = query.Where("(created_at, id) < (?, ?)", page.After.CreatedAt, page.After.ID)
+		// Expanded rather than a row-value comparison, which not every
+		// database supports.
+		query = query.Where("created_at < ? OR (created_at = ? AND id < ?)",
+			page.After.CreatedAt, page.After.CreatedAt, page.After.ID)
 	}
 	return query
 }

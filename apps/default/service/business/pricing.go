@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"errors"
 	"math"
+	"slices"
 	"sort"
 	"time"
 
@@ -96,6 +97,11 @@ type PricingBusiness interface {
 		ctx context.Context,
 		req *commercev1.DiscountRuleSaveRequest,
 	) (*commercev1.DiscountRule, error)
+	// ApproveDiscountRule records the caller's approval so pricing may
+	// apply a rule that requires one.
+	ApproveDiscountRule(ctx context.Context, id string) (*commercev1.DiscountRule, error)
+	// GetDiscountRuleShopID resolves the shop that owns a discount rule.
+	GetDiscountRuleShopID(ctx context.Context, id string) (string, error)
 	SearchDiscountRules(
 		ctx context.Context,
 		req *commercev1.DiscountRuleSearchRequest,
@@ -440,6 +446,11 @@ func (pb *pricingBusiness) updateAssignment(
 	if err != nil {
 		return nil, data.ErrorConvertToAPI(err)
 	}
+	// The caller was authorised against the request's price list; an
+	// assignment on another list is not theirs to change.
+	if a.PriceListID != req.GetPriceListId() {
+		return nil, connect.NewError(connect.CodeNotFound, errors.New("assignment not found"))
+	}
 
 	updateColumns := make([]string, 0)
 	if req.GetStatus() != commercev1.CustomerPriceListAssignmentStatus_CUSTOMER_PRICE_LIST_ASSIGNMENT_STATUS_UNSPECIFIED {
@@ -548,6 +559,11 @@ func (pb *pricingBusiness) updateOverride(
 	o, err := pb.overrideRepo.GetByID(ctx, req.GetId())
 	if err != nil {
 		return nil, data.ErrorConvertToAPI(err)
+	}
+	// The caller was authorised against the request's variant (and so its
+	// shop); an override on another variant is not theirs to change.
+	if o.ProductVariantID != req.GetProductVariantId() {
+		return nil, connect.NewError(connect.CodeNotFound, errors.New("override not found"))
 	}
 
 	updateColumns := make([]string, 0)
@@ -718,6 +734,23 @@ func (pb *pricingBusiness) updateDiscountRule(
 		t := req.GetValidUntil().AsTime()
 		dr.ValidUntil = &t
 		updateColumns = append(updateColumns, "valid_until")
+	}
+	// Approval can be demanded by any update. Waiving it needs the field in
+	// the update mask (the handler then requires discount_approve), so a
+	// partial update can never make a guarded rule apply unchecked.
+	if req.GetRequiresApproval() != dr.RequiresApproval &&
+		(req.GetRequiresApproval() || slices.Contains(req.GetUpdateMask().GetPaths(), "requires_approval")) {
+		dr.RequiresApproval = req.GetRequiresApproval()
+		updateColumns = append(updateColumns, "requires_approval")
+	}
+	// An approval covers the terms that were approved; changing what the
+	// rule gives away needs a fresh one.
+	if dr.ApprovedAt != nil && slices.ContainsFunc(updateColumns, func(c string) bool {
+		return c == "discount_type" || c == "value" || c == "applies_to" || c == "conditions"
+	}) {
+		dr.ApprovedAt = nil
+		dr.ApprovedBy = ""
+		updateColumns = append(updateColumns, "approved_at", "approved_by")
 	}
 
 	if len(updateColumns) > 0 {
@@ -954,7 +987,7 @@ const (
 // discountApplies reports whether rule may be applied to one unit of target
 // without a person approving it.
 func discountApplies(rule *models.DiscountRule, target discountTarget) bool {
-	if rule.RequiresApproval {
+	if rule.RequiresApproval && rule.ApprovedAt == nil {
 		return false
 	}
 	switch commercev1.DiscountAppliesTo(rule.AppliesTo) {
@@ -1117,4 +1150,39 @@ func calculateDiscount(rule *models.DiscountRule, price *commonv1.Money) int64 {
 	}
 
 	return discountNanos
+}
+
+func (pb *pricingBusiness) GetDiscountRuleShopID(ctx context.Context, id string) (string, error) {
+	dr, err := pb.discountRuleRepo.GetByID(ctx, id)
+	if err != nil {
+		return "", data.ErrorConvertToAPI(err)
+	}
+	return dr.ShopID, nil
+}
+
+func (pb *pricingBusiness) ApproveDiscountRule(ctx context.Context, id string) (*commercev1.DiscountRule, error) {
+	dr, err := pb.discountRuleRepo.GetByID(ctx, id)
+	if err != nil {
+		return nil, data.ErrorConvertToAPI(err)
+	}
+	if !dr.RequiresApproval {
+		return nil, connect.NewError(
+			connect.CodeFailedPrecondition,
+			errors.New("discount rule does not require approval"),
+		)
+	}
+	if dr.ApprovedAt != nil {
+		return dr.ToAPI(), nil
+	}
+	approver := subjectFromContext(ctx)
+	if approver == "" {
+		return nil, connect.NewError(connect.CodeUnauthenticated, errors.New("an approver is required"))
+	}
+	now := time.Now()
+	dr.ApprovedAt = &now
+	dr.ApprovedBy = approver
+	if _, updateErr := pb.discountRuleRepo.Update(ctx, dr, "approved_at", "approved_by"); updateErr != nil {
+		return nil, data.ErrorConvertToAPI(updateErr)
+	}
+	return dr.ToAPI(), nil
 }

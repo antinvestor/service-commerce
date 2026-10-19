@@ -20,4 +20,9 @@ import (
 
 type ProcurementConfig struct {
 	config.ConfigurationDefault
+
+	// ManufacturingServiceURI is where production plan shortages are read
+	// for purchase order suggestions. Empty disables suggestions.
+	ManufacturingServiceURI                   string `env:"MANUFACTURING_SERVICE_URI"                      envDefault:""`
+	ManufacturingServiceWorkloadAPITargetPath string `env:"MANUFACTURING_SERVICE_WORKLOAD_API_TARGET_PATH" envDefault:"/ns/manufacturing/sa/service-manufacturing"`
 }

@@ -42,6 +42,14 @@ type Notifier interface {
 	OrderShipped(ctx context.Context, shop *models.Shop, order *models.Order, fulfilment *models.Fulfilment)
 	OrderDelivered(ctx context.Context, shop *models.Shop, order *models.Order)
 	LedgerDayPosted(ctx context.Context, shop *models.Shop, posting *models.LedgerPosting)
+	// InstalmentReceived tells both sides a part payment landed and what
+	// remains.
+	InstalmentReceived(ctx context.Context, shop *models.Shop, order *models.Order, payment *models.OrderPayment)
+	// PaymentThresholdReached tells the seller the paid share crossed one of
+	// the policy's signal thresholds.
+	PaymentThresholdReached(ctx context.Context, shop *models.Shop, order *models.Order, threshold int32)
+	// BalanceOverdue tells both sides the balance deadline passed.
+	BalanceOverdue(ctx context.Context, shop *models.Shop, order *models.Order)
 }
 
 // notifier sends through a notification.Sender.
@@ -111,6 +119,47 @@ func (n *notifier) LedgerDayPosted(ctx context.Context, shop *models.Shop, posti
 		messages.VarRefundAmount: formatNanos(posting.RefundNanos),
 	}
 	n.toSeller(ctx, messages.LedgerDayPosted, typeLedger, shop, vars, notificationv1.PRIORITY_LOW)
+}
+
+func (n *notifier) InstalmentReceived(
+	ctx context.Context,
+	shop *models.Shop,
+	order *models.Order,
+	payment *models.OrderPayment,
+) {
+	vars := balanceVars(shop, order)
+	vars[messages.VarPaymentAmount] = formatNanos(payment.AmountNanos)
+	n.toBuyer(ctx, messages.InstalmentReceivedBuyer, typeOrder, order, vars, notificationv1.PRIORITY_HIGH)
+	n.toSeller(ctx, messages.InstalmentReceivedSeller, typeOrder, shop, vars, notificationv1.PRIORITY_LOW)
+}
+
+func (n *notifier) PaymentThresholdReached(
+	ctx context.Context,
+	shop *models.Shop,
+	order *models.Order,
+	threshold int32,
+) {
+	vars := balanceVars(shop, order)
+	vars[messages.VarThreshold] = strconv.Itoa(int(threshold))
+	n.toSeller(ctx, messages.PaymentThresholdSeller, typeOrder, shop, vars, notificationv1.PRIORITY_LOW)
+}
+
+func (n *notifier) BalanceOverdue(ctx context.Context, shop *models.Shop, order *models.Order) {
+	vars := balanceVars(shop, order)
+	n.toBuyer(ctx, messages.BalanceOverdueBuyer, typeOrder, order, vars, notificationv1.PRIORITY_HIGH)
+	n.toSeller(ctx, messages.BalanceOverdueSeller, typeOrder, shop, vars, notificationv1.PRIORITY_HIGH)
+}
+
+// balanceVars adds what has been paid and what remains to orderVars.
+func balanceVars(shop *models.Shop, order *models.Order) map[string]any {
+	vars := orderVars(shop, order)
+	vars[messages.VarAmountPaid] = formatNanos(order.AmountPaidNanos)
+	vars[messages.VarBalance] = formatNanos(order.BalanceNanos())
+	vars[messages.VarBalanceDue] = ""
+	if order.BalanceDueAt != nil {
+		vars[messages.VarBalanceDue] = order.BalanceDueAt.Format("2 Jan 2006")
+	}
+	return vars
 }
 
 // --- delivery ---

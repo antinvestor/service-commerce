@@ -37,6 +37,9 @@ class Shop extends $pb.GeneratedMessage {
     $core.String? checkoutReturnUrl,
     $2.Timestamp? createdAt,
     $6.Struct? extra,
+    PaymentPolicy? paymentPolicy,
+    $core.String? webhookUrl,
+    $core.bool? webhookSecretSet,
   }) {
     final $result = create();
     if (id != null) {
@@ -72,6 +75,15 @@ class Shop extends $pb.GeneratedMessage {
     if (extra != null) {
       $result.extra = extra;
     }
+    if (paymentPolicy != null) {
+      $result.paymentPolicy = paymentPolicy;
+    }
+    if (webhookUrl != null) {
+      $result.webhookUrl = webhookUrl;
+    }
+    if (webhookSecretSet != null) {
+      $result.webhookSecretSet = webhookSecretSet;
+    }
     return $result;
   }
   Shop._() : super();
@@ -90,6 +102,9 @@ class Shop extends $pb.GeneratedMessage {
     ..aOS(9, _omitFieldNames ? '' : 'checkoutReturnUrl')
     ..aOM<$2.Timestamp>(10, _omitFieldNames ? '' : 'createdAt', subBuilder: $2.Timestamp.create)
     ..aOM<$6.Struct>(15, _omitFieldNames ? '' : 'extra', subBuilder: $6.Struct.create)
+    ..aOM<PaymentPolicy>(16, _omitFieldNames ? '' : 'paymentPolicy', subBuilder: PaymentPolicy.create)
+    ..aOS(17, _omitFieldNames ? '' : 'webhookUrl')
+    ..aOB(18, _omitFieldNames ? '' : 'webhookSecretSet')
     ..hasRequiredFields = false
   ;
 
@@ -217,6 +232,184 @@ class Shop extends $pb.GeneratedMessage {
   void clearExtra() => clearField(15);
   @$pb.TagNumber(15)
   $6.Struct ensureExtra() => $_ensure(10);
+
+  /// How buyers may pay: in full, or in instalments with thresholds. Products
+  /// may override it.
+  @$pb.TagNumber(16)
+  PaymentPolicy get paymentPolicy => $_getN(11);
+  @$pb.TagNumber(16)
+  set paymentPolicy(PaymentPolicy v) { setField(16, v); }
+  @$pb.TagNumber(16)
+  $core.bool hasPaymentPolicy() => $_has(11);
+  @$pb.TagNumber(16)
+  void clearPaymentPolicy() => clearField(16);
+  @$pb.TagNumber(16)
+  PaymentPolicy ensurePaymentPolicy() => $_ensure(11);
+
+  /// HTTPS endpoint order events are POSTed to, signed with the shop's
+  /// webhook secret.
+  @$pb.TagNumber(17)
+  $core.String get webhookUrl => $_getSZ(12);
+  @$pb.TagNumber(17)
+  set webhookUrl($core.String v) { $_setString(12, v); }
+  @$pb.TagNumber(17)
+  $core.bool hasWebhookUrl() => $_has(12);
+  @$pb.TagNumber(17)
+  void clearWebhookUrl() => clearField(17);
+
+  /// Whether a webhook secret is set. The secret itself is never returned.
+  @$pb.TagNumber(18)
+  $core.bool get webhookSecretSet => $_getBF(13);
+  @$pb.TagNumber(18)
+  set webhookSecretSet($core.bool v) { $_setBool(13, v); }
+  @$pb.TagNumber(18)
+  $core.bool hasWebhookSecretSet() => $_has(13);
+  @$pb.TagNumber(18)
+  void clearWebhookSecretSet() => clearField(18);
+}
+
+/// PaymentPolicy governs paying for an order in instalments and the signals
+/// raised as payment progresses. Percentages are whole percent of the order
+/// total.
+class PaymentPolicy extends $pb.GeneratedMessage {
+  factory PaymentPolicy({
+    $core.bool? allowInstalments,
+    $core.int? minDepositPercent,
+    $core.int? minInstalmentPercent,
+    $core.int? balanceDueDays,
+    $core.int? fulfilAtPercent,
+    $core.Iterable<$core.int>? signalThresholds,
+    $core.bool? cancelWhenOverdue,
+  }) {
+    final $result = create();
+    if (allowInstalments != null) {
+      $result.allowInstalments = allowInstalments;
+    }
+    if (minDepositPercent != null) {
+      $result.minDepositPercent = minDepositPercent;
+    }
+    if (minInstalmentPercent != null) {
+      $result.minInstalmentPercent = minInstalmentPercent;
+    }
+    if (balanceDueDays != null) {
+      $result.balanceDueDays = balanceDueDays;
+    }
+    if (fulfilAtPercent != null) {
+      $result.fulfilAtPercent = fulfilAtPercent;
+    }
+    if (signalThresholds != null) {
+      $result.signalThresholds.addAll(signalThresholds);
+    }
+    if (cancelWhenOverdue != null) {
+      $result.cancelWhenOverdue = cancelWhenOverdue;
+    }
+    return $result;
+  }
+  PaymentPolicy._() : super();
+  factory PaymentPolicy.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory PaymentPolicy.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'PaymentPolicy', package: const $pb.PackageName(_omitMessageNames ? '' : 'commerce.v1'), createEmptyInstance: create)
+    ..aOB(1, _omitFieldNames ? '' : 'allowInstalments')
+    ..a<$core.int>(2, _omitFieldNames ? '' : 'minDepositPercent', $pb.PbFieldType.O3)
+    ..a<$core.int>(3, _omitFieldNames ? '' : 'minInstalmentPercent', $pb.PbFieldType.O3)
+    ..a<$core.int>(4, _omitFieldNames ? '' : 'balanceDueDays', $pb.PbFieldType.O3)
+    ..a<$core.int>(5, _omitFieldNames ? '' : 'fulfilAtPercent', $pb.PbFieldType.O3)
+    ..p<$core.int>(6, _omitFieldNames ? '' : 'signalThresholds', $pb.PbFieldType.K3)
+    ..aOB(7, _omitFieldNames ? '' : 'cancelWhenOverdue')
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  PaymentPolicy clone() => PaymentPolicy()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  PaymentPolicy copyWith(void Function(PaymentPolicy) updates) => super.copyWith((message) => updates(message as PaymentPolicy)) as PaymentPolicy;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static PaymentPolicy create() => PaymentPolicy._();
+  PaymentPolicy createEmptyInstance() => create();
+  static $pb.PbList<PaymentPolicy> createRepeated() => $pb.PbList<PaymentPolicy>();
+  @$core.pragma('dart2js:noInline')
+  static PaymentPolicy getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<PaymentPolicy>(create);
+  static PaymentPolicy? _defaultInstance;
+
+  /// Buyers may pay in more than one instalment.
+  @$pb.TagNumber(1)
+  $core.bool get allowInstalments => $_getBF(0);
+  @$pb.TagNumber(1)
+  set allowInstalments($core.bool v) { $_setBool(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasAllowInstalments() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearAllowInstalments() => clearField(1);
+
+  /// The first instalment must be at least this share of the total. Once it
+  /// is paid, stock stays reserved past the payment window. 0 accepts any
+  /// amount.
+  @$pb.TagNumber(2)
+  $core.int get minDepositPercent => $_getIZ(1);
+  @$pb.TagNumber(2)
+  set minDepositPercent($core.int v) { $_setSignedInt32(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasMinDepositPercent() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearMinDepositPercent() => clearField(2);
+
+  /// Every instalment but the last must be at least this share of the total.
+  @$pb.TagNumber(3)
+  $core.int get minInstalmentPercent => $_getIZ(2);
+  @$pb.TagNumber(3)
+  set minInstalmentPercent($core.int v) { $_setSignedInt32(2, v); }
+  @$pb.TagNumber(3)
+  $core.bool hasMinInstalmentPercent() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearMinInstalmentPercent() => clearField(3);
+
+  /// Days the buyer has to pay the balance after the first instalment. 0
+  /// means no deadline.
+  @$pb.TagNumber(4)
+  $core.int get balanceDueDays => $_getIZ(3);
+  @$pb.TagNumber(4)
+  set balanceDueDays($core.int v) { $_setSignedInt32(3, v); }
+  @$pb.TagNumber(4)
+  $core.bool hasBalanceDueDays() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearBalanceDueDays() => clearField(4);
+
+  /// Share that must be paid before the order may be fulfilled. 0 means the
+  /// full amount.
+  @$pb.TagNumber(5)
+  $core.int get fulfilAtPercent => $_getIZ(4);
+  @$pb.TagNumber(5)
+  set fulfilAtPercent($core.int v) { $_setSignedInt32(4, v); }
+  @$pb.TagNumber(5)
+  $core.bool hasFulfilAtPercent() => $_has(4);
+  @$pb.TagNumber(5)
+  void clearFulfilAtPercent() => clearField(5);
+
+  /// Paid-share marks that raise an ORDER_EVENT_TYPE_THRESHOLD_CROSSED signal
+  /// when payment crosses them, e.g. [25, 50, 75].
+  @$pb.TagNumber(6)
+  $core.List<$core.int> get signalThresholds => $_getList(5);
+
+  /// Cancel the order, release its stock and record a refund of what was paid
+  /// when the balance deadline passes.
+  @$pb.TagNumber(7)
+  $core.bool get cancelWhenOverdue => $_getBF(6);
+  @$pb.TagNumber(7)
+  set cancelWhenOverdue($core.bool v) { $_setBool(6, v); }
+  @$pb.TagNumber(7)
+  $core.bool hasCancelWhenOverdue() => $_has(6);
+  @$pb.TagNumber(7)
+  void clearCancelWhenOverdue() => clearField(7);
 }
 
 class CreateShopRequest extends $pb.GeneratedMessage {
@@ -228,6 +421,9 @@ class CreateShopRequest extends $pb.GeneratedMessage {
     $core.String? contactId,
     $core.Iterable<$core.String>? mediaIds,
     $core.String? checkoutReturnUrl,
+    PaymentPolicy? paymentPolicy,
+    $core.String? webhookUrl,
+    $core.String? webhookSecret,
   }) {
     final $result = create();
     if (name != null) {
@@ -251,6 +447,15 @@ class CreateShopRequest extends $pb.GeneratedMessage {
     if (checkoutReturnUrl != null) {
       $result.checkoutReturnUrl = checkoutReturnUrl;
     }
+    if (paymentPolicy != null) {
+      $result.paymentPolicy = paymentPolicy;
+    }
+    if (webhookUrl != null) {
+      $result.webhookUrl = webhookUrl;
+    }
+    if (webhookSecret != null) {
+      $result.webhookSecret = webhookSecret;
+    }
     return $result;
   }
   CreateShopRequest._() : super();
@@ -265,6 +470,9 @@ class CreateShopRequest extends $pb.GeneratedMessage {
     ..aOS(5, _omitFieldNames ? '' : 'contactId')
     ..pPS(6, _omitFieldNames ? '' : 'mediaIds')
     ..aOS(7, _omitFieldNames ? '' : 'checkoutReturnUrl')
+    ..aOM<PaymentPolicy>(8, _omitFieldNames ? '' : 'paymentPolicy', subBuilder: PaymentPolicy.create)
+    ..aOS(9, _omitFieldNames ? '' : 'webhookUrl')
+    ..aOS(10, _omitFieldNames ? '' : 'webhookSecret')
     ..hasRequiredFields = false
   ;
 
@@ -316,6 +524,7 @@ class CreateShopRequest extends $pb.GeneratedMessage {
   @$pb.TagNumber(3)
   void clearDescription() => clearField(3);
 
+  /// ISO 4217 code. Empty uses the caller's default (see ResolveDefaultCurrency).
   @$pb.TagNumber(4)
   $core.String get currency => $_getSZ(3);
   @$pb.TagNumber(4)
@@ -345,6 +554,35 @@ class CreateShopRequest extends $pb.GeneratedMessage {
   $core.bool hasCheckoutReturnUrl() => $_has(6);
   @$pb.TagNumber(7)
   void clearCheckoutReturnUrl() => clearField(7);
+
+  @$pb.TagNumber(8)
+  PaymentPolicy get paymentPolicy => $_getN(7);
+  @$pb.TagNumber(8)
+  set paymentPolicy(PaymentPolicy v) { setField(8, v); }
+  @$pb.TagNumber(8)
+  $core.bool hasPaymentPolicy() => $_has(7);
+  @$pb.TagNumber(8)
+  void clearPaymentPolicy() => clearField(8);
+  @$pb.TagNumber(8)
+  PaymentPolicy ensurePaymentPolicy() => $_ensure(7);
+
+  @$pb.TagNumber(9)
+  $core.String get webhookUrl => $_getSZ(8);
+  @$pb.TagNumber(9)
+  set webhookUrl($core.String v) { $_setString(8, v); }
+  @$pb.TagNumber(9)
+  $core.bool hasWebhookUrl() => $_has(8);
+  @$pb.TagNumber(9)
+  void clearWebhookUrl() => clearField(9);
+
+  @$pb.TagNumber(10)
+  $core.String get webhookSecret => $_getSZ(9);
+  @$pb.TagNumber(10)
+  set webhookSecret($core.String v) { $_setString(9, v); }
+  @$pb.TagNumber(10)
+  $core.bool hasWebhookSecret() => $_has(9);
+  @$pb.TagNumber(10)
+  void clearWebhookSecret() => clearField(10);
 }
 
 class CreateShopResponse extends $pb.GeneratedMessage {
@@ -411,6 +649,9 @@ class UpdateShopRequest extends $pb.GeneratedMessage {
     $core.String? currency,
     $core.String? contactId,
     $core.String? checkoutReturnUrl,
+    PaymentPolicy? paymentPolicy,
+    $core.String? webhookUrl,
+    $core.String? webhookSecret,
   }) {
     final $result = create();
     if (id != null) {
@@ -443,6 +684,15 @@ class UpdateShopRequest extends $pb.GeneratedMessage {
     if (checkoutReturnUrl != null) {
       $result.checkoutReturnUrl = checkoutReturnUrl;
     }
+    if (paymentPolicy != null) {
+      $result.paymentPolicy = paymentPolicy;
+    }
+    if (webhookUrl != null) {
+      $result.webhookUrl = webhookUrl;
+    }
+    if (webhookSecret != null) {
+      $result.webhookSecret = webhookSecret;
+    }
     return $result;
   }
   UpdateShopRequest._() : super();
@@ -460,6 +710,9 @@ class UpdateShopRequest extends $pb.GeneratedMessage {
     ..aOS(8, _omitFieldNames ? '' : 'currency')
     ..aOS(9, _omitFieldNames ? '' : 'contactId')
     ..aOS(10, _omitFieldNames ? '' : 'checkoutReturnUrl')
+    ..aOM<PaymentPolicy>(11, _omitFieldNames ? '' : 'paymentPolicy', subBuilder: PaymentPolicy.create)
+    ..aOS(12, _omitFieldNames ? '' : 'webhookUrl')
+    ..aOS(13, _omitFieldNames ? '' : 'webhookSecret')
     ..hasRequiredFields = false
   ;
 
@@ -571,6 +824,36 @@ class UpdateShopRequest extends $pb.GeneratedMessage {
   $core.bool hasCheckoutReturnUrl() => $_has(9);
   @$pb.TagNumber(10)
   void clearCheckoutReturnUrl() => clearField(10);
+
+  @$pb.TagNumber(11)
+  PaymentPolicy get paymentPolicy => $_getN(10);
+  @$pb.TagNumber(11)
+  set paymentPolicy(PaymentPolicy v) { setField(11, v); }
+  @$pb.TagNumber(11)
+  $core.bool hasPaymentPolicy() => $_has(10);
+  @$pb.TagNumber(11)
+  void clearPaymentPolicy() => clearField(11);
+  @$pb.TagNumber(11)
+  PaymentPolicy ensurePaymentPolicy() => $_ensure(10);
+
+  @$pb.TagNumber(12)
+  $core.String get webhookUrl => $_getSZ(11);
+  @$pb.TagNumber(12)
+  set webhookUrl($core.String v) { $_setString(11, v); }
+  @$pb.TagNumber(12)
+  $core.bool hasWebhookUrl() => $_has(11);
+  @$pb.TagNumber(12)
+  void clearWebhookUrl() => clearField(12);
+
+  /// Write-only. Empty with "webhook_secret" in the mask clears it.
+  @$pb.TagNumber(13)
+  $core.String get webhookSecret => $_getSZ(12);
+  @$pb.TagNumber(13)
+  set webhookSecret($core.String v) { $_setString(12, v); }
+  @$pb.TagNumber(13)
+  $core.bool hasWebhookSecret() => $_has(12);
+  @$pb.TagNumber(13)
+  void clearWebhookSecret() => clearField(13);
 }
 
 class UpdateShopResponse extends $pb.GeneratedMessage {
@@ -837,6 +1120,103 @@ class GetShopResponse extends $pb.GeneratedMessage {
   Shop ensureShop() => $_ensure(0);
 }
 
+class ResolveDefaultCurrencyRequest extends $pb.GeneratedMessage {
+  factory ResolveDefaultCurrencyRequest() => create();
+  ResolveDefaultCurrencyRequest._() : super();
+  factory ResolveDefaultCurrencyRequest.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory ResolveDefaultCurrencyRequest.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'ResolveDefaultCurrencyRequest', package: const $pb.PackageName(_omitMessageNames ? '' : 'commerce.v1'), createEmptyInstance: create)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  ResolveDefaultCurrencyRequest clone() => ResolveDefaultCurrencyRequest()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  ResolveDefaultCurrencyRequest copyWith(void Function(ResolveDefaultCurrencyRequest) updates) => super.copyWith((message) => updates(message as ResolveDefaultCurrencyRequest)) as ResolveDefaultCurrencyRequest;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static ResolveDefaultCurrencyRequest create() => ResolveDefaultCurrencyRequest._();
+  ResolveDefaultCurrencyRequest createEmptyInstance() => create();
+  static $pb.PbList<ResolveDefaultCurrencyRequest> createRepeated() => $pb.PbList<ResolveDefaultCurrencyRequest>();
+  @$core.pragma('dart2js:noInline')
+  static ResolveDefaultCurrencyRequest getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<ResolveDefaultCurrencyRequest>(create);
+  static ResolveDefaultCurrencyRequest? _defaultInstance;
+}
+
+class ResolveDefaultCurrencyResponse extends $pb.GeneratedMessage {
+  factory ResolveDefaultCurrencyResponse({
+    $core.String? currency,
+    CurrencySource? source,
+  }) {
+    final $result = create();
+    if (currency != null) {
+      $result.currency = currency;
+    }
+    if (source != null) {
+      $result.source = source;
+    }
+    return $result;
+  }
+  ResolveDefaultCurrencyResponse._() : super();
+  factory ResolveDefaultCurrencyResponse.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory ResolveDefaultCurrencyResponse.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'ResolveDefaultCurrencyResponse', package: const $pb.PackageName(_omitMessageNames ? '' : 'commerce.v1'), createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'currency')
+    ..e<CurrencySource>(2, _omitFieldNames ? '' : 'source', $pb.PbFieldType.OE, defaultOrMaker: CurrencySource.CURRENCY_SOURCE_UNSPECIFIED, valueOf: CurrencySource.valueOf, enumValues: CurrencySource.values)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  ResolveDefaultCurrencyResponse clone() => ResolveDefaultCurrencyResponse()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  ResolveDefaultCurrencyResponse copyWith(void Function(ResolveDefaultCurrencyResponse) updates) => super.copyWith((message) => updates(message as ResolveDefaultCurrencyResponse)) as ResolveDefaultCurrencyResponse;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static ResolveDefaultCurrencyResponse create() => ResolveDefaultCurrencyResponse._();
+  ResolveDefaultCurrencyResponse createEmptyInstance() => create();
+  static $pb.PbList<ResolveDefaultCurrencyResponse> createRepeated() => $pb.PbList<ResolveDefaultCurrencyResponse>();
+  @$core.pragma('dart2js:noInline')
+  static ResolveDefaultCurrencyResponse getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<ResolveDefaultCurrencyResponse>(create);
+  static ResolveDefaultCurrencyResponse? _defaultInstance;
+
+  /// ISO 4217 code.
+  @$pb.TagNumber(1)
+  $core.String get currency => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set currency($core.String v) { $_setString(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasCurrency() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearCurrency() => clearField(1);
+
+  @$pb.TagNumber(2)
+  CurrencySource get source => $_getN(1);
+  @$pb.TagNumber(2)
+  set source(CurrencySource v) { setField(2, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasSource() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearSource() => clearField(2);
+}
+
 class Product extends $pb.GeneratedMessage {
   factory Product({
     $core.String? id,
@@ -848,6 +1228,7 @@ class Product extends $pb.GeneratedMessage {
     ProductStatus? status,
     $core.Iterable<$core.String>? mediaIds,
     $2.Timestamp? createdAt,
+    PaymentPolicy? paymentPolicy,
   }) {
     final $result = create();
     if (id != null) {
@@ -877,6 +1258,9 @@ class Product extends $pb.GeneratedMessage {
     if (createdAt != null) {
       $result.createdAt = createdAt;
     }
+    if (paymentPolicy != null) {
+      $result.paymentPolicy = paymentPolicy;
+    }
     return $result;
   }
   Product._() : super();
@@ -893,6 +1277,7 @@ class Product extends $pb.GeneratedMessage {
     ..e<ProductStatus>(15, _omitFieldNames ? '' : 'status', $pb.PbFieldType.OE, defaultOrMaker: ProductStatus.PRODUCT_STATUS_UNSPECIFIED, valueOf: ProductStatus.valueOf, enumValues: ProductStatus.values)
     ..pPS(16, _omitFieldNames ? '' : 'mediaIds')
     ..aOM<$2.Timestamp>(17, _omitFieldNames ? '' : 'createdAt', subBuilder: $2.Timestamp.create)
+    ..aOM<PaymentPolicy>(18, _omitFieldNames ? '' : 'paymentPolicy', subBuilder: PaymentPolicy.create)
     ..hasRequiredFields = false
   ;
 
@@ -990,6 +1375,19 @@ class Product extends $pb.GeneratedMessage {
   void clearCreatedAt() => clearField(17);
   @$pb.TagNumber(17)
   $2.Timestamp ensureCreatedAt() => $_ensure(8);
+
+  /// Overrides the shop's payment policy for orders containing this product.
+  /// Unset uses the shop's.
+  @$pb.TagNumber(18)
+  PaymentPolicy get paymentPolicy => $_getN(9);
+  @$pb.TagNumber(18)
+  set paymentPolicy(PaymentPolicy v) { setField(18, v); }
+  @$pb.TagNumber(18)
+  $core.bool hasPaymentPolicy() => $_has(9);
+  @$pb.TagNumber(18)
+  void clearPaymentPolicy() => clearField(18);
+  @$pb.TagNumber(18)
+  PaymentPolicy ensurePaymentPolicy() => $_ensure(9);
 }
 
 class ProductVariant extends $pb.GeneratedMessage {
@@ -1169,6 +1567,8 @@ class CreateProductRequest extends $pb.GeneratedMessage {
     $core.String? description,
     $core.Iterable<$core.String>? mediaIds,
     $core.Map<$core.String, $core.String>? attributes,
+    FulfilmentType? fulfilmentType,
+    PaymentPolicy? paymentPolicy,
   }) {
     final $result = create();
     if (shopId != null) {
@@ -1186,6 +1586,12 @@ class CreateProductRequest extends $pb.GeneratedMessage {
     if (attributes != null) {
       $result.attributes.addAll(attributes);
     }
+    if (fulfilmentType != null) {
+      $result.fulfilmentType = fulfilmentType;
+    }
+    if (paymentPolicy != null) {
+      $result.paymentPolicy = paymentPolicy;
+    }
     return $result;
   }
   CreateProductRequest._() : super();
@@ -1198,6 +1604,8 @@ class CreateProductRequest extends $pb.GeneratedMessage {
     ..aOS(3, _omitFieldNames ? '' : 'description')
     ..pPS(4, _omitFieldNames ? '' : 'mediaIds')
     ..m<$core.String, $core.String>(5, _omitFieldNames ? '' : 'attributes', entryClassName: 'CreateProductRequest.AttributesEntry', keyFieldType: $pb.PbFieldType.OS, valueFieldType: $pb.PbFieldType.OS, packageName: const $pb.PackageName('commerce.v1'))
+    ..e<FulfilmentType>(6, _omitFieldNames ? '' : 'fulfilmentType', $pb.PbFieldType.OE, defaultOrMaker: FulfilmentType.FULFILMENT_TYPE_UNSPECIFIED, valueOf: FulfilmentType.valueOf, enumValues: FulfilmentType.values)
+    ..aOM<PaymentPolicy>(7, _omitFieldNames ? '' : 'paymentPolicy', subBuilder: PaymentPolicy.create)
     ..hasRequiredFields = false
   ;
 
@@ -1254,6 +1662,26 @@ class CreateProductRequest extends $pb.GeneratedMessage {
 
   @$pb.TagNumber(5)
   $core.Map<$core.String, $core.String> get attributes => $_getMap(4);
+
+  @$pb.TagNumber(6)
+  FulfilmentType get fulfilmentType => $_getN(5);
+  @$pb.TagNumber(6)
+  set fulfilmentType(FulfilmentType v) { setField(6, v); }
+  @$pb.TagNumber(6)
+  $core.bool hasFulfilmentType() => $_has(5);
+  @$pb.TagNumber(6)
+  void clearFulfilmentType() => clearField(6);
+
+  @$pb.TagNumber(7)
+  PaymentPolicy get paymentPolicy => $_getN(6);
+  @$pb.TagNumber(7)
+  set paymentPolicy(PaymentPolicy v) { setField(7, v); }
+  @$pb.TagNumber(7)
+  $core.bool hasPaymentPolicy() => $_has(6);
+  @$pb.TagNumber(7)
+  void clearPaymentPolicy() => clearField(7);
+  @$pb.TagNumber(7)
+  PaymentPolicy ensurePaymentPolicy() => $_ensure(6);
 }
 
 class CreateProductResponse extends $pb.GeneratedMessage {
@@ -1877,6 +2305,215 @@ class UpdateProductVariantRequest extends $pb.GeneratedMessage {
 
   @$pb.TagNumber(9)
   $core.List<$core.String> get mediaIds => $_getList(8);
+}
+
+class UpdateProductRequest extends $pb.GeneratedMessage {
+  factory UpdateProductRequest({
+    $core.String? id,
+    $1.FieldMask? updateMask,
+    $core.String? name,
+    $core.String? description,
+    $core.Map<$core.String, $core.String>? attributes,
+    FulfilmentType? fulfilmentType,
+    ProductStatus? status,
+    $core.Iterable<$core.String>? mediaIds,
+    PaymentPolicy? paymentPolicy,
+  }) {
+    final $result = create();
+    if (id != null) {
+      $result.id = id;
+    }
+    if (updateMask != null) {
+      $result.updateMask = updateMask;
+    }
+    if (name != null) {
+      $result.name = name;
+    }
+    if (description != null) {
+      $result.description = description;
+    }
+    if (attributes != null) {
+      $result.attributes.addAll(attributes);
+    }
+    if (fulfilmentType != null) {
+      $result.fulfilmentType = fulfilmentType;
+    }
+    if (status != null) {
+      $result.status = status;
+    }
+    if (mediaIds != null) {
+      $result.mediaIds.addAll(mediaIds);
+    }
+    if (paymentPolicy != null) {
+      $result.paymentPolicy = paymentPolicy;
+    }
+    return $result;
+  }
+  UpdateProductRequest._() : super();
+  factory UpdateProductRequest.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory UpdateProductRequest.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'UpdateProductRequest', package: const $pb.PackageName(_omitMessageNames ? '' : 'commerce.v1'), createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'id')
+    ..aOM<$1.FieldMask>(2, _omitFieldNames ? '' : 'updateMask', subBuilder: $1.FieldMask.create)
+    ..aOS(3, _omitFieldNames ? '' : 'name')
+    ..aOS(4, _omitFieldNames ? '' : 'description')
+    ..m<$core.String, $core.String>(5, _omitFieldNames ? '' : 'attributes', entryClassName: 'UpdateProductRequest.AttributesEntry', keyFieldType: $pb.PbFieldType.OS, valueFieldType: $pb.PbFieldType.OS, packageName: const $pb.PackageName('commerce.v1'))
+    ..e<FulfilmentType>(6, _omitFieldNames ? '' : 'fulfilmentType', $pb.PbFieldType.OE, defaultOrMaker: FulfilmentType.FULFILMENT_TYPE_UNSPECIFIED, valueOf: FulfilmentType.valueOf, enumValues: FulfilmentType.values)
+    ..e<ProductStatus>(7, _omitFieldNames ? '' : 'status', $pb.PbFieldType.OE, defaultOrMaker: ProductStatus.PRODUCT_STATUS_UNSPECIFIED, valueOf: ProductStatus.valueOf, enumValues: ProductStatus.values)
+    ..pPS(8, _omitFieldNames ? '' : 'mediaIds')
+    ..aOM<PaymentPolicy>(9, _omitFieldNames ? '' : 'paymentPolicy', subBuilder: PaymentPolicy.create)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  UpdateProductRequest clone() => UpdateProductRequest()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  UpdateProductRequest copyWith(void Function(UpdateProductRequest) updates) => super.copyWith((message) => updates(message as UpdateProductRequest)) as UpdateProductRequest;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static UpdateProductRequest create() => UpdateProductRequest._();
+  UpdateProductRequest createEmptyInstance() => create();
+  static $pb.PbList<UpdateProductRequest> createRepeated() => $pb.PbList<UpdateProductRequest>();
+  @$core.pragma('dart2js:noInline')
+  static UpdateProductRequest getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<UpdateProductRequest>(create);
+  static UpdateProductRequest? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get id => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set id($core.String v) { $_setString(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearId() => clearField(1);
+
+  /// Fields to apply. Without a mask only fields carrying a value are applied.
+  @$pb.TagNumber(2)
+  $1.FieldMask get updateMask => $_getN(1);
+  @$pb.TagNumber(2)
+  set updateMask($1.FieldMask v) { setField(2, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasUpdateMask() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearUpdateMask() => clearField(2);
+  @$pb.TagNumber(2)
+  $1.FieldMask ensureUpdateMask() => $_ensure(1);
+
+  @$pb.TagNumber(3)
+  $core.String get name => $_getSZ(2);
+  @$pb.TagNumber(3)
+  set name($core.String v) { $_setString(2, v); }
+  @$pb.TagNumber(3)
+  $core.bool hasName() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearName() => clearField(3);
+
+  @$pb.TagNumber(4)
+  $core.String get description => $_getSZ(3);
+  @$pb.TagNumber(4)
+  set description($core.String v) { $_setString(3, v); }
+  @$pb.TagNumber(4)
+  $core.bool hasDescription() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearDescription() => clearField(4);
+
+  @$pb.TagNumber(5)
+  $core.Map<$core.String, $core.String> get attributes => $_getMap(4);
+
+  @$pb.TagNumber(6)
+  FulfilmentType get fulfilmentType => $_getN(5);
+  @$pb.TagNumber(6)
+  set fulfilmentType(FulfilmentType v) { setField(6, v); }
+  @$pb.TagNumber(6)
+  $core.bool hasFulfilmentType() => $_has(5);
+  @$pb.TagNumber(6)
+  void clearFulfilmentType() => clearField(6);
+
+  @$pb.TagNumber(7)
+  ProductStatus get status => $_getN(6);
+  @$pb.TagNumber(7)
+  set status(ProductStatus v) { setField(7, v); }
+  @$pb.TagNumber(7)
+  $core.bool hasStatus() => $_has(6);
+  @$pb.TagNumber(7)
+  void clearStatus() => clearField(7);
+
+  @$pb.TagNumber(8)
+  $core.List<$core.String> get mediaIds => $_getList(7);
+
+  /// With "payment_policy" in the mask and this unset, the override is
+  /// removed and the shop's policy applies again.
+  @$pb.TagNumber(9)
+  PaymentPolicy get paymentPolicy => $_getN(8);
+  @$pb.TagNumber(9)
+  set paymentPolicy(PaymentPolicy v) { setField(9, v); }
+  @$pb.TagNumber(9)
+  $core.bool hasPaymentPolicy() => $_has(8);
+  @$pb.TagNumber(9)
+  void clearPaymentPolicy() => clearField(9);
+  @$pb.TagNumber(9)
+  PaymentPolicy ensurePaymentPolicy() => $_ensure(8);
+}
+
+class UpdateProductResponse extends $pb.GeneratedMessage {
+  factory UpdateProductResponse({
+    Product? product,
+  }) {
+    final $result = create();
+    if (product != null) {
+      $result.product = product;
+    }
+    return $result;
+  }
+  UpdateProductResponse._() : super();
+  factory UpdateProductResponse.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory UpdateProductResponse.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'UpdateProductResponse', package: const $pb.PackageName(_omitMessageNames ? '' : 'commerce.v1'), createEmptyInstance: create)
+    ..aOM<Product>(1, _omitFieldNames ? '' : 'product', subBuilder: Product.create)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  UpdateProductResponse clone() => UpdateProductResponse()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  UpdateProductResponse copyWith(void Function(UpdateProductResponse) updates) => super.copyWith((message) => updates(message as UpdateProductResponse)) as UpdateProductResponse;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static UpdateProductResponse create() => UpdateProductResponse._();
+  UpdateProductResponse createEmptyInstance() => create();
+  static $pb.PbList<UpdateProductResponse> createRepeated() => $pb.PbList<UpdateProductResponse>();
+  @$core.pragma('dart2js:noInline')
+  static UpdateProductResponse getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<UpdateProductResponse>(create);
+  static UpdateProductResponse? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  Product get product => $_getN(0);
+  @$pb.TagNumber(1)
+  set product(Product v) { setField(1, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasProduct() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearProduct() => clearField(1);
+  @$pb.TagNumber(1)
+  Product ensureProduct() => $_ensure(0);
 }
 
 class ListProductVariantsRequest extends $pb.GeneratedMessage {
@@ -2910,6 +3547,12 @@ class Order extends $pb.GeneratedMessage {
     $2.Timestamp? cancelledAt,
     $core.String? cancelReason,
     $core.String? ledgerTransactionId,
+    $8.Money? amountPaid,
+    $8.Money? balance,
+    $2.Timestamp? balanceDueAt,
+    PaymentPolicy? paymentPolicy,
+    $core.Iterable<OrderPayment>? payments,
+    $2.Timestamp? paymentDueAt,
   }) {
     final $result = create();
     if (id != null) {
@@ -2972,6 +3615,24 @@ class Order extends $pb.GeneratedMessage {
     if (ledgerTransactionId != null) {
       $result.ledgerTransactionId = ledgerTransactionId;
     }
+    if (amountPaid != null) {
+      $result.amountPaid = amountPaid;
+    }
+    if (balance != null) {
+      $result.balance = balance;
+    }
+    if (balanceDueAt != null) {
+      $result.balanceDueAt = balanceDueAt;
+    }
+    if (paymentPolicy != null) {
+      $result.paymentPolicy = paymentPolicy;
+    }
+    if (payments != null) {
+      $result.payments.addAll(payments);
+    }
+    if (paymentDueAt != null) {
+      $result.paymentDueAt = paymentDueAt;
+    }
     return $result;
   }
   Order._() : super();
@@ -2999,6 +3660,12 @@ class Order extends $pb.GeneratedMessage {
     ..aOM<$2.Timestamp>(18, _omitFieldNames ? '' : 'cancelledAt', subBuilder: $2.Timestamp.create)
     ..aOS(19, _omitFieldNames ? '' : 'cancelReason')
     ..aOS(20, _omitFieldNames ? '' : 'ledgerTransactionId')
+    ..aOM<$8.Money>(21, _omitFieldNames ? '' : 'amountPaid', subBuilder: $8.Money.create)
+    ..aOM<$8.Money>(22, _omitFieldNames ? '' : 'balance', subBuilder: $8.Money.create)
+    ..aOM<$2.Timestamp>(23, _omitFieldNames ? '' : 'balanceDueAt', subBuilder: $2.Timestamp.create)
+    ..aOM<PaymentPolicy>(24, _omitFieldNames ? '' : 'paymentPolicy', subBuilder: PaymentPolicy.create)
+    ..pc<OrderPayment>(25, _omitFieldNames ? '' : 'payments', $pb.PbFieldType.PM, subBuilder: OrderPayment.create)
+    ..aOM<$2.Timestamp>(26, _omitFieldNames ? '' : 'paymentDueAt', subBuilder: $2.Timestamp.create)
     ..hasRequiredFields = false
   ;
 
@@ -3210,6 +3877,227 @@ class Order extends $pb.GeneratedMessage {
   $core.bool hasLedgerTransactionId() => $_has(19);
   @$pb.TagNumber(20)
   void clearLedgerTransactionId() => clearField(20);
+
+  /// What has been paid so far across every instalment.
+  @$pb.TagNumber(21)
+  $8.Money get amountPaid => $_getN(20);
+  @$pb.TagNumber(21)
+  set amountPaid($8.Money v) { setField(21, v); }
+  @$pb.TagNumber(21)
+  $core.bool hasAmountPaid() => $_has(20);
+  @$pb.TagNumber(21)
+  void clearAmountPaid() => clearField(21);
+  @$pb.TagNumber(21)
+  $8.Money ensureAmountPaid() => $_ensure(20);
+
+  /// What remains to be paid.
+  @$pb.TagNumber(22)
+  $8.Money get balance => $_getN(21);
+  @$pb.TagNumber(22)
+  set balance($8.Money v) { setField(22, v); }
+  @$pb.TagNumber(22)
+  $core.bool hasBalance() => $_has(21);
+  @$pb.TagNumber(22)
+  void clearBalance() => clearField(22);
+  @$pb.TagNumber(22)
+  $8.Money ensureBalance() => $_ensure(21);
+
+  /// Deadline for the balance once a first instalment has been paid.
+  @$pb.TagNumber(23)
+  $2.Timestamp get balanceDueAt => $_getN(22);
+  @$pb.TagNumber(23)
+  set balanceDueAt($2.Timestamp v) { setField(23, v); }
+  @$pb.TagNumber(23)
+  $core.bool hasBalanceDueAt() => $_has(22);
+  @$pb.TagNumber(23)
+  void clearBalanceDueAt() => clearField(23);
+  @$pb.TagNumber(23)
+  $2.Timestamp ensureBalanceDueAt() => $_ensure(22);
+
+  /// The payment policy in force for this order, fixed when it was placed.
+  @$pb.TagNumber(24)
+  PaymentPolicy get paymentPolicy => $_getN(23);
+  @$pb.TagNumber(24)
+  set paymentPolicy(PaymentPolicy v) { setField(24, v); }
+  @$pb.TagNumber(24)
+  $core.bool hasPaymentPolicy() => $_has(23);
+  @$pb.TagNumber(24)
+  void clearPaymentPolicy() => clearField(24);
+  @$pb.TagNumber(24)
+  PaymentPolicy ensurePaymentPolicy() => $_ensure(23);
+
+  /// Every payment applied to the order, oldest first.
+  @$pb.TagNumber(25)
+  $core.List<OrderPayment> get payments => $_getList(24);
+
+  /// Unpaid orders hold stock until this time.
+  @$pb.TagNumber(26)
+  $2.Timestamp get paymentDueAt => $_getN(25);
+  @$pb.TagNumber(26)
+  set paymentDueAt($2.Timestamp v) { setField(26, v); }
+  @$pb.TagNumber(26)
+  $core.bool hasPaymentDueAt() => $_has(25);
+  @$pb.TagNumber(26)
+  void clearPaymentDueAt() => clearField(26);
+  @$pb.TagNumber(26)
+  $2.Timestamp ensurePaymentDueAt() => $_ensure(25);
+}
+
+/// OrderPayment is one instalment applied to an order.
+class OrderPayment extends $pb.GeneratedMessage {
+  factory OrderPayment({
+    $core.String? id,
+    $8.Money? amount,
+    OrderPaymentSource? source,
+    $core.String? reference,
+    $core.String? paymentId,
+    $2.Timestamp? paidAt,
+    $core.String? recordedBy,
+    $core.String? note,
+  }) {
+    final $result = create();
+    if (id != null) {
+      $result.id = id;
+    }
+    if (amount != null) {
+      $result.amount = amount;
+    }
+    if (source != null) {
+      $result.source = source;
+    }
+    if (reference != null) {
+      $result.reference = reference;
+    }
+    if (paymentId != null) {
+      $result.paymentId = paymentId;
+    }
+    if (paidAt != null) {
+      $result.paidAt = paidAt;
+    }
+    if (recordedBy != null) {
+      $result.recordedBy = recordedBy;
+    }
+    if (note != null) {
+      $result.note = note;
+    }
+    return $result;
+  }
+  OrderPayment._() : super();
+  factory OrderPayment.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory OrderPayment.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'OrderPayment', package: const $pb.PackageName(_omitMessageNames ? '' : 'commerce.v1'), createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'id')
+    ..aOM<$8.Money>(2, _omitFieldNames ? '' : 'amount', subBuilder: $8.Money.create)
+    ..e<OrderPaymentSource>(3, _omitFieldNames ? '' : 'source', $pb.PbFieldType.OE, defaultOrMaker: OrderPaymentSource.ORDER_PAYMENT_SOURCE_UNSPECIFIED, valueOf: OrderPaymentSource.valueOf, enumValues: OrderPaymentSource.values)
+    ..aOS(4, _omitFieldNames ? '' : 'reference')
+    ..aOS(5, _omitFieldNames ? '' : 'paymentId')
+    ..aOM<$2.Timestamp>(6, _omitFieldNames ? '' : 'paidAt', subBuilder: $2.Timestamp.create)
+    ..aOS(7, _omitFieldNames ? '' : 'recordedBy')
+    ..aOS(8, _omitFieldNames ? '' : 'note')
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  OrderPayment clone() => OrderPayment()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  OrderPayment copyWith(void Function(OrderPayment) updates) => super.copyWith((message) => updates(message as OrderPayment)) as OrderPayment;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static OrderPayment create() => OrderPayment._();
+  OrderPayment createEmptyInstance() => create();
+  static $pb.PbList<OrderPayment> createRepeated() => $pb.PbList<OrderPayment>();
+  @$core.pragma('dart2js:noInline')
+  static OrderPayment getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<OrderPayment>(create);
+  static OrderPayment? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get id => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set id($core.String v) { $_setString(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearId() => clearField(1);
+
+  @$pb.TagNumber(2)
+  $8.Money get amount => $_getN(1);
+  @$pb.TagNumber(2)
+  set amount($8.Money v) { setField(2, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasAmount() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearAmount() => clearField(2);
+  @$pb.TagNumber(2)
+  $8.Money ensureAmount() => $_ensure(1);
+
+  @$pb.TagNumber(3)
+  OrderPaymentSource get source => $_getN(2);
+  @$pb.TagNumber(3)
+  set source(OrderPaymentSource v) { setField(3, v); }
+  @$pb.TagNumber(3)
+  $core.bool hasSource() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearSource() => clearField(3);
+
+  /// Checkout session ref for online payments; the shop's receipt reference
+  /// for recorded ones.
+  @$pb.TagNumber(4)
+  $core.String get reference => $_getSZ(3);
+  @$pb.TagNumber(4)
+  set reference($core.String v) { $_setString(3, v); }
+  @$pb.TagNumber(4)
+  $core.bool hasReference() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearReference() => clearField(4);
+
+  /// Payment service reference, when there is one.
+  @$pb.TagNumber(5)
+  $core.String get paymentId => $_getSZ(4);
+  @$pb.TagNumber(5)
+  set paymentId($core.String v) { $_setString(4, v); }
+  @$pb.TagNumber(5)
+  $core.bool hasPaymentId() => $_has(4);
+  @$pb.TagNumber(5)
+  void clearPaymentId() => clearField(5);
+
+  @$pb.TagNumber(6)
+  $2.Timestamp get paidAt => $_getN(5);
+  @$pb.TagNumber(6)
+  set paidAt($2.Timestamp v) { setField(6, v); }
+  @$pb.TagNumber(6)
+  $core.bool hasPaidAt() => $_has(5);
+  @$pb.TagNumber(6)
+  void clearPaidAt() => clearField(6);
+  @$pb.TagNumber(6)
+  $2.Timestamp ensurePaidAt() => $_ensure(5);
+
+  /// Profile of the staff member who recorded an offline payment.
+  @$pb.TagNumber(7)
+  $core.String get recordedBy => $_getSZ(6);
+  @$pb.TagNumber(7)
+  set recordedBy($core.String v) { $_setString(6, v); }
+  @$pb.TagNumber(7)
+  $core.bool hasRecordedBy() => $_has(6);
+  @$pb.TagNumber(7)
+  void clearRecordedBy() => clearField(7);
+
+  @$pb.TagNumber(8)
+  $core.String get note => $_getSZ(7);
+  @$pb.TagNumber(8)
+  set note($core.String v) { $_setString(7, v); }
+  @$pb.TagNumber(8)
+  $core.bool hasNote() => $_has(7);
+  @$pb.TagNumber(8)
+  void clearNote() => clearField(8);
 }
 
 class OrderLine extends $pb.GeneratedMessage {
@@ -3827,6 +4715,7 @@ class CheckoutOrderRequest extends $pb.GeneratedMessage {
     $core.String? orderId,
     $core.String? returnUrl,
     $core.Iterable<$core.String>? methods,
+    $8.Money? amount,
   }) {
     final $result = create();
     if (orderId != null) {
@@ -3838,6 +4727,9 @@ class CheckoutOrderRequest extends $pb.GeneratedMessage {
     if (methods != null) {
       $result.methods.addAll(methods);
     }
+    if (amount != null) {
+      $result.amount = amount;
+    }
     return $result;
   }
   CheckoutOrderRequest._() : super();
@@ -3848,6 +4740,7 @@ class CheckoutOrderRequest extends $pb.GeneratedMessage {
     ..aOS(1, _omitFieldNames ? '' : 'orderId')
     ..aOS(2, _omitFieldNames ? '' : 'returnUrl')
     ..pPS(3, _omitFieldNames ? '' : 'methods')
+    ..aOM<$8.Money>(4, _omitFieldNames ? '' : 'amount', subBuilder: $8.Money.create)
     ..hasRequiredFields = false
   ;
 
@@ -3894,6 +4787,20 @@ class CheckoutOrderRequest extends $pb.GeneratedMessage {
   /// Optional restriction to specific payment methods.
   @$pb.TagNumber(3)
   $core.List<$core.String> get methods => $_getList(2);
+
+  /// The instalment to pay now. Empty pays the whole balance. Anything less
+  /// needs a policy that allows instalments and must meet its deposit and
+  /// minimum instalment.
+  @$pb.TagNumber(4)
+  $8.Money get amount => $_getN(3);
+  @$pb.TagNumber(4)
+  set amount($8.Money v) { setField(4, v); }
+  @$pb.TagNumber(4)
+  $core.bool hasAmount() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearAmount() => clearField(4);
+  @$pb.TagNumber(4)
+  $8.Money ensureAmount() => $_ensure(3);
 }
 
 class CheckoutOrderResponse extends $pb.GeneratedMessage {
@@ -3901,6 +4808,7 @@ class CheckoutOrderResponse extends $pb.GeneratedMessage {
     Order? order,
     $core.String? checkoutUrl,
     $core.String? sessionRef,
+    $8.Money? amount,
   }) {
     final $result = create();
     if (order != null) {
@@ -3912,6 +4820,9 @@ class CheckoutOrderResponse extends $pb.GeneratedMessage {
     if (sessionRef != null) {
       $result.sessionRef = sessionRef;
     }
+    if (amount != null) {
+      $result.amount = amount;
+    }
     return $result;
   }
   CheckoutOrderResponse._() : super();
@@ -3922,6 +4833,7 @@ class CheckoutOrderResponse extends $pb.GeneratedMessage {
     ..aOM<Order>(1, _omitFieldNames ? '' : 'order', subBuilder: Order.create)
     ..aOS(2, _omitFieldNames ? '' : 'checkoutUrl')
     ..aOS(3, _omitFieldNames ? '' : 'sessionRef')
+    ..aOM<$8.Money>(4, _omitFieldNames ? '' : 'amount', subBuilder: $8.Money.create)
     ..hasRequiredFields = false
   ;
 
@@ -3974,6 +4886,18 @@ class CheckoutOrderResponse extends $pb.GeneratedMessage {
   $core.bool hasSessionRef() => $_has(2);
   @$pb.TagNumber(3)
   void clearSessionRef() => clearField(3);
+
+  /// The amount this checkout session charges.
+  @$pb.TagNumber(4)
+  $8.Money get amount => $_getN(3);
+  @$pb.TagNumber(4)
+  set amount($8.Money v) { setField(4, v); }
+  @$pb.TagNumber(4)
+  $core.bool hasAmount() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearAmount() => clearField(4);
+  @$pb.TagNumber(4)
+  $8.Money ensureAmount() => $_ensure(3);
 }
 
 class ConfirmOrderPaymentRequest extends $pb.GeneratedMessage {
@@ -4194,6 +5118,511 @@ class CancelOrderResponse extends $pb.GeneratedMessage {
   Order ensureOrder() => $_ensure(0);
 }
 
+class RecordOrderPaymentRequest extends $pb.GeneratedMessage {
+  factory RecordOrderPaymentRequest({
+    $core.String? orderId,
+    $8.Money? amount,
+    $core.String? reference,
+    $core.String? note,
+  }) {
+    final $result = create();
+    if (orderId != null) {
+      $result.orderId = orderId;
+    }
+    if (amount != null) {
+      $result.amount = amount;
+    }
+    if (reference != null) {
+      $result.reference = reference;
+    }
+    if (note != null) {
+      $result.note = note;
+    }
+    return $result;
+  }
+  RecordOrderPaymentRequest._() : super();
+  factory RecordOrderPaymentRequest.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory RecordOrderPaymentRequest.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'RecordOrderPaymentRequest', package: const $pb.PackageName(_omitMessageNames ? '' : 'commerce.v1'), createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'orderId')
+    ..aOM<$8.Money>(2, _omitFieldNames ? '' : 'amount', subBuilder: $8.Money.create)
+    ..aOS(3, _omitFieldNames ? '' : 'reference')
+    ..aOS(4, _omitFieldNames ? '' : 'note')
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  RecordOrderPaymentRequest clone() => RecordOrderPaymentRequest()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  RecordOrderPaymentRequest copyWith(void Function(RecordOrderPaymentRequest) updates) => super.copyWith((message) => updates(message as RecordOrderPaymentRequest)) as RecordOrderPaymentRequest;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static RecordOrderPaymentRequest create() => RecordOrderPaymentRequest._();
+  RecordOrderPaymentRequest createEmptyInstance() => create();
+  static $pb.PbList<RecordOrderPaymentRequest> createRepeated() => $pb.PbList<RecordOrderPaymentRequest>();
+  @$core.pragma('dart2js:noInline')
+  static RecordOrderPaymentRequest getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<RecordOrderPaymentRequest>(create);
+  static RecordOrderPaymentRequest? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get orderId => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set orderId($core.String v) { $_setString(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasOrderId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearOrderId() => clearField(1);
+
+  @$pb.TagNumber(2)
+  $8.Money get amount => $_getN(1);
+  @$pb.TagNumber(2)
+  set amount($8.Money v) { setField(2, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasAmount() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearAmount() => clearField(2);
+  @$pb.TagNumber(2)
+  $8.Money ensureAmount() => $_ensure(1);
+
+  /// The shop's receipt or transaction reference; unique per order.
+  @$pb.TagNumber(3)
+  $core.String get reference => $_getSZ(2);
+  @$pb.TagNumber(3)
+  set reference($core.String v) { $_setString(2, v); }
+  @$pb.TagNumber(3)
+  $core.bool hasReference() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearReference() => clearField(3);
+
+  @$pb.TagNumber(4)
+  $core.String get note => $_getSZ(3);
+  @$pb.TagNumber(4)
+  set note($core.String v) { $_setString(3, v); }
+  @$pb.TagNumber(4)
+  $core.bool hasNote() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearNote() => clearField(4);
+}
+
+class RecordOrderPaymentResponse extends $pb.GeneratedMessage {
+  factory RecordOrderPaymentResponse({
+    Order? order,
+  }) {
+    final $result = create();
+    if (order != null) {
+      $result.order = order;
+    }
+    return $result;
+  }
+  RecordOrderPaymentResponse._() : super();
+  factory RecordOrderPaymentResponse.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory RecordOrderPaymentResponse.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'RecordOrderPaymentResponse', package: const $pb.PackageName(_omitMessageNames ? '' : 'commerce.v1'), createEmptyInstance: create)
+    ..aOM<Order>(1, _omitFieldNames ? '' : 'order', subBuilder: Order.create)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  RecordOrderPaymentResponse clone() => RecordOrderPaymentResponse()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  RecordOrderPaymentResponse copyWith(void Function(RecordOrderPaymentResponse) updates) => super.copyWith((message) => updates(message as RecordOrderPaymentResponse)) as RecordOrderPaymentResponse;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static RecordOrderPaymentResponse create() => RecordOrderPaymentResponse._();
+  RecordOrderPaymentResponse createEmptyInstance() => create();
+  static $pb.PbList<RecordOrderPaymentResponse> createRepeated() => $pb.PbList<RecordOrderPaymentResponse>();
+  @$core.pragma('dart2js:noInline')
+  static RecordOrderPaymentResponse getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<RecordOrderPaymentResponse>(create);
+  static RecordOrderPaymentResponse? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  Order get order => $_getN(0);
+  @$pb.TagNumber(1)
+  set order(Order v) { setField(1, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasOrder() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearOrder() => clearField(1);
+  @$pb.TagNumber(1)
+  Order ensureOrder() => $_ensure(0);
+}
+
+/// OrderEvent is a signal raised as an order's payment or lifecycle
+/// progresses.
+class OrderEvent extends $pb.GeneratedMessage {
+  factory OrderEvent({
+    $core.String? id,
+    $core.String? shopId,
+    $core.String? orderId,
+    $core.String? orderNumber,
+    OrderEventType? type,
+    $core.int? thresholdPercent,
+    $core.int? paidPercent,
+    $8.Money? amountPaid,
+    $8.Money? balance,
+    $8.Money? paymentAmount,
+    $2.Timestamp? createdAt,
+    OrderEventDelivery? delivery,
+  }) {
+    final $result = create();
+    if (id != null) {
+      $result.id = id;
+    }
+    if (shopId != null) {
+      $result.shopId = shopId;
+    }
+    if (orderId != null) {
+      $result.orderId = orderId;
+    }
+    if (orderNumber != null) {
+      $result.orderNumber = orderNumber;
+    }
+    if (type != null) {
+      $result.type = type;
+    }
+    if (thresholdPercent != null) {
+      $result.thresholdPercent = thresholdPercent;
+    }
+    if (paidPercent != null) {
+      $result.paidPercent = paidPercent;
+    }
+    if (amountPaid != null) {
+      $result.amountPaid = amountPaid;
+    }
+    if (balance != null) {
+      $result.balance = balance;
+    }
+    if (paymentAmount != null) {
+      $result.paymentAmount = paymentAmount;
+    }
+    if (createdAt != null) {
+      $result.createdAt = createdAt;
+    }
+    if (delivery != null) {
+      $result.delivery = delivery;
+    }
+    return $result;
+  }
+  OrderEvent._() : super();
+  factory OrderEvent.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory OrderEvent.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'OrderEvent', package: const $pb.PackageName(_omitMessageNames ? '' : 'commerce.v1'), createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'id')
+    ..aOS(2, _omitFieldNames ? '' : 'shopId')
+    ..aOS(3, _omitFieldNames ? '' : 'orderId')
+    ..aOS(4, _omitFieldNames ? '' : 'orderNumber')
+    ..e<OrderEventType>(5, _omitFieldNames ? '' : 'type', $pb.PbFieldType.OE, defaultOrMaker: OrderEventType.ORDER_EVENT_TYPE_UNSPECIFIED, valueOf: OrderEventType.valueOf, enumValues: OrderEventType.values)
+    ..a<$core.int>(6, _omitFieldNames ? '' : 'thresholdPercent', $pb.PbFieldType.O3)
+    ..a<$core.int>(7, _omitFieldNames ? '' : 'paidPercent', $pb.PbFieldType.O3)
+    ..aOM<$8.Money>(8, _omitFieldNames ? '' : 'amountPaid', subBuilder: $8.Money.create)
+    ..aOM<$8.Money>(9, _omitFieldNames ? '' : 'balance', subBuilder: $8.Money.create)
+    ..aOM<$8.Money>(10, _omitFieldNames ? '' : 'paymentAmount', subBuilder: $8.Money.create)
+    ..aOM<$2.Timestamp>(11, _omitFieldNames ? '' : 'createdAt', subBuilder: $2.Timestamp.create)
+    ..e<OrderEventDelivery>(12, _omitFieldNames ? '' : 'delivery', $pb.PbFieldType.OE, defaultOrMaker: OrderEventDelivery.ORDER_EVENT_DELIVERY_UNSPECIFIED, valueOf: OrderEventDelivery.valueOf, enumValues: OrderEventDelivery.values)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  OrderEvent clone() => OrderEvent()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  OrderEvent copyWith(void Function(OrderEvent) updates) => super.copyWith((message) => updates(message as OrderEvent)) as OrderEvent;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static OrderEvent create() => OrderEvent._();
+  OrderEvent createEmptyInstance() => create();
+  static $pb.PbList<OrderEvent> createRepeated() => $pb.PbList<OrderEvent>();
+  @$core.pragma('dart2js:noInline')
+  static OrderEvent getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<OrderEvent>(create);
+  static OrderEvent? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get id => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set id($core.String v) { $_setString(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearId() => clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get shopId => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set shopId($core.String v) { $_setString(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasShopId() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearShopId() => clearField(2);
+
+  @$pb.TagNumber(3)
+  $core.String get orderId => $_getSZ(2);
+  @$pb.TagNumber(3)
+  set orderId($core.String v) { $_setString(2, v); }
+  @$pb.TagNumber(3)
+  $core.bool hasOrderId() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearOrderId() => clearField(3);
+
+  @$pb.TagNumber(4)
+  $core.String get orderNumber => $_getSZ(3);
+  @$pb.TagNumber(4)
+  set orderNumber($core.String v) { $_setString(3, v); }
+  @$pb.TagNumber(4)
+  $core.bool hasOrderNumber() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearOrderNumber() => clearField(4);
+
+  @$pb.TagNumber(5)
+  OrderEventType get type => $_getN(4);
+  @$pb.TagNumber(5)
+  set type(OrderEventType v) { setField(5, v); }
+  @$pb.TagNumber(5)
+  $core.bool hasType() => $_has(4);
+  @$pb.TagNumber(5)
+  void clearType() => clearField(5);
+
+  /// For THRESHOLD_CROSSED, the policy mark that was crossed.
+  @$pb.TagNumber(6)
+  $core.int get thresholdPercent => $_getIZ(5);
+  @$pb.TagNumber(6)
+  set thresholdPercent($core.int v) { $_setSignedInt32(5, v); }
+  @$pb.TagNumber(6)
+  $core.bool hasThresholdPercent() => $_has(5);
+  @$pb.TagNumber(6)
+  void clearThresholdPercent() => clearField(6);
+
+  /// Share of the total paid when the event was raised.
+  @$pb.TagNumber(7)
+  $core.int get paidPercent => $_getIZ(6);
+  @$pb.TagNumber(7)
+  set paidPercent($core.int v) { $_setSignedInt32(6, v); }
+  @$pb.TagNumber(7)
+  $core.bool hasPaidPercent() => $_has(6);
+  @$pb.TagNumber(7)
+  void clearPaidPercent() => clearField(7);
+
+  @$pb.TagNumber(8)
+  $8.Money get amountPaid => $_getN(7);
+  @$pb.TagNumber(8)
+  set amountPaid($8.Money v) { setField(8, v); }
+  @$pb.TagNumber(8)
+  $core.bool hasAmountPaid() => $_has(7);
+  @$pb.TagNumber(8)
+  void clearAmountPaid() => clearField(8);
+  @$pb.TagNumber(8)
+  $8.Money ensureAmountPaid() => $_ensure(7);
+
+  @$pb.TagNumber(9)
+  $8.Money get balance => $_getN(8);
+  @$pb.TagNumber(9)
+  set balance($8.Money v) { setField(9, v); }
+  @$pb.TagNumber(9)
+  $core.bool hasBalance() => $_has(8);
+  @$pb.TagNumber(9)
+  void clearBalance() => clearField(9);
+  @$pb.TagNumber(9)
+  $8.Money ensureBalance() => $_ensure(8);
+
+  /// The instalment that caused the event, for payment events.
+  @$pb.TagNumber(10)
+  $8.Money get paymentAmount => $_getN(9);
+  @$pb.TagNumber(10)
+  set paymentAmount($8.Money v) { setField(10, v); }
+  @$pb.TagNumber(10)
+  $core.bool hasPaymentAmount() => $_has(9);
+  @$pb.TagNumber(10)
+  void clearPaymentAmount() => clearField(10);
+  @$pb.TagNumber(10)
+  $8.Money ensurePaymentAmount() => $_ensure(9);
+
+  @$pb.TagNumber(11)
+  $2.Timestamp get createdAt => $_getN(10);
+  @$pb.TagNumber(11)
+  set createdAt($2.Timestamp v) { setField(11, v); }
+  @$pb.TagNumber(11)
+  $core.bool hasCreatedAt() => $_has(10);
+  @$pb.TagNumber(11)
+  void clearCreatedAt() => clearField(11);
+  @$pb.TagNumber(11)
+  $2.Timestamp ensureCreatedAt() => $_ensure(10);
+
+  /// Webhook delivery state for this event.
+  @$pb.TagNumber(12)
+  OrderEventDelivery get delivery => $_getN(11);
+  @$pb.TagNumber(12)
+  set delivery(OrderEventDelivery v) { setField(12, v); }
+  @$pb.TagNumber(12)
+  $core.bool hasDelivery() => $_has(11);
+  @$pb.TagNumber(12)
+  void clearDelivery() => clearField(12);
+}
+
+class ListOrderEventsRequest extends $pb.GeneratedMessage {
+  factory ListOrderEventsRequest({
+    $core.String? shopId,
+    $core.String? orderId,
+    $7.SearchRequest? search,
+  }) {
+    final $result = create();
+    if (shopId != null) {
+      $result.shopId = shopId;
+    }
+    if (orderId != null) {
+      $result.orderId = orderId;
+    }
+    if (search != null) {
+      $result.search = search;
+    }
+    return $result;
+  }
+  ListOrderEventsRequest._() : super();
+  factory ListOrderEventsRequest.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory ListOrderEventsRequest.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'ListOrderEventsRequest', package: const $pb.PackageName(_omitMessageNames ? '' : 'commerce.v1'), createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'shopId')
+    ..aOS(2, _omitFieldNames ? '' : 'orderId')
+    ..aOM<$7.SearchRequest>(3, _omitFieldNames ? '' : 'search', subBuilder: $7.SearchRequest.create)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  ListOrderEventsRequest clone() => ListOrderEventsRequest()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  ListOrderEventsRequest copyWith(void Function(ListOrderEventsRequest) updates) => super.copyWith((message) => updates(message as ListOrderEventsRequest)) as ListOrderEventsRequest;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static ListOrderEventsRequest create() => ListOrderEventsRequest._();
+  ListOrderEventsRequest createEmptyInstance() => create();
+  static $pb.PbList<ListOrderEventsRequest> createRepeated() => $pb.PbList<ListOrderEventsRequest>();
+  @$core.pragma('dart2js:noInline')
+  static ListOrderEventsRequest getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<ListOrderEventsRequest>(create);
+  static ListOrderEventsRequest? _defaultInstance;
+
+  /// One of shop_id or order_id is required.
+  @$pb.TagNumber(1)
+  $core.String get shopId => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set shopId($core.String v) { $_setString(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasShopId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearShopId() => clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get orderId => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set orderId($core.String v) { $_setString(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasOrderId() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearOrderId() => clearField(2);
+
+  /// Page size and cursor.
+  @$pb.TagNumber(3)
+  $7.SearchRequest get search => $_getN(2);
+  @$pb.TagNumber(3)
+  set search($7.SearchRequest v) { setField(3, v); }
+  @$pb.TagNumber(3)
+  $core.bool hasSearch() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearSearch() => clearField(3);
+  @$pb.TagNumber(3)
+  $7.SearchRequest ensureSearch() => $_ensure(2);
+}
+
+class ListOrderEventsResponse extends $pb.GeneratedMessage {
+  factory ListOrderEventsResponse({
+    $core.Iterable<OrderEvent>? events,
+    $core.String? nextPage,
+  }) {
+    final $result = create();
+    if (events != null) {
+      $result.events.addAll(events);
+    }
+    if (nextPage != null) {
+      $result.nextPage = nextPage;
+    }
+    return $result;
+  }
+  ListOrderEventsResponse._() : super();
+  factory ListOrderEventsResponse.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory ListOrderEventsResponse.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'ListOrderEventsResponse', package: const $pb.PackageName(_omitMessageNames ? '' : 'commerce.v1'), createEmptyInstance: create)
+    ..pc<OrderEvent>(1, _omitFieldNames ? '' : 'events', $pb.PbFieldType.PM, subBuilder: OrderEvent.create)
+    ..aOS(2, _omitFieldNames ? '' : 'nextPage')
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  ListOrderEventsResponse clone() => ListOrderEventsResponse()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  ListOrderEventsResponse copyWith(void Function(ListOrderEventsResponse) updates) => super.copyWith((message) => updates(message as ListOrderEventsResponse)) as ListOrderEventsResponse;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static ListOrderEventsResponse create() => ListOrderEventsResponse._();
+  ListOrderEventsResponse createEmptyInstance() => create();
+  static $pb.PbList<ListOrderEventsResponse> createRepeated() => $pb.PbList<ListOrderEventsResponse>();
+  @$core.pragma('dart2js:noInline')
+  static ListOrderEventsResponse getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<ListOrderEventsResponse>(create);
+  static ListOrderEventsResponse? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.List<OrderEvent> get events => $_getList(0);
+
+  @$pb.TagNumber(2)
+  $core.String get nextPage => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set nextPage($core.String v) { $_setString(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasNextPage() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearNextPage() => clearField(2);
+}
+
 class ReconcilePaymentsRequest extends $pb.GeneratedMessage {
   factory ReconcilePaymentsRequest({
     $core.String? shopId,
@@ -4266,6 +5695,8 @@ class ReconcilePaymentsResponse extends $pb.GeneratedMessage {
     $core.int? paid,
     $core.int? expired,
     $core.int? failed,
+    $core.int? overdue,
+    $core.int? eventsDelivered,
   }) {
     final $result = create();
     if (examined != null) {
@@ -4280,6 +5711,12 @@ class ReconcilePaymentsResponse extends $pb.GeneratedMessage {
     if (failed != null) {
       $result.failed = failed;
     }
+    if (overdue != null) {
+      $result.overdue = overdue;
+    }
+    if (eventsDelivered != null) {
+      $result.eventsDelivered = eventsDelivered;
+    }
     return $result;
   }
   ReconcilePaymentsResponse._() : super();
@@ -4291,6 +5728,8 @@ class ReconcilePaymentsResponse extends $pb.GeneratedMessage {
     ..a<$core.int>(2, _omitFieldNames ? '' : 'paid', $pb.PbFieldType.O3)
     ..a<$core.int>(3, _omitFieldNames ? '' : 'expired', $pb.PbFieldType.O3)
     ..a<$core.int>(4, _omitFieldNames ? '' : 'failed', $pb.PbFieldType.O3)
+    ..a<$core.int>(5, _omitFieldNames ? '' : 'overdue', $pb.PbFieldType.O3)
+    ..a<$core.int>(6, _omitFieldNames ? '' : 'eventsDelivered', $pb.PbFieldType.O3)
     ..hasRequiredFields = false
   ;
 
@@ -4350,6 +5789,26 @@ class ReconcilePaymentsResponse extends $pb.GeneratedMessage {
   $core.bool hasFailed() => $_has(3);
   @$pb.TagNumber(4)
   void clearFailed() => clearField(4);
+
+  /// Part-paid orders flagged past their balance deadline.
+  @$pb.TagNumber(5)
+  $core.int get overdue => $_getIZ(4);
+  @$pb.TagNumber(5)
+  set overdue($core.int v) { $_setSignedInt32(4, v); }
+  @$pb.TagNumber(5)
+  $core.bool hasOverdue() => $_has(4);
+  @$pb.TagNumber(5)
+  void clearOverdue() => clearField(5);
+
+  /// Webhook deliveries that succeeded on retry.
+  @$pb.TagNumber(6)
+  $core.int get eventsDelivered => $_getIZ(5);
+  @$pb.TagNumber(6)
+  set eventsDelivered($core.int v) { $_setSignedInt32(5, v); }
+  @$pb.TagNumber(6)
+  $core.bool hasEventsDelivered() => $_has(5);
+  @$pb.TagNumber(6)
+  void clearEventsDelivered() => clearField(6);
 }
 
 class RunEndOfDayLedgerRequest extends $pb.GeneratedMessage {
@@ -5213,6 +6672,100 @@ class GetFulfilmentResponse extends $pb.GeneratedMessage {
   Fulfilment ensureFulfilment() => $_ensure(0);
 }
 
+class ListFulfilmentsRequest extends $pb.GeneratedMessage {
+  factory ListFulfilmentsRequest({
+    $core.String? orderId,
+  }) {
+    final $result = create();
+    if (orderId != null) {
+      $result.orderId = orderId;
+    }
+    return $result;
+  }
+  ListFulfilmentsRequest._() : super();
+  factory ListFulfilmentsRequest.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory ListFulfilmentsRequest.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'ListFulfilmentsRequest', package: const $pb.PackageName(_omitMessageNames ? '' : 'commerce.v1'), createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'orderId')
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  ListFulfilmentsRequest clone() => ListFulfilmentsRequest()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  ListFulfilmentsRequest copyWith(void Function(ListFulfilmentsRequest) updates) => super.copyWith((message) => updates(message as ListFulfilmentsRequest)) as ListFulfilmentsRequest;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static ListFulfilmentsRequest create() => ListFulfilmentsRequest._();
+  ListFulfilmentsRequest createEmptyInstance() => create();
+  static $pb.PbList<ListFulfilmentsRequest> createRepeated() => $pb.PbList<ListFulfilmentsRequest>();
+  @$core.pragma('dart2js:noInline')
+  static ListFulfilmentsRequest getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<ListFulfilmentsRequest>(create);
+  static ListFulfilmentsRequest? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get orderId => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set orderId($core.String v) { $_setString(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasOrderId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearOrderId() => clearField(1);
+}
+
+class ListFulfilmentsResponse extends $pb.GeneratedMessage {
+  factory ListFulfilmentsResponse({
+    $core.Iterable<Fulfilment>? fulfilments,
+  }) {
+    final $result = create();
+    if (fulfilments != null) {
+      $result.fulfilments.addAll(fulfilments);
+    }
+    return $result;
+  }
+  ListFulfilmentsResponse._() : super();
+  factory ListFulfilmentsResponse.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory ListFulfilmentsResponse.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'ListFulfilmentsResponse', package: const $pb.PackageName(_omitMessageNames ? '' : 'commerce.v1'), createEmptyInstance: create)
+    ..pc<Fulfilment>(1, _omitFieldNames ? '' : 'fulfilments', $pb.PbFieldType.PM, subBuilder: Fulfilment.create)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  ListFulfilmentsResponse clone() => ListFulfilmentsResponse()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  ListFulfilmentsResponse copyWith(void Function(ListFulfilmentsResponse) updates) => super.copyWith((message) => updates(message as ListFulfilmentsResponse)) as ListFulfilmentsResponse;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static ListFulfilmentsResponse create() => ListFulfilmentsResponse._();
+  ListFulfilmentsResponse createEmptyInstance() => create();
+  static $pb.PbList<ListFulfilmentsResponse> createRepeated() => $pb.PbList<ListFulfilmentsResponse>();
+  @$core.pragma('dart2js:noInline')
+  static ListFulfilmentsResponse getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<ListFulfilmentsResponse>(create);
+  static ListFulfilmentsResponse? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.List<Fulfilment> get fulfilments => $_getList(0);
+}
+
 /// A named collection of prices for product variants, scoped to a shop and currency.
 class PriceList extends $pb.GeneratedMessage {
   factory PriceList({
@@ -5815,6 +7368,8 @@ class DiscountRule extends $pb.GeneratedMessage {
     $2.Timestamp? validUntil,
     DiscountRuleStatus? status,
     $2.Timestamp? createdAt,
+    $core.String? approvedBy,
+    $2.Timestamp? approvedAt,
   }) {
     final $result = create();
     if (id != null) {
@@ -5856,6 +7411,12 @@ class DiscountRule extends $pb.GeneratedMessage {
     if (createdAt != null) {
       $result.createdAt = createdAt;
     }
+    if (approvedBy != null) {
+      $result.approvedBy = approvedBy;
+    }
+    if (approvedAt != null) {
+      $result.approvedAt = approvedAt;
+    }
     return $result;
   }
   DiscountRule._() : super();
@@ -5876,6 +7437,8 @@ class DiscountRule extends $pb.GeneratedMessage {
     ..aOM<$2.Timestamp>(11, _omitFieldNames ? '' : 'validUntil', subBuilder: $2.Timestamp.create)
     ..e<DiscountRuleStatus>(12, _omitFieldNames ? '' : 'status', $pb.PbFieldType.OE, defaultOrMaker: DiscountRuleStatus.DISCOUNT_RULE_STATUS_UNSPECIFIED, valueOf: DiscountRuleStatus.valueOf, enumValues: DiscountRuleStatus.values)
     ..aOM<$2.Timestamp>(15, _omitFieldNames ? '' : 'createdAt', subBuilder: $2.Timestamp.create)
+    ..aOS(16, _omitFieldNames ? '' : 'approvedBy')
+    ..aOM<$2.Timestamp>(17, _omitFieldNames ? '' : 'approvedAt', subBuilder: $2.Timestamp.create)
     ..hasRequiredFields = false
   ;
 
@@ -6024,6 +7587,27 @@ class DiscountRule extends $pb.GeneratedMessage {
   void clearCreatedAt() => clearField(15);
   @$pb.TagNumber(15)
   $2.Timestamp ensureCreatedAt() => $_ensure(12);
+
+  /// Who approved a rule that requires approval; empty until approved.
+  @$pb.TagNumber(16)
+  $core.String get approvedBy => $_getSZ(13);
+  @$pb.TagNumber(16)
+  set approvedBy($core.String v) { $_setString(13, v); }
+  @$pb.TagNumber(16)
+  $core.bool hasApprovedBy() => $_has(13);
+  @$pb.TagNumber(16)
+  void clearApprovedBy() => clearField(16);
+
+  @$pb.TagNumber(17)
+  $2.Timestamp get approvedAt => $_getN(14);
+  @$pb.TagNumber(17)
+  set approvedAt($2.Timestamp v) { setField(17, v); }
+  @$pb.TagNumber(17)
+  $core.bool hasApprovedAt() => $_has(14);
+  @$pb.TagNumber(17)
+  void clearApprovedAt() => clearField(17);
+  @$pb.TagNumber(17)
+  $2.Timestamp ensureApprovedAt() => $_ensure(14);
 }
 
 /// The fully resolved price for a variant, showing which source and discounts apply.
@@ -7414,6 +8998,7 @@ class DiscountRuleSaveRequest extends $pb.GeneratedMessage {
     $2.Timestamp? validFrom,
     $2.Timestamp? validUntil,
     DiscountRuleStatus? status,
+    $1.FieldMask? updateMask,
   }) {
     final $result = create();
     if (id != null) {
@@ -7452,6 +9037,9 @@ class DiscountRuleSaveRequest extends $pb.GeneratedMessage {
     if (status != null) {
       $result.status = status;
     }
+    if (updateMask != null) {
+      $result.updateMask = updateMask;
+    }
     return $result;
   }
   DiscountRuleSaveRequest._() : super();
@@ -7471,6 +9059,7 @@ class DiscountRuleSaveRequest extends $pb.GeneratedMessage {
     ..aOM<$2.Timestamp>(10, _omitFieldNames ? '' : 'validFrom', subBuilder: $2.Timestamp.create)
     ..aOM<$2.Timestamp>(11, _omitFieldNames ? '' : 'validUntil', subBuilder: $2.Timestamp.create)
     ..e<DiscountRuleStatus>(12, _omitFieldNames ? '' : 'status', $pb.PbFieldType.OE, defaultOrMaker: DiscountRuleStatus.DISCOUNT_RULE_STATUS_UNSPECIFIED, valueOf: DiscountRuleStatus.valueOf, enumValues: DiscountRuleStatus.values)
+    ..aOM<$1.FieldMask>(13, _omitFieldNames ? '' : 'updateMask', subBuilder: $1.FieldMask.create)
     ..hasRequiredFields = false
   ;
 
@@ -7609,6 +9198,20 @@ class DiscountRuleSaveRequest extends $pb.GeneratedMessage {
   $core.bool hasStatus() => $_has(11);
   @$pb.TagNumber(12)
   void clearStatus() => clearField(12);
+
+  /// On update, the fields to apply. Without a mask only fields carrying a
+  /// value are applied. Listing "requires_approval" with it false waives the
+  /// approval requirement, which needs discount_approve on the shop.
+  @$pb.TagNumber(13)
+  $1.FieldMask get updateMask => $_getN(12);
+  @$pb.TagNumber(13)
+  set updateMask($1.FieldMask v) { setField(13, v); }
+  @$pb.TagNumber(13)
+  $core.bool hasUpdateMask() => $_has(12);
+  @$pb.TagNumber(13)
+  void clearUpdateMask() => clearField(13);
+  @$pb.TagNumber(13)
+  $1.FieldMask ensureUpdateMask() => $_ensure(12);
 }
 
 class DiscountRuleSaveResponse extends $pb.GeneratedMessage {
@@ -7801,6 +9404,108 @@ class DiscountRuleSearchResponse extends $pb.GeneratedMessage {
   void clearPrevCursor() => clearField(3);
 }
 
+class DiscountRuleApproveRequest extends $pb.GeneratedMessage {
+  factory DiscountRuleApproveRequest({
+    $core.String? id,
+  }) {
+    final $result = create();
+    if (id != null) {
+      $result.id = id;
+    }
+    return $result;
+  }
+  DiscountRuleApproveRequest._() : super();
+  factory DiscountRuleApproveRequest.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory DiscountRuleApproveRequest.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'DiscountRuleApproveRequest', package: const $pb.PackageName(_omitMessageNames ? '' : 'commerce.v1'), createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'id')
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  DiscountRuleApproveRequest clone() => DiscountRuleApproveRequest()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  DiscountRuleApproveRequest copyWith(void Function(DiscountRuleApproveRequest) updates) => super.copyWith((message) => updates(message as DiscountRuleApproveRequest)) as DiscountRuleApproveRequest;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static DiscountRuleApproveRequest create() => DiscountRuleApproveRequest._();
+  DiscountRuleApproveRequest createEmptyInstance() => create();
+  static $pb.PbList<DiscountRuleApproveRequest> createRepeated() => $pb.PbList<DiscountRuleApproveRequest>();
+  @$core.pragma('dart2js:noInline')
+  static DiscountRuleApproveRequest getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<DiscountRuleApproveRequest>(create);
+  static DiscountRuleApproveRequest? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get id => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set id($core.String v) { $_setString(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearId() => clearField(1);
+}
+
+class DiscountRuleApproveResponse extends $pb.GeneratedMessage {
+  factory DiscountRuleApproveResponse({
+    DiscountRule? discountRule,
+  }) {
+    final $result = create();
+    if (discountRule != null) {
+      $result.discountRule = discountRule;
+    }
+    return $result;
+  }
+  DiscountRuleApproveResponse._() : super();
+  factory DiscountRuleApproveResponse.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory DiscountRuleApproveResponse.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'DiscountRuleApproveResponse', package: const $pb.PackageName(_omitMessageNames ? '' : 'commerce.v1'), createEmptyInstance: create)
+    ..aOM<DiscountRule>(1, _omitFieldNames ? '' : 'discountRule', subBuilder: DiscountRule.create)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  DiscountRuleApproveResponse clone() => DiscountRuleApproveResponse()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  DiscountRuleApproveResponse copyWith(void Function(DiscountRuleApproveResponse) updates) => super.copyWith((message) => updates(message as DiscountRuleApproveResponse)) as DiscountRuleApproveResponse;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static DiscountRuleApproveResponse create() => DiscountRuleApproveResponse._();
+  DiscountRuleApproveResponse createEmptyInstance() => create();
+  static $pb.PbList<DiscountRuleApproveResponse> createRepeated() => $pb.PbList<DiscountRuleApproveResponse>();
+  @$core.pragma('dart2js:noInline')
+  static DiscountRuleApproveResponse getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<DiscountRuleApproveResponse>(create);
+  static DiscountRuleApproveResponse? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  DiscountRule get discountRule => $_getN(0);
+  @$pb.TagNumber(1)
+  set discountRule(DiscountRule v) { setField(1, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasDiscountRule() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearDiscountRule() => clearField(1);
+  @$pb.TagNumber(1)
+  DiscountRule ensureDiscountRule() => $_ensure(0);
+}
+
 class ResolvePriceRequest extends $pb.GeneratedMessage {
   factory ResolvePriceRequest({
     $core.String? customerId,
@@ -7947,6 +9652,9 @@ class CommerceServiceApi {
   $async.Future<ListShopsResponse> listShops($pb.ClientContext? ctx, ListShopsRequest request) =>
     _client.invoke<ListShopsResponse>(ctx, 'CommerceService', 'ListShops', request, ListShopsResponse())
   ;
+  $async.Future<ResolveDefaultCurrencyResponse> resolveDefaultCurrency($pb.ClientContext? ctx, ResolveDefaultCurrencyRequest request) =>
+    _client.invoke<ResolveDefaultCurrencyResponse>(ctx, 'CommerceService', 'ResolveDefaultCurrency', request, ResolveDefaultCurrencyResponse())
+  ;
   $async.Future<CreateProductResponse> createProduct($pb.ClientContext? ctx, CreateProductRequest request) =>
     _client.invoke<CreateProductResponse>(ctx, 'CommerceService', 'CreateProduct', request, CreateProductResponse())
   ;
@@ -7961,6 +9669,9 @@ class CommerceServiceApi {
   ;
   $async.Future<UpdateProductVariantResponse> updateProductVariant($pb.ClientContext? ctx, UpdateProductVariantRequest request) =>
     _client.invoke<UpdateProductVariantResponse>(ctx, 'CommerceService', 'UpdateProductVariant', request, UpdateProductVariantResponse())
+  ;
+  $async.Future<UpdateProductResponse> updateProduct($pb.ClientContext? ctx, UpdateProductRequest request) =>
+    _client.invoke<UpdateProductResponse>(ctx, 'CommerceService', 'UpdateProduct', request, UpdateProductResponse())
   ;
   $async.Future<ListProductVariantsResponse> listProductVariants($pb.ClientContext? ctx, ListProductVariantsRequest request) =>
     _client.invoke<ListProductVariantsResponse>(ctx, 'CommerceService', 'ListProductVariants', request, ListProductVariantsResponse())
@@ -7998,6 +9709,12 @@ class CommerceServiceApi {
   $async.Future<CancelOrderResponse> cancelOrder($pb.ClientContext? ctx, CancelOrderRequest request) =>
     _client.invoke<CancelOrderResponse>(ctx, 'CommerceService', 'CancelOrder', request, CancelOrderResponse())
   ;
+  $async.Future<RecordOrderPaymentResponse> recordOrderPayment($pb.ClientContext? ctx, RecordOrderPaymentRequest request) =>
+    _client.invoke<RecordOrderPaymentResponse>(ctx, 'CommerceService', 'RecordOrderPayment', request, RecordOrderPaymentResponse())
+  ;
+  $async.Future<ListOrderEventsResponse> listOrderEvents($pb.ClientContext? ctx, ListOrderEventsRequest request) =>
+    _client.invoke<ListOrderEventsResponse>(ctx, 'CommerceService', 'ListOrderEvents', request, ListOrderEventsResponse())
+  ;
   $async.Future<ReconcilePaymentsResponse> reconcilePayments($pb.ClientContext? ctx, ReconcilePaymentsRequest request) =>
     _client.invoke<ReconcilePaymentsResponse>(ctx, 'CommerceService', 'ReconcilePayments', request, ReconcilePaymentsResponse())
   ;
@@ -8012,6 +9729,9 @@ class CommerceServiceApi {
   ;
   $async.Future<GetFulfilmentResponse> getFulfilment($pb.ClientContext? ctx, GetFulfilmentRequest request) =>
     _client.invoke<GetFulfilmentResponse>(ctx, 'CommerceService', 'GetFulfilment', request, GetFulfilmentResponse())
+  ;
+  $async.Future<ListFulfilmentsResponse> listFulfilments($pb.ClientContext? ctx, ListFulfilmentsRequest request) =>
+    _client.invoke<ListFulfilmentsResponse>(ctx, 'CommerceService', 'ListFulfilments', request, ListFulfilmentsResponse())
   ;
   $async.Future<PriceListSaveResponse> priceListSave($pb.ClientContext? ctx, PriceListSaveRequest request) =>
     _client.invoke<PriceListSaveResponse>(ctx, 'CommerceService', 'PriceListSave', request, PriceListSaveResponse())
@@ -8042,6 +9762,9 @@ class CommerceServiceApi {
   ;
   $async.Future<DiscountRuleSearchResponse> discountRuleSearch($pb.ClientContext? ctx, DiscountRuleSearchRequest request) =>
     _client.invoke<DiscountRuleSearchResponse>(ctx, 'CommerceService', 'DiscountRuleSearch', request, DiscountRuleSearchResponse())
+  ;
+  $async.Future<DiscountRuleApproveResponse> discountRuleApprove($pb.ClientContext? ctx, DiscountRuleApproveRequest request) =>
+    _client.invoke<DiscountRuleApproveResponse>(ctx, 'CommerceService', 'DiscountRuleApprove', request, DiscountRuleApproveResponse())
   ;
   $async.Future<ResolvePriceResponse> resolvePrice($pb.ClientContext? ctx, ResolvePriceRequest request) =>
     _client.invoke<ResolvePriceResponse>(ctx, 'CommerceService', 'ResolvePrice', request, ResolvePriceResponse())

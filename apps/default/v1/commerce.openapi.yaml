@@ -40,13 +40,16 @@ paths:
       parameters:
         - name: Connect-Protocol-Version
           in: header
-          required: true
+          description: Define the version of the Connect protocol
           schema:
             $ref: '#/components/schemas/connect-protocol-version'
+          example: 1
         - name: Connect-Timeout-Ms
           in: header
+          description: Define the timeout, in ms
           schema:
             $ref: '#/components/schemas/connect-timeout-header'
+          example: 1000
       requestBody:
         content:
           application/json:
@@ -80,13 +83,16 @@ paths:
       parameters:
         - name: Connect-Protocol-Version
           in: header
-          required: true
+          description: Define the version of the Connect protocol
           schema:
             $ref: '#/components/schemas/connect-protocol-version'
+          example: 1
         - name: Connect-Timeout-Ms
           in: header
+          description: Define the timeout, in ms
           schema:
             $ref: '#/components/schemas/connect-timeout-header'
+          example: 1000
       requestBody:
         content:
           application/json:
@@ -120,13 +126,16 @@ paths:
       parameters:
         - name: Connect-Protocol-Version
           in: header
-          required: true
+          description: Define the version of the Connect protocol
           schema:
             $ref: '#/components/schemas/connect-protocol-version'
+          example: 1
         - name: Connect-Timeout-Ms
           in: header
+          description: Define the timeout, in ms
           schema:
             $ref: '#/components/schemas/connect-timeout-header'
+          example: 1000
       requestBody:
         content:
           application/json:
@@ -161,13 +170,16 @@ paths:
       parameters:
         - name: Connect-Protocol-Version
           in: header
-          required: true
+          description: Define the version of the Connect protocol
           schema:
             $ref: '#/components/schemas/connect-protocol-version'
+          example: 1
         - name: Connect-Timeout-Ms
           in: header
+          description: Define the timeout, in ms
           schema:
             $ref: '#/components/schemas/connect-timeout-header'
+          example: 1000
       requestBody:
         content:
           application/json:
@@ -198,13 +210,16 @@ paths:
       parameters:
         - name: Connect-Protocol-Version
           in: header
-          required: true
+          description: Define the version of the Connect protocol
           schema:
             $ref: '#/components/schemas/connect-protocol-version'
+          example: 1
         - name: Connect-Timeout-Ms
           in: header
+          description: Define the timeout, in ms
           schema:
             $ref: '#/components/schemas/connect-timeout-header'
+          example: 1000
       requestBody:
         content:
           application/json:
@@ -238,13 +253,16 @@ paths:
       parameters:
         - name: Connect-Protocol-Version
           in: header
-          required: true
+          description: Define the version of the Connect protocol
           schema:
             $ref: '#/components/schemas/connect-protocol-version'
+          example: 1
         - name: Connect-Timeout-Ms
           in: header
+          description: Define the timeout, in ms
           schema:
             $ref: '#/components/schemas/connect-timeout-header'
+          example: 1000
       requestBody:
         content:
           application/json:
@@ -285,13 +303,16 @@ paths:
       parameters:
         - name: Connect-Protocol-Version
           in: header
-          required: true
+          description: Define the version of the Connect protocol
           schema:
             $ref: '#/components/schemas/connect-protocol-version'
+          example: 1
         - name: Connect-Timeout-Ms
           in: header
+          description: Define the timeout, in ms
           schema:
             $ref: '#/components/schemas/connect-timeout-header'
+          example: 1000
       requestBody:
         content:
           application/json:
@@ -322,13 +343,16 @@ paths:
       parameters:
         - name: Connect-Protocol-Version
           in: header
-          required: true
+          description: Define the version of the Connect protocol
           schema:
             $ref: '#/components/schemas/connect-protocol-version'
+          example: 1
         - name: Connect-Timeout-Ms
           in: header
+          description: Define the timeout, in ms
           schema:
             $ref: '#/components/schemas/connect-timeout-header'
+          example: 1000
       requestBody:
         content:
           application/json:
@@ -360,13 +384,16 @@ paths:
       parameters:
         - name: Connect-Protocol-Version
           in: header
-          required: true
+          description: Define the version of the Connect protocol
           schema:
             $ref: '#/components/schemas/connect-protocol-version'
+          example: 1
         - name: Connect-Timeout-Ms
           in: header
+          description: Define the timeout, in ms
           schema:
             $ref: '#/components/schemas/connect-timeout-header'
+          example: 1000
       requestBody:
         content:
           application/json:
@@ -398,13 +425,16 @@ paths:
       parameters:
         - name: Connect-Protocol-Version
           in: header
-          required: true
+          description: Define the version of the Connect protocol
           schema:
             $ref: '#/components/schemas/connect-protocol-version'
+          example: 1
         - name: Connect-Timeout-Ms
           in: header
+          description: Define the timeout, in ms
           schema:
             $ref: '#/components/schemas/connect-timeout-header'
+          example: 1000
       requestBody:
         content:
           application/json:
@@ -436,13 +466,16 @@ paths:
       parameters:
         - name: Connect-Protocol-Version
           in: header
-          required: true
+          description: Define the version of the Connect protocol
           schema:
             $ref: '#/components/schemas/connect-protocol-version'
+          example: 1
         - name: Connect-Timeout-Ms
           in: header
+          description: Define the timeout, in ms
           schema:
             $ref: '#/components/schemas/connect-timeout-header'
+          example: 1000
       requestBody:
         content:
           application/json:
@@ -474,13 +507,16 @@ paths:
       parameters:
         - name: Connect-Protocol-Version
           in: header
-          required: true
+          description: Define the version of the Connect protocol
           schema:
             $ref: '#/components/schemas/connect-protocol-version'
+          example: 1
         - name: Connect-Timeout-Ms
           in: header
+          description: Define the timeout, in ms
           schema:
             $ref: '#/components/schemas/connect-timeout-header'
+          example: 1000
       requestBody:
         content:
           application/json:
@@ -512,13 +548,16 @@ paths:
       parameters:
         - name: Connect-Protocol-Version
           in: header
-          required: true
+          description: Define the version of the Connect protocol
           schema:
             $ref: '#/components/schemas/connect-protocol-version'
+          example: 1
         - name: Connect-Timeout-Ms
           in: header
+          description: Define the timeout, in ms
           schema:
             $ref: '#/components/schemas/connect-timeout-header'
+          example: 1000
       requestBody:
         content:
           application/json:
@@ -550,13 +589,16 @@ paths:
       parameters:
         - name: Connect-Protocol-Version
           in: header
-          required: true
+          description: Define the version of the Connect protocol
           schema:
             $ref: '#/components/schemas/connect-protocol-version'
+          example: 1
         - name: Connect-Timeout-Ms
           in: header
+          description: Define the timeout, in ms
           schema:
             $ref: '#/components/schemas/connect-timeout-header'
+          example: 1000
       requestBody:
         content:
           application/json:
@@ -588,13 +630,16 @@ paths:
       parameters:
         - name: Connect-Protocol-Version
           in: header
-          required: true
+          description: Define the version of the Connect protocol
           schema:
             $ref: '#/components/schemas/connect-protocol-version'
+          example: 1
         - name: Connect-Timeout-Ms
           in: header
+          description: Define the timeout, in ms
           schema:
             $ref: '#/components/schemas/connect-timeout-header'
+          example: 1000
       requestBody:
         content:
           application/json:
@@ -616,6 +661,49 @@ paths:
                 $ref: '#/components/schemas/commerce.v1.CustomerPriceOverrideSearchResponse'
       x-required-permissions:
         - price_list_view
+  /commerce.v1.CommerceService/DiscountRuleApprove:
+    post:
+      tags:
+        - commerce.v1.CommerceService
+      summary: DiscountRuleApprove
+      description: |-
+        Approves a discount rule that requires approval, so pricing may apply
+         it automatically.
+      operationId: commerce.v1.CommerceService.DiscountRuleApprove
+      parameters:
+        - name: Connect-Protocol-Version
+          in: header
+          description: Define the version of the Connect protocol
+          schema:
+            $ref: '#/components/schemas/connect-protocol-version'
+          example: 1
+        - name: Connect-Timeout-Ms
+          in: header
+          description: Define the timeout, in ms
+          schema:
+            $ref: '#/components/schemas/connect-timeout-header'
+          example: 1000
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/commerce.v1.DiscountRuleApproveRequest'
+        required: true
+      responses:
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/connect.error'
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/commerce.v1.DiscountRuleApproveResponse'
+      x-required-permissions:
+        - discount_approve
   /commerce.v1.CommerceService/DiscountRuleSave:
     post:
       tags:
@@ -626,13 +714,16 @@ paths:
       parameters:
         - name: Connect-Protocol-Version
           in: header
-          required: true
+          description: Define the version of the Connect protocol
           schema:
             $ref: '#/components/schemas/connect-protocol-version'
+          example: 1
         - name: Connect-Timeout-Ms
           in: header
+          description: Define the timeout, in ms
           schema:
             $ref: '#/components/schemas/connect-timeout-header'
+          example: 1000
       requestBody:
         content:
           application/json:
@@ -664,13 +755,16 @@ paths:
       parameters:
         - name: Connect-Protocol-Version
           in: header
-          required: true
+          description: Define the version of the Connect protocol
           schema:
             $ref: '#/components/schemas/connect-protocol-version'
+          example: 1
         - name: Connect-Timeout-Ms
           in: header
+          description: Define the timeout, in ms
           schema:
             $ref: '#/components/schemas/connect-timeout-header'
+          example: 1000
       requestBody:
         content:
           application/json:
@@ -701,13 +795,16 @@ paths:
       parameters:
         - name: Connect-Protocol-Version
           in: header
-          required: true
+          description: Define the version of the Connect protocol
           schema:
             $ref: '#/components/schemas/connect-protocol-version'
+          example: 1
         - name: Connect-Timeout-Ms
           in: header
+          description: Define the timeout, in ms
           schema:
             $ref: '#/components/schemas/connect-timeout-header'
+          example: 1000
       requestBody:
         content:
           application/json:
@@ -739,13 +836,16 @@ paths:
       parameters:
         - name: Connect-Protocol-Version
           in: header
-          required: true
+          description: Define the version of the Connect protocol
           schema:
             $ref: '#/components/schemas/connect-protocol-version'
+          example: 1
         - name: Connect-Timeout-Ms
           in: header
+          description: Define the timeout, in ms
           schema:
             $ref: '#/components/schemas/connect-timeout-header'
+          example: 1000
       requestBody:
         content:
           application/json:
@@ -777,13 +877,16 @@ paths:
       parameters:
         - name: Connect-Protocol-Version
           in: header
-          required: true
+          description: Define the version of the Connect protocol
           schema:
             $ref: '#/components/schemas/connect-protocol-version'
+          example: 1
         - name: Connect-Timeout-Ms
           in: header
+          description: Define the timeout, in ms
           schema:
             $ref: '#/components/schemas/connect-timeout-header'
+          example: 1000
       requestBody:
         content:
           application/json:
@@ -815,13 +918,16 @@ paths:
       parameters:
         - name: Connect-Protocol-Version
           in: header
-          required: true
+          description: Define the version of the Connect protocol
           schema:
             $ref: '#/components/schemas/connect-protocol-version'
+          example: 1
         - name: Connect-Timeout-Ms
           in: header
+          description: Define the timeout, in ms
           schema:
             $ref: '#/components/schemas/connect-timeout-header'
+          example: 1000
       requestBody:
         content:
           application/json:
@@ -853,13 +959,16 @@ paths:
       parameters:
         - name: Connect-Protocol-Version
           in: header
-          required: true
+          description: Define the version of the Connect protocol
           schema:
             $ref: '#/components/schemas/connect-protocol-version'
+          example: 1
         - name: Connect-Timeout-Ms
           in: header
+          description: Define the timeout, in ms
           schema:
             $ref: '#/components/schemas/connect-timeout-header'
+          example: 1000
       requestBody:
         content:
           application/json:
@@ -881,6 +990,90 @@ paths:
                 $ref: '#/components/schemas/commerce.v1.GetShopResponse'
       x-required-permissions:
         - shop_view
+  /commerce.v1.CommerceService/ListFulfilments:
+    post:
+      tags:
+        - commerce.v1.CommerceService
+      summary: ListFulfilments
+      description: Lists an order's fulfilments, oldest first.
+      operationId: commerce.v1.CommerceService.ListFulfilments
+      parameters:
+        - name: Connect-Protocol-Version
+          in: header
+          description: Define the version of the Connect protocol
+          schema:
+            $ref: '#/components/schemas/connect-protocol-version'
+          example: 1
+        - name: Connect-Timeout-Ms
+          in: header
+          description: Define the timeout, in ms
+          schema:
+            $ref: '#/components/schemas/connect-timeout-header'
+          example: 1000
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/commerce.v1.ListFulfilmentsRequest'
+        required: true
+      responses:
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/connect.error'
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/commerce.v1.ListFulfilmentsResponse'
+      x-required-permissions:
+        - fulfilment_view
+  /commerce.v1.CommerceService/ListOrderEvents:
+    post:
+      tags:
+        - commerce.v1.CommerceService
+      summary: ListOrderEvents
+      description: |-
+        Lists payment and lifecycle signals for an order, or for every order in
+         a shop, oldest first. The same events are pushed to the shop's webhook.
+      operationId: commerce.v1.CommerceService.ListOrderEvents
+      parameters:
+        - name: Connect-Protocol-Version
+          in: header
+          description: Define the version of the Connect protocol
+          schema:
+            $ref: '#/components/schemas/connect-protocol-version'
+          example: 1
+        - name: Connect-Timeout-Ms
+          in: header
+          description: Define the timeout, in ms
+          schema:
+            $ref: '#/components/schemas/connect-timeout-header'
+          example: 1000
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/commerce.v1.ListOrderEventsRequest'
+        required: true
+      responses:
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/connect.error'
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/commerce.v1.ListOrderEventsResponse'
+      x-required-permissions:
+        - order_view
   /commerce.v1.CommerceService/ListOrders:
     post:
       tags:
@@ -891,13 +1084,16 @@ paths:
       parameters:
         - name: Connect-Protocol-Version
           in: header
-          required: true
+          description: Define the version of the Connect protocol
           schema:
             $ref: '#/components/schemas/connect-protocol-version'
+          example: 1
         - name: Connect-Timeout-Ms
           in: header
+          description: Define the timeout, in ms
           schema:
             $ref: '#/components/schemas/connect-timeout-header'
+          example: 1000
       requestBody:
         content:
           application/json:
@@ -929,13 +1125,16 @@ paths:
       parameters:
         - name: Connect-Protocol-Version
           in: header
-          required: true
+          description: Define the version of the Connect protocol
           schema:
             $ref: '#/components/schemas/connect-protocol-version'
+          example: 1
         - name: Connect-Timeout-Ms
           in: header
+          description: Define the timeout, in ms
           schema:
             $ref: '#/components/schemas/connect-timeout-header'
+          example: 1000
       requestBody:
         content:
           application/json:
@@ -967,13 +1166,16 @@ paths:
       parameters:
         - name: Connect-Protocol-Version
           in: header
-          required: true
+          description: Define the version of the Connect protocol
           schema:
             $ref: '#/components/schemas/connect-protocol-version'
+          example: 1
         - name: Connect-Timeout-Ms
           in: header
+          description: Define the timeout, in ms
           schema:
             $ref: '#/components/schemas/connect-timeout-header'
+          example: 1000
       requestBody:
         content:
           application/json:
@@ -1005,13 +1207,16 @@ paths:
       parameters:
         - name: Connect-Protocol-Version
           in: header
-          required: true
+          description: Define the version of the Connect protocol
           schema:
             $ref: '#/components/schemas/connect-protocol-version'
+          example: 1
         - name: Connect-Timeout-Ms
           in: header
+          description: Define the timeout, in ms
           schema:
             $ref: '#/components/schemas/connect-timeout-header'
+          example: 1000
       requestBody:
         content:
           application/json:
@@ -1043,13 +1248,16 @@ paths:
       parameters:
         - name: Connect-Protocol-Version
           in: header
-          required: true
+          description: Define the version of the Connect protocol
           schema:
             $ref: '#/components/schemas/connect-protocol-version'
+          example: 1
         - name: Connect-Timeout-Ms
           in: header
+          description: Define the timeout, in ms
           schema:
             $ref: '#/components/schemas/connect-timeout-header'
+          example: 1000
       requestBody:
         content:
           application/json:
@@ -1081,13 +1289,16 @@ paths:
       parameters:
         - name: Connect-Protocol-Version
           in: header
-          required: true
+          description: Define the version of the Connect protocol
           schema:
             $ref: '#/components/schemas/connect-protocol-version'
+          example: 1
         - name: Connect-Timeout-Ms
           in: header
+          description: Define the timeout, in ms
           schema:
             $ref: '#/components/schemas/connect-timeout-header'
+          example: 1000
       requestBody:
         content:
           application/json:
@@ -1119,13 +1330,16 @@ paths:
       parameters:
         - name: Connect-Protocol-Version
           in: header
-          required: true
+          description: Define the version of the Connect protocol
           schema:
             $ref: '#/components/schemas/connect-protocol-version'
+          example: 1
         - name: Connect-Timeout-Ms
           in: header
+          description: Define the timeout, in ms
           schema:
             $ref: '#/components/schemas/connect-timeout-header'
+          example: 1000
       requestBody:
         content:
           application/json:
@@ -1157,13 +1371,16 @@ paths:
       parameters:
         - name: Connect-Protocol-Version
           in: header
-          required: true
+          description: Define the version of the Connect protocol
           schema:
             $ref: '#/components/schemas/connect-protocol-version'
+          example: 1
         - name: Connect-Timeout-Ms
           in: header
+          description: Define the timeout, in ms
           schema:
             $ref: '#/components/schemas/connect-timeout-header'
+          example: 1000
       requestBody:
         content:
           application/json:
@@ -1197,13 +1414,16 @@ paths:
       parameters:
         - name: Connect-Protocol-Version
           in: header
-          required: true
+          description: Define the version of the Connect protocol
           schema:
             $ref: '#/components/schemas/connect-protocol-version'
+          example: 1
         - name: Connect-Timeout-Ms
           in: header
+          description: Define the timeout, in ms
           schema:
             $ref: '#/components/schemas/connect-timeout-header'
+          example: 1000
       requestBody:
         content:
           application/json:
@@ -1225,6 +1445,50 @@ paths:
                 $ref: '#/components/schemas/commerce.v1.ReconcilePaymentsResponse'
       x-required-permissions:
         - ledger_post
+  /commerce.v1.CommerceService/RecordOrderPayment:
+    post:
+      tags:
+        - commerce.v1.CommerceService
+      summary: RecordOrderPayment
+      description: |-
+        Records a payment the shop took itself (cash, bank transfer, a till) as
+         an instalment against the order. Staff only. A reference already
+         recorded on the order is returned as-is, so retries are safe.
+      operationId: commerce.v1.CommerceService.RecordOrderPayment
+      parameters:
+        - name: Connect-Protocol-Version
+          in: header
+          description: Define the version of the Connect protocol
+          schema:
+            $ref: '#/components/schemas/connect-protocol-version'
+          example: 1
+        - name: Connect-Timeout-Ms
+          in: header
+          description: Define the timeout, in ms
+          schema:
+            $ref: '#/components/schemas/connect-timeout-header'
+          example: 1000
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/commerce.v1.RecordOrderPaymentRequest'
+        required: true
+      responses:
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/connect.error'
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/commerce.v1.RecordOrderPaymentResponse'
+      x-required-permissions:
+        - order_manage
   /commerce.v1.CommerceService/RemoveCartLine:
     post:
       tags:
@@ -1234,13 +1498,16 @@ paths:
       parameters:
         - name: Connect-Protocol-Version
           in: header
-          required: true
+          description: Define the version of the Connect protocol
           schema:
             $ref: '#/components/schemas/connect-protocol-version'
+          example: 1
         - name: Connect-Timeout-Ms
           in: header
+          description: Define the timeout, in ms
           schema:
             $ref: '#/components/schemas/connect-timeout-header'
+          example: 1000
       requestBody:
         content:
           application/json:
@@ -1262,6 +1529,51 @@ paths:
                 $ref: '#/components/schemas/commerce.v1.RemoveCartLineResponse'
       x-required-permissions:
         - cart_manage
+  /commerce.v1.CommerceService/ResolveDefaultCurrency:
+    post:
+      tags:
+        - commerce.v1.CommerceService
+      summary: ResolveDefaultCurrency
+      description: |-
+        Resolves the currency the caller most likely trades in: their currency
+         setting, else the locale of the device they are signed in on, else the
+         country of their first profile address. CreateShop applies the same
+         default when no currency is given.
+      operationId: commerce.v1.CommerceService.ResolveDefaultCurrency
+      parameters:
+        - name: Connect-Protocol-Version
+          in: header
+          description: Define the version of the Connect protocol
+          schema:
+            $ref: '#/components/schemas/connect-protocol-version'
+          example: 1
+        - name: Connect-Timeout-Ms
+          in: header
+          description: Define the timeout, in ms
+          schema:
+            $ref: '#/components/schemas/connect-timeout-header'
+          example: 1000
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/commerce.v1.ResolveDefaultCurrencyRequest'
+        required: true
+      responses:
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/connect.error'
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/commerce.v1.ResolveDefaultCurrencyResponse'
+      x-required-permissions:
+        - shops_list
   /commerce.v1.CommerceService/ResolvePrice:
     post:
       tags:
@@ -1272,13 +1584,16 @@ paths:
       parameters:
         - name: Connect-Protocol-Version
           in: header
-          required: true
+          description: Define the version of the Connect protocol
           schema:
             $ref: '#/components/schemas/connect-protocol-version'
+          example: 1
         - name: Connect-Timeout-Ms
           in: header
+          description: Define the timeout, in ms
           schema:
             $ref: '#/components/schemas/connect-timeout-header'
+          example: 1000
       requestBody:
         content:
           application/json:
@@ -1312,13 +1627,16 @@ paths:
       parameters:
         - name: Connect-Protocol-Version
           in: header
-          required: true
+          description: Define the version of the Connect protocol
           schema:
             $ref: '#/components/schemas/connect-protocol-version'
+          example: 1
         - name: Connect-Timeout-Ms
           in: header
+          description: Define the timeout, in ms
           schema:
             $ref: '#/components/schemas/connect-timeout-header'
+          example: 1000
       requestBody:
         content:
           application/json:
@@ -1350,13 +1668,16 @@ paths:
       parameters:
         - name: Connect-Protocol-Version
           in: header
-          required: true
+          description: Define the version of the Connect protocol
           schema:
             $ref: '#/components/schemas/connect-protocol-version'
+          example: 1
         - name: Connect-Timeout-Ms
           in: header
+          description: Define the timeout, in ms
           schema:
             $ref: '#/components/schemas/connect-timeout-header'
+          example: 1000
       requestBody:
         content:
           application/json:
@@ -1378,6 +1699,49 @@ paths:
                 $ref: '#/components/schemas/commerce.v1.UpdateFulfilmentResponse'
       x-required-permissions:
         - fulfilment_manage
+  /commerce.v1.CommerceService/UpdateProduct:
+    post:
+      tags:
+        - commerce.v1.CommerceService
+      summary: UpdateProduct
+      description: |-
+        Updates a product: details, fulfilment type, status, and its payment
+         policy override.
+      operationId: commerce.v1.CommerceService.UpdateProduct
+      parameters:
+        - name: Connect-Protocol-Version
+          in: header
+          description: Define the version of the Connect protocol
+          schema:
+            $ref: '#/components/schemas/connect-protocol-version'
+          example: 1
+        - name: Connect-Timeout-Ms
+          in: header
+          description: Define the timeout, in ms
+          schema:
+            $ref: '#/components/schemas/connect-timeout-header'
+          example: 1000
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/commerce.v1.UpdateProductRequest'
+        required: true
+      responses:
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/connect.error'
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/commerce.v1.UpdateProductResponse'
+      x-required-permissions:
+        - product_manage
   /commerce.v1.CommerceService/UpdateProductVariant:
     post:
       tags:
@@ -1388,13 +1752,16 @@ paths:
       parameters:
         - name: Connect-Protocol-Version
           in: header
-          required: true
+          description: Define the version of the Connect protocol
           schema:
             $ref: '#/components/schemas/connect-protocol-version'
+          example: 1
         - name: Connect-Timeout-Ms
           in: header
+          description: Define the timeout, in ms
           schema:
             $ref: '#/components/schemas/connect-timeout-header'
+          example: 1000
       requestBody:
         content:
           application/json:
@@ -1426,13 +1793,16 @@ paths:
       parameters:
         - name: Connect-Protocol-Version
           in: header
-          required: true
+          description: Define the version of the Connect protocol
           schema:
             $ref: '#/components/schemas/connect-protocol-version'
+          example: 1
         - name: Connect-Timeout-Ms
           in: header
+          description: Define the timeout, in ms
           schema:
             $ref: '#/components/schemas/connect-timeout-header'
+          example: 1000
       requestBody:
         content:
           application/json:
@@ -1469,9 +1839,7 @@ components:
           type: string
           title: product_variant_id
         quantity:
-          type:
-            - integer
-            - string
+          type: string
           title: quantity
           format: int64
       title: AddCartLineRequest
@@ -1480,8 +1848,9 @@ components:
       type: object
       properties:
         cart:
+          allOf:
+            - $ref: '#/components/schemas/commerce.v1.Cart'
           title: cart
-          $ref: '#/components/schemas/commerce.v1.Cart'
       title: AddCartLineResponse
       additionalProperties: false
     commerce.v1.CancelOrderRequest:
@@ -1502,8 +1871,9 @@ components:
       type: object
       properties:
         order:
+          allOf:
+            - $ref: '#/components/schemas/commerce.v1.Order'
           title: order
-          $ref: '#/components/schemas/commerce.v1.Order'
       title: CancelOrderResponse
       additionalProperties: false
     commerce.v1.Cart:
@@ -1516,8 +1886,9 @@ components:
           type: string
           title: shop_id
         status:
+          allOf:
+            - $ref: '#/components/schemas/commerce.v1.CartStatus'
           title: status
-          $ref: '#/components/schemas/commerce.v1.CartStatus'
         profileId:
           type: string
           title: profile_id
@@ -1530,14 +1901,17 @@ components:
             $ref: '#/components/schemas/commerce.v1.CartLine'
           title: lines
         expiresAt:
+          allOf:
+            - $ref: '#/components/schemas/google.protobuf.Timestamp'
           title: expires_at
-          $ref: '#/components/schemas/google.protobuf.Timestamp'
         createdAt:
+          allOf:
+            - $ref: '#/components/schemas/google.protobuf.Timestamp'
           title: created_at
-          $ref: '#/components/schemas/google.protobuf.Timestamp'
         updatedAt:
+          allOf:
+            - $ref: '#/components/schemas/google.protobuf.Timestamp'
           title: updated_at
-          $ref: '#/components/schemas/google.protobuf.Timestamp'
       title: Cart
       additionalProperties: false
     commerce.v1.CartLine:
@@ -1556,9 +1930,7 @@ components:
           minLength: 3
           pattern: '[0-9a-z_-]{3,40}'
         quantity:
-          type:
-            - integer
-            - string
+          type: string
           title: quantity
           format: int64
       title: CartLine
@@ -1591,20 +1963,34 @@ components:
             type: string
           title: methods
           description: Optional restriction to specific payment methods.
+        amount:
+          allOf:
+            - $ref: '#/components/schemas/common.v1.Money'
+          title: amount
+          description: |-
+            The instalment to pay now. Empty pays the whole balance. Anything less
+             needs a policy that allows instalments and must meet its deposit and
+             minimum instalment.
       title: CheckoutOrderRequest
       additionalProperties: false
     commerce.v1.CheckoutOrderResponse:
       type: object
       properties:
         order:
+          allOf:
+            - $ref: '#/components/schemas/commerce.v1.Order'
           title: order
-          $ref: '#/components/schemas/commerce.v1.Order'
         checkoutUrl:
           type: string
           title: checkout_url
         sessionRef:
           type: string
           title: session_ref
+        amount:
+          allOf:
+            - $ref: '#/components/schemas/common.v1.Money'
+          title: amount
+          description: The amount this checkout session charges.
       title: CheckoutOrderResponse
       additionalProperties: false
     commerce.v1.ConfirmOrderPaymentRequest:
@@ -1622,8 +2008,9 @@ components:
       type: object
       properties:
         order:
+          allOf:
+            - $ref: '#/components/schemas/commerce.v1.Order'
           title: order
-          $ref: '#/components/schemas/commerce.v1.Order'
       title: ConfirmOrderPaymentResponse
       additionalProperties: false
     commerce.v1.CreateCartRequest:
@@ -1648,8 +2035,9 @@ components:
       type: object
       properties:
         cart:
+          allOf:
+            - $ref: '#/components/schemas/commerce.v1.Cart'
           title: cart
-          $ref: '#/components/schemas/commerce.v1.Cart'
       title: CreateCartResponse
       additionalProperties: false
     commerce.v1.CreateFulfilmentRequest:
@@ -1672,8 +2060,9 @@ components:
       type: object
       properties:
         fulfilment:
+          allOf:
+            - $ref: '#/components/schemas/commerce.v1.Fulfilment'
           title: fulfilment
-          $ref: '#/components/schemas/commerce.v1.Fulfilment'
       title: CreateFulfilmentResponse
       additionalProperties: false
     commerce.v1.CreateOrderFromCartRequest:
@@ -1709,8 +2098,9 @@ components:
       type: object
       properties:
         order:
+          allOf:
+            - $ref: '#/components/schemas/commerce.v1.Order'
           title: order
-          $ref: '#/components/schemas/commerce.v1.Order'
       title: CreateOrderFromCartResponse
       additionalProperties: false
     commerce.v1.CreateOrderLine:
@@ -1723,9 +2113,7 @@ components:
           minLength: 3
           pattern: '[0-9a-z_-]{3,40}'
         quantity:
-          type:
-            - integer
-            - string
+          type: string
           title: quantity
           format: int64
       title: CreateOrderLine
@@ -1769,8 +2157,9 @@ components:
       type: object
       properties:
         order:
+          allOf:
+            - $ref: '#/components/schemas/commerce.v1.Order'
           title: order
-          $ref: '#/components/schemas/commerce.v1.Order'
       title: CreateOrderResponse
       additionalProperties: false
     commerce.v1.CreateProductRequest:
@@ -1799,25 +2188,23 @@ components:
           additionalProperties:
             type: string
             title: value
+        fulfilmentType:
+          allOf:
+            - $ref: '#/components/schemas/commerce.v1.FulfilmentType'
+          title: fulfilment_type
+        paymentPolicy:
+          allOf:
+            - $ref: '#/components/schemas/commerce.v1.PaymentPolicy'
+          title: payment_policy
       title: CreateProductRequest
-      additionalProperties: false
-    commerce.v1.CreateProductRequest.AttributesEntry:
-      type: object
-      properties:
-        key:
-          type: string
-          title: key
-        value:
-          type: string
-          title: value
-      title: AttributesEntry
       additionalProperties: false
     commerce.v1.CreateProductResponse:
       type: object
       properties:
         product:
+          allOf:
+            - $ref: '#/components/schemas/commerce.v1.Product'
           title: product
-          $ref: '#/components/schemas/commerce.v1.Product'
       title: CreateProductResponse
       additionalProperties: false
     commerce.v1.CreateProductVariantRequest:
@@ -1836,12 +2223,11 @@ components:
           type: string
           title: name
         price:
+          allOf:
+            - $ref: '#/components/schemas/common.v1.Money'
           title: price
-          $ref: '#/components/schemas/common.v1.Money'
         stockQuantity:
-          type:
-            - integer
-            - string
+          type: string
           title: stock_quantity
           format: int64
         attributes:
@@ -1857,23 +2243,13 @@ components:
           title: media_ids
       title: CreateProductVariantRequest
       additionalProperties: false
-    commerce.v1.CreateProductVariantRequest.AttributesEntry:
-      type: object
-      properties:
-        key:
-          type: string
-          title: key
-        value:
-          type: string
-          title: value
-      title: AttributesEntry
-      additionalProperties: false
     commerce.v1.CreateProductVariantResponse:
       type: object
       properties:
         productVariant:
+          allOf:
+            - $ref: '#/components/schemas/commerce.v1.ProductVariant'
           title: product_variant
-          $ref: '#/components/schemas/commerce.v1.ProductVariant'
       title: CreateProductVariantResponse
       additionalProperties: false
     commerce.v1.CreateShopRequest:
@@ -1891,6 +2267,7 @@ components:
         currency:
           type: string
           title: currency
+          description: ISO 4217 code. Empty uses the caller's default (see ResolveDefaultCurrency).
         contactId:
           type: string
           title: contact_id
@@ -1902,16 +2279,37 @@ components:
         checkoutReturnUrl:
           type: string
           title: checkout_return_url
+        paymentPolicy:
+          allOf:
+            - $ref: '#/components/schemas/commerce.v1.PaymentPolicy'
+          title: payment_policy
+        webhookUrl:
+          type: string
+          title: webhook_url
+        webhookSecret:
+          type: string
+          title: webhook_secret
       title: CreateShopRequest
       additionalProperties: false
     commerce.v1.CreateShopResponse:
       type: object
       properties:
         shop:
+          allOf:
+            - $ref: '#/components/schemas/commerce.v1.Shop'
           title: shop
-          $ref: '#/components/schemas/commerce.v1.Shop'
       title: CreateShopResponse
       additionalProperties: false
+    commerce.v1.CurrencySource:
+      type: string
+      title: CurrencySource
+      enum:
+        - CURRENCY_SOURCE_UNSPECIFIED
+        - CURRENCY_SOURCE_PREFERENCE
+        - CURRENCY_SOURCE_DEVICE
+        - CURRENCY_SOURCE_ADDRESS
+        - CURRENCY_SOURCE_PLATFORM_DEFAULT
+      description: Where a resolved default currency came from.
     commerce.v1.CustomerPriceListAssignment:
       type: object
       properties:
@@ -1937,11 +2335,13 @@ components:
           type: string
           title: assigned_by
         status:
+          allOf:
+            - $ref: '#/components/schemas/commerce.v1.CustomerPriceListAssignmentStatus'
           title: status
-          $ref: '#/components/schemas/commerce.v1.CustomerPriceListAssignmentStatus'
         createdAt:
+          allOf:
+            - $ref: '#/components/schemas/google.protobuf.Timestamp'
           title: created_at
-          $ref: '#/components/schemas/google.protobuf.Timestamp'
       title: CustomerPriceListAssignment
       additionalProperties: false
       description: Links a customer to a price list.
@@ -1968,16 +2368,18 @@ components:
           type: string
           title: assigned_by
         status:
+          allOf:
+            - $ref: '#/components/schemas/commerce.v1.CustomerPriceListAssignmentStatus'
           title: status
-          $ref: '#/components/schemas/commerce.v1.CustomerPriceListAssignmentStatus'
       title: CustomerPriceListAssignmentSaveRequest
       additionalProperties: false
     commerce.v1.CustomerPriceListAssignmentSaveResponse:
       type: object
       properties:
         assignment:
+          allOf:
+            - $ref: '#/components/schemas/commerce.v1.CustomerPriceListAssignment'
           title: assignment
-          $ref: '#/components/schemas/commerce.v1.CustomerPriceListAssignment'
       title: CustomerPriceListAssignmentSaveResponse
       additionalProperties: false
     commerce.v1.CustomerPriceListAssignmentSearchRequest:
@@ -1990,8 +2392,9 @@ components:
           type: string
           title: price_list_id
         search:
+          allOf:
+            - $ref: '#/components/schemas/common.v1.SearchRequest'
           title: search
-          $ref: '#/components/schemas/common.v1.SearchRequest'
       title: CustomerPriceListAssignmentSearchRequest
       additionalProperties: false
     commerce.v1.CustomerPriceListAssignmentSearchResponse:
@@ -2039,23 +2442,28 @@ components:
           minLength: 3
           pattern: '[0-9a-z_-]{3,40}'
         unitPrice:
+          allOf:
+            - $ref: '#/components/schemas/common.v1.Money'
           title: unit_price
-          $ref: '#/components/schemas/common.v1.Money'
         validFrom:
+          allOf:
+            - $ref: '#/components/schemas/google.protobuf.Timestamp'
           title: valid_from
-          $ref: '#/components/schemas/google.protobuf.Timestamp'
         validUntil:
+          allOf:
+            - $ref: '#/components/schemas/google.protobuf.Timestamp'
           title: valid_until
-          $ref: '#/components/schemas/google.protobuf.Timestamp'
         approvedBy:
           type: string
           title: approved_by
         status:
+          allOf:
+            - $ref: '#/components/schemas/commerce.v1.CustomerPriceOverrideStatus'
           title: status
-          $ref: '#/components/schemas/commerce.v1.CustomerPriceOverrideStatus'
         createdAt:
+          allOf:
+            - $ref: '#/components/schemas/google.protobuf.Timestamp'
           title: created_at
-          $ref: '#/components/schemas/google.protobuf.Timestamp'
       title: CustomerPriceOverride
       additionalProperties: false
       description: A per-customer, per-variant price override that takes precedence over price lists.
@@ -2079,28 +2487,33 @@ components:
           minLength: 3
           pattern: '[0-9a-z_-]{3,40}'
         unitPrice:
+          allOf:
+            - $ref: '#/components/schemas/common.v1.Money'
           title: unit_price
-          $ref: '#/components/schemas/common.v1.Money'
         validFrom:
+          allOf:
+            - $ref: '#/components/schemas/google.protobuf.Timestamp'
           title: valid_from
-          $ref: '#/components/schemas/google.protobuf.Timestamp'
         validUntil:
+          allOf:
+            - $ref: '#/components/schemas/google.protobuf.Timestamp'
           title: valid_until
-          $ref: '#/components/schemas/google.protobuf.Timestamp'
         approvedBy:
           type: string
           title: approved_by
         status:
+          allOf:
+            - $ref: '#/components/schemas/commerce.v1.CustomerPriceOverrideStatus'
           title: status
-          $ref: '#/components/schemas/commerce.v1.CustomerPriceOverrideStatus'
       title: CustomerPriceOverrideSaveRequest
       additionalProperties: false
     commerce.v1.CustomerPriceOverrideSaveResponse:
       type: object
       properties:
         override:
+          allOf:
+            - $ref: '#/components/schemas/commerce.v1.CustomerPriceOverride'
           title: override
-          $ref: '#/components/schemas/commerce.v1.CustomerPriceOverride'
       title: CustomerPriceOverrideSaveResponse
       additionalProperties: false
     commerce.v1.CustomerPriceOverrideSearchRequest:
@@ -2113,8 +2526,9 @@ components:
           type: string
           title: product_variant_id
         search:
+          allOf:
+            - $ref: '#/components/schemas/common.v1.SearchRequest'
           title: search
-          $ref: '#/components/schemas/common.v1.SearchRequest'
       title: CustomerPriceOverrideSearchRequest
       additionalProperties: false
     commerce.v1.CustomerPriceOverrideSearchResponse:
@@ -2166,18 +2580,21 @@ components:
           type: string
           title: name
         discountType:
+          allOf:
+            - $ref: '#/components/schemas/commerce.v1.DiscountType'
           title: discount_type
-          $ref: '#/components/schemas/commerce.v1.DiscountType'
         value:
           type: number
           title: value
           format: double
         appliesTo:
+          allOf:
+            - $ref: '#/components/schemas/commerce.v1.DiscountAppliesTo'
           title: applies_to
-          $ref: '#/components/schemas/commerce.v1.DiscountAppliesTo'
         conditions:
+          allOf:
+            - $ref: '#/components/schemas/google.protobuf.Struct'
           title: conditions
-          $ref: '#/components/schemas/google.protobuf.Struct'
         requiresApproval:
           type: boolean
           title: requires_approval
@@ -2186,20 +2603,52 @@ components:
           title: max_discount_percent
           format: double
         validFrom:
+          allOf:
+            - $ref: '#/components/schemas/google.protobuf.Timestamp'
           title: valid_from
-          $ref: '#/components/schemas/google.protobuf.Timestamp'
         validUntil:
+          allOf:
+            - $ref: '#/components/schemas/google.protobuf.Timestamp'
           title: valid_until
-          $ref: '#/components/schemas/google.protobuf.Timestamp'
         status:
+          allOf:
+            - $ref: '#/components/schemas/commerce.v1.DiscountRuleStatus'
           title: status
-          $ref: '#/components/schemas/commerce.v1.DiscountRuleStatus'
         createdAt:
+          allOf:
+            - $ref: '#/components/schemas/google.protobuf.Timestamp'
           title: created_at
-          $ref: '#/components/schemas/google.protobuf.Timestamp'
+        approvedBy:
+          type: string
+          title: approved_by
+          description: Who approved a rule that requires approval; empty until approved.
+        approvedAt:
+          allOf:
+            - $ref: '#/components/schemas/google.protobuf.Timestamp'
+          title: approved_at
       title: DiscountRule
       additionalProperties: false
       description: A rule that applies discounts to orders or line items based on conditions.
+    commerce.v1.DiscountRuleApproveRequest:
+      type: object
+      properties:
+        id:
+          type: string
+          title: id
+          maxLength: 40
+          minLength: 3
+          pattern: '[0-9a-z_-]{3,40}'
+      title: DiscountRuleApproveRequest
+      additionalProperties: false
+    commerce.v1.DiscountRuleApproveResponse:
+      type: object
+      properties:
+        discountRule:
+          allOf:
+            - $ref: '#/components/schemas/commerce.v1.DiscountRule'
+          title: discount_rule
+      title: DiscountRuleApproveResponse
+      additionalProperties: false
     commerce.v1.DiscountRuleSaveRequest:
       type: object
       properties:
@@ -2217,18 +2666,21 @@ components:
           type: string
           title: name
         discountType:
+          allOf:
+            - $ref: '#/components/schemas/commerce.v1.DiscountType'
           title: discount_type
-          $ref: '#/components/schemas/commerce.v1.DiscountType'
         value:
           type: number
           title: value
           format: double
         appliesTo:
+          allOf:
+            - $ref: '#/components/schemas/commerce.v1.DiscountAppliesTo'
           title: applies_to
-          $ref: '#/components/schemas/commerce.v1.DiscountAppliesTo'
         conditions:
+          allOf:
+            - $ref: '#/components/schemas/google.protobuf.Struct'
           title: conditions
-          $ref: '#/components/schemas/google.protobuf.Struct'
         requiresApproval:
           type: boolean
           title: requires_approval
@@ -2237,22 +2689,34 @@ components:
           title: max_discount_percent
           format: double
         validFrom:
+          allOf:
+            - $ref: '#/components/schemas/google.protobuf.Timestamp'
           title: valid_from
-          $ref: '#/components/schemas/google.protobuf.Timestamp'
         validUntil:
+          allOf:
+            - $ref: '#/components/schemas/google.protobuf.Timestamp'
           title: valid_until
-          $ref: '#/components/schemas/google.protobuf.Timestamp'
         status:
+          allOf:
+            - $ref: '#/components/schemas/commerce.v1.DiscountRuleStatus'
           title: status
-          $ref: '#/components/schemas/commerce.v1.DiscountRuleStatus'
+        updateMask:
+          allOf:
+            - $ref: '#/components/schemas/google.protobuf.FieldMask'
+          title: update_mask
+          description: |-
+            On update, the fields to apply. Without a mask only fields carrying a
+             value are applied. Listing "requires_approval" with it false waives the
+             approval requirement, which needs discount_approve on the shop.
       title: DiscountRuleSaveRequest
       additionalProperties: false
     commerce.v1.DiscountRuleSaveResponse:
       type: object
       properties:
         discountRule:
+          allOf:
+            - $ref: '#/components/schemas/commerce.v1.DiscountRule'
           title: discount_rule
-          $ref: '#/components/schemas/commerce.v1.DiscountRule'
       title: DiscountRuleSaveResponse
       additionalProperties: false
     commerce.v1.DiscountRuleSearchRequest:
@@ -2265,8 +2729,9 @@ components:
           minLength: 3
           pattern: '[0-9a-z_-]{3,40}'
         search:
+          allOf:
+            - $ref: '#/components/schemas/common.v1.SearchRequest'
           title: search
-          $ref: '#/components/schemas/common.v1.SearchRequest'
       title: DiscountRuleSearchRequest
       additionalProperties: false
     commerce.v1.DiscountRuleSearchResponse:
@@ -2315,8 +2780,9 @@ components:
           minLength: 3
           pattern: '[0-9a-z_-]{3,40}'
         status:
+          allOf:
+            - $ref: '#/components/schemas/commerce.v1.FulfilmentStatus'
           title: status
-          $ref: '#/components/schemas/commerce.v1.FulfilmentStatus'
         carrier:
           type: string
           title: carrier
@@ -2329,11 +2795,13 @@ components:
             $ref: '#/components/schemas/commerce.v1.FulfilmentLine'
           title: lines
         createdAt:
+          allOf:
+            - $ref: '#/components/schemas/google.protobuf.Timestamp'
           title: created_at
-          $ref: '#/components/schemas/google.protobuf.Timestamp'
         shippedAt:
+          allOf:
+            - $ref: '#/components/schemas/google.protobuf.Timestamp'
           title: shipped_at
-          $ref: '#/components/schemas/google.protobuf.Timestamp'
       title: Fulfilment
       additionalProperties: false
     commerce.v1.FulfilmentLine:
@@ -2346,9 +2814,7 @@ components:
           minLength: 3
           pattern: '[0-9a-z_-]{3,40}'
         quantity:
-          type:
-            - integer
-            - string
+          type: string
           title: quantity
           format: int64
       title: FulfilmentLine
@@ -2387,8 +2853,9 @@ components:
       type: object
       properties:
         cart:
+          allOf:
+            - $ref: '#/components/schemas/commerce.v1.Cart'
           title: cart
-          $ref: '#/components/schemas/commerce.v1.Cart'
       title: GetCartResponse
       additionalProperties: false
     commerce.v1.GetFulfilmentRequest:
@@ -2406,8 +2873,9 @@ components:
       type: object
       properties:
         fulfilment:
+          allOf:
+            - $ref: '#/components/schemas/commerce.v1.Fulfilment'
           title: fulfilment
-          $ref: '#/components/schemas/commerce.v1.Fulfilment'
       title: GetFulfilmentResponse
       additionalProperties: false
     commerce.v1.GetOrderRequest:
@@ -2425,8 +2893,9 @@ components:
       type: object
       properties:
         order:
+          allOf:
+            - $ref: '#/components/schemas/commerce.v1.Order'
           title: order
-          $ref: '#/components/schemas/commerce.v1.Order'
       title: GetOrderResponse
       additionalProperties: false
     commerce.v1.GetProductRequest:
@@ -2444,8 +2913,9 @@ components:
       type: object
       properties:
         product:
+          allOf:
+            - $ref: '#/components/schemas/commerce.v1.Product'
           title: product
-          $ref: '#/components/schemas/commerce.v1.Product'
       title: GetProductResponse
       additionalProperties: false
     commerce.v1.GetShopRequest:
@@ -2463,8 +2933,9 @@ components:
       type: object
       properties:
         shop:
+          allOf:
+            - $ref: '#/components/schemas/commerce.v1.Shop'
           title: shop
-          $ref: '#/components/schemas/commerce.v1.Shop'
       title: GetShopResponse
       additionalProperties: false
     commerce.v1.LedgerPosting:
@@ -2480,11 +2951,13 @@ components:
           type: string
           title: transaction_id
         sales:
+          allOf:
+            - $ref: '#/components/schemas/common.v1.Money'
           title: sales
-          $ref: '#/components/schemas/common.v1.Money'
         refunds:
+          allOf:
+            - $ref: '#/components/schemas/common.v1.Money'
           title: refunds
-          $ref: '#/components/schemas/common.v1.Money'
         orders:
           type: integer
           title: orders
@@ -2497,6 +2970,57 @@ components:
           title: error
       title: LedgerPosting
       additionalProperties: false
+    commerce.v1.ListFulfilmentsRequest:
+      type: object
+      properties:
+        orderId:
+          type: string
+          title: order_id
+          maxLength: 40
+          minLength: 3
+          pattern: '[0-9a-z_-]{3,40}'
+      title: ListFulfilmentsRequest
+      additionalProperties: false
+    commerce.v1.ListFulfilmentsResponse:
+      type: object
+      properties:
+        fulfilments:
+          type: array
+          items:
+            $ref: '#/components/schemas/commerce.v1.Fulfilment'
+          title: fulfilments
+      title: ListFulfilmentsResponse
+      additionalProperties: false
+    commerce.v1.ListOrderEventsRequest:
+      type: object
+      properties:
+        shopId:
+          type: string
+          title: shop_id
+          description: One of shop_id or order_id is required.
+        orderId:
+          type: string
+          title: order_id
+        search:
+          allOf:
+            - $ref: '#/components/schemas/common.v1.SearchRequest'
+          title: search
+          description: Page size and cursor.
+      title: ListOrderEventsRequest
+      additionalProperties: false
+    commerce.v1.ListOrderEventsResponse:
+      type: object
+      properties:
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/commerce.v1.OrderEvent'
+          title: events
+        nextPage:
+          type: string
+          title: next_page
+      title: ListOrderEventsResponse
+      additionalProperties: false
     commerce.v1.ListOrdersRequest:
       type: object
       properties:
@@ -2507,9 +3031,10 @@ components:
           minLength: 3
           pattern: '[0-9a-z_-]{3,40}'
         search:
+          allOf:
+            - $ref: '#/components/schemas/common.v1.SearchRequest'
           title: search
           description: Optional search parameters (query, cursor, etc.)
-          $ref: '#/components/schemas/common.v1.SearchRequest'
       title: ListOrdersRequest
       additionalProperties: false
     commerce.v1.ListOrdersResponse:
@@ -2559,9 +3084,10 @@ components:
           minLength: 3
           pattern: '[0-9a-z_-]{3,40}'
         search:
+          allOf:
+            - $ref: '#/components/schemas/common.v1.SearchRequest'
           title: search
           description: Optional search parameters (query, cursor, etc.)
-          $ref: '#/components/schemas/common.v1.SearchRequest'
       title: ListProductsRequest
       additionalProperties: false
     commerce.v1.ListProductsResponse:
@@ -2584,8 +3110,9 @@ components:
       type: object
       properties:
         search:
+          allOf:
+            - $ref: '#/components/schemas/common.v1.SearchRequest'
           title: search
-          $ref: '#/components/schemas/common.v1.SearchRequest'
       title: ListShopsRequest
       additionalProperties: false
     commerce.v1.ListShopsResponse:
@@ -2620,14 +3147,17 @@ components:
           type: string
           title: order_number
         status:
+          allOf:
+            - $ref: '#/components/schemas/commerce.v1.OrderStatus'
           title: status
-          $ref: '#/components/schemas/commerce.v1.OrderStatus'
         paymentStatus:
+          allOf:
+            - $ref: '#/components/schemas/commerce.v1.PaymentStatus'
           title: payment_status
-          $ref: '#/components/schemas/commerce.v1.PaymentStatus'
         fulfilmentStatus:
+          allOf:
+            - $ref: '#/components/schemas/commerce.v1.FulfilmentStatus'
           title: fulfilment_status
-          $ref: '#/components/schemas/commerce.v1.FulfilmentStatus'
         profileId:
           type: string
           title: profile_id
@@ -2647,19 +3177,22 @@ components:
           minLength: 3
           pattern: '[0-9a-z_-]{3,40}'
         subtotal:
+          allOf:
+            - $ref: '#/components/schemas/common.v1.Money'
           title: subtotal
-          $ref: '#/components/schemas/common.v1.Money'
         total:
+          allOf:
+            - $ref: '#/components/schemas/common.v1.Money'
           title: total
-          $ref: '#/components/schemas/common.v1.Money'
         lines:
           type: array
           items:
             $ref: '#/components/schemas/commerce.v1.OrderLine'
           title: lines
         createdAt:
+          allOf:
+            - $ref: '#/components/schemas/google.protobuf.Timestamp'
           title: created_at
-          $ref: '#/components/schemas/google.protobuf.Timestamp'
         paymentSessionRef:
           type: string
           title: payment_session_ref
@@ -2673,11 +3206,13 @@ components:
           title: payment_id
           description: Payment service reference once the session completes.
         paidAt:
+          allOf:
+            - $ref: '#/components/schemas/google.protobuf.Timestamp'
           title: paid_at
-          $ref: '#/components/schemas/google.protobuf.Timestamp'
         cancelledAt:
+          allOf:
+            - $ref: '#/components/schemas/google.protobuf.Timestamp'
           title: cancelled_at
-          $ref: '#/components/schemas/google.protobuf.Timestamp'
         cancelReason:
           type: string
           title: cancel_reason
@@ -2685,8 +3220,118 @@ components:
           type: string
           title: ledger_transaction_id
           description: Ledger transaction this order was merged into at end of day.
+        amountPaid:
+          allOf:
+            - $ref: '#/components/schemas/common.v1.Money'
+          title: amount_paid
+          description: What has been paid so far across every instalment.
+        balance:
+          allOf:
+            - $ref: '#/components/schemas/common.v1.Money'
+          title: balance
+          description: What remains to be paid.
+        balanceDueAt:
+          allOf:
+            - $ref: '#/components/schemas/google.protobuf.Timestamp'
+          title: balance_due_at
+          description: Deadline for the balance once a first instalment has been paid.
+        paymentPolicy:
+          allOf:
+            - $ref: '#/components/schemas/commerce.v1.PaymentPolicy'
+          title: payment_policy
+          description: The payment policy in force for this order, fixed when it was placed.
+        payments:
+          type: array
+          items:
+            $ref: '#/components/schemas/commerce.v1.OrderPayment'
+          title: payments
+          description: Every payment applied to the order, oldest first.
+        paymentDueAt:
+          allOf:
+            - $ref: '#/components/schemas/google.protobuf.Timestamp'
+          title: payment_due_at
+          description: Unpaid orders hold stock until this time.
       title: Order
       additionalProperties: false
+    commerce.v1.OrderEvent:
+      type: object
+      properties:
+        id:
+          type: string
+          title: id
+        shopId:
+          type: string
+          title: shop_id
+        orderId:
+          type: string
+          title: order_id
+        orderNumber:
+          type: string
+          title: order_number
+        type:
+          allOf:
+            - $ref: '#/components/schemas/commerce.v1.OrderEventType'
+          title: type
+        thresholdPercent:
+          type: integer
+          title: threshold_percent
+          format: int32
+          description: For THRESHOLD_CROSSED, the policy mark that was crossed.
+        paidPercent:
+          type: integer
+          title: paid_percent
+          format: int32
+          description: Share of the total paid when the event was raised.
+        amountPaid:
+          allOf:
+            - $ref: '#/components/schemas/common.v1.Money'
+          title: amount_paid
+        balance:
+          allOf:
+            - $ref: '#/components/schemas/common.v1.Money'
+          title: balance
+        paymentAmount:
+          allOf:
+            - $ref: '#/components/schemas/common.v1.Money'
+          title: payment_amount
+          description: The instalment that caused the event, for payment events.
+        createdAt:
+          allOf:
+            - $ref: '#/components/schemas/google.protobuf.Timestamp'
+          title: created_at
+        delivery:
+          allOf:
+            - $ref: '#/components/schemas/commerce.v1.OrderEventDelivery'
+          title: delivery
+          description: Webhook delivery state for this event.
+      title: OrderEvent
+      additionalProperties: false
+      description: |-
+        OrderEvent is a signal raised as an order's payment or lifecycle
+         progresses.
+    commerce.v1.OrderEventDelivery:
+      type: string
+      title: OrderEventDelivery
+      enum:
+        - ORDER_EVENT_DELIVERY_UNSPECIFIED
+        - ORDER_EVENT_DELIVERY_NOT_REQUIRED
+        - ORDER_EVENT_DELIVERY_PENDING
+        - ORDER_EVENT_DELIVERY_DELIVERED
+        - ORDER_EVENT_DELIVERY_FAILED
+    commerce.v1.OrderEventType:
+      type: string
+      title: OrderEventType
+      enum:
+        - ORDER_EVENT_TYPE_UNSPECIFIED
+        - ORDER_EVENT_TYPE_PAYMENT_RECEIVED
+        - ORDER_EVENT_TYPE_DEPOSIT_PAID
+        - ORDER_EVENT_TYPE_THRESHOLD_CROSSED
+        - ORDER_EVENT_TYPE_FULFILMENT_RELEASED
+        - ORDER_EVENT_TYPE_FULLY_PAID
+        - ORDER_EVENT_TYPE_BALANCE_OVERDUE
+        - ORDER_EVENT_TYPE_OVERPAID
+        - ORDER_EVENT_TYPE_CANCELLED
+        - ORDER_EVENT_TYPE_EXPIRED
     commerce.v1.OrderLine:
       type: object
       properties:
@@ -2710,19 +3355,64 @@ components:
           type: string
           title: name_snapshot
         unitPrice:
+          allOf:
+            - $ref: '#/components/schemas/common.v1.Money'
           title: unit_price
-          $ref: '#/components/schemas/common.v1.Money'
         quantity:
-          type:
-            - integer
-            - string
+          type: string
           title: quantity
           format: int64
         totalPrice:
+          allOf:
+            - $ref: '#/components/schemas/common.v1.Money'
           title: total_price
-          $ref: '#/components/schemas/common.v1.Money'
       title: OrderLine
       additionalProperties: false
+    commerce.v1.OrderPayment:
+      type: object
+      properties:
+        id:
+          type: string
+          title: id
+        amount:
+          allOf:
+            - $ref: '#/components/schemas/common.v1.Money'
+          title: amount
+        source:
+          allOf:
+            - $ref: '#/components/schemas/commerce.v1.OrderPaymentSource'
+          title: source
+        reference:
+          type: string
+          title: reference
+          description: |-
+            Checkout session ref for online payments; the shop's receipt reference
+             for recorded ones.
+        paymentId:
+          type: string
+          title: payment_id
+          description: Payment service reference, when there is one.
+        paidAt:
+          allOf:
+            - $ref: '#/components/schemas/google.protobuf.Timestamp'
+          title: paid_at
+        recordedBy:
+          type: string
+          title: recorded_by
+          description: Profile of the staff member who recorded an offline payment.
+        note:
+          type: string
+          title: note
+      title: OrderPayment
+      additionalProperties: false
+      description: OrderPayment is one instalment applied to an order.
+    commerce.v1.OrderPaymentSource:
+      type: string
+      title: OrderPaymentSource
+      enum:
+        - ORDER_PAYMENT_SOURCE_UNSPECIFIED
+        - ORDER_PAYMENT_SOURCE_CHECKOUT
+        - ORDER_PAYMENT_SOURCE_RECORDED
     commerce.v1.OrderStatus:
       type: string
       title: OrderStatus
@@ -2732,6 +3422,71 @@ components:
         - ORDER_STATUS_CANCELLED
         - ORDER_STATUS_FULFILLED
         - ORDER_STATUS_PENDING_PAYMENT
+    commerce.v1.PaymentPolicy:
+      type: object
+      properties:
+        allowInstalments:
+          type: boolean
+          title: allow_instalments
+          description: Buyers may pay in more than one instalment.
+        minDepositPercent:
+          type: integer
+          title: min_deposit_percent
+          maximum: 100
+          minimum: 0
+          format: int32
+          description: |-
+            The first instalment must be at least this share of the total. Once it
+             is paid, stock stays reserved past the payment window. 0 accepts any
+             amount.
+        minInstalmentPercent:
+          type: integer
+          title: min_instalment_percent
+          maximum: 100
+          minimum: 0
+          format: int32
+          description: Every instalment but the last must be at least this share of the total.
+        balanceDueDays:
+          type: integer
+          title: balance_due_days
+          maximum: 3650
+          minimum: 0
+          format: int32
+          description: |-
+            Days the buyer has to pay the balance after the first instalment. 0
+             means no deadline.
+        fulfilAtPercent:
+          type: integer
+          title: fulfil_at_percent
+          maximum: 100
+          minimum: 0
+          format: int32
+          description: |-
+            Share that must be paid before the order may be fulfilled. 0 means the
+             full amount.
+        signalThresholds:
+          type: array
+          items:
+            exclusiveMinimum: 0
+            type: integer
+            maximum: 100
+            format: int32
+          title: signal_thresholds
+          description: |-
+            Paid-share marks that raise an ORDER_EVENT_TYPE_THRESHOLD_CROSSED signal
+             when payment crosses them, e.g. [25, 50, 75].
+        cancelWhenOverdue:
+          type: boolean
+          title: cancel_when_overdue
+          description: |-
+            Cancel the order, release its stock and record a refund of what was paid
+             when the balance deadline passes.
+      title: PaymentPolicy
+      additionalProperties: false
+      description: |-
+        PaymentPolicy governs paying for an order in instalments and the signals
+         raised as payment progresses. Percentages are whole percent of the order
+         total.
     commerce.v1.PaymentStatus:
       type: string
       title: PaymentStatus
@@ -2742,6 +3497,7 @@ components:
         - PAYMENT_STATUS_FAILED
         - PAYMENT_STATUS_REFUNDED
         - PAYMENT_STATUS_EXPIRED
+        - PAYMENT_STATUS_PARTIALLY_PAID
     commerce.v1.PriceList:
       type: object
       properties:
@@ -2768,17 +3524,21 @@ components:
           title: priority
           format: int32
         validFrom:
+          allOf:
+            - $ref: '#/components/schemas/google.protobuf.Timestamp'
           title: valid_from
-          $ref: '#/components/schemas/google.protobuf.Timestamp'
         validUntil:
+          allOf:
+            - $ref: '#/components/schemas/google.protobuf.Timestamp'
           title: valid_until
-          $ref: '#/components/schemas/google.protobuf.Timestamp'
         status:
+          allOf:
+            - $ref: '#/components/schemas/commerce.v1.PriceListStatus'
           title: status
-          $ref: '#/components/schemas/commerce.v1.PriceListStatus'
         createdAt:
+          allOf:
+            - $ref: '#/components/schemas/google.protobuf.Timestamp'
           title: created_at
-          $ref: '#/components/schemas/google.protobuf.Timestamp'
       title: PriceList
       additionalProperties: false
       description: A named collection of prices for product variants, scoped to a shop and currency.
@@ -2804,8 +3564,9 @@ components:
           minLength: 3
           pattern: '[0-9a-z_-]{3,40}'
         unitPrice:
+          allOf:
+            - $ref: '#/components/schemas/common.v1.Money'
           title: unit_price
-          $ref: '#/components/schemas/common.v1.Money'
         minQuantity:
           type: integer
           title: min_quantity
@@ -2861,8 +3622,9 @@ components:
       type: object
       properties:
         priceList:
+          allOf:
+            - $ref: '#/components/schemas/commerce.v1.PriceList'
           title: price_list
-          $ref: '#/components/schemas/commerce.v1.PriceList'
       title: PriceListGetResponse
       additionalProperties: false
     commerce.v1.PriceListSaveRequest:
@@ -2889,22 +3651,26 @@ components:
           title: priority
           format: int32
         validFrom:
+          allOf:
+            - $ref: '#/components/schemas/google.protobuf.Timestamp'
           title: valid_from
-          $ref: '#/components/schemas/google.protobuf.Timestamp'
         validUntil:
+          allOf:
+            - $ref: '#/components/schemas/google.protobuf.Timestamp'
           title: valid_until
-          $ref: '#/components/schemas/google.protobuf.Timestamp'
         status:
+          allOf:
+            - $ref: '#/components/schemas/commerce.v1.PriceListStatus'
           title: status
-          $ref: '#/components/schemas/commerce.v1.PriceListStatus'
       title: PriceListSaveRequest
       additionalProperties: false
     commerce.v1.PriceListSaveResponse:
       type: object
       properties:
         priceList:
+          allOf:
+            - $ref: '#/components/schemas/commerce.v1.PriceList'
           title: price_list
-          $ref: '#/components/schemas/commerce.v1.PriceList'
       title: PriceListSaveResponse
       additionalProperties: false
     commerce.v1.PriceListSearchRequest:
@@ -2917,8 +3683,9 @@ components:
           minLength: 3
           pattern: '[0-9a-z_-]{3,40}'
         search:
+          allOf:
+            - $ref: '#/components/schemas/common.v1.SearchRequest'
           title: search
-          $ref: '#/components/schemas/common.v1.SearchRequest'
       title: PriceListSearchRequest
       additionalProperties: false
     commerce.v1.PriceListSearchResponse:
@@ -2982,11 +3749,13 @@ components:
             title: value
           description: 'Shared attributes (e.g. "Material": "Cotton")'
         fulfilmentType:
+          allOf:
+            - $ref: '#/components/schemas/commerce.v1.FulfilmentType'
           title: fulfilment_type
-          $ref: '#/components/schemas/commerce.v1.FulfilmentType'
         status:
+          allOf:
+            - $ref: '#/components/schemas/commerce.v1.ProductStatus'
           title: status
-          $ref: '#/components/schemas/commerce.v1.ProductStatus'
         mediaIds:
           type: array
           items:
@@ -2996,20 +3765,17 @@ components:
             Media assets (images, videos) for the product.
             References files in the Files Service.
         createdAt:
+          allOf:
+            - $ref: '#/components/schemas/google.protobuf.Timestamp'
           title: created_at
-          $ref: '#/components/schemas/google.protobuf.Timestamp'
+        paymentPolicy:
+          allOf:
+            - $ref: '#/components/schemas/commerce.v1.PaymentPolicy'
+          title: payment_policy
+          description: |-
+            Overrides the shop's payment policy for orders containing this product.
+             Unset uses the shop's.
       title: Product
-      additionalProperties: false
-    commerce.v1.Product.AttributesEntry:
-      type: object
-      properties:
-        key:
-          type: string
-          title: key
-        value:
-          type: string
-          title: value
-      title: AttributesEntry
       additionalProperties: false
     commerce.v1.ProductStatus:
       type: string
@@ -3041,13 +3807,12 @@ components:
           type: string
           title: name
         price:
+          allOf:
+            - $ref: '#/components/schemas/common.v1.Money'
           title: price
           description: Price in minor units (for example cents).
-          $ref: '#/components/schemas/common.v1.Money'
         stockQuantity:
-          type:
-            - integer
-            - string
+          type: string
           title: stock_quantity
           format: int64
         attributes:
@@ -3063,23 +3828,14 @@ components:
             type: string
           title: media_ids
         status:
+          allOf:
+            - $ref: '#/components/schemas/commerce.v1.ProductVariantStatus'
           title: status
-          $ref: '#/components/schemas/commerce.v1.ProductVariantStatus'
         createdAt:
+          allOf:
+            - $ref: '#/components/schemas/google.protobuf.Timestamp'
           title: created_at
-          $ref: '#/components/schemas/google.protobuf.Timestamp'
       title: ProductVariant
-      additionalProperties: false
-    commerce.v1.ProductVariant.AttributesEntry:
-      type: object
-      properties:
-        key:
-          type: string
-          title: key
-        value:
-          type: string
-          title: value
-      title: AttributesEntry
       additionalProperties: false
     commerce.v1.ProductVariantStatus:
       type: string
@@ -3121,7 +3877,53 @@ components:
           type: integer
           title: failed
           format: int32
+        overdue:
+          type: integer
+          title: overdue
+          format: int32
+          description: Part-paid orders flagged past their balance deadline.
+        eventsDelivered:
+          type: integer
+          title: events_delivered
+          format: int32
+          description: Webhook deliveries that succeeded on retry.
       title: ReconcilePaymentsResponse
+      additionalProperties: false
+    commerce.v1.RecordOrderPaymentRequest:
+      type: object
+      properties:
+        orderId:
+          type: string
+          title: order_id
+          maxLength: 40
+          minLength: 3
+          pattern: '[0-9a-z_-]{3,40}'
+        amount:
+          allOf:
+            - $ref: '#/components/schemas/common.v1.Money'
+          title: amount
+        reference:
+          type: string
+          title: reference
+          maxLength: 100
+          minLength: 1
+          description: The shop's receipt or transaction reference; unique per order.
+        note:
+          type: string
+          title: note
+          maxLength: 500
+      title: RecordOrderPaymentRequest
+      required:
+        - amount
+      additionalProperties: false
+    commerce.v1.RecordOrderPaymentResponse:
+      type: object
+      properties:
+        order:
+          allOf:
+            - $ref: '#/components/schemas/commerce.v1.Order'
+          title: order
+      title: RecordOrderPaymentResponse
       additionalProperties: false
     commerce.v1.RemoveCartLineRequest:
       type: object
@@ -3144,9 +3946,27 @@ components:
       type: object
       properties:
         cart:
+          allOf:
+            - $ref: '#/components/schemas/commerce.v1.Cart'
           title: cart
-          $ref: '#/components/schemas/commerce.v1.Cart'
       title: RemoveCartLineResponse
+      additionalProperties: false
+    commerce.v1.ResolveDefaultCurrencyRequest:
+      type: object
+      title: ResolveDefaultCurrencyRequest
+      additionalProperties: false
+    commerce.v1.ResolveDefaultCurrencyResponse:
+      type: object
+      properties:
+        currency:
+          type: string
+          title: currency
+          description: ISO 4217 code.
+        source:
+          allOf:
+            - $ref: '#/components/schemas/commerce.v1.CurrencySource'
+          title: source
+      title: ResolveDefaultCurrencyResponse
       additionalProperties: false
     commerce.v1.ResolvePriceRequest:
       type: object
@@ -3173,8 +3993,9 @@ components:
       type: object
       properties:
         resolvedPrice:
+          allOf:
+            - $ref: '#/components/schemas/commerce.v1.ResolvedPrice'
           title: resolved_price
-          $ref: '#/components/schemas/commerce.v1.ResolvedPrice'
       title: ResolvePriceResponse
       additionalProperties: false
     commerce.v1.ResolvedPrice:
@@ -3187,11 +4008,13 @@ components:
           minLength: 3
           pattern: '[0-9a-z_-]{3,40}'
         unitPrice:
+          allOf:
+            - $ref: '#/components/schemas/common.v1.Money'
           title: unit_price
-          $ref: '#/components/schemas/common.v1.Money'
         priceSource:
+          allOf:
+            - $ref: '#/components/schemas/commerce.v1.PriceSource'
           title: price_source
-          $ref: '#/components/schemas/commerce.v1.PriceSource'
         priceListId:
           type: string
           title: price_list_id
@@ -3199,14 +4022,16 @@ components:
           type: string
           title: override_id
         discountAmount:
+          allOf:
+            - $ref: '#/components/schemas/common.v1.Money'
           title: discount_amount
-          $ref: '#/components/schemas/common.v1.Money'
         discountRuleId:
           type: string
           title: discount_rule_id
         preDiscountPrice:
+          allOf:
+            - $ref: '#/components/schemas/common.v1.Money'
           title: pre_discount_price
-          $ref: '#/components/schemas/common.v1.Money'
       title: ResolvedPrice
       additionalProperties: false
       description: The fully resolved price for a variant, showing which source and discounts apply.
@@ -3254,8 +4079,9 @@ components:
           type: string
           title: description
         status:
+          allOf:
+            - $ref: '#/components/schemas/commerce.v1.ShopStatus'
           title: status
-          $ref: '#/components/schemas/commerce.v1.ShopStatus'
         mediaIds:
           type: array
           items:
@@ -3279,12 +4105,31 @@ components:
             Where the hosted checkout page sends the buyer after paying. Empty uses
              the service default.
         createdAt:
+          allOf:
+            - $ref: '#/components/schemas/google.protobuf.Timestamp'
           title: created_at
-          $ref: '#/components/schemas/google.protobuf.Timestamp'
         extra:
+          allOf:
+            - $ref: '#/components/schemas/google.protobuf.Struct'
           title: extra
           description: Additional key metadata (algorithm, app_id, etc.)
-          $ref: '#/components/schemas/google.protobuf.Struct'
+        paymentPolicy:
+          allOf:
+            - $ref: '#/components/schemas/commerce.v1.PaymentPolicy'
+          title: payment_policy
+          description: |-
+            How buyers may pay: in full, or in instalments with thresholds. Products
+             may override it.
+        webhookUrl:
+          type: string
+          title: webhook_url
+          description: |-
+            HTTPS endpoint order events are POSTed to, signed with the shop's
+             webhook secret.
+        webhookSecretSet:
+          type: boolean
+          title: webhook_secret_set
+          description: Whether a webhook secret is set. The secret itself is never returned.
       title: Shop
       additionalProperties: false
     commerce.v1.ShopStatus:
@@ -3304,11 +4149,13 @@ components:
           minLength: 3
           pattern: '[0-9a-z_-]{3,40}'
         updateMask:
+          allOf:
+            - $ref: '#/components/schemas/google.protobuf.FieldMask'
           title: update_mask
-          $ref: '#/components/schemas/google.protobuf.FieldMask'
         status:
+          allOf:
+            - $ref: '#/components/schemas/commerce.v1.FulfilmentStatus'
           title: status
-          $ref: '#/components/schemas/commerce.v1.FulfilmentStatus'
         carrier:
           type: string
           title: carrier
@@ -3316,17 +4163,76 @@ components:
           type: string
           title: tracking_number
         shippedAt:
+          allOf:
+            - $ref: '#/components/schemas/google.protobuf.Timestamp'
           title: shipped_at
-          $ref: '#/components/schemas/google.protobuf.Timestamp'
       title: UpdateFulfilmentRequest
       additionalProperties: false
     commerce.v1.UpdateFulfilmentResponse:
       type: object
       properties:
         fulfilment:
+          allOf:
+            - $ref: '#/components/schemas/commerce.v1.Fulfilment'
           title: fulfilment
-          $ref: '#/components/schemas/commerce.v1.Fulfilment'
       title: UpdateFulfilmentResponse
+      additionalProperties: false
+    commerce.v1.UpdateProductRequest:
+      type: object
+      properties:
+        id:
+          type: string
+          title: id
+          maxLength: 40
+          minLength: 3
+          pattern: '[0-9a-z_-]{3,40}'
+        updateMask:
+          allOf:
+            - $ref: '#/components/schemas/google.protobuf.FieldMask'
+          title: update_mask
+          description: Fields to apply. Without a mask only fields carrying a value are applied.
+        name:
+          type: string
+          title: name
+        description:
+          type: string
+          title: description
+        attributes:
+          type: object
+          title: attributes
+          additionalProperties:
+            type: string
+            title: value
+        fulfilmentType:
+          allOf:
+            - $ref: '#/components/schemas/commerce.v1.FulfilmentType'
+          title: fulfilment_type
+        status:
+          allOf:
+            - $ref: '#/components/schemas/commerce.v1.ProductStatus'
+          title: status
+        mediaIds:
+          type: array
+          items:
+            type: string
+          title: media_ids
+        paymentPolicy:
+          allOf:
+            - $ref: '#/components/schemas/commerce.v1.PaymentPolicy'
+          title: payment_policy
+          description: |-
+            With "payment_policy" in the mask and this unset, the override is
+             removed and the shop's policy applies again.
+      title: UpdateProductRequest
+      additionalProperties: false
+    commerce.v1.UpdateProductResponse:
+      type: object
+      properties:
+        product:
+          allOf:
+            - $ref: '#/components/schemas/commerce.v1.Product'
+          title: product
+      title: UpdateProductResponse
       additionalProperties: false
     commerce.v1.UpdateProductVariantRequest:
       type: object
@@ -3335,8 +4241,9 @@ components:
           type: string
           title: variant_id
         updateMask:
+          allOf:
+            - $ref: '#/components/schemas/google.protobuf.FieldMask'
           title: update_mask
-          $ref: '#/components/schemas/google.protobuf.FieldMask'
         sku:
           type: string
           title: sku
@@ -3344,17 +4251,17 @@ components:
           type: string
           title: name
         price:
+          allOf:
+            - $ref: '#/components/schemas/common.v1.Money'
           title: price
-          $ref: '#/components/schemas/common.v1.Money'
         stockQuantity:
-          type:
-            - integer
-            - string
+          type: string
           title: stock_quantity
           format: int64
         status:
+          allOf:
+            - $ref: '#/components/schemas/commerce.v1.ProductVariantStatus'
           title: status
-          $ref: '#/components/schemas/commerce.v1.ProductVariantStatus'
         attributes:
           type: object
           title: attributes
@@ -3368,23 +4275,13 @@ components:
           title: media_ids
       title: UpdateProductVariantRequest
       additionalProperties: false
-    commerce.v1.UpdateProductVariantRequest.AttributesEntry:
-      type: object
-      properties:
-        key:
-          type: string
-          title: key
-        value:
-          type: string
-          title: value
-      title: AttributesEntry
-      additionalProperties: false
     commerce.v1.UpdateProductVariantResponse:
       type: object
       properties:
         productVariant:
+          allOf:
+            - $ref: '#/components/schemas/commerce.v1.ProductVariant'
           title: product_variant
-          $ref: '#/components/schemas/commerce.v1.ProductVariant'
       title: UpdateProductVariantResponse
       additionalProperties: false
     commerce.v1.UpdateShopRequest:
@@ -3397,8 +4294,9 @@ components:
           minLength: 3
           pattern: '[0-9a-z_-]{3,40}'
         updateMask:
+          allOf:
+            - $ref: '#/components/schemas/google.protobuf.FieldMask'
           title: update_mask
-          $ref: '#/components/schemas/google.protobuf.FieldMask'
         name:
           type: string
           title: name
@@ -3411,11 +4309,13 @@ components:
             type: string
           title: media_ids
         status:
+          allOf:
+            - $ref: '#/components/schemas/commerce.v1.ShopStatus'
           title: status
-          $ref: '#/components/schemas/commerce.v1.ShopStatus'
         extra:
+          allOf:
+            - $ref: '#/components/schemas/google.protobuf.Struct'
           title: extra
-          $ref: '#/components/schemas/google.protobuf.Struct'
         currency:
           type: string
           title: currency
@@ -3425,14 +4325,26 @@ components:
         checkoutReturnUrl:
           type: string
           title: checkout_return_url
+        paymentPolicy:
+          allOf:
+            - $ref: '#/components/schemas/commerce.v1.PaymentPolicy'
+          title: payment_policy
+        webhookUrl:
+          type: string
+          title: webhook_url
+        webhookSecret:
+          type: string
+          title: webhook_secret
+          description: Write-only. Empty with "webhook_secret" in the mask clears it.
       title: UpdateShopRequest
       additionalProperties: false
     commerce.v1.UpdateShopResponse:
       type: object
       properties:
         shop:
+          allOf:
+            - $ref: '#/components/schemas/commerce.v1.Shop'
           title: shop
-          $ref: '#/components/schemas/commerce.v1.Shop'
       title: UpdateShopResponse
       additionalProperties: false
     common.v1.Money:
@@ -3443,9 +4355,7 @@ components:
           title: currency_code
           description: The 3-letter ISO 4217 currency code (e.g. "KES", "USD", "EUR").
         units:
-          type:
-            - integer
-            - string
+          type: string
           title: units
           format: int64
           description: |-
@@ -3503,9 +4413,10 @@ components:
           title: id_query
           description: Specific ID or ID pattern to search for
         cursor:
+          allOf:
+            - $ref: '#/components/schemas/common.v1.PageCursor'
           title: cursor
           description: Pagination parameters
-          $ref: '#/components/schemas/common.v1.PageCursor'
         properties:
           type: array
           items:
@@ -3513,9 +4424,10 @@ components:
           title: properties
           description: Specific properties/fields to include in results
         extras:
+          allOf:
+            - $ref: '#/components/schemas/google.protobuf.Struct'
           title: extras
           description: Service-specific additional search parameters
-          $ref: '#/components/schemas/google.protobuf.Struct'
       title: SearchRequest
       additionalProperties: false
       description: |-
@@ -3523,13 +4435,15 @@ components:
          Supports text search, ID-based queries, pagination, property filtering, and extensibility.
     connect-protocol-version:
       type: number
-      title: Connect-Protocol-Version
-      enum:
+      examples:
         - 1
+      title: Connect-Protocol-Version
       description: Define the version of the Connect protocol
       const: 1
     connect-timeout-header:
       type: number
+      examples:
+        - 1000
       title: Connect-Timeout-Ms
       description: Define the timeout, in ms
     connect.error:
@@ -3573,240 +4487,26 @@ components:
       properties:
         type:
           type: string
-          description: 'A URL that acts as a globally unique identifier for the type of the serialized message. For example: `type.googleapis.com/google.rpc.ErrorInfo`. This is used to determine the schema of the data in the `value` field and is the discriminator for the `debug` field.'
+          description: 'A URL that acts as a globally unique identifier for the type of the serialized message. For example: `type.googleapis.com/google.rpc.ErrorInfo`.'
         value:
           type: string
-          format: binary
+          format: byte
           description: The Protobuf message, serialized as bytes and base64-encoded. The specific message type is identified by the `type` field.
         debug:
-          oneOf:
-            - type: object
-              title: Any
-              additionalProperties: true
-              description: Detailed error information.
-          discriminator:
-            propertyName: type
+          type: object
           title: Debug
+          additionalProperties: true
           description: Deserialized error detail payload. The 'type' field indicates the schema. This field is for easier debugging and should not be relied upon for application logic.
       additionalProperties: true
       description: Contains an arbitrary serialized message along with a @type that describes the type of the serialized message, with an additional debug field for ConnectRPC error details.
     google.protobuf.FieldMask:
       type: string
-      description: |-
-        `FieldMask` represents a set of symbolic field paths, for example:
-
-             paths: "f.a"
-             paths: "f.b.d"
-
-         Here `f` represents a field in some root message, `a` and `b`
-         fields in the message found in `f`, and `d` a field found in the
-         message in `f.b`.
-
-         Field masks are used to specify a subset of fields that should be
-         returned by a get operation or modified by an update operation.
-         Field masks also have a custom JSON encoding (see below).
-
-         # Field Masks in Projections
-
-         When used in the context of a projection, a response message or
-         sub-message is filtered by the API to only contain those fields as
-         specified in the mask. For example, if the mask in the previous
-         example is applied to a response message as follows:
-
-             f {
-               a : 22
-               b {
-                 d : 1
-                 x : 2
-               }
-               y : 13
-             }
-             z: 8
-
-         The result will not contain specific values for fields x,y and z
-         (their value will be set to the default, and omitted in proto text
-         output):
-
-
-             f {
-               a : 22
-               b {
-                 d : 1
-               }
-             }
-
-         A repeated field is not allowed except at the last position of a
-         paths string.
-
-         If a FieldMask object is not present in a get operation, the
-         operation applies to all fields (as if a FieldMask of all fields
-         had been specified).
-
-         Note that a field mask does not necessarily apply to the
-         top-level response message. In case of a REST get operation, the
-         field mask applies directly to the response, but in case of a REST
-         list operation, the mask instead applies to each individual message
-         in the returned resource list. In case of a REST custom method,
-         other definitions may be used. Where the mask applies will be
-         clearly documented together with its declaration in the API.  In
-         any case, the effect on the returned resource/resources is required
-         behavior for APIs.
-
-         # Field Masks in Update Operations
-
-         A field mask in update operations specifies which fields of the
-         targeted resource are going to be updated. The API is required
-         to only change the values of the fields as specified in the mask
-         and leave the others untouched. If a resource is passed in to
-         describe the updated values, the API ignores the values of all
-         fields not covered by the mask.
-
-         If a repeated field is specified for an update operation, new values will
-         be appended to the existing repeated field in the target resource. Note that
-         a repeated field is only allowed in the last position of a `paths` string.
-
-         If a sub-message is specified in the last position of the field mask for an
-         update operation, then new value will be merged into the existing sub-message
-         in the target resource.
-
-         For example, given the target message:
-
-             f {
-               b {
-                 d: 1
-                 x: 2
-               }
-               c: [1]
-             }
-
-         And an update message:
-
-             f {
-               b {
-                 d: 10
-               }
-               c: [2]
-             }
-
-         then if the field mask is:
-
-          paths: ["f.b", "f.c"]
-
-         then the result will be:
-
-             f {
-               b {
-                 d: 10
-                 x: 2
-               }
-               c: [1, 2]
-             }
-
-         An implementation may provide options to override this default behavior for
-         repeated and message fields.
-
-         In order to reset a field's value to the default, the field must
-         be in the mask and set to the default value in the provided resource.
-         Hence, in order to reset all fields of a resource, provide a default
-         instance of the resource and set all fields in the mask, or do
-         not provide a mask as described below.
-
-         If a field mask is not present on update, the operation applies to
-         all fields (as if a field mask of all fields has been specified).
-         Note that in the presence of schema evolution, this may mean that
-         fields the client does not know and has therefore not filled into
-         the request will be reset to their default. If this is unwanted
-         behavior, a specific service may require a client to always specify
-         a field mask, producing an error if not.
-
-         As with get operations, the location of the resource which
-         describes the updated values in the request message depends on the
-         operation kind. In any case, the effect of the field mask is
-         required to be honored by the API.
-
-         ## Considerations for HTTP REST
-
-         The HTTP kind of an update operation which uses a field mask must
-         be set to PATCH instead of PUT in order to satisfy HTTP semantics
-         (PUT must only be used for full updates).
-
-         # JSON Encoding of Field Masks
-
-         In JSON, a field mask is encoded as a single string where paths are
-         separated by a comma. Fields name in each path are converted
-         to/from lower-camel naming conventions.
-
-         As an example, consider the following message declarations:
-
-             message Profile {
-               User user = 1;
-               Photo photo = 2;
-             }
-             message User {
-               string display_name = 1;
-               string address = 2;
-             }
-
-         In proto a field mask for `Profile` may look as such:
-
-             mask {
-               paths: "user.display_name"
-               paths: "photo"
-             }
-
-         In JSON, the same mask is represented as below:
-
-             {
-               mask: "user.displayName,photo"
-             }
-
-         # Field Masks and Oneof Fields
-
-         Field masks treat fields in oneofs just as regular fields. Consider the
-         following message:
-
-             message SampleMessage {
-               oneof test_oneof {
-                 string name = 4;
-                 SubMessage sub_message = 9;
-               }
-             }
-
-         The field mask can be:
-
-             mask {
-               paths: "name"
-             }
-
-         Or:
-
-             mask {
-               paths: "sub_message"
-             }
-
-         Note that oneof type names ("test_oneof" in this case) cannot be used in
-         paths.
-
-         ## Field Mask Verification
-
-         The implementation of any API method which has a FieldMask type field in the
-         request should verify the included field paths, and return an
-         `INVALID_ARGUMENT` error if any path is unmappable.
+      description: Comma-separated field paths in lowerCamelCase (for example, `user.displayName,photo`).
     google.protobuf.ListValue:
-      type: object
-      properties:
-        values:
-          type: array
-          items:
-            $ref: '#/components/schemas/google.protobuf.Value'
-          title: values
-          description: Repeated field of dynamically typed values.
-      title: ListValue
-      additionalProperties: false
-      description: |-
-        `ListValue` is a wrapper around a repeated field of values.
-
-         The JSON representation for `ListValue` is JSON array.
+      type: array
+      items:
+        $ref: '#/components/schemas/google.protobuf.Value'
+      description: A JSON array whose elements may be any JSON value.
     google.protobuf.NullValue:
       type: string
       title: NullValue
@@ -3821,122 +4521,14 @@ components:
       type: object
       additionalProperties:
         $ref: '#/components/schemas/google.protobuf.Value'
-      description: |-
-        `Struct` represents a structured data value, consisting of fields
-         which map to dynamically typed values. In some languages, `Struct`
-         might be supported by a native representation. For example, in
-         scripting languages like JS a struct is represented as an
-         object. The details of that representation are described together
-         with the proto support for the language.
-
-         The JSON representation for `Struct` is JSON object.
-    google.protobuf.Struct.FieldsEntry:
-      type: object
-      properties:
-        key:
-          type: string
-          title: key
-        value:
-          title: value
-          $ref: '#/components/schemas/google.protobuf.Value'
-      title: FieldsEntry
-      additionalProperties: false
+      description: A JSON object whose property values may be any JSON value.
     google.protobuf.Timestamp:
       type: string
       examples:
         - "2023-01-15T01:30:15.01Z"
         - "2024-12-25T12:00:00Z"
       format: date-time
-      description: |-
-        A Timestamp represents a point in time independent of any time zone or local
-         calendar, encoded as a count of seconds and fractions of seconds at
-         nanosecond resolution. The count is relative to an epoch at UTC midnight on
-         January 1, 1970, in the proleptic Gregorian calendar which extends the
-         Gregorian calendar backwards to year one.
-
-         All minutes are 60 seconds long. Leap seconds are "smeared" so that no leap
-         second table is needed for interpretation, using a [24-hour linear
-         smear](https://developers.google.com/time/smear).
-
-         The range is from 0001-01-01T00:00:00Z to 9999-12-31T23:59:59.999999999Z. By
-         restricting to that range, we ensure that we can convert to and from [RFC
-         3339](https://www.ietf.org/rfc/rfc3339.txt) date strings.
-
-         # Examples
-
-         Example 1: Compute Timestamp from POSIX `time()`.
-
-             Timestamp timestamp;
-             timestamp.set_seconds(time(NULL));
-             timestamp.set_nanos(0);
-
-         Example 2: Compute Timestamp from POSIX `gettimeofday()`.
-
-             struct timeval tv;
-             gettimeofday(&tv, NULL);
-
-             Timestamp timestamp;
-             timestamp.set_seconds(tv.tv_sec);
-             timestamp.set_nanos(tv.tv_usec * 1000);
-
-         Example 3: Compute Timestamp from Win32 `GetSystemTimeAsFileTime()`.
-
-             FILETIME ft;
-             GetSystemTimeAsFileTime(&ft);
-             UINT64 ticks = (((UINT64)ft.dwHighDateTime) << 32) | ft.dwLowDateTime;
-
-             // A Windows tick is 100 nanoseconds. Windows epoch 1601-01-01T00:00:00Z
-             // is 11644473600 seconds before Unix epoch 1970-01-01T00:00:00Z.
-             Timestamp timestamp;
-             timestamp.set_seconds((INT64) ((ticks / 10000000) - 11644473600LL));
-             timestamp.set_nanos((INT32) ((ticks % 10000000) * 100));
-
-         Example 4: Compute Timestamp from Java `System.currentTimeMillis()`.
-
-             long millis = System.currentTimeMillis();
-
-             Timestamp timestamp = Timestamp.newBuilder().setSeconds(millis / 1000)
-                 .setNanos((int) ((millis % 1000) * 1000000)).build();
-
-         Example 5: Compute Timestamp from Java `Instant.now()`.
-
-             Instant now = Instant.now();
-
-             Timestamp timestamp =
-                 Timestamp.newBuilder().setSeconds(now.getEpochSecond())
-                     .setNanos(now.getNano()).build();
-
-         Example 6: Compute Timestamp from current time in Python.
-
-             timestamp = Timestamp()
-             timestamp.GetCurrentTime()
-
-         # JSON Mapping
-
-         In JSON format, the Timestamp type is encoded as a string in the
-         [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) format. That is, the
-         format is "{year}-{month}-{day}T{hour}:{min}:{sec}[.{frac_sec}]Z"
-         where {year} is always expressed using four digits while {month}, {day},
-         {hour}, {min}, and {sec} are zero-padded to two digits each. The fractional
-         seconds, which can go up to 9 digits (i.e. up to 1 nanosecond resolution),
-         are optional. The "Z" suffix indicates the timezone ("UTC"); the timezone
-         is required. A proto3 JSON serializer should always use UTC (as indicated by
-         "Z") when printing the Timestamp type and a proto3 JSON parser should be
-         able to accept both UTC and other timezones (as indicated by an offset).
-
-         For example, "2017-01-15T01:30:15.01Z" encodes 15.01 seconds past
-         01:30 UTC on January 15, 2017.
-
-         In JavaScript, one can convert a Date object to this format using the
-         standard
-         [toISOString()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/toISOString)
-         method. In Python, a standard `datetime.datetime` object can be converted
-         to this format using
-         [`strftime`](https://docs.python.org/2/library/time.html#time.strftime) with
-         the time format spec '%Y-%m-%dT%H:%M:%S.%fZ'. Likewise, in Java, one can use
-         the Joda Time's [`ISODateTimeFormat.dateTime()`](
-         http://joda-time.sourceforge.net/apidocs/org/joda/time/format/ISODateTimeFormat.html#dateTime()
-         ) to obtain a formatter capable of generating timestamps in this format.
+      description: A point in time in RFC 3339 format, with up to nanosecond precision. Output uses UTC (`Z`); input may use an offset from UTC.
     google.protobuf.Value:
       oneOf:
         - type: "null"
@@ -3946,13 +4538,7 @@ components:
         - type: array
         - type: object
           additionalProperties: true
-      description: |-
-        `Value` represents a dynamically typed value which can be either
-         null, a number, a string, a boolean, a recursive struct value, or a
-         list of values. A producer of value is expected to set one of these
-         variants. Absence of any variant indicates an error.
-
-         The JSON representation for `Value` is JSON value.
+      description: 'Any JSON value: `null`, number, string, boolean, array, or object.'
   securitySchemes:
     BearerAuth:
       type: http

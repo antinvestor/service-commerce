@@ -6,11 +6,7 @@ import 'supplier_rating_badge.dart';
 
 /// A card widget for displaying a [Supplier] in list views.
 class SupplierCard extends StatelessWidget {
-  const SupplierCard({
-    super.key,
-    required this.supplier,
-    this.onTap,
-  });
+  const SupplierCard({super.key, required this.supplier, this.onTap});
 
   final Supplier supplier;
   final VoidCallback? onTap;
@@ -64,12 +60,21 @@ class SupplierCard extends StatelessWidget {
                         StatusBadge.fromEnum(
                           value: supplier.status,
                           mapper: (s) => switch (s) {
-                            SupplierStatus.SUPPLIER_STATUS_ACTIVE =>
-                              ('Active', Colors.green, null),
-                            SupplierStatus.SUPPLIER_STATUS_SUSPENDED =>
-                              ('Suspended', Colors.orange, null),
-                            SupplierStatus.SUPPLIER_STATUS_INACTIVE =>
-                              ('Inactive', Colors.grey, null),
+                            SupplierStatus.SUPPLIER_STATUS_ACTIVE => (
+                              'Active',
+                              Colors.green,
+                              null,
+                            ),
+                            SupplierStatus.SUPPLIER_STATUS_SUSPENDED => (
+                              'Suspended',
+                              Colors.orange,
+                              null,
+                            ),
+                            SupplierStatus.SUPPLIER_STATUS_INACTIVE => (
+                              'Inactive',
+                              Colors.grey,
+                              null,
+                            ),
                             _ => ('Unknown', Colors.grey, null),
                           },
                         ),

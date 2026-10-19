@@ -24,6 +24,12 @@ export 'src/widgets/variant_status_badge.dart';
 export 'src/widgets/product_search_select.dart';
 export 'src/widgets/variant_price_tile.dart';
 export 'src/widgets/fulfilment_type_badge.dart';
+export 'src/widgets/payment_policy_editor.dart';
+export 'src/widgets/product_edit_dialog.dart';
+export 'src/widgets/attribute_list_editor.dart';
+
+// Utilities
+export 'src/utils/price_input.dart';
 
 // Providers
 export 'src/providers/catalog_transport_provider.dart';

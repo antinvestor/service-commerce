@@ -18,6 +18,7 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"fmt"
+	"math/bits"
 	"time"
 
 	commonv1 "buf.build/gen/go/antinvestor/common/protocolbuffers/go/common/v1"
@@ -84,6 +85,11 @@ type Shop struct {
 	CheckoutReturnURL string `gorm:"type:varchar(1024)"`
 	MediaIDs          StringArray
 	Properties        data.JSONMap
+	// PaymentPolicy is the shop-wide default; nil means pay in full.
+	PaymentPolicy *PaymentPolicy
+	// WebhookURL receives order events signed with WebhookSecret.
+	WebhookURL    string `gorm:"type:varchar(1024)"`
+	WebhookSecret string `gorm:"type:varchar(255)"`
 }
 
 func (s *Shop) ToAPI() *commercev1.Shop {
@@ -99,6 +105,9 @@ func (s *Shop) ToAPI() *commercev1.Shop {
 		MediaIds:          s.MediaIDs.ToStringSlice(),
 		CreatedAt:         timestamppb.New(s.CreatedAt),
 		Extra:             s.Properties.ToProtoStruct(),
+		PaymentPolicy:     s.PaymentPolicy.ToAPI(),
+		WebhookUrl:        s.WebhookURL,
+		WebhookSecretSet:  s.WebhookSecret != "",
 	}
 }
 
@@ -112,6 +121,8 @@ type Product struct {
 	FulfilmentType int32 `gorm:"default:0"`
 	Status         int32 `gorm:"default:1"`
 	MediaIDs       StringArray
+	// PaymentPolicy overrides the shop's; nil uses the shop's.
+	PaymentPolicy *PaymentPolicy
 
 	Shop     *Shop             `gorm:"foreignKey:ShopID"`
 	Variants []*ProductVariant `gorm:"foreignKey:ProductID"`
@@ -130,6 +141,7 @@ func (p *Product) ToAPI() *commercev1.Product {
 		Status:         commercev1.ProductStatus(p.Status),
 		MediaIds:       p.MediaIDs.ToStringSlice(),
 		CreatedAt:      timestamppb.New(p.CreatedAt),
+		PaymentPolicy:  p.PaymentPolicy.ToAPI(),
 	}
 }
 
@@ -254,8 +266,18 @@ type Order struct {
 	// merged on a later trading day than the sale it reverses.
 	RefundLedgerTransactionID string `gorm:"type:varchar(64)"`
 
-	Lines []*OrderLine `gorm:"foreignKey:OrderID"`
-	Shop  *Shop        `gorm:"foreignKey:ShopID"`
+	// Instalments. AmountPaidNanos is the sum of Payments. PaymentPolicy is
+	// the merged policy fixed when the order was placed. BalanceDueAt is
+	// set by the first instalment; OverdueAt records that the overdue
+	// signal was raised.
+	AmountPaidNanos int64
+	PaymentPolicy   *PaymentPolicy
+	BalanceDueAt    *time.Time `gorm:"index:idx_order_balance_due"`
+	OverdueAt       *time.Time
+
+	Lines    []*OrderLine    `gorm:"foreignKey:OrderID"`
+	Payments []*OrderPayment `gorm:"foreignKey:OrderID"`
+	Shop     *Shop           `gorm:"foreignKey:ShopID"`
 }
 
 func (o *Order) ToAPI() *commercev1.Order {
@@ -290,7 +312,47 @@ func (o *Order) ToAPI() *commercev1.Order {
 	if o.CancelledAt != nil {
 		api.CancelledAt = timestamppb.New(*o.CancelledAt)
 	}
+	api.AmountPaid = MoneyFromNanos(o.TotalCurrency, o.AmountPaidNanos)
+	api.Balance = MoneyFromNanos(o.TotalCurrency, o.BalanceNanos())
+	api.PaymentPolicy = o.PaymentPolicy.ToAPI()
+	if o.BalanceDueAt != nil {
+		api.BalanceDueAt = timestamppb.New(*o.BalanceDueAt)
+	}
+	if o.PaymentDueAt != nil {
+		api.PaymentDueAt = timestamppb.New(*o.PaymentDueAt)
+	}
+	for _, payment := range o.Payments {
+		api.Payments = append(api.Payments, payment.ToAPI())
+	}
 	return api
+}
+
+// BalanceNanos is what remains to be paid; never negative.
+func (o *Order) BalanceNanos() int64 {
+	return max(o.TotalNanosValue()-o.AmountPaidNanos, 0)
+}
+
+// PaidPercent is the whole percent of the total paid, rounded down.
+func (o *Order) PaidPercent() int32 {
+	return PercentOf(o.AmountPaidNanos, o.TotalNanosValue())
+}
+
+// PercentOf is part as a whole percent of total, rounded down and capped at
+// 100. A zero total counts as fully paid.
+func PercentOf(part, total int64) int32 {
+	if total <= 0 {
+		return 100 //nolint:mnd // percent
+	}
+	if part >= total {
+		return 100 //nolint:mnd // percent
+	}
+	if part <= 0 {
+		return 0
+	}
+	// part*100 in 128 bits so large totals neither overflow nor round up.
+	hi, lo := bits.Mul64(uint64(part), 100) //nolint:mnd // percent
+	quo, _ := bits.Div64(hi, lo, uint64(total))
+	return int32(quo) //nolint:gosec // < 100
 }
 
 // TotalNanosValue is the order total as a single nanos integer.
@@ -307,6 +369,9 @@ type OrderPaymentSession struct {
 	data.BaseModel
 	OrderID    string `gorm:"type:varchar(50);index:idx_order_payment_session_order"`
 	SessionRef string `gorm:"type:varchar(64);uniqueIndex:idx_order_payment_session_ref"`
+	// AmountNanos is what the session was created to charge. Sessions made
+	// before instalments existed have 0, meaning the order total.
+	AmountNanos int64
 }
 
 // LedgerPosting records one end-of-day merge for a shop and trading day, so

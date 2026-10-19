@@ -249,6 +249,15 @@ service CommerceService {
       permissions: ["shops_list"]
     };
   }
+  // Resolves the currency the caller most likely trades in: their currency
+  // setting, else the locale of the device they are signed in on, else the
+  // country of their first profile address. CreateShop applies the same
+  // default when no currency is given.
+  rpc ResolveDefaultCurrency(ResolveDefaultCurrencyRequest) returns (ResolveDefaultCurrencyResponse) {
+    option (common.v1.method_permissions) = {
+      permissions: ["shops_list"]
+    };
+  }
 
   // ----------------------
   // Catalog
@@ -281,6 +290,13 @@ service CommerceService {
   }
   // Updates an existing product variant.
   rpc UpdateProductVariant(UpdateProductVariantRequest) returns (UpdateProductVariantResponse) {
+    option (common.v1.method_permissions) = {
+      permissions: ["product_manage"]
+    };
+  }
+  // Updates a product: details, fulfilment type, status, and its payment
+  // policy override.
+  rpc UpdateProduct(UpdateProductRequest) returns (UpdateProductResponse) {
     option (common.v1.method_permissions) = {
       permissions: ["product_manage"]
     };
@@ -382,6 +398,21 @@ service CommerceService {
       permissions: ["order_manage"]
     };
   }
+  // Records a payment the shop took itself (cash, bank transfer, a till) as
+  // an instalment against the order. Staff only. A reference already
+  // recorded on the order is returned as-is, so retries are safe.
+  rpc RecordOrderPayment(RecordOrderPaymentRequest) returns (RecordOrderPaymentResponse) {
+    option (common.v1.method_permissions) = {
+      permissions: ["order_manage"]
+    };
+  }
+  // Lists payment and lifecycle signals for an order, or for every order in
+  // a shop, oldest first. The same events are pushed to the shop's webhook.
+  rpc ListOrderEvents(ListOrderEventsRequest) returns (ListOrderEventsResponse) {
+    option (common.v1.method_permissions) = {
+      permissions: ["order_view"]
+    };
+  }
   // Reconciles orders awaiting payment against the payment service and
   // expires reservations whose payment window has lapsed. Scheduled.
   rpc ReconcilePayments(ReconcilePaymentsRequest) returns (ReconcilePaymentsResponse) {
@@ -421,6 +452,12 @@ service CommerceService {
   }
   // Retrieves a fulfilment by ID.
   rpc GetFulfilment(GetFulfilmentRequest) returns (GetFulfilmentResponse) {
+    option (common.v1.method_permissions) = {
+      permissions: ["fulfilment_view"]
+    };
+  }
+  // Lists an order's fulfilments, oldest first.
+  rpc ListFulfilments(ListFulfilmentsRequest) returns (ListFulfilmentsResponse) {
     option (common.v1.method_permissions) = {
       permissions: ["fulfilment_view"]
     };
@@ -494,6 +531,13 @@ service CommerceService {
       permissions: ["price_list_view"]
     };
   }
+  // Approves a discount rule that requires approval, so pricing may apply
+  // it automatically.
+  rpc DiscountRuleApprove(DiscountRuleApproveRequest) returns (DiscountRuleApproveResponse) {
+    option (common.v1.method_permissions) = {
+      permissions: ["discount_approve"]
+    };
+  }
 
   // Resolves the effective price for a variant given customer and quantity context.
   rpc ResolvePrice(ResolvePriceRequest) returns (ResolvePriceResponse) {
@@ -538,6 +582,55 @@ message Shop {
 
   google.protobuf.Timestamp created_at = 10;
   google.protobuf.Struct extra = 15; // Additional key metadata (algorithm, app_id, etc.)
+  // How buyers may pay: in full, or in instalments with thresholds. Products
+  // may override it.
+  PaymentPolicy payment_policy = 16;
+  // HTTPS endpoint order events are POSTed to, signed with the shop's
+  // webhook secret.
+  string webhook_url = 17;
+  // Whether a webhook secret is set. The secret itself is never returned.
+  bool webhook_secret_set = 18;
+}
+
+// PaymentPolicy governs paying for an order in instalments and the signals
+// raised as payment progresses. Percentages are whole percent of the order
+// total.
+message PaymentPolicy {
+  // Buyers may pay in more than one instalment.
+  bool allow_instalments = 1;
+  // The first instalment must be at least this share of the total. Once it
+  // is paid, stock stays reserved past the payment window. 0 accepts any
+  // amount.
+  int32 min_deposit_percent = 2 [(buf.validate.field).int32 = {
+    gte: 0
+    lte: 100
+  }];
+  // Every instalment but the last must be at least this share of the total.
+  int32 min_instalment_percent = 3 [(buf.validate.field).int32 = {
+    gte: 0
+    lte: 100
+  }];
+  // Days the buyer has to pay the balance after the first instalment. 0
+  // means no deadline.
+  int32 balance_due_days = 4 [(buf.validate.field).int32 = {
+    gte: 0
+    lte: 3650
+  }];
+  // Share that must be paid before the order may be fulfilled. 0 means the
+  // full amount.
+  int32 fulfil_at_percent = 5 [(buf.validate.field).int32 = {
+    gte: 0
+    lte: 100
+  }];
+  // Paid-share marks that raise an ORDER_EVENT_TYPE_THRESHOLD_CROSSED signal
+  // when payment crosses them, e.g. [25, 50, 75].
+  repeated int32 signal_thresholds = 6 [(buf.validate.field).repeated.items.int32 = {
+    gt: 0
+    lte: 100
+  }];
+  // Cancel the order, release its stock and record a refund of what was paid
+  // when the balance deadline passes.
+  bool cancel_when_overdue = 7;
 }
 
 enum ShopStatus {
@@ -550,10 +643,14 @@ message CreateShopRequest {
   string name = 1;
   string slug = 2;
   string description = 3;
+  // ISO 4217 code. Empty uses the caller's default (see ResolveDefaultCurrency).
   string currency = 4;
   string contact_id = 5;
   repeated string media_ids = 6;
   string checkout_return_url = 7;
+  PaymentPolicy payment_policy = 8;
+  string webhook_url = 9;
+  string webhook_secret = 10;
 }
 
 message CreateShopResponse {
@@ -576,6 +673,10 @@ message UpdateShopRequest {
   string currency = 8;
   string contact_id = 9;
   string checkout_return_url = 10;
+  PaymentPolicy payment_policy = 11;
+  string webhook_url = 12;
+  // Write-only. Empty with "webhook_secret" in the mask clears it.
+  string webhook_secret = 13;
 }
 
 message UpdateShopResponse {
@@ -601,6 +702,27 @@ message ListShopsResponse {
 
 message GetShopResponse {
   Shop shop = 1;
+}
+
+// Where a resolved default currency came from.
+enum CurrencySource {
+  CURRENCY_SOURCE_UNSPECIFIED = 0;
+  // The caller's "currency" setting in the settings service.
+  CURRENCY_SOURCE_PREFERENCE = 1;
+  // The locale of the device the caller is signed in on.
+  CURRENCY_SOURCE_DEVICE = 2;
+  // The country of the caller's first profile address.
+  CURRENCY_SOURCE_ADDRESS = 3;
+  // Nothing was known about the caller; the platform default applies.
+  CURRENCY_SOURCE_PLATFORM_DEFAULT = 4;
+}
+
+message ResolveDefaultCurrencyRequest {}
+
+message ResolveDefaultCurrencyResponse {
+  // ISO 4217 code.
+  string currency = 1;
+  CurrencySource source = 2;
 }
 
 //
@@ -635,6 +757,9 @@ message Product {
   repeated string media_ids = 16;
 
   google.protobuf.Timestamp created_at = 17;
+  // Overrides the shop's payment policy for orders containing this product.
+  // Unset uses the shop's.
+  PaymentPolicy payment_policy = 18;
 }
 
 enum ProductStatus {
@@ -702,6 +827,8 @@ message CreateProductRequest {
   string description = 3;
   repeated string media_ids = 4;
   map<string, string> attributes = 5;
+  FulfilmentType fulfilment_type = 6;
+  PaymentPolicy payment_policy = 7;
 }
 
 message CreateProductResponse {
@@ -767,6 +894,29 @@ message UpdateProductVariantRequest {
   ProductVariantStatus status = 8;
   map<string, string> attributes = 6;
   repeated string media_ids = 9;
+}
+
+message UpdateProductRequest {
+  string id = 1 [
+    (buf.validate.field).string.min_len = 3,
+    (buf.validate.field).string.max_len = 40,
+    (buf.validate.field).string.pattern = "[0-9a-z_-]{3,40}"
+  ];
+  // Fields to apply. Without a mask only fields carrying a value are applied.
+  google.protobuf.FieldMask update_mask = 2;
+  string name = 3;
+  string description = 4;
+  map<string, string> attributes = 5;
+  FulfilmentType fulfilment_type = 6;
+  ProductStatus status = 7;
+  repeated string media_ids = 8;
+  // With "payment_policy" in the mask and this unset, the override is
+  // removed and the shop's policy applies again.
+  PaymentPolicy payment_policy = 9;
+}
+
+message UpdateProductResponse {
+  Product product = 1;
 }
 
 message ListProductVariantsRequest {
@@ -895,16 +1045,19 @@ message CreateOrderFromCartRequest {
   ];
 
   string profile_id = 5 [
+    (buf.validate.field).ignore = IGNORE_IF_ZERO_VALUE,
     (buf.validate.field).string.min_len = 3,
     (buf.validate.field).string.max_len = 40,
     (buf.validate.field).string.pattern = "[0-9a-z_-]{3,40}"
   ];
   string contact_id = 6 [
+    (buf.validate.field).ignore = IGNORE_IF_ZERO_VALUE,
     (buf.validate.field).string.min_len = 3,
     (buf.validate.field).string.max_len = 40,
     (buf.validate.field).string.pattern = "[0-9a-z_-]{3,40}"
   ];
   string address_id = 7 [
+    (buf.validate.field).ignore = IGNORE_IF_ZERO_VALUE,
     (buf.validate.field).string.min_len = 3,
     (buf.validate.field).string.max_len = 40,
     (buf.validate.field).string.pattern = "[0-9a-z_-]{3,40}"
@@ -971,6 +1124,42 @@ message Order {
   string cancel_reason = 19;
   // Ledger transaction this order was merged into at end of day.
   string ledger_transaction_id = 20;
+  // What has been paid so far across every instalment.
+  common.v1.Money amount_paid = 21;
+  // What remains to be paid.
+  common.v1.Money balance = 22;
+  // Deadline for the balance once a first instalment has been paid.
+  google.protobuf.Timestamp balance_due_at = 23;
+  // The payment policy in force for this order, fixed when it was placed.
+  PaymentPolicy payment_policy = 24;
+  // Every payment applied to the order, oldest first.
+  repeated OrderPayment payments = 25;
+  // Unpaid orders hold stock until this time.
+  google.protobuf.Timestamp payment_due_at = 26;
+}
+
+// OrderPayment is one instalment applied to an order.
+message OrderPayment {
+  string id = 1;
+  common.v1.Money amount = 2;
+  OrderPaymentSource source = 3;
+  // Checkout session ref for online payments; the shop's receipt reference
+  // for recorded ones.
+  string reference = 4;
+  // Payment service reference, when there is one.
+  string payment_id = 5;
+  google.protobuf.Timestamp paid_at = 6;
+  // Profile of the staff member who recorded an offline payment.
+  string recorded_by = 7;
+  string note = 8;
+}
+
+enum OrderPaymentSource {
+  ORDER_PAYMENT_SOURCE_UNSPECIFIED = 0;
+  // Paid through hosted checkout.
+  ORDER_PAYMENT_SOURCE_CHECKOUT = 1;
+  // Taken by the shop and recorded by staff.
+  ORDER_PAYMENT_SOURCE_RECORDED = 2;
 }
 
 enum OrderStatus {
@@ -995,6 +1184,8 @@ enum PaymentStatus {
   PAYMENT_STATUS_REFUNDED = 4;
   // Payment window lapsed without completion; stock was released.
   PAYMENT_STATUS_EXPIRED = 5;
+  // At least one instalment is paid and a balance remains.
+  PAYMENT_STATUS_PARTIALLY_PAID = 6;
 }
 
 message OrderLine {
@@ -1025,16 +1216,19 @@ message CreateOrderRequest {
   string shop_id = 1;
 
   string profile_id = 5 [
+    (buf.validate.field).ignore = IGNORE_IF_ZERO_VALUE,
     (buf.validate.field).string.min_len = 3,
     (buf.validate.field).string.max_len = 40,
     (buf.validate.field).string.pattern = "[0-9a-z_-]{3,40}"
   ];
   string contact_id = 6 [
+    (buf.validate.field).ignore = IGNORE_IF_ZERO_VALUE,
     (buf.validate.field).string.min_len = 3,
     (buf.validate.field).string.max_len = 40,
     (buf.validate.field).string.pattern = "[0-9a-z_-]{3,40}"
   ];
   string address_id = 7 [
+    (buf.validate.field).ignore = IGNORE_IF_ZERO_VALUE,
     (buf.validate.field).string.min_len = 3,
     (buf.validate.field).string.max_len = 40,
     (buf.validate.field).string.pattern = "[0-9a-z_-]{3,40}"
@@ -1096,12 +1290,18 @@ message CheckoutOrderRequest {
   string return_url = 2;
   // Optional restriction to specific payment methods.
   repeated string methods = 3;
+  // The instalment to pay now. Empty pays the whole balance. Anything less
+  // needs a policy that allows instalments and must meet its deposit and
+  // minimum instalment.
+  common.v1.Money amount = 4;
 }
 
 message CheckoutOrderResponse {
   Order order = 1;
   string checkout_url = 2;
   string session_ref = 3;
+  // The amount this checkout session charges.
+  common.v1.Money amount = 4;
 }
 
 message ConfirmOrderPaymentRequest {
@@ -1129,6 +1329,91 @@ message CancelOrderResponse {
   Order order = 1;
 }
 
+message RecordOrderPaymentRequest {
+  string order_id = 1 [
+    (buf.validate.field).string.min_len = 3,
+    (buf.validate.field).string.max_len = 40,
+    (buf.validate.field).string.pattern = "[0-9a-z_-]{3,40}"
+  ];
+  common.v1.Money amount = 2 [(buf.validate.field).required = true];
+  // The shop's receipt or transaction reference; unique per order.
+  string reference = 3 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 100
+  }];
+  string note = 4 [(buf.validate.field).string.max_len = 500];
+}
+
+message RecordOrderPaymentResponse {
+  Order order = 1;
+}
+
+// OrderEvent is a signal raised as an order's payment or lifecycle
+// progresses.
+message OrderEvent {
+  string id = 1;
+  string shop_id = 2;
+  string order_id = 3;
+  string order_number = 4;
+  OrderEventType type = 5;
+  // For THRESHOLD_CROSSED, the policy mark that was crossed.
+  int32 threshold_percent = 6;
+  // Share of the total paid when the event was raised.
+  int32 paid_percent = 7;
+  common.v1.Money amount_paid = 8;
+  common.v1.Money balance = 9;
+  // The instalment that caused the event, for payment events.
+  common.v1.Money payment_amount = 10;
+  google.protobuf.Timestamp created_at = 11;
+  // Webhook delivery state for this event.
+  OrderEventDelivery delivery = 12;
+}
+
+enum OrderEventType {
+  ORDER_EVENT_TYPE_UNSPECIFIED = 0;
+  // An instalment was applied.
+  ORDER_EVENT_TYPE_PAYMENT_RECEIVED = 1;
+  // The first instalment was applied; stock is held until the balance
+  // deadline.
+  ORDER_EVENT_TYPE_DEPOSIT_PAID = 2;
+  // Payment crossed one of the policy's signal thresholds.
+  ORDER_EVENT_TYPE_THRESHOLD_CROSSED = 3;
+  // The paid share reached the policy's fulfilment mark.
+  ORDER_EVENT_TYPE_FULFILMENT_RELEASED = 4;
+  // The order is paid in full.
+  ORDER_EVENT_TYPE_FULLY_PAID = 5;
+  // The balance deadline passed with money still owed.
+  ORDER_EVENT_TYPE_BALANCE_OVERDUE = 6;
+  // More was paid than the order total; the excess needs refunding.
+  ORDER_EVENT_TYPE_OVERPAID = 7;
+  ORDER_EVENT_TYPE_CANCELLED = 8;
+  // The payment window lapsed before anything was paid.
+  ORDER_EVENT_TYPE_EXPIRED = 9;
+}
+
+enum OrderEventDelivery {
+  ORDER_EVENT_DELIVERY_UNSPECIFIED = 0;
+  // The shop has no webhook.
+  ORDER_EVENT_DELIVERY_NOT_REQUIRED = 1;
+  ORDER_EVENT_DELIVERY_PENDING = 2;
+  ORDER_EVENT_DELIVERY_DELIVERED = 3;
+  // Retries are exhausted.
+  ORDER_EVENT_DELIVERY_FAILED = 4;
+}
+
+message ListOrderEventsRequest {
+  // One of shop_id or order_id is required.
+  string shop_id = 1;
+  string order_id = 2;
+  // Page size and cursor.
+  common.v1.SearchRequest search = 3;
+}
+
+message ListOrderEventsResponse {
+  repeated OrderEvent events = 1;
+  string next_page = 2;
+}
+
 message ReconcilePaymentsRequest {
   // Limit to one shop; empty reconciles every shop in the partition.
   string shop_id = 1;
@@ -1141,6 +1426,10 @@ message ReconcilePaymentsResponse {
   int32 paid = 2;
   int32 expired = 3;
   int32 failed = 4;
+  // Part-paid orders flagged past their balance deadline.
+  int32 overdue = 5;
+  // Webhook deliveries that succeeded on retry.
+  int32 events_delivered = 6;
 }
 
 message RunEndOfDayLedgerRequest {
@@ -1257,6 +1546,18 @@ message GetFulfilmentRequest {
 
 message GetFulfilmentResponse {
   Fulfilment fulfilment = 1;
+}
+
+message ListFulfilmentsRequest {
+  string order_id = 1 [
+    (buf.validate.field).string.min_len = 3,
+    (buf.validate.field).string.max_len = 40,
+    (buf.validate.field).string.pattern = "[0-9a-z_-]{3,40}"
+  ];
+}
+
+message ListFulfilmentsResponse {
+  repeated Fulfilment fulfilments = 1;
 }
 
 //
@@ -1421,6 +1722,9 @@ message DiscountRule {
   google.protobuf.Timestamp valid_until = 11;
   DiscountRuleStatus status = 12;
   google.protobuf.Timestamp created_at = 15;
+  // Who approved a rule that requires approval; empty until approved.
+  string approved_by = 16;
+  google.protobuf.Timestamp approved_at = 17;
 }
 
 // The fully resolved price for a variant, showing which source and discounts apply.
@@ -1598,6 +1902,10 @@ message DiscountRuleSaveRequest {
   google.protobuf.Timestamp valid_from = 10;
   google.protobuf.Timestamp valid_until = 11;
   DiscountRuleStatus status = 12;
+  // On update, the fields to apply. Without a mask only fields carrying a
+  // value are applied. Listing "requires_approval" with it false waives the
+  // approval requirement, which needs discount_approve on the shop.
+  google.protobuf.FieldMask update_mask = 13;
 }
 
 message DiscountRuleSaveResponse {
@@ -1620,6 +1928,18 @@ message DiscountRuleSearchResponse {
 }
 
 // ---- ResolvePrice RPC ----
+
+message DiscountRuleApproveRequest {
+  string id = 1 [
+    (buf.validate.field).string.min_len = 3,
+    (buf.validate.field).string.max_len = 40,
+    (buf.validate.field).string.pattern = "[0-9a-z_-]{3,40}"
+  ];
+}
+
+message DiscountRuleApproveResponse {
+  DiscountRule discount_rule = 1;
+}
 
 message ResolvePriceRequest {
   string customer_id = 1 [

@@ -15,6 +15,7 @@ import 'package:antinvestor_ui_production/antinvestor_ui_production.dart'
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/auth/active_shop_provider.dart';
 import '../../../core/auth/tenant_context_provider.dart';
 
 /// Snapshot of commerce + manufacturing KPIs surfaced on the dashboard.
@@ -29,12 +30,12 @@ class DashboardKpis {
 
   /// Placeholder used before the tenant scope resolves.
   factory DashboardKpis.empty() => const DashboardKpis(
-        todaysSales: '—',
-        openPurchaseOrders: 0,
-        activeBatches: 0,
-        lowStockItems: 0,
-        expiringStockItems: 0,
-      );
+    todaysSales: '—',
+    openPurchaseOrders: 0,
+    activeBatches: 0,
+    lowStockItems: 0,
+    expiringStockItems: 0,
+  );
 
   final String todaysSales;
   final int openPurchaseOrders;
@@ -64,8 +65,10 @@ final dashboardKpisProvider = FutureProvider<DashboardKpis>((ref) async {
     return DashboardKpis.empty();
   }
 
+  final currency = ref.watch(activeShopProvider.select((s) => s?.currency));
+
   final results = await Future.wait<Object>([
-    _todaysSales(ref, scope.shopId),
+    _todaysSales(ref, scope.shopId, currency ?? ''),
     _openPurchaseOrders(ref, scope.propertyId),
     _activeBatches(ref, scope.propertyId),
     _lowStockItems(ref, scope.propertyId),
@@ -81,10 +84,17 @@ final dashboardKpisProvider = FutureProvider<DashboardKpis>((ref) async {
   );
 });
 
-final _currencyFormat = NumberFormat.currency(name: 'KES', symbol: 'KSh ');
+/// Formats [amount] in the shop's [currency] (ISO 4217), e.g. `KES 1,250.00`.
+/// Without a currency the bare amount is shown rather than guessing one.
+String formatShopMoney(double amount, String currency) {
+  final code = currency.trim().toUpperCase();
+  if (code.isEmpty) return NumberFormat('#,##0.00').format(amount);
+  return NumberFormat.currency(name: code, symbol: '$code ').format(amount);
+}
 
-/// Sum of order totals created since the start of the local day.
-Future<String> _todaysSales(Ref ref, String shopId) async {
+/// Sum of order totals created since the start of the local day, in the
+/// active shop's currency.
+Future<String> _todaysSales(Ref ref, String shopId, String currency) async {
   if (shopId.isEmpty) return '—';
   try {
     final orders = await ref.read(orderListProvider(shopId).future);
@@ -93,7 +103,7 @@ Future<String> _todaysSales(Ref ref, String shopId) async {
     final total = orders
         .where((o) => _orderCreatedAt(o)?.isAfter(startOfDay) ?? false)
         .fold<double>(0, (sum, o) => sum + _orderTotal(o));
-    return _currencyFormat.format(total);
+    return formatShopMoney(total, currency);
   } catch (_) {
     return '—';
   }
@@ -118,8 +128,7 @@ double _orderTotal(Order order) {
 Future<int> _openPurchaseOrders(Ref ref, String propertyId) async {
   if (propertyId.isEmpty) return 0;
   try {
-    final pos =
-        await ref.read(purchaseOrderListProvider(propertyId).future);
+    final pos = await ref.read(purchaseOrderListProvider(propertyId).future);
     return pos.where(_isOpenPurchaseOrder).length;
   } catch (_) {
     return 0;

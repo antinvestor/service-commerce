@@ -7,15 +7,18 @@ import '../../core/auth/tenant_context_provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/theme_mode_provider.dart';
 import '../../core/widgets/page_header.dart';
+import 'operations_section.dart';
 import 'shop_settings_section.dart';
 
 /// Console settings surface.
 ///
-/// Renders four panels stacked vertically:
+/// Renders panels stacked vertically:
 /// 1. Appearance — light/dark/system theme switcher
 /// 2. Profile & account — link to identity profile + email
 /// 3. Tenant / organization scope — current shop + property
-/// 4. Session — sign-out button + about/version info
+/// 4. Shop — shop details, payment policy, webhook
+/// 5. Operations — run payment reconciliation / end-of-day posting
+/// 6. Session — sign-out button + about/version info
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
 
@@ -74,10 +77,9 @@ class SettingsPage extends ConsumerWidget {
                 child: _TenantScopeSection(scope: scope),
               ),
               const SizedBox(height: 16),
-              const _Panel(
-                title: 'Shop',
-                child: ShopSettingsSection(),
-              ),
+              const _Panel(title: 'Shop', child: ShopSettingsSection()),
+              const SizedBox(height: 16),
+              const _Panel(title: 'Operations', child: OperationsSection()),
               const SizedBox(height: 16),
               _Panel(
                 title: 'Session',
@@ -122,9 +124,9 @@ class _Panel extends StatelessWidget {
         children: [
           Text(
             title,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 12),
           child,
@@ -174,7 +176,8 @@ class _ProfileSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final name = claims['name'] as String? ??
+    final name =
+        claims['name'] as String? ??
         claims['preferred_username'] as String? ??
         'Unknown operator';
     final email = claims['email'] as String? ?? '—';
@@ -268,9 +271,9 @@ class _ScopeRow extends StatelessWidget {
             width: 96,
             child: Text(
               label,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppColors.onSurfaceMuted,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: AppColors.onSurfaceMuted),
             ),
           ),
           Expanded(
@@ -319,15 +322,9 @@ class _AboutSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Antinvestor Console',
-          style: theme.textTheme.titleSmall,
-        ),
+        Text('Antinvestor Console', style: theme.textTheme.titleSmall),
         const SizedBox(height: 4),
-        Text(
-          'Version $version',
-          style: theme.textTheme.bodySmall,
-        ),
+        Text('Version $version', style: theme.textTheme.bodySmall),
         const SizedBox(height: 4),
         Text(
           'Auth runtime $authRuntimeVersion',

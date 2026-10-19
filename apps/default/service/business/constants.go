@@ -26,4 +26,8 @@ const (
 	fieldCurrency          = "currency"
 	fieldContactID         = "contact_id"
 	fieldCheckoutReturnURL = "checkout_return_url"
+	fieldFulfilmentType    = "fulfilment_type"
+	fieldPaymentPolicy     = "payment_policy"
+	fieldWebhookURL        = "webhook_url"
+	fieldWebhookSecret     = "webhook_secret"
 )

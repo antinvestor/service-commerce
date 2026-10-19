@@ -8,11 +8,7 @@ String _formatDate(DateTime dt) =>
 
 /// A card widget for displaying a [GoodsReceipt] in list views.
 class GoodsReceiptCard extends StatelessWidget {
-  const GoodsReceiptCard({
-    super.key,
-    required this.receipt,
-    this.onTap,
-  });
+  const GoodsReceiptCard({super.key, required this.receipt, this.onTap});
 
   final GoodsReceipt receipt;
   final VoidCallback? onTap;

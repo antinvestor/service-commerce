@@ -25,11 +25,13 @@ abstract class CommerceServiceBase extends $pb.GeneratedService {
   $async.Future<$9.GetShopResponse> getShop($pb.ServerContext ctx, $9.GetShopRequest request);
   $async.Future<$9.UpdateShopResponse> updateShop($pb.ServerContext ctx, $9.UpdateShopRequest request);
   $async.Future<$9.ListShopsResponse> listShops($pb.ServerContext ctx, $9.ListShopsRequest request);
+  $async.Future<$9.ResolveDefaultCurrencyResponse> resolveDefaultCurrency($pb.ServerContext ctx, $9.ResolveDefaultCurrencyRequest request);
   $async.Future<$9.CreateProductResponse> createProduct($pb.ServerContext ctx, $9.CreateProductRequest request);
   $async.Future<$9.GetProductResponse> getProduct($pb.ServerContext ctx, $9.GetProductRequest request);
   $async.Future<$9.ListProductsResponse> listProducts($pb.ServerContext ctx, $9.ListProductsRequest request);
   $async.Future<$9.CreateProductVariantResponse> createProductVariant($pb.ServerContext ctx, $9.CreateProductVariantRequest request);
   $async.Future<$9.UpdateProductVariantResponse> updateProductVariant($pb.ServerContext ctx, $9.UpdateProductVariantRequest request);
+  $async.Future<$9.UpdateProductResponse> updateProduct($pb.ServerContext ctx, $9.UpdateProductRequest request);
   $async.Future<$9.ListProductVariantsResponse> listProductVariants($pb.ServerContext ctx, $9.ListProductVariantsRequest request);
   $async.Future<$9.CreateCartResponse> createCart($pb.ServerContext ctx, $9.CreateCartRequest request);
   $async.Future<$9.GetCartResponse> getCart($pb.ServerContext ctx, $9.GetCartRequest request);
@@ -42,11 +44,14 @@ abstract class CommerceServiceBase extends $pb.GeneratedService {
   $async.Future<$9.CheckoutOrderResponse> checkoutOrder($pb.ServerContext ctx, $9.CheckoutOrderRequest request);
   $async.Future<$9.ConfirmOrderPaymentResponse> confirmOrderPayment($pb.ServerContext ctx, $9.ConfirmOrderPaymentRequest request);
   $async.Future<$9.CancelOrderResponse> cancelOrder($pb.ServerContext ctx, $9.CancelOrderRequest request);
+  $async.Future<$9.RecordOrderPaymentResponse> recordOrderPayment($pb.ServerContext ctx, $9.RecordOrderPaymentRequest request);
+  $async.Future<$9.ListOrderEventsResponse> listOrderEvents($pb.ServerContext ctx, $9.ListOrderEventsRequest request);
   $async.Future<$9.ReconcilePaymentsResponse> reconcilePayments($pb.ServerContext ctx, $9.ReconcilePaymentsRequest request);
   $async.Future<$9.RunEndOfDayLedgerResponse> runEndOfDayLedger($pb.ServerContext ctx, $9.RunEndOfDayLedgerRequest request);
   $async.Future<$9.CreateFulfilmentResponse> createFulfilment($pb.ServerContext ctx, $9.CreateFulfilmentRequest request);
   $async.Future<$9.UpdateFulfilmentResponse> updateFulfilment($pb.ServerContext ctx, $9.UpdateFulfilmentRequest request);
   $async.Future<$9.GetFulfilmentResponse> getFulfilment($pb.ServerContext ctx, $9.GetFulfilmentRequest request);
+  $async.Future<$9.ListFulfilmentsResponse> listFulfilments($pb.ServerContext ctx, $9.ListFulfilmentsRequest request);
   $async.Future<$9.PriceListSaveResponse> priceListSave($pb.ServerContext ctx, $9.PriceListSaveRequest request);
   $async.Future<$9.PriceListGetResponse> priceListGet($pb.ServerContext ctx, $9.PriceListGetRequest request);
   $async.Future<$9.PriceListSearchResponse> priceListSearch($pb.ServerContext ctx, $9.PriceListSearchRequest request);
@@ -57,6 +62,7 @@ abstract class CommerceServiceBase extends $pb.GeneratedService {
   $async.Future<$9.CustomerPriceOverrideSearchResponse> customerPriceOverrideSearch($pb.ServerContext ctx, $9.CustomerPriceOverrideSearchRequest request);
   $async.Future<$9.DiscountRuleSaveResponse> discountRuleSave($pb.ServerContext ctx, $9.DiscountRuleSaveRequest request);
   $async.Future<$9.DiscountRuleSearchResponse> discountRuleSearch($pb.ServerContext ctx, $9.DiscountRuleSearchRequest request);
+  $async.Future<$9.DiscountRuleApproveResponse> discountRuleApprove($pb.ServerContext ctx, $9.DiscountRuleApproveRequest request);
   $async.Future<$9.ResolvePriceResponse> resolvePrice($pb.ServerContext ctx, $9.ResolvePriceRequest request);
 
   $pb.GeneratedMessage createRequest($core.String methodName) {
@@ -65,11 +71,13 @@ abstract class CommerceServiceBase extends $pb.GeneratedService {
       case 'GetShop': return $9.GetShopRequest();
       case 'UpdateShop': return $9.UpdateShopRequest();
       case 'ListShops': return $9.ListShopsRequest();
+      case 'ResolveDefaultCurrency': return $9.ResolveDefaultCurrencyRequest();
       case 'CreateProduct': return $9.CreateProductRequest();
       case 'GetProduct': return $9.GetProductRequest();
       case 'ListProducts': return $9.ListProductsRequest();
       case 'CreateProductVariant': return $9.CreateProductVariantRequest();
       case 'UpdateProductVariant': return $9.UpdateProductVariantRequest();
+      case 'UpdateProduct': return $9.UpdateProductRequest();
       case 'ListProductVariants': return $9.ListProductVariantsRequest();
       case 'CreateCart': return $9.CreateCartRequest();
       case 'GetCart': return $9.GetCartRequest();
@@ -82,11 +90,14 @@ abstract class CommerceServiceBase extends $pb.GeneratedService {
       case 'CheckoutOrder': return $9.CheckoutOrderRequest();
       case 'ConfirmOrderPayment': return $9.ConfirmOrderPaymentRequest();
       case 'CancelOrder': return $9.CancelOrderRequest();
+      case 'RecordOrderPayment': return $9.RecordOrderPaymentRequest();
+      case 'ListOrderEvents': return $9.ListOrderEventsRequest();
       case 'ReconcilePayments': return $9.ReconcilePaymentsRequest();
       case 'RunEndOfDayLedger': return $9.RunEndOfDayLedgerRequest();
       case 'CreateFulfilment': return $9.CreateFulfilmentRequest();
       case 'UpdateFulfilment': return $9.UpdateFulfilmentRequest();
       case 'GetFulfilment': return $9.GetFulfilmentRequest();
+      case 'ListFulfilments': return $9.ListFulfilmentsRequest();
       case 'PriceListSave': return $9.PriceListSaveRequest();
       case 'PriceListGet': return $9.PriceListGetRequest();
       case 'PriceListSearch': return $9.PriceListSearchRequest();
@@ -97,6 +108,7 @@ abstract class CommerceServiceBase extends $pb.GeneratedService {
       case 'CustomerPriceOverrideSearch': return $9.CustomerPriceOverrideSearchRequest();
       case 'DiscountRuleSave': return $9.DiscountRuleSaveRequest();
       case 'DiscountRuleSearch': return $9.DiscountRuleSearchRequest();
+      case 'DiscountRuleApprove': return $9.DiscountRuleApproveRequest();
       case 'ResolvePrice': return $9.ResolvePriceRequest();
       default: throw $core.ArgumentError('Unknown method: $methodName');
     }
@@ -108,11 +120,13 @@ abstract class CommerceServiceBase extends $pb.GeneratedService {
       case 'GetShop': return this.getShop(ctx, request as $9.GetShopRequest);
       case 'UpdateShop': return this.updateShop(ctx, request as $9.UpdateShopRequest);
       case 'ListShops': return this.listShops(ctx, request as $9.ListShopsRequest);
+      case 'ResolveDefaultCurrency': return this.resolveDefaultCurrency(ctx, request as $9.ResolveDefaultCurrencyRequest);
       case 'CreateProduct': return this.createProduct(ctx, request as $9.CreateProductRequest);
       case 'GetProduct': return this.getProduct(ctx, request as $9.GetProductRequest);
       case 'ListProducts': return this.listProducts(ctx, request as $9.ListProductsRequest);
       case 'CreateProductVariant': return this.createProductVariant(ctx, request as $9.CreateProductVariantRequest);
       case 'UpdateProductVariant': return this.updateProductVariant(ctx, request as $9.UpdateProductVariantRequest);
+      case 'UpdateProduct': return this.updateProduct(ctx, request as $9.UpdateProductRequest);
       case 'ListProductVariants': return this.listProductVariants(ctx, request as $9.ListProductVariantsRequest);
       case 'CreateCart': return this.createCart(ctx, request as $9.CreateCartRequest);
       case 'GetCart': return this.getCart(ctx, request as $9.GetCartRequest);
@@ -125,11 +139,14 @@ abstract class CommerceServiceBase extends $pb.GeneratedService {
       case 'CheckoutOrder': return this.checkoutOrder(ctx, request as $9.CheckoutOrderRequest);
       case 'ConfirmOrderPayment': return this.confirmOrderPayment(ctx, request as $9.ConfirmOrderPaymentRequest);
       case 'CancelOrder': return this.cancelOrder(ctx, request as $9.CancelOrderRequest);
+      case 'RecordOrderPayment': return this.recordOrderPayment(ctx, request as $9.RecordOrderPaymentRequest);
+      case 'ListOrderEvents': return this.listOrderEvents(ctx, request as $9.ListOrderEventsRequest);
       case 'ReconcilePayments': return this.reconcilePayments(ctx, request as $9.ReconcilePaymentsRequest);
       case 'RunEndOfDayLedger': return this.runEndOfDayLedger(ctx, request as $9.RunEndOfDayLedgerRequest);
       case 'CreateFulfilment': return this.createFulfilment(ctx, request as $9.CreateFulfilmentRequest);
       case 'UpdateFulfilment': return this.updateFulfilment(ctx, request as $9.UpdateFulfilmentRequest);
       case 'GetFulfilment': return this.getFulfilment(ctx, request as $9.GetFulfilmentRequest);
+      case 'ListFulfilments': return this.listFulfilments(ctx, request as $9.ListFulfilmentsRequest);
       case 'PriceListSave': return this.priceListSave(ctx, request as $9.PriceListSaveRequest);
       case 'PriceListGet': return this.priceListGet(ctx, request as $9.PriceListGetRequest);
       case 'PriceListSearch': return this.priceListSearch(ctx, request as $9.PriceListSearchRequest);
@@ -140,6 +157,7 @@ abstract class CommerceServiceBase extends $pb.GeneratedService {
       case 'CustomerPriceOverrideSearch': return this.customerPriceOverrideSearch(ctx, request as $9.CustomerPriceOverrideSearchRequest);
       case 'DiscountRuleSave': return this.discountRuleSave(ctx, request as $9.DiscountRuleSaveRequest);
       case 'DiscountRuleSearch': return this.discountRuleSearch(ctx, request as $9.DiscountRuleSearchRequest);
+      case 'DiscountRuleApprove': return this.discountRuleApprove(ctx, request as $9.DiscountRuleApproveRequest);
       case 'ResolvePrice': return this.resolvePrice(ctx, request as $9.ResolvePriceRequest);
       default: throw $core.ArgumentError('Unknown method: $methodName');
     }

@@ -60,7 +60,7 @@ func (bts *BusinessTestSuite) TestCheckoutOrder_CreatesSessionOnceAndNotifies() 
 		_, variant := bts.createTestProductWithVariant(ctx, biz, shop.GetId())
 		order := bts.buyerOrder(ctx, biz, shop.GetId(), variant.GetId(), "buyer-1", 2)
 
-		first, err := biz.paymentBiz.CheckoutOrder(ctx, &commercev1.CheckoutOrderRequest{OrderId: order.GetId()})
+		first, err := checkoutOrder(ctx, biz.paymentBiz, &commercev1.CheckoutOrderRequest{OrderId: order.GetId()})
 		require.NoError(t, err)
 		require.NotEmpty(t, first.GetPaymentSessionRef())
 		require.Contains(t, first.GetCheckoutUrl(), first.GetPaymentSessionRef())
@@ -75,14 +75,14 @@ func (bts *BusinessTestSuite) TestCheckoutOrder_CreatesSessionOnceAndNotifies() 
 		require.Equal(t, 1, biz.notifier.count("placed", order.GetId()))
 
 		// A reload reuses the live session instead of creating another.
-		again, err := biz.paymentBiz.CheckoutOrder(ctx, &commercev1.CheckoutOrderRequest{OrderId: order.GetId()})
+		again, err := checkoutOrder(ctx, biz.paymentBiz, &commercev1.CheckoutOrderRequest{OrderId: order.GetId()})
 		require.NoError(t, err)
 		require.Equal(t, first.GetPaymentSessionRef(), again.GetPaymentSessionRef())
 		require.Equal(t, 1, biz.checkout.createdSessions())
 
 		// An expired session is replaced.
 		biz.checkout.expire(first.GetPaymentSessionRef())
-		replaced, err := biz.paymentBiz.CheckoutOrder(ctx, &commercev1.CheckoutOrderRequest{OrderId: order.GetId()})
+		replaced, err := checkoutOrder(ctx, biz.paymentBiz, &commercev1.CheckoutOrderRequest{OrderId: order.GetId()})
 		require.NoError(t, err)
 		require.NotEqual(t, first.GetPaymentSessionRef(), replaced.GetPaymentSessionRef())
 		require.Equal(t, 2, biz.checkout.createdSessions())
@@ -103,7 +103,7 @@ func (bts *BusinessTestSuite) TestCheckoutOrder_CreatesSessionOnceAndNotifies() 
 		require.Equal(t, 1, biz.notifier.count("paid", order.GetId()))
 
 		// A paid order cannot be checked out again.
-		_, err = biz.paymentBiz.CheckoutOrder(ctx, &commercev1.CheckoutOrderRequest{OrderId: order.GetId()})
+		_, err = checkoutOrder(ctx, biz.paymentBiz, &commercev1.CheckoutOrderRequest{OrderId: order.GetId()})
 		require.Equal(t, connect.CodeFailedPrecondition, connect.CodeOf(err))
 	})
 }
@@ -119,7 +119,7 @@ func (bts *BusinessTestSuite) TestCheckoutOrder_GatewayFailureLeavesOrderUntouch
 		order := bts.buyerOrder(ctx, biz, shop.GetId(), variant.GetId(), "buyer-2", 1)
 
 		biz.checkout.failNext = errors.New("rail down")
-		_, err := biz.paymentBiz.CheckoutOrder(ctx, &commercev1.CheckoutOrderRequest{OrderId: order.GetId()})
+		_, err := checkoutOrder(ctx, biz.paymentBiz, &commercev1.CheckoutOrderRequest{OrderId: order.GetId()})
 		require.Equal(t, connect.CodeUnavailable, connect.CodeOf(err))
 
 		reloaded, err := biz.orderBiz.GetOrder(ctx, order.GetId())
@@ -190,8 +190,7 @@ func (bts *BusinessTestSuite) TestReconcilePayments_SettlesAndExpires() {
 
 		// Paid at the rail but never confirmed by the buyer's browser.
 		silentlyPaid := bts.buyerOrder(ctx, biz, shop.GetId(), variant.GetId(), "buyer-4", 2)
-		checked, err := biz.paymentBiz.CheckoutOrder(
-			ctx,
+		checked, err := checkoutOrder(ctx, biz.paymentBiz,
 			&commercev1.CheckoutOrderRequest{OrderId: silentlyPaid.GetId()},
 		)
 		require.NoError(t, err)

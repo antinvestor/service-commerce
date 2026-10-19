@@ -5,7 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../providers/order_providers.dart';
+import '../widgets/fulfilment_panel.dart';
 import '../widgets/fulfilment_status_badge.dart';
+import '../widgets/order_event_timeline.dart';
 import '../widgets/order_line_tile.dart';
 import '../widgets/order_payment_panel.dart';
 import '../widgets/order_status_badge.dart';
@@ -32,19 +34,23 @@ class OrderDetailScreen extends ConsumerWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.error_outline,
-                  size: 48, color: theme.colorScheme.error),
+              Icon(
+                Icons.error_outline,
+                size: 48,
+                color: theme.colorScheme.error,
+              ),
               const SizedBox(height: 16),
-              Text('Failed to load order',
-                  style: theme.textTheme.titleMedium),
+              Text('Failed to load order', style: theme.textTheme.titleMedium),
               const SizedBox(height: 8),
-              Text(friendlyError(error),
-                  style: theme.textTheme.bodySmall
-                      ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+              Text(
+                friendlyError(error),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
               const SizedBox(height: 16),
               OutlinedButton.icon(
-                onPressed: () =>
-                    ref.invalidate(orderByIdProvider(orderId)),
+                onPressed: () => ref.invalidate(orderByIdProvider(orderId)),
                 icon: const Icon(Icons.refresh, size: 18),
                 label: const Text('Retry'),
               ),
@@ -64,8 +70,11 @@ class OrderDetailScreen extends ConsumerWidget {
                     onPressed: () => context.go('/orders'),
                   ),
                   const SizedBox(width: 8),
-                  Icon(Icons.receipt_long_outlined,
-                      size: 28, color: theme.colorScheme.primary),
+                  Icon(
+                    Icons.receipt_long_outlined,
+                    size: 28,
+                    color: theme.colorScheme.primary,
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
@@ -75,21 +84,23 @@ class OrderDetailScreen extends ConsumerWidget {
                           order.orderNumber.isNotEmpty
                               ? 'Order #${order.orderNumber}'
                               : 'Order',
-                          style: theme.textTheme.headlineSmall
-                              ?.copyWith(fontWeight: FontWeight.w600),
+                          style: theme.textTheme.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
-                        Text(order.id,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
-                                fontFamily: 'monospace')),
+                        Text(
+                          order.id,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                            fontFamily: 'monospace',
+                          ),
+                        ),
                       ],
                     ),
                   ),
                   FilledButton.tonalIcon(
-                    onPressed: () =>
-                        context.go('/orders/$orderId/fulfilment'),
-                    icon: const Icon(Icons.local_shipping_outlined,
-                        size: 18),
+                    onPressed: () => context.go('/orders/$orderId/fulfilment'),
+                    icon: const Icon(Icons.local_shipping_outlined, size: 18),
                     label: const Text('Fulfilment'),
                   ),
                 ],
@@ -123,6 +134,14 @@ class OrderDetailScreen extends ConsumerWidget {
                 label: 'Total',
                 child: AmountDisplay(amount: order.total),
               ),
+              if (order.hasBalance())
+                _DetailRow(
+                  label: 'Balance',
+                  child: AmountDisplay(
+                    amount: order.balance,
+                    placeholder: 'Nothing owed',
+                  ),
+                ),
               const SizedBox(height: 20),
 
               // Payment and lifecycle actions
@@ -130,27 +149,40 @@ class OrderDetailScreen extends ConsumerWidget {
               const SizedBox(height: 20),
 
               // Order lines
-              Text('Order Lines',
-                  style: theme.textTheme.titleSmall
-                      ?.copyWith(fontWeight: FontWeight.w600)),
+              Text(
+                'Order Lines',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
               const SizedBox(height: 8),
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
-                  border:
-                      Border.all(color: theme.colorScheme.outlineVariant),
+                  border: Border.all(color: theme.colorScheme.outlineVariant),
                 ),
                 child: order.lines.isEmpty
-                    ? Text('No lines',
+                    ? Text(
+                        'No lines',
                         style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant))
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      )
                     : Column(
                         children: order.lines
                             .map((line) => OrderLineTile(line: line))
                             .toList(),
                       ),
               ),
+              const SizedBox(height: 20),
+
+              // Fulfilments with status/carrier/tracking updates
+              OrderFulfilmentsPanel(orderId: order.id),
+              const SizedBox(height: 20),
+
+              // Payment and lifecycle signals
+              OrderEventsSection(orderId: order.id),
             ],
           ),
         ),
@@ -176,15 +208,22 @@ class _DetailRow extends StatelessWidget {
         children: [
           SizedBox(
             width: 110,
-            child: Text(label,
-                style: theme.textTheme.bodySmall
-                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+            child: Text(
+              label,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
           ),
           Expanded(
-            child: child ??
-                Text(value ?? '',
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(fontWeight: FontWeight.w500)),
+            child:
+                child ??
+                Text(
+                  value ?? '',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
           ),
         ],
       ),

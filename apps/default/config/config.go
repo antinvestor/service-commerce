@@ -37,6 +37,20 @@ type CommerceConfig struct {
 	TrustageServiceURI                       string `env:"TRUSTAGE_SERVICE_URI"                          envDefault:""`
 	TrustageServiceWorkloadAPITargetPath     string `env:"TRUSTAGE_SERVICE_WORKLOAD_API_TARGET_PATH"     envDefault:"/ns/trustage/sa/service-trustage"`
 
+	// Where a caller's default currency comes from: their "currency" setting,
+	// their device locale, then their profile address. Each is optional.
+	SettingsServiceURI                   string `env:"SETTINGS_SERVICE_URI"                      envDefault:""`
+	SettingsServiceWorkloadAPITargetPath string `env:"SETTINGS_SERVICE_WORKLOAD_API_TARGET_PATH" envDefault:"/ns/profile/sa/service-settings"`
+	DeviceServiceURI                     string `env:"DEVICE_SERVICE_URI"                        envDefault:""`
+	DeviceServiceWorkloadAPITargetPath   string `env:"DEVICE_SERVICE_WORKLOAD_API_TARGET_PATH"   envDefault:"/ns/profile/sa/service-devices"`
+	ProfileServiceURI                    string `env:"PROFILE_SERVICE_URI"                       envDefault:""`
+	ProfileServiceWorkloadAPITargetPath  string `env:"PROFILE_SERVICE_WORKLOAD_API_TARGET_PATH"  envDefault:"/ns/profile/sa/service-profile"`
+
+	// WebhookSecretKey seals shop webhook secrets at rest: base64 of 32
+	// random bytes (AES-256-GCM). Keep it in the secret store; rotating it
+	// requires shops to set their webhook secrets again.
+	WebhookSecretKey string `env:"WEBHOOK_SECRET_KEY" envDefault:""`
+
 	// Checkout policy.
 	// CheckoutReturnURL is where the hosted payment page sends buyers when a
 	// shop has not configured its own. {order_id} is substituted.
@@ -61,9 +75,6 @@ type CommerceConfig struct {
 	// when a shop has no timezone of its own.
 	LedgerTimezone string `env:"LEDGER_TIMEZONE" envDefault:"Africa/Nairobi"`
 
-	// WorkflowsPath holds the trustage workflow DSL files synced by the
-	// setup job.
-	WorkflowsPath string `env:"WORKFLOWS_PATH" envDefault:"./workflows"`
 	// CommerceServiceURI is the address trustage calls back into for
 	// scheduled runs; substituted into the workflow DSL as env.commerce_uri.
 	CommerceServiceURI string `env:"COMMERCE_SERVICE_URI" envDefault:""`

@@ -28,6 +28,7 @@ import (
 
 	"github.com/antinvestor/service-commerce/apps/default/service/business"
 	"github.com/antinvestor/service-commerce/apps/default/service/models"
+	commercev1 "github.com/antinvestor/service-commerce/gen/go/commerce/v1"
 )
 
 // The payment, ledger, and notification services are peers owned by other
@@ -270,6 +271,20 @@ func (r *recordingNotifier) LedgerDayPosted(_ context.Context, _ *models.Shop, _
 	r.record("ledger", nil)
 }
 
+func (r *recordingNotifier) InstalmentReceived(
+	_ context.Context, _ *models.Shop, o *models.Order, _ *models.OrderPayment,
+) {
+	r.record("instalment", o)
+}
+
+func (r *recordingNotifier) PaymentThresholdReached(_ context.Context, _ *models.Shop, o *models.Order, _ int32) {
+	r.record("threshold", o)
+}
+
+func (r *recordingNotifier) BalanceOverdue(_ context.Context, _ *models.Shop, o *models.Order) {
+	r.record("overdue", o)
+}
+
 func (r *recordingNotifier) count(kind string, orderID string) int {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -280,4 +295,50 @@ func (r *recordingNotifier) count(kind string, orderID string) int {
 		}
 	}
 	return n
+}
+
+// fakeWebhooks records webhook deliveries and fails while failing is set.
+type fakeWebhooks struct {
+	mu        sync.Mutex
+	failing   bool
+	delivered []business.WebhookDelivery
+}
+
+func (f *fakeWebhooks) Send(_ context.Context, delivery business.WebhookDelivery) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if f.failing {
+		return errors.New("receiver unavailable")
+	}
+	f.delivered = append(f.delivered, delivery)
+	return nil
+}
+
+func (f *fakeWebhooks) setFailing(failing bool) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.failing = failing
+}
+
+func (f *fakeWebhooks) events() []string {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	types := make([]string, 0, len(f.delivered))
+	for _, d := range f.delivered {
+		types = append(types, d.EventType)
+	}
+	return types
+}
+
+// checkoutOrder is CheckoutOrder for tests that only need the order.
+func checkoutOrder(
+	ctx context.Context,
+	payments business.PaymentBusiness,
+	req *commercev1.CheckoutOrderRequest,
+) (*commercev1.Order, error) {
+	result, err := payments.CheckoutOrder(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return result.Order, nil
 }

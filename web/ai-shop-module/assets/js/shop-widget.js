@@ -87,9 +87,14 @@
           lines: lines,
         });
       },
-      checkoutOrder: function (orderId, returnUrl) {
+      getOrder: function (id) {
+        return commerce("GetOrder", { id: id });
+      },
+      // amount is optional: omitted, the checkout charges the whole balance.
+      checkoutOrder: function (orderId, returnUrl, amount) {
         var body = { orderId: orderId };
         if (returnUrl) body.returnUrl = returnUrl;
+        if (amount) body.amount = amount;
         return commerce("CheckoutOrder", body);
       },
       createOrderFromCart: function (cartId, profileId, addressId) {
@@ -168,6 +173,11 @@
         error: null,
         toastMessage: null,
         toastType: "error",
+        // Order being paid (pay screen) or shown after checkout (order screen).
+        order: null,
+        payMode: "full",
+        payAmountInput: "",
+        payError: null,
       },
       initial || {}
     );
@@ -177,6 +187,11 @@
     return {
       get: function () {
         return state;
+      },
+      // patch updates state without re-rendering, for values typed into
+      // inputs that a re-render would otherwise wipe.
+      patch: function (partial) {
+        state = Object.assign({}, state, partial);
       },
       setState: function (partial) {
         state = Object.assign({}, state, partial);
@@ -204,27 +219,189 @@
   var FULFILMENT_TYPE_DIGITAL = 2;
   var FULFILMENT_TYPE_NONE = 3;
 
-  function formatMoney(moneyObj) {
-    if (!moneyObj) return "";
-    var units = parseInt(moneyObj.units || "0", 10);
-    var nanos = parseInt(moneyObj.nanos || "0", 10);
-    var amount = units + nanos / 1e9;
-    var currency = moneyObj.currencyCode || "";
+  // --- Money ---
+  // Money travels as {currencyCode, units: "int64 string", nanos: int}.
+  // Arithmetic is done in integer minor units (cents for most currencies)
+  // so totals never accumulate floating-point error.
+
+  var POW10 = [1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000];
+
+  // currencyDigits returns how many minor-unit digits a currency uses
+  // (2 for USD/KES, 0 for JPY, 3 for KWD), defaulting to 2.
+  function currencyDigits(currency) {
+    if (!currency) return 2;
+    try {
+      var d = new Intl.NumberFormat("en", { style: "currency", currency: currency })
+        .resolvedOptions().maximumFractionDigits;
+      return d >= 0 && d <= 9 ? d : 2;
+    } catch (e) {
+      return 2;
+    }
+  }
+
+  // moneyToMinor converts a Money to an integer count of minor units,
+  // rounding up any sub-minor remainder so a limit is never undershot.
+  function moneyToMinor(moneyObj, digits) {
+    if (!moneyObj) return 0;
+    if (digits === undefined) digits = currencyDigits(moneyObj.currencyCode);
+    var units = parseInt(moneyObj.units || "0", 10) || 0;
+    var nanos = parseInt(moneyObj.nanos || "0", 10) || 0;
+    var step = POW10[9 - digits];
+    var frac = nanos / step;
+    frac = nanos >= 0 ? Math.ceil(frac) : Math.floor(frac);
+    return units * POW10[digits] + frac;
+  }
+
+  // minorToMoney converts integer minor units back to a Money message.
+  function minorToMoney(minor, currency, digits) {
+    if (digits === undefined) digits = currencyDigits(currency);
+    var scale = POW10[digits];
+    var rem = minor % scale; // keeps the sign of minor, as Money requires
+    var units = (minor - rem) / scale;
+    return {
+      currencyCode: currency || "",
+      units: String(units),
+      nanos: rem * POW10[9 - digits],
+    };
+  }
+
+  // minorToDecimal renders minor units as a plain decimal string ("1234.50").
+  function minorToDecimal(minor, digits) {
+    var neg = minor < 0;
+    var abs = String(Math.abs(minor));
+    if (digits > 0) {
+      while (abs.length <= digits) abs = "0" + abs;
+      abs = abs.slice(0, abs.length - digits) + "." + abs.slice(abs.length - digits);
+    }
+    return (neg ? "-" : "") + abs;
+  }
+
+  // parseDecimalToMinor parses user input like "1,234.5" into minor units,
+  // returning null when it is not a valid non-negative amount.
+  function parseDecimalToMinor(str, digits) {
+    if (str === null || str === undefined) return null;
+    var clean = String(str).replace(/[\s,]/g, "");
+    var m = /^(\d*)(?:\.(\d*))?$/.exec(clean);
+    if (!m || (!m[1] && !m[2])) return null;
+    var frac = m[2] || "";
+    if (frac.length > digits) return null;
+    while (frac.length < digits) frac += "0";
+    return parseInt(m[1] || "0", 10) * POW10[digits] + (digits ? parseInt(frac, 10) : 0);
+  }
+
+  function formatMinor(minor, currency, digits) {
+    if (digits === undefined) digits = currencyDigits(currency);
     try {
       return new Intl.NumberFormat(undefined, {
         style: "currency",
         currency: currency,
-      }).format(amount);
+        minimumFractionDigits: digits,
+        maximumFractionDigits: digits,
+      }).format(minor / POW10[digits]);
     } catch (e) {
-      return currency + " " + amount.toFixed(2);
+      return (currency ? currency + " " : "") + minorToDecimal(minor, digits);
     }
   }
 
-  function moneyToDecimal(moneyObj) {
-    if (!moneyObj) return "0.00";
-    var units = parseInt(moneyObj.units || "0", 10);
-    var nanos = parseInt(moneyObj.nanos || "0", 10);
-    return (units + nanos / 1e9).toFixed(2);
+  function formatMoney(moneyObj) {
+    if (!moneyObj) return "";
+    var currency = moneyObj.currencyCode || "";
+    var digits = currencyDigits(currency);
+    return formatMinor(moneyToMinor(moneyObj, digits), currency, digits);
+  }
+
+  // ceilPercent returns ceil(minor * percent / 100) using integers only.
+  function ceilPercent(minor, percent) {
+    var p = minor * percent;
+    var q = (p - (p % 100)) / 100;
+    return p % 100 > 0 ? q + 1 : q;
+  }
+
+  // --- Payment policy ---
+
+  var PAYMENT_STATUS = {
+    0: "PAYMENT_STATUS_UNSPECIFIED",
+    1: "PAYMENT_STATUS_PENDING",
+    2: "PAYMENT_STATUS_PAID",
+    3: "PAYMENT_STATUS_FAILED",
+    4: "PAYMENT_STATUS_REFUNDED",
+    5: "PAYMENT_STATUS_EXPIRED",
+    6: "PAYMENT_STATUS_PARTIALLY_PAID",
+  };
+
+  function paymentStatusOf(order) {
+    var ps = order && order.paymentStatus;
+    if (ps === undefined || ps === null) return "PAYMENT_STATUS_UNSPECIFIED";
+    if (typeof ps === "number" || /^\d+$/.test(ps)) {
+      return PAYMENT_STATUS[parseInt(ps, 10)] || "PAYMENT_STATUS_UNSPECIFIED";
+    }
+    return ps;
+  }
+
+  // orderPaymentState derives what the buyer can pay on an order, all in
+  // integer minor units. minMinor is the smallest instalment the policy
+  // accepts right now (deposit if nothing is paid yet, else instalment);
+  // any amount from minMinor up to balanceMinor is valid, and the whole
+  // balance always is.
+  function orderPaymentState(order) {
+    var total = (order && order.total) || {};
+    var currency = total.currencyCode ||
+      (order && order.balance && order.balance.currencyCode) || "";
+    var digits = currencyDigits(currency);
+    var totalMinor = moneyToMinor(total, digits);
+    var paidMinor = moneyToMinor(order && order.amountPaid, digits);
+    var balanceMinor = order && order.balance
+      ? moneyToMinor(order.balance, digits)
+      : Math.max(0, totalMinor - paidMinor);
+    var policy = (order && order.paymentPolicy) || {};
+    var percent = paidMinor > 0
+      ? parseInt(policy.minInstalmentPercent || 0, 10) || 0
+      : parseInt(policy.minDepositPercent || 0, 10) || 0;
+    var minMinor = Math.max(1, ceilPercent(totalMinor, percent));
+    if (minMinor > balanceMinor) minMinor = balanceMinor;
+    return {
+      currency: currency,
+      digits: digits,
+      totalMinor: totalMinor,
+      paidMinor: paidMinor,
+      balanceMinor: balanceMinor,
+      minMinor: minMinor,
+      minPercent: percent,
+      isDeposit: paidMinor === 0,
+      // A part payment only makes sense when the minimum is below the balance.
+      allowInstalments: !!policy.allowInstalments && balanceMinor > 0 && minMinor < balanceMinor,
+      balanceDueAt: (order && order.balanceDueAt) || "",
+    };
+  }
+
+  // validateInstalment checks a typed amount against the payment state.
+  // Returns {minor} on success or {error} with a buyer-facing message.
+  function validateInstalment(input, ps) {
+    var minor = parseDecimalToMinor(input, ps.digits);
+    if (minor === null || minor <= 0) {
+      return { error: "Enter a valid amount" };
+    }
+    if (minor > ps.balanceMinor) {
+      return { error: "Amount cannot exceed the balance of " + formatMinor(ps.balanceMinor, ps.currency, ps.digits) };
+    }
+    if (minor < ps.minMinor) {
+      return {
+        error: "Minimum " + (ps.isDeposit ? "deposit" : "instalment") + " is " +
+          formatMinor(ps.minMinor, ps.currency, ps.digits),
+      };
+    }
+    return { minor: minor };
+  }
+
+  function formatDate(ts) {
+    if (!ts) return "";
+    var d = new Date(ts);
+    if (isNaN(d.getTime())) return "";
+    try {
+      return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+    } catch (e) {
+      return d.toDateString();
+    }
   }
 
   function parseJwtSub(token) {
@@ -278,29 +455,86 @@
     var mediaBase = config.mediaBaseUrl;
     var paymentUrl = config.paymentUrl;
 
-    // startPayment sends the buyer to the hosted checkout page for the order.
-    // The commerce service creates the checkout session and returns its URL;
-    // a legacy paymentUrl is only used when no hosted checkout is configured.
+    // returnUrlFor is where the hosted checkout sends the buyer back to: the
+    // configured paymentUrl, else this page, tagged with the order id so the
+    // widget can show the order's payment status on return.
+    function returnUrlFor(order) {
+      var base = paymentUrl || (typeof window !== "undefined" ? window.location.href : "");
+      if (!base) return undefined;
+      try {
+        var u = new URL(base, window.location.href);
+        u.searchParams.set("order_id", order.id);
+        return u.toString();
+      } catch (e) {
+        return base;
+      }
+    }
+
+    function orderIdFromUrl() {
+      try {
+        return new URLSearchParams(window.location.search).get("order_id") || "";
+      } catch (e) {
+        return "";
+      }
+    }
+
+    function clearOrderIdFromUrl() {
+      try {
+        var u = new URL(window.location.href);
+        if (!u.searchParams.has("order_id")) return;
+        u.searchParams.delete("order_id");
+        window.history.replaceState(null, "", u.toString());
+      } catch (e) {
+        /* ignore */
+      }
+    }
+
+    // startPayment continues from a freshly placed order. When the order's
+    // policy allows instalments the buyer chooses how much to pay now;
+    // otherwise they go straight to the hosted checkout for the full amount.
     function startPayment(order) {
       if (!order) {
         showToast("Order placed successfully!", "success");
         dispatch("INIT");
         return null;
       }
+      var ps = orderPaymentState(order);
+      if (ps.allowInstalments) {
+        openPayScreen(order);
+        return null;
+      }
+      return redirectToCheckout(order, null);
+    }
+
+    function openPayScreen(order) {
+      var ps = orderPaymentState(order);
+      store.setState({
+        order: order,
+        screen: "pay",
+        payMode: "full",
+        payAmountInput: minorToDecimal(ps.minPercent > 0 ? ps.minMinor : ps.balanceMinor, ps.digits),
+        payError: null,
+      });
+    }
+
+    // redirectToCheckout creates the hosted checkout session for amount
+    // (a Money, or null for the whole balance) and sends the buyer to it.
+    function redirectToCheckout(order, amount) {
+      store.setState({ screen: "loading" });
       return api
-        .checkoutOrder(order.id, paymentUrl || undefined)
+        .checkoutOrder(order.id, returnUrlFor(order), amount || undefined)
         .then(function (r) {
           if (r.checkoutUrl) {
             window.location.href = r.checkoutUrl;
             return null;
           }
           showToast("Order " + (order.orderNumber || "") + " placed. Payment is pending.", "success");
-          dispatch("INIT");
+          store.setState({ order: r.order || order, screen: "order" });
           return null;
         })
-        .catch(function () {
-          showToast("Order placed. Complete payment from your order page.", "success");
-          dispatch("INIT");
+        .catch(function (err) {
+          showToast(err.message || "Could not start payment. Try again from your order.");
+          store.setState({ order: order, screen: "order" });
         });
     }
 
@@ -347,19 +581,16 @@
 
     function computeCartTotal() {
       var items = store.get().cartItems;
-      var totalUnits = 0;
-      var totalNanos = 0;
       var currency = "";
       items.forEach(function (item) {
-        if (item.price) {
-          currency = item.price.currencyCode || currency;
-          totalUnits += (parseInt(item.price.units || "0", 10)) * item.quantity;
-          totalNanos += (parseInt(item.price.nanos || "0", 10)) * item.quantity;
-        }
+        if (item.price && item.price.currencyCode) currency = currency || item.price.currencyCode;
       });
-      totalUnits += Math.floor(totalNanos / 1e9);
-      totalNanos = totalNanos % 1e9;
-      return { currencyCode: currency, units: String(totalUnits), nanos: String(totalNanos) };
+      var digits = currencyDigits(currency);
+      var totalMinor = 0;
+      items.forEach(function (item) {
+        if (item.price) totalMinor += moneyToMinor(item.price, digits) * item.quantity;
+      });
+      return minorToMoney(totalMinor, currency, digits);
     }
 
     var dispatch = function (action, payload) {
@@ -367,6 +598,11 @@
 
       switch (action) {
         case "INIT":
+          var returnedOrderId = orderIdFromUrl();
+          if (returnedOrderId && !payload) {
+            dispatch("LOAD_ORDER", { orderId: returnedOrderId });
+            break;
+          }
           var productIdStr = config.productIds || "";
           var productIds = productIdStr
             .split(",")
@@ -661,15 +897,21 @@
           break;
 
         case "IMMEDIATE_ORDER":
+          // Buy now goes through a dedicated cart so it uses the buyer's
+          // order path (CreateOrder is staff-only) without touching the
+          // shopping cart the buyer may already have.
           if (!s.selectedVariant || !s.selectedProduct) return;
+          var buyVariant = s.selectedVariant;
+          var buyQty = s.quantity;
           store.setState({ screen: "loading" });
           api
-            .createOrder(shopId, profileId, [
-              {
-                variantId: s.selectedVariant.id,
-                quantity: s.quantity,
-              },
-            ])
+            .createCart(shopId, profileId)
+            .then(function (r) {
+              return api.addCartLine(r.cart.id, buyVariant.id, buyQty);
+            })
+            .then(function (r) {
+              return api.createOrderFromCart(r.cart.id, profileId);
+            })
             .then(function (r) {
               return startPayment(r.order);
             })
@@ -677,6 +919,69 @@
               store.setState({ screen: "detail" });
               showToast(err.message || "Failed to place order");
             });
+          break;
+
+        case "LOAD_ORDER":
+          store.setState({ screen: "loading" });
+          api
+            .getOrder(payload.orderId)
+            .then(function (r) {
+              if (!r.order) throw new Error("Order not found");
+              store.setState({ order: r.order, screen: "order" });
+            })
+            .catch(function (err) {
+              store.setState({
+                screen: "error",
+                error: err.message || "Failed to load order",
+              });
+            });
+          break;
+
+        case "REFRESH_ORDER":
+          if (!s.order) return;
+          dispatch("LOAD_ORDER", { orderId: s.order.id });
+          break;
+
+        case "PAY_ORDER":
+          // From the order status card: pay the next instalment or the rest.
+          if (!s.order) return;
+          if (orderPaymentState(s.order).allowInstalments) {
+            openPayScreen(s.order);
+          } else {
+            redirectToCheckout(s.order, null);
+          }
+          break;
+
+        case "SET_PAY_MODE":
+          store.setState({
+            payMode: payload.mode === "part" ? "part" : "full",
+            payError: null,
+          });
+          break;
+
+        case "SUBMIT_PAYMENT":
+          if (!s.order) return;
+          if (s.payMode !== "part") {
+            redirectToCheckout(s.order, null);
+            break;
+          }
+          var pstate = orderPaymentState(s.order);
+          var checked = validateInstalment(s.payAmountInput, pstate);
+          if (checked.error) {
+            store.setState({ payError: checked.error });
+            return;
+          }
+          // Paying the whole balance needs no amount; the server charges it.
+          var payAmount = checked.minor === pstate.balanceMinor
+            ? null
+            : minorToMoney(checked.minor, pstate.currency, pstate.digits);
+          redirectToCheckout(s.order, payAmount);
+          break;
+
+        case "CONTINUE_SHOPPING":
+          clearOrderIdFromUrl();
+          store.setState({ order: null, payError: null });
+          dispatch("INIT", { fresh: true });
           break;
 
         case "BACK_TO_GRID":
@@ -721,6 +1026,12 @@
           break;
         case "checkout":
           html = renderCheckout(s);
+          break;
+        case "pay":
+          html = renderPay(s);
+          break;
+        case "order":
+          html = renderOrderStatus(s);
           break;
         case "error":
           html = renderError(s);
@@ -1144,6 +1455,136 @@
       return html;
     }
 
+    // renderPaymentSummary lists total, paid, balance and the balance deadline.
+    function renderPaymentSummary(order, ps) {
+      function row(label, minor, cls) {
+        return (
+          '<div class="ai-shop-order-summary-item' + (cls ? " " + cls : "") + '">' +
+          "<span>" + label + "</span>" +
+          "<span>" + escapeHtml(formatMinor(minor, ps.currency, ps.digits)) + "</span>" +
+          "</div>"
+        );
+      }
+      var html = row("Order total", ps.totalMinor);
+      html += row("Paid", ps.paidMinor);
+      html +=
+        '<div class="ai-shop-order-summary-total">' +
+        "<span>Balance</span>" +
+        "<span>" + escapeHtml(formatMinor(ps.balanceMinor, ps.currency, ps.digits)) + "</span>" +
+        "</div>";
+      var due = formatDate(ps.balanceDueAt);
+      if (due && ps.balanceMinor > 0) {
+        html += '<div class="ai-shop-pay-due">Balance due by ' + escapeHtml(due) + "</div>";
+      }
+      return html;
+    }
+
+    function renderPay(s) {
+      var order = s.order;
+      if (!order) return renderError({ error: "Order not found" });
+      var ps = orderPaymentState(order);
+      var part = s.payMode === "part";
+
+      var html = '<div class="ai-shop-checkout">';
+      html +=
+        '<div class="ai-shop-checkout-header">' +
+        '<h2 class="ai-shop-checkout-title">Pay for order ' + escapeHtml(order.orderNumber || "") + "</h2>" +
+        "</div>";
+
+      html += '<div class="ai-shop-checkout-section">' + renderPaymentSummary(order, ps) + "</div>";
+
+      html += '<div class="ai-shop-checkout-section">';
+      html += '<h3 class="ai-shop-checkout-section-title">How much would you like to pay now?</h3>';
+      html += '<div class="ai-shop-address-list">';
+      html +=
+        '<div class="ai-shop-address-option' + (part ? "" : " ai-shop-address-option--selected") +
+        '" data-action="SET_PAY_MODE" data-payload=\'{"mode":"full"}\'>' +
+        '<input type="radio" class="ai-shop-address-radio" name="ai-shop-pay-mode"' + (part ? "" : " checked") + ">" +
+        '<div class="ai-shop-address-detail">' +
+        '<div class="ai-shop-address-name">Pay in full</div>' +
+        "<div>" + escapeHtml(formatMinor(ps.balanceMinor, ps.currency, ps.digits)) + "</div>" +
+        "</div></div>";
+      html +=
+        '<div class="ai-shop-address-option' + (part ? " ai-shop-address-option--selected" : "") +
+        '" data-action="SET_PAY_MODE" data-payload=\'{"mode":"part"}\'>' +
+        '<input type="radio" class="ai-shop-address-radio" name="ai-shop-pay-mode"' + (part ? " checked" : "") + ">" +
+        '<div class="ai-shop-address-detail">' +
+        '<div class="ai-shop-address-name">' + (ps.isDeposit ? "Pay a deposit" : "Pay an instalment") + "</div>" +
+        "<div>From " + escapeHtml(formatMinor(ps.minMinor, ps.currency, ps.digits)) +
+        (ps.minPercent > 0 ? " (" + ps.minPercent + "% of the total)" : "") +
+        "</div>" +
+        "</div></div>";
+      html += "</div>"; // list
+
+      if (part) {
+        html +=
+          '<div class="ai-shop-form-group ai-shop-pay-amount">' +
+          '<label class="ai-shop-form-label" for="ai-shop-pay-amount-input">Amount (' + escapeHtml(ps.currency) + ")</label>" +
+          '<input class="ai-shop-form-input' + (s.payError ? " ai-shop-form-input--error" : "") +
+          '" id="ai-shop-pay-amount-input" type="text" inputmode="decimal" autocomplete="off" data-field="payAmount" value="' +
+          escapeHtml(s.payAmountInput) + '">' +
+          '<span class="ai-shop-pay-hint">Between ' +
+          escapeHtml(formatMinor(ps.minMinor, ps.currency, ps.digits)) + " and " +
+          escapeHtml(formatMinor(ps.balanceMinor, ps.currency, ps.digits)) + "</span>" +
+          (s.payError ? '<span class="ai-shop-form-error">' + escapeHtml(s.payError) + "</span>" : "") +
+          "</div>";
+      }
+      html += "</div>"; // section
+
+      html +=
+        '<button class="ai-shop-btn ai-shop-btn--success ai-shop-btn--block" data-action="SUBMIT_PAYMENT">' +
+        "Continue to payment" +
+        "</button>";
+      html += "</div>";
+      return html;
+    }
+
+    var PAYMENT_STATUS_LABELS = {
+      PAYMENT_STATUS_PENDING: "Awaiting payment",
+      PAYMENT_STATUS_PAID: "Paid",
+      PAYMENT_STATUS_PARTIALLY_PAID: "Partially paid",
+      PAYMENT_STATUS_FAILED: "Payment failed",
+      PAYMENT_STATUS_REFUNDED: "Refunded",
+      PAYMENT_STATUS_EXPIRED: "Expired",
+    };
+
+    function renderOrderStatus(s) {
+      var order = s.order;
+      if (!order) return renderError({ error: "Order not found" });
+      var ps = orderPaymentState(order);
+      var status = paymentStatusOf(order);
+      var label = PAYMENT_STATUS_LABELS[status] || "Pending";
+      var cancelled = order.status === "ORDER_STATUS_CANCELLED" || order.status === 2;
+
+      var html = '<div class="ai-shop-checkout">';
+      html +=
+        '<div class="ai-shop-checkout-header">' +
+        '<h2 class="ai-shop-checkout-title">Order ' + escapeHtml(order.orderNumber || "") + "</h2>" +
+        '<span class="ai-shop-pay-status ai-shop-pay-status--' +
+        escapeHtml(status.replace("PAYMENT_STATUS_", "").toLowerCase()) + '">' +
+        escapeHtml(cancelled ? "Cancelled" : label) + "</span>" +
+        "</div>";
+
+      html += '<div class="ai-shop-checkout-section">' + renderPaymentSummary(order, ps) + "</div>";
+
+      if (!cancelled && ps.balanceMinor > 0 &&
+          (status === "PAYMENT_STATUS_PARTIALLY_PAID" || status === "PAYMENT_STATUS_PENDING" ||
+           status === "PAYMENT_STATUS_FAILED")) {
+        html +=
+          '<button class="ai-shop-btn ai-shop-btn--success ai-shop-btn--block" data-action="PAY_ORDER">' +
+          (status === "PAYMENT_STATUS_PARTIALLY_PAID" ? "Pay next instalment" : "Complete payment") +
+          "</button>";
+      }
+
+      html +=
+        '<div class="ai-shop-form-actions ai-shop-pay-actions">' +
+        '<button class="ai-shop-btn ai-shop-btn--outline ai-shop-btn--sm" data-action="REFRESH_ORDER">Refresh</button>' +
+        '<button class="ai-shop-btn ai-shop-btn--outline ai-shop-btn--sm" data-action="CONTINUE_SHOPPING">Continue shopping</button>' +
+        "</div>";
+      html += "</div>";
+      return html;
+    }
+
     function renderAddressForm(s) {
       var errs = s.addressErrors || {};
       var fields = [
@@ -1256,6 +1697,14 @@
       dispatch(action, payload);
     });
 
+    // Keep the typed instalment amount in state without re-rendering, so a
+    // later render (toast, mode switch) shows what the buyer typed.
+    rootEl.addEventListener("input", function (e) {
+      if (e.target && e.target.getAttribute("data-field") === "payAmount") {
+        store.patch({ payAmountInput: e.target.value, payError: null });
+      }
+    });
+
     // Subscribe to state changes
     store.subscribe(render);
 
@@ -1300,6 +1749,24 @@
     }
   }
 
+  // Pure helpers are exported under CommonJS so they can be exercised
+  // without a browser; in a page this branch is skipped.
+  if (typeof module === "object" && module.exports) {
+    module.exports = {
+      currencyDigits: currencyDigits,
+      moneyToMinor: moneyToMinor,
+      minorToMoney: minorToMoney,
+      minorToDecimal: minorToDecimal,
+      parseDecimalToMinor: parseDecimalToMinor,
+      formatMoney: formatMoney,
+      ceilPercent: ceilPercent,
+      orderPaymentState: orderPaymentState,
+      validateInstalment: validateInstalment,
+      paymentStatusOf: paymentStatusOf,
+    };
+  }
+
+  if (typeof document === "undefined") return;
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", boot);
   } else {

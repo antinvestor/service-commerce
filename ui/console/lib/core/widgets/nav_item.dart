@@ -32,13 +32,34 @@ class NavItem {
   bool get hasChildren => children.isNotEmpty;
 }
 
-/// Top-level nav items always visible in the sidebar.
+/// Top-level nav items shown in the sidebar.
+///
+/// The sidebar hides any item whose route is not served by the composed
+/// router (see `registeredRoutePathsProvider`), so an entry for a module
+/// that is not registered never leads to a "page not found".
 const List<NavItem> primaryNavItems = [
   NavItem(label: 'Dashboard', icon: Icons.dashboard_outlined, route: '/'),
   NavItem(
     label: 'Sales',
     icon: Icons.point_of_sale_outlined,
     route: '/orders',
+    children: [
+      NavItem(
+        label: 'Orders',
+        icon: Icons.receipt_long_outlined,
+        route: '/orders',
+      ),
+      NavItem(
+        label: 'New order',
+        icon: Icons.add_shopping_cart_outlined,
+        route: '/orders/checkout',
+      ),
+      NavItem(
+        label: 'Payment signals',
+        icon: Icons.notifications_active_outlined,
+        route: '/orders/events',
+      ),
+    ],
   ),
   NavItem(
     label: 'Production',
@@ -50,11 +71,7 @@ const List<NavItem> primaryNavItems = [
     icon: Icons.inventory_2_outlined,
     route: '/inventory',
   ),
-  NavItem(
-    label: 'Customers',
-    icon: Icons.people_outline,
-    route: '/customers',
-  ),
+  NavItem(label: 'Customers', icon: Icons.people_outline, route: '/customers'),
 ];
 
 /// Secondary destinations surfaced via the "More" overflow drawer,
@@ -72,12 +89,56 @@ const List<NavItem> secondaryNavItems = [
     icon: Icons.sell_outlined,
     route: '/pricing',
     group: 'Commerce',
+    children: [
+      NavItem(
+        label: 'Price lists',
+        icon: Icons.list_alt_outlined,
+        route: '/pricing',
+      ),
+      NavItem(
+        label: 'Customer overrides',
+        icon: Icons.person_pin_outlined,
+        route: '/pricing/overrides',
+      ),
+      NavItem(
+        label: 'Discounts',
+        icon: Icons.local_offer_outlined,
+        route: '/pricing/discounts',
+      ),
+      NavItem(
+        label: 'Price checker',
+        icon: Icons.price_check_outlined,
+        route: '/pricing/checker',
+      ),
+    ],
   ),
   NavItem(
     label: 'Procurement',
     icon: Icons.local_shipping_outlined,
     route: '/procurement',
     group: 'Commerce',
+    children: [
+      NavItem(
+        label: 'Overview',
+        icon: Icons.dashboard_outlined,
+        route: '/procurement',
+      ),
+      NavItem(
+        label: 'Suppliers',
+        icon: Icons.business_outlined,
+        route: '/procurement/suppliers',
+      ),
+      NavItem(
+        label: 'Purchase orders',
+        icon: Icons.assignment_outlined,
+        route: '/procurement/orders',
+      ),
+      NavItem(
+        label: 'Suggestions',
+        icon: Icons.auto_awesome_outlined,
+        route: '/procurement/suggestions',
+      ),
+    ],
   ),
 
   // Manufacturing
@@ -154,6 +215,24 @@ const List<NavItem> secondaryNavItems = [
     icon: Icons.badge_outlined,
     route: '/identity',
     group: 'Platform',
+    children: [
+      NavItem(label: 'Staff', icon: Icons.badge_outlined, route: '/identity'),
+      NavItem(
+        label: 'Roles',
+        icon: Icons.admin_panel_settings_outlined,
+        route: '/identity/roles',
+      ),
+      NavItem(
+        label: 'Teams',
+        icon: Icons.groups_outlined,
+        route: '/identity/teams',
+      ),
+      NavItem(
+        label: 'Organizations',
+        icon: Icons.apartment_outlined,
+        route: '/identity/organizations',
+      ),
+    ],
   ),
   NavItem(
     label: 'Profiles',

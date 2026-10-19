@@ -13,8 +13,9 @@ final procurementTransportProvider = Provider<Transport>((ref) {
   return createTransport(tokenProvider, baseUrl: _procurementUrl);
 });
 
-final procurementServiceClientProvider =
-    Provider<ProcurementServiceClient>((ref) {
+final procurementServiceClientProvider = Provider<ProcurementServiceClient>((
+  ref,
+) {
   final transport = ref.watch(procurementTransportProvider);
   return ProcurementServiceClient(transport);
 });

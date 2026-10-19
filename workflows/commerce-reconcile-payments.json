@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "name": "commerce.reconcile_payments",
-  "description": "Every thirty minutes, settle orders whose hosted checkout completed without the buyer returning, and release stock held by orders whose payment window lapsed. Buyers who return from checkout are settled immediately by the payment return page.",
+  "description": "Every thirty minutes: apply checkout payments buyers completed without returning (whole orders and instalments), release stock from orders whose payment window lapsed, flag or cancel part-paid orders past their balance deadline, and retry undelivered order-event webhooks.",
   "schedules": [
     {
       "name": "commerce.reconcile_payments.every_30m",

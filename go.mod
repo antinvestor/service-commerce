@@ -1,16 +1,26 @@
 module github.com/antinvestor/service-commerce
 
-go 1.26.9
+go 1.26.7
+
+toolchain go1.26.9
 
 require (
 	buf.build/gen/go/antinvestor/common/protocolbuffers/go v1.36.12-20260509050709-3f270876dbf3.2
+	buf.build/gen/go/antinvestor/device/connectrpc/go v1.21.0-20260929153428-514d7e254c6f.1
+	buf.build/gen/go/antinvestor/device/protocolbuffers/go v1.36.12-20260929153428-514d7e254c6f.2
 	buf.build/gen/go/antinvestor/ledger/connectrpc/go v1.21.0-20260831184824-b59f37b34aa1.1
 	buf.build/gen/go/antinvestor/ledger/protocolbuffers/go v1.36.12-20260831184824-b59f37b34aa1.2
+	buf.build/gen/go/antinvestor/manufacturing/connectrpc/go v1.21.0-20260911062319-cb4cec5af873.1
+	buf.build/gen/go/antinvestor/manufacturing/protocolbuffers/go v1.36.12-20260911062319-cb4cec5af873.2
 	buf.build/gen/go/antinvestor/notification/protocolbuffers/go v1.36.12-20260831182621-e7d71a2bcc5d.2
 	buf.build/gen/go/antinvestor/payment/connectrpc/go v1.21.0-20260831184824-a4a7e9defafa.1
 	buf.build/gen/go/antinvestor/payment/protocolbuffers/go v1.36.12-20260831184824-a4a7e9defafa.2
 	buf.build/gen/go/antinvestor/procurement/connectrpc/go v1.21.0-20260831163205-8965cef21d40.1
 	buf.build/gen/go/antinvestor/procurement/protocolbuffers/go v1.36.12-20260831163205-8965cef21d40.2
+	buf.build/gen/go/antinvestor/profile/connectrpc/go v1.21.0-20260831194050-82ad359a5ea0.1
+	buf.build/gen/go/antinvestor/profile/protocolbuffers/go v1.36.12-20260831194050-82ad359a5ea0.2
+	buf.build/gen/go/antinvestor/settingz/connectrpc/go v1.21.0-20260831194050-1ad01a14931e.1
+	buf.build/gen/go/antinvestor/settingz/protocolbuffers/go v1.36.12-20260831194050-1ad01a14931e.2
 	buf.build/gen/go/antinvestor/workflow/connectrpc/go v1.21.0-20260511135803-9b0e411394e1.1
 	buf.build/gen/go/antinvestor/workflow/protocolbuffers/go v1.36.12-20260511135803-9b0e411394e1.2
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.12-20260825204119-511051f7f437.2
@@ -22,6 +32,7 @@ require (
 	github.com/pitabwire/util v0.9.1
 	github.com/stretchr/testify v1.12.1
 	github.com/testcontainers/testcontainers-go v0.44.0
+	golang.org/x/text v0.43.0
 	google.golang.org/protobuf v1.36.12
 	gorm.io/gorm v1.31.2
 )
@@ -146,13 +157,12 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
 	gocloud.dev v0.46.0 // indirect
-	golang.org/x/crypto v0.57.0 // indirect
+	golang.org/x/crypto v0.58.0 // indirect
 	golang.org/x/exp v0.0.0-20260718201538-764159d718ef // indirect
-	golang.org/x/net v0.60.0 // indirect
+	golang.org/x/net v0.61.0 // indirect
 	golang.org/x/oauth2 v0.36.0 // indirect
-	golang.org/x/sync v0.23.0 // indirect
-	golang.org/x/sys v0.48.0 // indirect
-	golang.org/x/text v0.42.0 // indirect
+	golang.org/x/sync v0.24.0 // indirect
+	golang.org/x/sys v0.49.0 // indirect
 	golang.org/x/time v0.15.0 // indirect
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da // indirect
 	google.golang.org/api v0.294.0 // indirect

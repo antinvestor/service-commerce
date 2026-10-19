@@ -3,6 +3,7 @@ description: >
   Product catalog UI library for Antinvestor. Embeddable screens and widgets
   for browsing products, selecting variants, and managing catalog entries.
 version: 0.1.0
+publish_to: none
 repository: https://github.com/antinvestor/service-commerce
 homepage: https://github.com/antinvestor/service-commerce/tree/main/ui/catalog
 

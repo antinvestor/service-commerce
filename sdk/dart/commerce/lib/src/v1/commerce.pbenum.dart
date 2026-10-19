@@ -30,6 +30,28 @@ class ShopStatus extends $pb.ProtobufEnum {
   const ShopStatus._($core.int v, $core.String n) : super(v, n);
 }
 
+/// Where a resolved default currency came from.
+class CurrencySource extends $pb.ProtobufEnum {
+  static const CurrencySource CURRENCY_SOURCE_UNSPECIFIED = CurrencySource._(0, _omitEnumNames ? '' : 'CURRENCY_SOURCE_UNSPECIFIED');
+  static const CurrencySource CURRENCY_SOURCE_PREFERENCE = CurrencySource._(1, _omitEnumNames ? '' : 'CURRENCY_SOURCE_PREFERENCE');
+  static const CurrencySource CURRENCY_SOURCE_DEVICE = CurrencySource._(2, _omitEnumNames ? '' : 'CURRENCY_SOURCE_DEVICE');
+  static const CurrencySource CURRENCY_SOURCE_ADDRESS = CurrencySource._(3, _omitEnumNames ? '' : 'CURRENCY_SOURCE_ADDRESS');
+  static const CurrencySource CURRENCY_SOURCE_PLATFORM_DEFAULT = CurrencySource._(4, _omitEnumNames ? '' : 'CURRENCY_SOURCE_PLATFORM_DEFAULT');
+
+  static const $core.List<CurrencySource> values = <CurrencySource> [
+    CURRENCY_SOURCE_UNSPECIFIED,
+    CURRENCY_SOURCE_PREFERENCE,
+    CURRENCY_SOURCE_DEVICE,
+    CURRENCY_SOURCE_ADDRESS,
+    CURRENCY_SOURCE_PLATFORM_DEFAULT,
+  ];
+
+  static final $core.Map<$core.int, CurrencySource> _byValue = $pb.ProtobufEnum.initByValue(values);
+  static CurrencySource? valueOf($core.int value) => _byValue[value];
+
+  const CurrencySource._($core.int v, $core.String n) : super(v, n);
+}
+
 class ProductStatus extends $pb.ProtobufEnum {
   static const ProductStatus PRODUCT_STATUS_UNSPECIFIED = ProductStatus._(0, _omitEnumNames ? '' : 'PRODUCT_STATUS_UNSPECIFIED');
   static const ProductStatus PRODUCT_STATUS_ACTIVE = ProductStatus._(1, _omitEnumNames ? '' : 'PRODUCT_STATUS_ACTIVE');
@@ -106,6 +128,23 @@ class CartStatus extends $pb.ProtobufEnum {
   const CartStatus._($core.int v, $core.String n) : super(v, n);
 }
 
+class OrderPaymentSource extends $pb.ProtobufEnum {
+  static const OrderPaymentSource ORDER_PAYMENT_SOURCE_UNSPECIFIED = OrderPaymentSource._(0, _omitEnumNames ? '' : 'ORDER_PAYMENT_SOURCE_UNSPECIFIED');
+  static const OrderPaymentSource ORDER_PAYMENT_SOURCE_CHECKOUT = OrderPaymentSource._(1, _omitEnumNames ? '' : 'ORDER_PAYMENT_SOURCE_CHECKOUT');
+  static const OrderPaymentSource ORDER_PAYMENT_SOURCE_RECORDED = OrderPaymentSource._(2, _omitEnumNames ? '' : 'ORDER_PAYMENT_SOURCE_RECORDED');
+
+  static const $core.List<OrderPaymentSource> values = <OrderPaymentSource> [
+    ORDER_PAYMENT_SOURCE_UNSPECIFIED,
+    ORDER_PAYMENT_SOURCE_CHECKOUT,
+    ORDER_PAYMENT_SOURCE_RECORDED,
+  ];
+
+  static final $core.Map<$core.int, OrderPaymentSource> _byValue = $pb.ProtobufEnum.initByValue(values);
+  static OrderPaymentSource? valueOf($core.int value) => _byValue[value];
+
+  const OrderPaymentSource._($core.int v, $core.String n) : super(v, n);
+}
+
 class OrderStatus extends $pb.ProtobufEnum {
   static const OrderStatus ORDER_STATUS_UNSPECIFIED = OrderStatus._(0, _omitEnumNames ? '' : 'ORDER_STATUS_UNSPECIFIED');
   static const OrderStatus ORDER_STATUS_CONFIRMED = OrderStatus._(1, _omitEnumNames ? '' : 'ORDER_STATUS_CONFIRMED');
@@ -134,6 +173,7 @@ class PaymentStatus extends $pb.ProtobufEnum {
   static const PaymentStatus PAYMENT_STATUS_FAILED = PaymentStatus._(3, _omitEnumNames ? '' : 'PAYMENT_STATUS_FAILED');
   static const PaymentStatus PAYMENT_STATUS_REFUNDED = PaymentStatus._(4, _omitEnumNames ? '' : 'PAYMENT_STATUS_REFUNDED');
   static const PaymentStatus PAYMENT_STATUS_EXPIRED = PaymentStatus._(5, _omitEnumNames ? '' : 'PAYMENT_STATUS_EXPIRED');
+  static const PaymentStatus PAYMENT_STATUS_PARTIALLY_PAID = PaymentStatus._(6, _omitEnumNames ? '' : 'PAYMENT_STATUS_PARTIALLY_PAID');
 
   static const $core.List<PaymentStatus> values = <PaymentStatus> [
     PAYMENT_STATUS_UNSPECIFIED,
@@ -142,12 +182,65 @@ class PaymentStatus extends $pb.ProtobufEnum {
     PAYMENT_STATUS_FAILED,
     PAYMENT_STATUS_REFUNDED,
     PAYMENT_STATUS_EXPIRED,
+    PAYMENT_STATUS_PARTIALLY_PAID,
   ];
 
   static final $core.Map<$core.int, PaymentStatus> _byValue = $pb.ProtobufEnum.initByValue(values);
   static PaymentStatus? valueOf($core.int value) => _byValue[value];
 
   const PaymentStatus._($core.int v, $core.String n) : super(v, n);
+}
+
+class OrderEventType extends $pb.ProtobufEnum {
+  static const OrderEventType ORDER_EVENT_TYPE_UNSPECIFIED = OrderEventType._(0, _omitEnumNames ? '' : 'ORDER_EVENT_TYPE_UNSPECIFIED');
+  static const OrderEventType ORDER_EVENT_TYPE_PAYMENT_RECEIVED = OrderEventType._(1, _omitEnumNames ? '' : 'ORDER_EVENT_TYPE_PAYMENT_RECEIVED');
+  static const OrderEventType ORDER_EVENT_TYPE_DEPOSIT_PAID = OrderEventType._(2, _omitEnumNames ? '' : 'ORDER_EVENT_TYPE_DEPOSIT_PAID');
+  static const OrderEventType ORDER_EVENT_TYPE_THRESHOLD_CROSSED = OrderEventType._(3, _omitEnumNames ? '' : 'ORDER_EVENT_TYPE_THRESHOLD_CROSSED');
+  static const OrderEventType ORDER_EVENT_TYPE_FULFILMENT_RELEASED = OrderEventType._(4, _omitEnumNames ? '' : 'ORDER_EVENT_TYPE_FULFILMENT_RELEASED');
+  static const OrderEventType ORDER_EVENT_TYPE_FULLY_PAID = OrderEventType._(5, _omitEnumNames ? '' : 'ORDER_EVENT_TYPE_FULLY_PAID');
+  static const OrderEventType ORDER_EVENT_TYPE_BALANCE_OVERDUE = OrderEventType._(6, _omitEnumNames ? '' : 'ORDER_EVENT_TYPE_BALANCE_OVERDUE');
+  static const OrderEventType ORDER_EVENT_TYPE_OVERPAID = OrderEventType._(7, _omitEnumNames ? '' : 'ORDER_EVENT_TYPE_OVERPAID');
+  static const OrderEventType ORDER_EVENT_TYPE_CANCELLED = OrderEventType._(8, _omitEnumNames ? '' : 'ORDER_EVENT_TYPE_CANCELLED');
+  static const OrderEventType ORDER_EVENT_TYPE_EXPIRED = OrderEventType._(9, _omitEnumNames ? '' : 'ORDER_EVENT_TYPE_EXPIRED');
+
+  static const $core.List<OrderEventType> values = <OrderEventType> [
+    ORDER_EVENT_TYPE_UNSPECIFIED,
+    ORDER_EVENT_TYPE_PAYMENT_RECEIVED,
+    ORDER_EVENT_TYPE_DEPOSIT_PAID,
+    ORDER_EVENT_TYPE_THRESHOLD_CROSSED,
+    ORDER_EVENT_TYPE_FULFILMENT_RELEASED,
+    ORDER_EVENT_TYPE_FULLY_PAID,
+    ORDER_EVENT_TYPE_BALANCE_OVERDUE,
+    ORDER_EVENT_TYPE_OVERPAID,
+    ORDER_EVENT_TYPE_CANCELLED,
+    ORDER_EVENT_TYPE_EXPIRED,
+  ];
+
+  static final $core.Map<$core.int, OrderEventType> _byValue = $pb.ProtobufEnum.initByValue(values);
+  static OrderEventType? valueOf($core.int value) => _byValue[value];
+
+  const OrderEventType._($core.int v, $core.String n) : super(v, n);
+}
+
+class OrderEventDelivery extends $pb.ProtobufEnum {
+  static const OrderEventDelivery ORDER_EVENT_DELIVERY_UNSPECIFIED = OrderEventDelivery._(0, _omitEnumNames ? '' : 'ORDER_EVENT_DELIVERY_UNSPECIFIED');
+  static const OrderEventDelivery ORDER_EVENT_DELIVERY_NOT_REQUIRED = OrderEventDelivery._(1, _omitEnumNames ? '' : 'ORDER_EVENT_DELIVERY_NOT_REQUIRED');
+  static const OrderEventDelivery ORDER_EVENT_DELIVERY_PENDING = OrderEventDelivery._(2, _omitEnumNames ? '' : 'ORDER_EVENT_DELIVERY_PENDING');
+  static const OrderEventDelivery ORDER_EVENT_DELIVERY_DELIVERED = OrderEventDelivery._(3, _omitEnumNames ? '' : 'ORDER_EVENT_DELIVERY_DELIVERED');
+  static const OrderEventDelivery ORDER_EVENT_DELIVERY_FAILED = OrderEventDelivery._(4, _omitEnumNames ? '' : 'ORDER_EVENT_DELIVERY_FAILED');
+
+  static const $core.List<OrderEventDelivery> values = <OrderEventDelivery> [
+    ORDER_EVENT_DELIVERY_UNSPECIFIED,
+    ORDER_EVENT_DELIVERY_NOT_REQUIRED,
+    ORDER_EVENT_DELIVERY_PENDING,
+    ORDER_EVENT_DELIVERY_DELIVERED,
+    ORDER_EVENT_DELIVERY_FAILED,
+  ];
+
+  static final $core.Map<$core.int, OrderEventDelivery> _byValue = $pb.ProtobufEnum.initByValue(values);
+  static OrderEventDelivery? valueOf($core.int value) => _byValue[value];
+
+  const OrderEventDelivery._($core.int v, $core.String n) : super(v, n);
 }
 
 class FulfilmentStatus extends $pb.ProtobufEnum {

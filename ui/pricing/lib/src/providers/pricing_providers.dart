@@ -3,9 +3,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'pricing_transport_provider.dart';
 
+/// The shop, used for defaults such as its currency.
+final shopProvider = FutureProvider.family<Shop, String>((ref, shopId) async {
+  final client = ref.watch(pricingServiceClientProvider);
+  final response = await client.getShop(GetShopRequest()..id = shopId);
+  return response.shop;
+});
+
 /// List price lists for a given shop.
-final priceListProvider =
-    FutureProvider.family<List<PriceList>, String>((ref, shopId) async {
+final priceListProvider = FutureProvider.family<List<PriceList>, String>((
+  ref,
+  shopId,
+) async {
   final client = ref.watch(pricingServiceClientProvider);
   final request = PriceListSearchRequest()..shopId = shopId;
   final response = await client.priceListSearch(request);
@@ -13,8 +22,10 @@ final priceListProvider =
 });
 
 /// Get a single price list by ID.
-final priceListByIdProvider =
-    FutureProvider.family<PriceList, String>((ref, priceListId) async {
+final priceListByIdProvider = FutureProvider.family<PriceList, String>((
+  ref,
+  priceListId,
+) async {
   final client = ref.watch(pricingServiceClientProvider);
   final request = PriceListGetRequest()..id = priceListId;
   final response = await client.priceListGet(request);
@@ -32,58 +43,71 @@ final priceListByIdProvider =
 /// surfaces that server-confirmed set; it watches the notifier so it rebuilds
 /// whenever a batch-save completes.
 final priceListEntryListProvider =
-    FutureProvider.family<List<PriceListEntry>, String>((ref, priceListId) async {
-  // Watch the notifier so the provider is recomputed after each mutation.
-  ref.watch(pricingNotifierProvider);
-  final notifier = ref.read(pricingNotifierProvider.notifier);
-  return notifier.entriesFor(priceListId);
-});
+    FutureProvider.family<List<PriceListEntry>, String>((
+      ref,
+      priceListId,
+    ) async {
+      // Watch the notifier so the provider is recomputed after each mutation.
+      ref.watch(pricingNotifierProvider);
+      final notifier = ref.read(pricingNotifierProvider.notifier);
+      return notifier.entriesFor(priceListId);
+    });
 
 /// List customer price overrides, filtered by customer or variant.
-final customerOverrideListProvider = FutureProvider.family<
-    List<CustomerPriceOverride>,
-    ({String? customerId, String? variantId})>((ref, params) async {
-  final client = ref.watch(pricingServiceClientProvider);
-  final request = CustomerPriceOverrideSearchRequest();
-  if (params.customerId != null) request.customerId = params.customerId!;
-  if (params.variantId != null) request.productVariantId = params.variantId!;
-  final response = await client.customerPriceOverrideSearch(request);
-  return response.overrides;
-});
+final customerOverrideListProvider =
+    FutureProvider.family<
+      List<CustomerPriceOverride>,
+      ({String? customerId, String? variantId})
+    >((ref, params) async {
+      final client = ref.watch(pricingServiceClientProvider);
+      final request = CustomerPriceOverrideSearchRequest();
+      if (params.customerId != null) {
+        request.customerId = params.customerId!;
+      }
+      if (params.variantId != null) {
+        request.productVariantId = params.variantId!;
+      }
+      final response = await client.customerPriceOverrideSearch(request);
+      return response.overrides;
+    });
 
 /// List discount rules for a shop.
 final discountRuleListProvider =
     FutureProvider.family<List<DiscountRule>, String>((ref, shopId) async {
-  final client = ref.watch(pricingServiceClientProvider);
-  final request = DiscountRuleSearchRequest()..shopId = shopId;
-  final response = await client.discountRuleSearch(request);
-  return response.discountRules;
-});
+      final client = ref.watch(pricingServiceClientProvider);
+      final request = DiscountRuleSearchRequest()..shopId = shopId;
+      final response = await client.discountRuleSearch(request);
+      return response.discountRules;
+    });
 
 /// List customer price-list assignments, filtered by price list and/or customer.
-final priceListAssignmentListProvider = FutureProvider.family<
-    List<CustomerPriceListAssignment>,
-    ({String? priceListId, String? customerId})>((ref, params) async {
-  final client = ref.watch(pricingServiceClientProvider);
-  final request = CustomerPriceListAssignmentSearchRequest();
-  if (params.priceListId != null) request.priceListId = params.priceListId!;
-  if (params.customerId != null) request.customerId = params.customerId!;
-  final response = await client.customerPriceListAssignmentSearch(request);
-  return response.assignments;
-});
+final priceListAssignmentListProvider =
+    FutureProvider.family<
+      List<CustomerPriceListAssignment>,
+      ({String? priceListId, String? customerId})
+    >((ref, params) async {
+      final client = ref.watch(pricingServiceClientProvider);
+      final request = CustomerPriceListAssignmentSearchRequest();
+      if (params.priceListId != null) request.priceListId = params.priceListId!;
+      if (params.customerId != null) request.customerId = params.customerId!;
+      final response = await client.customerPriceListAssignmentSearch(request);
+      return response.assignments;
+    });
 
 /// Resolve the effective price for a customer + variant + quantity.
-final resolvePriceProvider = FutureProvider.family<ResolvedPrice,
-    ({String customerId, String variantId, int quantity})>(
-    (ref, params) async {
-  final client = ref.watch(pricingServiceClientProvider);
-  final request = ResolvePriceRequest()
-    ..customerId = params.customerId
-    ..productVariantId = params.variantId
-    ..quantity = params.quantity;
-  final response = await client.resolvePrice(request);
-  return response.resolvedPrice;
-});
+final resolvePriceProvider =
+    FutureProvider.family<
+      ResolvedPrice,
+      ({String customerId, String variantId, int quantity})
+    >((ref, params) async {
+      final client = ref.watch(pricingServiceClientProvider);
+      final request = ResolvePriceRequest()
+        ..customerId = params.customerId
+        ..productVariantId = params.variantId
+        ..quantity = params.quantity;
+      final response = await client.resolvePrice(request);
+      return response.resolvedPrice;
+    });
 
 /// Notifier for pricing mutations.
 class PricingNotifier extends Notifier<AsyncValue<void>> {
@@ -94,8 +118,7 @@ class PricingNotifier extends Notifier<AsyncValue<void>> {
   @override
   AsyncValue<void> build() => const AsyncValue.data(null);
 
-  CommerceServiceClient get _client =>
-      ref.read(pricingServiceClientProvider);
+  CommerceServiceClient get _client => ref.read(pricingServiceClientProvider);
 
   /// The entries currently confirmed for [priceListId] in this session.
   List<PriceListEntry> entriesFor(String priceListId) =>
@@ -116,7 +139,8 @@ class PricingNotifier extends Notifier<AsyncValue<void>> {
   /// Replaces the entries for the variants present in [request] and records
   /// the server-confirmed set for the price list so reads reflect it.
   Future<List<PriceListEntry>> batchSaveEntries(
-      PriceListEntryBatchSaveRequest request) async {
+    PriceListEntryBatchSaveRequest request,
+  ) async {
     state = const AsyncValue.loading();
     try {
       final response = await _client.priceListEntryBatchSave(request);
@@ -124,8 +148,9 @@ class PricingNotifier extends Notifier<AsyncValue<void>> {
       // saved entries. Merge those into the cached set, replacing any prior
       // entries for the same variants and dropping variants no longer present.
       final priceListId = request.priceListId;
-      final requestedVariants =
-          request.entries.map((e) => e.productVariantId).toSet();
+      final requestedVariants = request.entries
+          .map((e) => e.productVariantId)
+          .toSet();
       final retained = (_entriesByList[priceListId] ?? const [])
           .where((e) => !requestedVariants.contains(e.productVariantId))
           .toList();
@@ -164,10 +189,9 @@ class PricingNotifier extends Notifier<AsyncValue<void>> {
         others.addAll(response.entries);
         _entriesByList[priceListId] = others;
       } else {
-        _entriesByList[priceListId] =
-            (_entriesByList[priceListId] ?? const [])
-                .where((e) => e.productVariantId != variantId)
-                .toList();
+        _entriesByList[priceListId] = (_entriesByList[priceListId] ?? const [])
+            .where((e) => e.productVariantId != variantId)
+            .toList();
       }
       state = const AsyncValue.data(null);
     } catch (e, st) {
@@ -177,7 +201,8 @@ class PricingNotifier extends Notifier<AsyncValue<void>> {
   }
 
   Future<CustomerPriceOverride> saveOverride(
-      CustomerPriceOverrideSaveRequest request) async {
+    CustomerPriceOverrideSaveRequest request,
+  ) async {
     state = const AsyncValue.loading();
     try {
       final response = await _client.customerPriceOverrideSave(request);
@@ -202,8 +227,25 @@ class PricingNotifier extends Notifier<AsyncValue<void>> {
     }
   }
 
+  /// Approves a discount rule that requires approval, stamping
+  /// `approved_by`/`approved_at` server-side.
+  Future<DiscountRule> approveDiscount(String ruleId) async {
+    state = const AsyncValue.loading();
+    try {
+      final response = await _client.discountRuleApprove(
+        DiscountRuleApproveRequest()..id = ruleId,
+      );
+      state = const AsyncValue.data(null);
+      return response.discountRule;
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+      rethrow;
+    }
+  }
+
   Future<CustomerPriceListAssignment> saveAssignment(
-      CustomerPriceListAssignmentSaveRequest request) async {
+    CustomerPriceListAssignmentSaveRequest request,
+  ) async {
     state = const AsyncValue.loading();
     try {
       final response = await _client.customerPriceListAssignmentSave(request);
@@ -218,3 +260,14 @@ class PricingNotifier extends Notifier<AsyncValue<void>> {
 
 final pricingNotifierProvider =
     NotifierProvider<PricingNotifier, AsyncValue<void>>(PricingNotifier.new);
+
+/// The shop's currency code, or an empty string when the shop cannot be
+/// loaded, so forms can default to it without blocking on failure.
+Future<String> readShopCurrency(WidgetRef ref, String shopId) async {
+  try {
+    final shop = await ref.read(shopProvider(shopId).future);
+    return shop.currency.trim().toUpperCase();
+  } catch (_) {
+    return '';
+  }
+}

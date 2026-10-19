@@ -105,6 +105,10 @@ func (m *middleware) CanDiscountManage(ctx context.Context, shopID string) error
 	return m.checkShopPermission(ctx, shopID, PermissionDiscountManage)
 }
 
+func (m *middleware) CanDiscountApprove(ctx context.Context, shopID string) error {
+	return m.checkShopPermission(ctx, shopID, PermissionDiscountApprove)
+}
+
 // --- Tuple management ---
 
 // AddShopMember adds a member to a shop with the specified role.

@@ -58,6 +58,9 @@ const (
 	// CommerceServiceListShopsProcedure is the fully-qualified name of the CommerceService's ListShops
 	// RPC.
 	CommerceServiceListShopsProcedure = "/commerce.v1.CommerceService/ListShops"
+	// CommerceServiceResolveDefaultCurrencyProcedure is the fully-qualified name of the
+	// CommerceService's ResolveDefaultCurrency RPC.
+	CommerceServiceResolveDefaultCurrencyProcedure = "/commerce.v1.CommerceService/ResolveDefaultCurrency"
 	// CommerceServiceCreateProductProcedure is the fully-qualified name of the CommerceService's
 	// CreateProduct RPC.
 	CommerceServiceCreateProductProcedure = "/commerce.v1.CommerceService/CreateProduct"
@@ -73,6 +76,9 @@ const (
 	// CommerceServiceUpdateProductVariantProcedure is the fully-qualified name of the CommerceService's
 	// UpdateProductVariant RPC.
 	CommerceServiceUpdateProductVariantProcedure = "/commerce.v1.CommerceService/UpdateProductVariant"
+	// CommerceServiceUpdateProductProcedure is the fully-qualified name of the CommerceService's
+	// UpdateProduct RPC.
+	CommerceServiceUpdateProductProcedure = "/commerce.v1.CommerceService/UpdateProduct"
 	// CommerceServiceListProductVariantsProcedure is the fully-qualified name of the CommerceService's
 	// ListProductVariants RPC.
 	CommerceServiceListProductVariantsProcedure = "/commerce.v1.CommerceService/ListProductVariants"
@@ -108,6 +114,12 @@ const (
 	// CommerceServiceCancelOrderProcedure is the fully-qualified name of the CommerceService's
 	// CancelOrder RPC.
 	CommerceServiceCancelOrderProcedure = "/commerce.v1.CommerceService/CancelOrder"
+	// CommerceServiceRecordOrderPaymentProcedure is the fully-qualified name of the CommerceService's
+	// RecordOrderPayment RPC.
+	CommerceServiceRecordOrderPaymentProcedure = "/commerce.v1.CommerceService/RecordOrderPayment"
+	// CommerceServiceListOrderEventsProcedure is the fully-qualified name of the CommerceService's
+	// ListOrderEvents RPC.
+	CommerceServiceListOrderEventsProcedure = "/commerce.v1.CommerceService/ListOrderEvents"
 	// CommerceServiceReconcilePaymentsProcedure is the fully-qualified name of the CommerceService's
 	// ReconcilePayments RPC.
 	CommerceServiceReconcilePaymentsProcedure = "/commerce.v1.CommerceService/ReconcilePayments"
@@ -123,6 +135,9 @@ const (
 	// CommerceServiceGetFulfilmentProcedure is the fully-qualified name of the CommerceService's
 	// GetFulfilment RPC.
 	CommerceServiceGetFulfilmentProcedure = "/commerce.v1.CommerceService/GetFulfilment"
+	// CommerceServiceListFulfilmentsProcedure is the fully-qualified name of the CommerceService's
+	// ListFulfilments RPC.
+	CommerceServiceListFulfilmentsProcedure = "/commerce.v1.CommerceService/ListFulfilments"
 	// CommerceServicePriceListSaveProcedure is the fully-qualified name of the CommerceService's
 	// PriceListSave RPC.
 	CommerceServicePriceListSaveProcedure = "/commerce.v1.CommerceService/PriceListSave"
@@ -153,6 +168,9 @@ const (
 	// CommerceServiceDiscountRuleSearchProcedure is the fully-qualified name of the CommerceService's
 	// DiscountRuleSearch RPC.
 	CommerceServiceDiscountRuleSearchProcedure = "/commerce.v1.CommerceService/DiscountRuleSearch"
+	// CommerceServiceDiscountRuleApproveProcedure is the fully-qualified name of the CommerceService's
+	// DiscountRuleApprove RPC.
+	CommerceServiceDiscountRuleApproveProcedure = "/commerce.v1.CommerceService/DiscountRuleApprove"
 	// CommerceServiceResolvePriceProcedure is the fully-qualified name of the CommerceService's
 	// ResolvePrice RPC.
 	CommerceServiceResolvePriceProcedure = "/commerce.v1.CommerceService/ResolvePrice"
@@ -168,6 +186,11 @@ type CommerceServiceClient interface {
 	UpdateShop(context.Context, *connect.Request[v1.UpdateShopRequest]) (*connect.Response[v1.UpdateShopResponse], error)
 	// Lists the shops in the caller's partition.
 	ListShops(context.Context, *connect.Request[v1.ListShopsRequest]) (*connect.Response[v1.ListShopsResponse], error)
+	// Resolves the currency the caller most likely trades in: their currency
+	// setting, else the locale of the device they are signed in on, else the
+	// country of their first profile address. CreateShop applies the same
+	// default when no currency is given.
+	ResolveDefaultCurrency(context.Context, *connect.Request[v1.ResolveDefaultCurrencyRequest]) (*connect.Response[v1.ResolveDefaultCurrencyResponse], error)
 	// Creates a new product in the catalog.
 	CreateProduct(context.Context, *connect.Request[v1.CreateProductRequest]) (*connect.Response[v1.CreateProductResponse], error)
 	// Retrieves a product by its ID.
@@ -178,6 +201,9 @@ type CommerceServiceClient interface {
 	CreateProductVariant(context.Context, *connect.Request[v1.CreateProductVariantRequest]) (*connect.Response[v1.CreateProductVariantResponse], error)
 	// Updates an existing product variant.
 	UpdateProductVariant(context.Context, *connect.Request[v1.UpdateProductVariantRequest]) (*connect.Response[v1.UpdateProductVariantResponse], error)
+	// Updates a product: details, fulfilment type, status, and its payment
+	// policy override.
+	UpdateProduct(context.Context, *connect.Request[v1.UpdateProductRequest]) (*connect.Response[v1.UpdateProductResponse], error)
 	// Lists the variants of a product.
 	ListProductVariants(context.Context, *connect.Request[v1.ListProductVariantsRequest]) (*connect.Response[v1.ListProductVariantsResponse], error)
 	CreateCart(context.Context, *connect.Request[v1.CreateCartRequest]) (*connect.Response[v1.CreateCartResponse], error)
@@ -211,6 +237,13 @@ type CommerceServiceClient interface {
 	// Cancels an unfulfilled order and returns its stock. Buyers may cancel
 	// their own unpaid orders; staff may cancel any unfulfilled order.
 	CancelOrder(context.Context, *connect.Request[v1.CancelOrderRequest]) (*connect.Response[v1.CancelOrderResponse], error)
+	// Records a payment the shop took itself (cash, bank transfer, a till) as
+	// an instalment against the order. Staff only. A reference already
+	// recorded on the order is returned as-is, so retries are safe.
+	RecordOrderPayment(context.Context, *connect.Request[v1.RecordOrderPaymentRequest]) (*connect.Response[v1.RecordOrderPaymentResponse], error)
+	// Lists payment and lifecycle signals for an order, or for every order in
+	// a shop, oldest first. The same events are pushed to the shop's webhook.
+	ListOrderEvents(context.Context, *connect.Request[v1.ListOrderEventsRequest]) (*connect.Response[v1.ListOrderEventsResponse], error)
 	// Reconciles orders awaiting payment against the payment service and
 	// expires reservations whose payment window has lapsed. Scheduled.
 	ReconcilePayments(context.Context, *connect.Request[v1.ReconcilePaymentsRequest]) (*connect.Response[v1.ReconcilePaymentsResponse], error)
@@ -226,6 +259,8 @@ type CommerceServiceClient interface {
 	UpdateFulfilment(context.Context, *connect.Request[v1.UpdateFulfilmentRequest]) (*connect.Response[v1.UpdateFulfilmentResponse], error)
 	// Retrieves a fulfilment by ID.
 	GetFulfilment(context.Context, *connect.Request[v1.GetFulfilmentRequest]) (*connect.Response[v1.GetFulfilmentResponse], error)
+	// Lists an order's fulfilments, oldest first.
+	ListFulfilments(context.Context, *connect.Request[v1.ListFulfilmentsRequest]) (*connect.Response[v1.ListFulfilmentsResponse], error)
 	// Creates or updates a price list.
 	PriceListSave(context.Context, *connect.Request[v1.PriceListSaveRequest]) (*connect.Response[v1.PriceListSaveResponse], error)
 	// Retrieves a price list by ID.
@@ -246,6 +281,9 @@ type CommerceServiceClient interface {
 	DiscountRuleSave(context.Context, *connect.Request[v1.DiscountRuleSaveRequest]) (*connect.Response[v1.DiscountRuleSaveResponse], error)
 	// Searches discount rules for a shop.
 	DiscountRuleSearch(context.Context, *connect.Request[v1.DiscountRuleSearchRequest]) (*connect.Response[v1.DiscountRuleSearchResponse], error)
+	// Approves a discount rule that requires approval, so pricing may apply
+	// it automatically.
+	DiscountRuleApprove(context.Context, *connect.Request[v1.DiscountRuleApproveRequest]) (*connect.Response[v1.DiscountRuleApproveResponse], error)
 	// Resolves the effective price for a variant given customer and quantity context.
 	ResolvePrice(context.Context, *connect.Request[v1.ResolvePriceRequest]) (*connect.Response[v1.ResolvePriceResponse], error)
 }
@@ -285,6 +323,12 @@ func NewCommerceServiceClient(httpClient connect.HTTPClient, baseURL string, opt
 			connect.WithSchema(commerceServiceMethods.ByName("ListShops")),
 			connect.WithClientOptions(opts...),
 		),
+		resolveDefaultCurrency: connect.NewClient[v1.ResolveDefaultCurrencyRequest, v1.ResolveDefaultCurrencyResponse](
+			httpClient,
+			baseURL+CommerceServiceResolveDefaultCurrencyProcedure,
+			connect.WithSchema(commerceServiceMethods.ByName("ResolveDefaultCurrency")),
+			connect.WithClientOptions(opts...),
+		),
 		createProduct: connect.NewClient[v1.CreateProductRequest, v1.CreateProductResponse](
 			httpClient,
 			baseURL+CommerceServiceCreateProductProcedure,
@@ -313,6 +357,12 @@ func NewCommerceServiceClient(httpClient connect.HTTPClient, baseURL string, opt
 			httpClient,
 			baseURL+CommerceServiceUpdateProductVariantProcedure,
 			connect.WithSchema(commerceServiceMethods.ByName("UpdateProductVariant")),
+			connect.WithClientOptions(opts...),
+		),
+		updateProduct: connect.NewClient[v1.UpdateProductRequest, v1.UpdateProductResponse](
+			httpClient,
+			baseURL+CommerceServiceUpdateProductProcedure,
+			connect.WithSchema(commerceServiceMethods.ByName("UpdateProduct")),
 			connect.WithClientOptions(opts...),
 		),
 		listProductVariants: connect.NewClient[v1.ListProductVariantsRequest, v1.ListProductVariantsResponse](
@@ -387,6 +437,18 @@ func NewCommerceServiceClient(httpClient connect.HTTPClient, baseURL string, opt
 			connect.WithSchema(commerceServiceMethods.ByName("CancelOrder")),
 			connect.WithClientOptions(opts...),
 		),
+		recordOrderPayment: connect.NewClient[v1.RecordOrderPaymentRequest, v1.RecordOrderPaymentResponse](
+			httpClient,
+			baseURL+CommerceServiceRecordOrderPaymentProcedure,
+			connect.WithSchema(commerceServiceMethods.ByName("RecordOrderPayment")),
+			connect.WithClientOptions(opts...),
+		),
+		listOrderEvents: connect.NewClient[v1.ListOrderEventsRequest, v1.ListOrderEventsResponse](
+			httpClient,
+			baseURL+CommerceServiceListOrderEventsProcedure,
+			connect.WithSchema(commerceServiceMethods.ByName("ListOrderEvents")),
+			connect.WithClientOptions(opts...),
+		),
 		reconcilePayments: connect.NewClient[v1.ReconcilePaymentsRequest, v1.ReconcilePaymentsResponse](
 			httpClient,
 			baseURL+CommerceServiceReconcilePaymentsProcedure,
@@ -415,6 +477,12 @@ func NewCommerceServiceClient(httpClient connect.HTTPClient, baseURL string, opt
 			httpClient,
 			baseURL+CommerceServiceGetFulfilmentProcedure,
 			connect.WithSchema(commerceServiceMethods.ByName("GetFulfilment")),
+			connect.WithClientOptions(opts...),
+		),
+		listFulfilments: connect.NewClient[v1.ListFulfilmentsRequest, v1.ListFulfilmentsResponse](
+			httpClient,
+			baseURL+CommerceServiceListFulfilmentsProcedure,
+			connect.WithSchema(commerceServiceMethods.ByName("ListFulfilments")),
 			connect.WithClientOptions(opts...),
 		),
 		priceListSave: connect.NewClient[v1.PriceListSaveRequest, v1.PriceListSaveResponse](
@@ -477,6 +545,12 @@ func NewCommerceServiceClient(httpClient connect.HTTPClient, baseURL string, opt
 			connect.WithSchema(commerceServiceMethods.ByName("DiscountRuleSearch")),
 			connect.WithClientOptions(opts...),
 		),
+		discountRuleApprove: connect.NewClient[v1.DiscountRuleApproveRequest, v1.DiscountRuleApproveResponse](
+			httpClient,
+			baseURL+CommerceServiceDiscountRuleApproveProcedure,
+			connect.WithSchema(commerceServiceMethods.ByName("DiscountRuleApprove")),
+			connect.WithClientOptions(opts...),
+		),
 		resolvePrice: connect.NewClient[v1.ResolvePriceRequest, v1.ResolvePriceResponse](
 			httpClient,
 			baseURL+CommerceServiceResolvePriceProcedure,
@@ -492,11 +566,13 @@ type commerceServiceClient struct {
 	getShop                           *connect.Client[v1.GetShopRequest, v1.GetShopResponse]
 	updateShop                        *connect.Client[v1.UpdateShopRequest, v1.UpdateShopResponse]
 	listShops                         *connect.Client[v1.ListShopsRequest, v1.ListShopsResponse]
+	resolveDefaultCurrency            *connect.Client[v1.ResolveDefaultCurrencyRequest, v1.ResolveDefaultCurrencyResponse]
 	createProduct                     *connect.Client[v1.CreateProductRequest, v1.CreateProductResponse]
 	getProduct                        *connect.Client[v1.GetProductRequest, v1.GetProductResponse]
 	listProducts                      *connect.Client[v1.ListProductsRequest, v1.ListProductsResponse]
 	createProductVariant              *connect.Client[v1.CreateProductVariantRequest, v1.CreateProductVariantResponse]
 	updateProductVariant              *connect.Client[v1.UpdateProductVariantRequest, v1.UpdateProductVariantResponse]
+	updateProduct                     *connect.Client[v1.UpdateProductRequest, v1.UpdateProductResponse]
 	listProductVariants               *connect.Client[v1.ListProductVariantsRequest, v1.ListProductVariantsResponse]
 	createCart                        *connect.Client[v1.CreateCartRequest, v1.CreateCartResponse]
 	getCart                           *connect.Client[v1.GetCartRequest, v1.GetCartResponse]
@@ -509,11 +585,14 @@ type commerceServiceClient struct {
 	checkoutOrder                     *connect.Client[v1.CheckoutOrderRequest, v1.CheckoutOrderResponse]
 	confirmOrderPayment               *connect.Client[v1.ConfirmOrderPaymentRequest, v1.ConfirmOrderPaymentResponse]
 	cancelOrder                       *connect.Client[v1.CancelOrderRequest, v1.CancelOrderResponse]
+	recordOrderPayment                *connect.Client[v1.RecordOrderPaymentRequest, v1.RecordOrderPaymentResponse]
+	listOrderEvents                   *connect.Client[v1.ListOrderEventsRequest, v1.ListOrderEventsResponse]
 	reconcilePayments                 *connect.Client[v1.ReconcilePaymentsRequest, v1.ReconcilePaymentsResponse]
 	runEndOfDayLedger                 *connect.Client[v1.RunEndOfDayLedgerRequest, v1.RunEndOfDayLedgerResponse]
 	createFulfilment                  *connect.Client[v1.CreateFulfilmentRequest, v1.CreateFulfilmentResponse]
 	updateFulfilment                  *connect.Client[v1.UpdateFulfilmentRequest, v1.UpdateFulfilmentResponse]
 	getFulfilment                     *connect.Client[v1.GetFulfilmentRequest, v1.GetFulfilmentResponse]
+	listFulfilments                   *connect.Client[v1.ListFulfilmentsRequest, v1.ListFulfilmentsResponse]
 	priceListSave                     *connect.Client[v1.PriceListSaveRequest, v1.PriceListSaveResponse]
 	priceListGet                      *connect.Client[v1.PriceListGetRequest, v1.PriceListGetResponse]
 	priceListSearch                   *connect.Client[v1.PriceListSearchRequest, v1.PriceListSearchResponse]
@@ -524,6 +603,7 @@ type commerceServiceClient struct {
 	customerPriceOverrideSearch       *connect.Client[v1.CustomerPriceOverrideSearchRequest, v1.CustomerPriceOverrideSearchResponse]
 	discountRuleSave                  *connect.Client[v1.DiscountRuleSaveRequest, v1.DiscountRuleSaveResponse]
 	discountRuleSearch                *connect.Client[v1.DiscountRuleSearchRequest, v1.DiscountRuleSearchResponse]
+	discountRuleApprove               *connect.Client[v1.DiscountRuleApproveRequest, v1.DiscountRuleApproveResponse]
 	resolvePrice                      *connect.Client[v1.ResolvePriceRequest, v1.ResolvePriceResponse]
 }
 
@@ -545,6 +625,11 @@ func (c *commerceServiceClient) UpdateShop(ctx context.Context, req *connect.Req
 // ListShops calls commerce.v1.CommerceService.ListShops.
 func (c *commerceServiceClient) ListShops(ctx context.Context, req *connect.Request[v1.ListShopsRequest]) (*connect.Response[v1.ListShopsResponse], error) {
 	return c.listShops.CallUnary(ctx, req)
+}
+
+// ResolveDefaultCurrency calls commerce.v1.CommerceService.ResolveDefaultCurrency.
+func (c *commerceServiceClient) ResolveDefaultCurrency(ctx context.Context, req *connect.Request[v1.ResolveDefaultCurrencyRequest]) (*connect.Response[v1.ResolveDefaultCurrencyResponse], error) {
+	return c.resolveDefaultCurrency.CallUnary(ctx, req)
 }
 
 // CreateProduct calls commerce.v1.CommerceService.CreateProduct.
@@ -570,6 +655,11 @@ func (c *commerceServiceClient) CreateProductVariant(ctx context.Context, req *c
 // UpdateProductVariant calls commerce.v1.CommerceService.UpdateProductVariant.
 func (c *commerceServiceClient) UpdateProductVariant(ctx context.Context, req *connect.Request[v1.UpdateProductVariantRequest]) (*connect.Response[v1.UpdateProductVariantResponse], error) {
 	return c.updateProductVariant.CallUnary(ctx, req)
+}
+
+// UpdateProduct calls commerce.v1.CommerceService.UpdateProduct.
+func (c *commerceServiceClient) UpdateProduct(ctx context.Context, req *connect.Request[v1.UpdateProductRequest]) (*connect.Response[v1.UpdateProductResponse], error) {
+	return c.updateProduct.CallUnary(ctx, req)
 }
 
 // ListProductVariants calls commerce.v1.CommerceService.ListProductVariants.
@@ -632,6 +722,16 @@ func (c *commerceServiceClient) CancelOrder(ctx context.Context, req *connect.Re
 	return c.cancelOrder.CallUnary(ctx, req)
 }
 
+// RecordOrderPayment calls commerce.v1.CommerceService.RecordOrderPayment.
+func (c *commerceServiceClient) RecordOrderPayment(ctx context.Context, req *connect.Request[v1.RecordOrderPaymentRequest]) (*connect.Response[v1.RecordOrderPaymentResponse], error) {
+	return c.recordOrderPayment.CallUnary(ctx, req)
+}
+
+// ListOrderEvents calls commerce.v1.CommerceService.ListOrderEvents.
+func (c *commerceServiceClient) ListOrderEvents(ctx context.Context, req *connect.Request[v1.ListOrderEventsRequest]) (*connect.Response[v1.ListOrderEventsResponse], error) {
+	return c.listOrderEvents.CallUnary(ctx, req)
+}
+
 // ReconcilePayments calls commerce.v1.CommerceService.ReconcilePayments.
 func (c *commerceServiceClient) ReconcilePayments(ctx context.Context, req *connect.Request[v1.ReconcilePaymentsRequest]) (*connect.Response[v1.ReconcilePaymentsResponse], error) {
 	return c.reconcilePayments.CallUnary(ctx, req)
@@ -655,6 +755,11 @@ func (c *commerceServiceClient) UpdateFulfilment(ctx context.Context, req *conne
 // GetFulfilment calls commerce.v1.CommerceService.GetFulfilment.
 func (c *commerceServiceClient) GetFulfilment(ctx context.Context, req *connect.Request[v1.GetFulfilmentRequest]) (*connect.Response[v1.GetFulfilmentResponse], error) {
 	return c.getFulfilment.CallUnary(ctx, req)
+}
+
+// ListFulfilments calls commerce.v1.CommerceService.ListFulfilments.
+func (c *commerceServiceClient) ListFulfilments(ctx context.Context, req *connect.Request[v1.ListFulfilmentsRequest]) (*connect.Response[v1.ListFulfilmentsResponse], error) {
+	return c.listFulfilments.CallUnary(ctx, req)
 }
 
 // PriceListSave calls commerce.v1.CommerceService.PriceListSave.
@@ -709,6 +814,11 @@ func (c *commerceServiceClient) DiscountRuleSearch(ctx context.Context, req *con
 	return c.discountRuleSearch.CallUnary(ctx, req)
 }
 
+// DiscountRuleApprove calls commerce.v1.CommerceService.DiscountRuleApprove.
+func (c *commerceServiceClient) DiscountRuleApprove(ctx context.Context, req *connect.Request[v1.DiscountRuleApproveRequest]) (*connect.Response[v1.DiscountRuleApproveResponse], error) {
+	return c.discountRuleApprove.CallUnary(ctx, req)
+}
+
 // ResolvePrice calls commerce.v1.CommerceService.ResolvePrice.
 func (c *commerceServiceClient) ResolvePrice(ctx context.Context, req *connect.Request[v1.ResolvePriceRequest]) (*connect.Response[v1.ResolvePriceResponse], error) {
 	return c.resolvePrice.CallUnary(ctx, req)
@@ -724,6 +834,11 @@ type CommerceServiceHandler interface {
 	UpdateShop(context.Context, *connect.Request[v1.UpdateShopRequest]) (*connect.Response[v1.UpdateShopResponse], error)
 	// Lists the shops in the caller's partition.
 	ListShops(context.Context, *connect.Request[v1.ListShopsRequest]) (*connect.Response[v1.ListShopsResponse], error)
+	// Resolves the currency the caller most likely trades in: their currency
+	// setting, else the locale of the device they are signed in on, else the
+	// country of their first profile address. CreateShop applies the same
+	// default when no currency is given.
+	ResolveDefaultCurrency(context.Context, *connect.Request[v1.ResolveDefaultCurrencyRequest]) (*connect.Response[v1.ResolveDefaultCurrencyResponse], error)
 	// Creates a new product in the catalog.
 	CreateProduct(context.Context, *connect.Request[v1.CreateProductRequest]) (*connect.Response[v1.CreateProductResponse], error)
 	// Retrieves a product by its ID.
@@ -734,6 +849,9 @@ type CommerceServiceHandler interface {
 	CreateProductVariant(context.Context, *connect.Request[v1.CreateProductVariantRequest]) (*connect.Response[v1.CreateProductVariantResponse], error)
 	// Updates an existing product variant.
 	UpdateProductVariant(context.Context, *connect.Request[v1.UpdateProductVariantRequest]) (*connect.Response[v1.UpdateProductVariantResponse], error)
+	// Updates a product: details, fulfilment type, status, and its payment
+	// policy override.
+	UpdateProduct(context.Context, *connect.Request[v1.UpdateProductRequest]) (*connect.Response[v1.UpdateProductResponse], error)
 	// Lists the variants of a product.
 	ListProductVariants(context.Context, *connect.Request[v1.ListProductVariantsRequest]) (*connect.Response[v1.ListProductVariantsResponse], error)
 	CreateCart(context.Context, *connect.Request[v1.CreateCartRequest]) (*connect.Response[v1.CreateCartResponse], error)
@@ -767,6 +885,13 @@ type CommerceServiceHandler interface {
 	// Cancels an unfulfilled order and returns its stock. Buyers may cancel
 	// their own unpaid orders; staff may cancel any unfulfilled order.
 	CancelOrder(context.Context, *connect.Request[v1.CancelOrderRequest]) (*connect.Response[v1.CancelOrderResponse], error)
+	// Records a payment the shop took itself (cash, bank transfer, a till) as
+	// an instalment against the order. Staff only. A reference already
+	// recorded on the order is returned as-is, so retries are safe.
+	RecordOrderPayment(context.Context, *connect.Request[v1.RecordOrderPaymentRequest]) (*connect.Response[v1.RecordOrderPaymentResponse], error)
+	// Lists payment and lifecycle signals for an order, or for every order in
+	// a shop, oldest first. The same events are pushed to the shop's webhook.
+	ListOrderEvents(context.Context, *connect.Request[v1.ListOrderEventsRequest]) (*connect.Response[v1.ListOrderEventsResponse], error)
 	// Reconciles orders awaiting payment against the payment service and
 	// expires reservations whose payment window has lapsed. Scheduled.
 	ReconcilePayments(context.Context, *connect.Request[v1.ReconcilePaymentsRequest]) (*connect.Response[v1.ReconcilePaymentsResponse], error)
@@ -782,6 +907,8 @@ type CommerceServiceHandler interface {
 	UpdateFulfilment(context.Context, *connect.Request[v1.UpdateFulfilmentRequest]) (*connect.Response[v1.UpdateFulfilmentResponse], error)
 	// Retrieves a fulfilment by ID.
 	GetFulfilment(context.Context, *connect.Request[v1.GetFulfilmentRequest]) (*connect.Response[v1.GetFulfilmentResponse], error)
+	// Lists an order's fulfilments, oldest first.
+	ListFulfilments(context.Context, *connect.Request[v1.ListFulfilmentsRequest]) (*connect.Response[v1.ListFulfilmentsResponse], error)
 	// Creates or updates a price list.
 	PriceListSave(context.Context, *connect.Request[v1.PriceListSaveRequest]) (*connect.Response[v1.PriceListSaveResponse], error)
 	// Retrieves a price list by ID.
@@ -802,6 +929,9 @@ type CommerceServiceHandler interface {
 	DiscountRuleSave(context.Context, *connect.Request[v1.DiscountRuleSaveRequest]) (*connect.Response[v1.DiscountRuleSaveResponse], error)
 	// Searches discount rules for a shop.
 	DiscountRuleSearch(context.Context, *connect.Request[v1.DiscountRuleSearchRequest]) (*connect.Response[v1.DiscountRuleSearchResponse], error)
+	// Approves a discount rule that requires approval, so pricing may apply
+	// it automatically.
+	DiscountRuleApprove(context.Context, *connect.Request[v1.DiscountRuleApproveRequest]) (*connect.Response[v1.DiscountRuleApproveResponse], error)
 	// Resolves the effective price for a variant given customer and quantity context.
 	ResolvePrice(context.Context, *connect.Request[v1.ResolvePriceRequest]) (*connect.Response[v1.ResolvePriceResponse], error)
 }
@@ -837,6 +967,12 @@ func NewCommerceServiceHandler(svc CommerceServiceHandler, opts ...connect.Handl
 		connect.WithSchema(commerceServiceMethods.ByName("ListShops")),
 		connect.WithHandlerOptions(opts...),
 	)
+	commerceServiceResolveDefaultCurrencyHandler := connect.NewUnaryHandler(
+		CommerceServiceResolveDefaultCurrencyProcedure,
+		svc.ResolveDefaultCurrency,
+		connect.WithSchema(commerceServiceMethods.ByName("ResolveDefaultCurrency")),
+		connect.WithHandlerOptions(opts...),
+	)
 	commerceServiceCreateProductHandler := connect.NewUnaryHandler(
 		CommerceServiceCreateProductProcedure,
 		svc.CreateProduct,
@@ -865,6 +1001,12 @@ func NewCommerceServiceHandler(svc CommerceServiceHandler, opts ...connect.Handl
 		CommerceServiceUpdateProductVariantProcedure,
 		svc.UpdateProductVariant,
 		connect.WithSchema(commerceServiceMethods.ByName("UpdateProductVariant")),
+		connect.WithHandlerOptions(opts...),
+	)
+	commerceServiceUpdateProductHandler := connect.NewUnaryHandler(
+		CommerceServiceUpdateProductProcedure,
+		svc.UpdateProduct,
+		connect.WithSchema(commerceServiceMethods.ByName("UpdateProduct")),
 		connect.WithHandlerOptions(opts...),
 	)
 	commerceServiceListProductVariantsHandler := connect.NewUnaryHandler(
@@ -939,6 +1081,18 @@ func NewCommerceServiceHandler(svc CommerceServiceHandler, opts ...connect.Handl
 		connect.WithSchema(commerceServiceMethods.ByName("CancelOrder")),
 		connect.WithHandlerOptions(opts...),
 	)
+	commerceServiceRecordOrderPaymentHandler := connect.NewUnaryHandler(
+		CommerceServiceRecordOrderPaymentProcedure,
+		svc.RecordOrderPayment,
+		connect.WithSchema(commerceServiceMethods.ByName("RecordOrderPayment")),
+		connect.WithHandlerOptions(opts...),
+	)
+	commerceServiceListOrderEventsHandler := connect.NewUnaryHandler(
+		CommerceServiceListOrderEventsProcedure,
+		svc.ListOrderEvents,
+		connect.WithSchema(commerceServiceMethods.ByName("ListOrderEvents")),
+		connect.WithHandlerOptions(opts...),
+	)
 	commerceServiceReconcilePaymentsHandler := connect.NewUnaryHandler(
 		CommerceServiceReconcilePaymentsProcedure,
 		svc.ReconcilePayments,
@@ -967,6 +1121,12 @@ func NewCommerceServiceHandler(svc CommerceServiceHandler, opts ...connect.Handl
 		CommerceServiceGetFulfilmentProcedure,
 		svc.GetFulfilment,
 		connect.WithSchema(commerceServiceMethods.ByName("GetFulfilment")),
+		connect.WithHandlerOptions(opts...),
+	)
+	commerceServiceListFulfilmentsHandler := connect.NewUnaryHandler(
+		CommerceServiceListFulfilmentsProcedure,
+		svc.ListFulfilments,
+		connect.WithSchema(commerceServiceMethods.ByName("ListFulfilments")),
 		connect.WithHandlerOptions(opts...),
 	)
 	commerceServicePriceListSaveHandler := connect.NewUnaryHandler(
@@ -1029,6 +1189,12 @@ func NewCommerceServiceHandler(svc CommerceServiceHandler, opts ...connect.Handl
 		connect.WithSchema(commerceServiceMethods.ByName("DiscountRuleSearch")),
 		connect.WithHandlerOptions(opts...),
 	)
+	commerceServiceDiscountRuleApproveHandler := connect.NewUnaryHandler(
+		CommerceServiceDiscountRuleApproveProcedure,
+		svc.DiscountRuleApprove,
+		connect.WithSchema(commerceServiceMethods.ByName("DiscountRuleApprove")),
+		connect.WithHandlerOptions(opts...),
+	)
 	commerceServiceResolvePriceHandler := connect.NewUnaryHandler(
 		CommerceServiceResolvePriceProcedure,
 		svc.ResolvePrice,
@@ -1045,6 +1211,8 @@ func NewCommerceServiceHandler(svc CommerceServiceHandler, opts ...connect.Handl
 			commerceServiceUpdateShopHandler.ServeHTTP(w, r)
 		case CommerceServiceListShopsProcedure:
 			commerceServiceListShopsHandler.ServeHTTP(w, r)
+		case CommerceServiceResolveDefaultCurrencyProcedure:
+			commerceServiceResolveDefaultCurrencyHandler.ServeHTTP(w, r)
 		case CommerceServiceCreateProductProcedure:
 			commerceServiceCreateProductHandler.ServeHTTP(w, r)
 		case CommerceServiceGetProductProcedure:
@@ -1055,6 +1223,8 @@ func NewCommerceServiceHandler(svc CommerceServiceHandler, opts ...connect.Handl
 			commerceServiceCreateProductVariantHandler.ServeHTTP(w, r)
 		case CommerceServiceUpdateProductVariantProcedure:
 			commerceServiceUpdateProductVariantHandler.ServeHTTP(w, r)
+		case CommerceServiceUpdateProductProcedure:
+			commerceServiceUpdateProductHandler.ServeHTTP(w, r)
 		case CommerceServiceListProductVariantsProcedure:
 			commerceServiceListProductVariantsHandler.ServeHTTP(w, r)
 		case CommerceServiceCreateCartProcedure:
@@ -1079,6 +1249,10 @@ func NewCommerceServiceHandler(svc CommerceServiceHandler, opts ...connect.Handl
 			commerceServiceConfirmOrderPaymentHandler.ServeHTTP(w, r)
 		case CommerceServiceCancelOrderProcedure:
 			commerceServiceCancelOrderHandler.ServeHTTP(w, r)
+		case CommerceServiceRecordOrderPaymentProcedure:
+			commerceServiceRecordOrderPaymentHandler.ServeHTTP(w, r)
+		case CommerceServiceListOrderEventsProcedure:
+			commerceServiceListOrderEventsHandler.ServeHTTP(w, r)
 		case CommerceServiceReconcilePaymentsProcedure:
 			commerceServiceReconcilePaymentsHandler.ServeHTTP(w, r)
 		case CommerceServiceRunEndOfDayLedgerProcedure:
@@ -1089,6 +1263,8 @@ func NewCommerceServiceHandler(svc CommerceServiceHandler, opts ...connect.Handl
 			commerceServiceUpdateFulfilmentHandler.ServeHTTP(w, r)
 		case CommerceServiceGetFulfilmentProcedure:
 			commerceServiceGetFulfilmentHandler.ServeHTTP(w, r)
+		case CommerceServiceListFulfilmentsProcedure:
+			commerceServiceListFulfilmentsHandler.ServeHTTP(w, r)
 		case CommerceServicePriceListSaveProcedure:
 			commerceServicePriceListSaveHandler.ServeHTTP(w, r)
 		case CommerceServicePriceListGetProcedure:
@@ -1109,6 +1285,8 @@ func NewCommerceServiceHandler(svc CommerceServiceHandler, opts ...connect.Handl
 			commerceServiceDiscountRuleSaveHandler.ServeHTTP(w, r)
 		case CommerceServiceDiscountRuleSearchProcedure:
 			commerceServiceDiscountRuleSearchHandler.ServeHTTP(w, r)
+		case CommerceServiceDiscountRuleApproveProcedure:
+			commerceServiceDiscountRuleApproveHandler.ServeHTTP(w, r)
 		case CommerceServiceResolvePriceProcedure:
 			commerceServiceResolvePriceHandler.ServeHTTP(w, r)
 		default:
@@ -1136,6 +1314,10 @@ func (UnimplementedCommerceServiceHandler) ListShops(context.Context, *connect.R
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("commerce.v1.CommerceService.ListShops is not implemented"))
 }
 
+func (UnimplementedCommerceServiceHandler) ResolveDefaultCurrency(context.Context, *connect.Request[v1.ResolveDefaultCurrencyRequest]) (*connect.Response[v1.ResolveDefaultCurrencyResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("commerce.v1.CommerceService.ResolveDefaultCurrency is not implemented"))
+}
+
 func (UnimplementedCommerceServiceHandler) CreateProduct(context.Context, *connect.Request[v1.CreateProductRequest]) (*connect.Response[v1.CreateProductResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("commerce.v1.CommerceService.CreateProduct is not implemented"))
 }
@@ -1154,6 +1336,10 @@ func (UnimplementedCommerceServiceHandler) CreateProductVariant(context.Context,
 
 func (UnimplementedCommerceServiceHandler) UpdateProductVariant(context.Context, *connect.Request[v1.UpdateProductVariantRequest]) (*connect.Response[v1.UpdateProductVariantResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("commerce.v1.CommerceService.UpdateProductVariant is not implemented"))
+}
+
+func (UnimplementedCommerceServiceHandler) UpdateProduct(context.Context, *connect.Request[v1.UpdateProductRequest]) (*connect.Response[v1.UpdateProductResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("commerce.v1.CommerceService.UpdateProduct is not implemented"))
 }
 
 func (UnimplementedCommerceServiceHandler) ListProductVariants(context.Context, *connect.Request[v1.ListProductVariantsRequest]) (*connect.Response[v1.ListProductVariantsResponse], error) {
@@ -1204,6 +1390,14 @@ func (UnimplementedCommerceServiceHandler) CancelOrder(context.Context, *connect
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("commerce.v1.CommerceService.CancelOrder is not implemented"))
 }
 
+func (UnimplementedCommerceServiceHandler) RecordOrderPayment(context.Context, *connect.Request[v1.RecordOrderPaymentRequest]) (*connect.Response[v1.RecordOrderPaymentResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("commerce.v1.CommerceService.RecordOrderPayment is not implemented"))
+}
+
+func (UnimplementedCommerceServiceHandler) ListOrderEvents(context.Context, *connect.Request[v1.ListOrderEventsRequest]) (*connect.Response[v1.ListOrderEventsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("commerce.v1.CommerceService.ListOrderEvents is not implemented"))
+}
+
 func (UnimplementedCommerceServiceHandler) ReconcilePayments(context.Context, *connect.Request[v1.ReconcilePaymentsRequest]) (*connect.Response[v1.ReconcilePaymentsResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("commerce.v1.CommerceService.ReconcilePayments is not implemented"))
 }
@@ -1222,6 +1416,10 @@ func (UnimplementedCommerceServiceHandler) UpdateFulfilment(context.Context, *co
 
 func (UnimplementedCommerceServiceHandler) GetFulfilment(context.Context, *connect.Request[v1.GetFulfilmentRequest]) (*connect.Response[v1.GetFulfilmentResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("commerce.v1.CommerceService.GetFulfilment is not implemented"))
+}
+
+func (UnimplementedCommerceServiceHandler) ListFulfilments(context.Context, *connect.Request[v1.ListFulfilmentsRequest]) (*connect.Response[v1.ListFulfilmentsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("commerce.v1.CommerceService.ListFulfilments is not implemented"))
 }
 
 func (UnimplementedCommerceServiceHandler) PriceListSave(context.Context, *connect.Request[v1.PriceListSaveRequest]) (*connect.Response[v1.PriceListSaveResponse], error) {
@@ -1262,6 +1460,10 @@ func (UnimplementedCommerceServiceHandler) DiscountRuleSave(context.Context, *co
 
 func (UnimplementedCommerceServiceHandler) DiscountRuleSearch(context.Context, *connect.Request[v1.DiscountRuleSearchRequest]) (*connect.Response[v1.DiscountRuleSearchResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("commerce.v1.CommerceService.DiscountRuleSearch is not implemented"))
+}
+
+func (UnimplementedCommerceServiceHandler) DiscountRuleApprove(context.Context, *connect.Request[v1.DiscountRuleApproveRequest]) (*connect.Response[v1.DiscountRuleApproveResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("commerce.v1.CommerceService.DiscountRuleApprove is not implemented"))
 }
 
 func (UnimplementedCommerceServiceHandler) ResolvePrice(context.Context, *connect.Request[v1.ResolvePriceRequest]) (*connect.Response[v1.ResolvePriceResponse], error) {

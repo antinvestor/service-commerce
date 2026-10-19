@@ -1,5 +1,4 @@
 import 'package:antinvestor_api_commerce/antinvestor_api_commerce.dart';
-import 'package:antinvestor_ui_core/widgets/edit_dialog.dart';
 import 'package:antinvestor_ui_core/widgets/error_helpers.dart';
 import 'package:antinvestor_ui_core/widgets/status_badge.dart';
 import 'package:flutter/material.dart';
@@ -7,8 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../providers/pricing_providers.dart';
-
-const _statusOptions = ['Active', 'Inactive'];
+import '../widgets/pricing_id_fields.dart';
 
 /// Screen for assigning customers to a price list and listing assignments.
 class PriceListAssignmentsScreen extends ConsumerWidget {
@@ -20,8 +18,7 @@ class PriceListAssignmentsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final params = (priceListId: priceListId, customerId: null);
-    final asyncAssignments =
-        ref.watch(priceListAssignmentListProvider(params));
+    final asyncAssignments = ref.watch(priceListAssignmentListProvider(params));
 
     return Scaffold(
       floatingActionButton: FloatingActionButton.extended(
@@ -35,15 +32,23 @@ class PriceListAssignmentsScreen extends ConsumerWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.error_outline,
-                  size: 48, color: theme.colorScheme.error),
+              Icon(
+                Icons.error_outline,
+                size: 48,
+                color: theme.colorScheme.error,
+              ),
               const SizedBox(height: 16),
-              Text('Failed to load assignments',
-                  style: theme.textTheme.titleMedium),
+              Text(
+                'Failed to load assignments',
+                style: theme.textTheme.titleMedium,
+              ),
               const SizedBox(height: 8),
-              Text(friendlyError(error),
-                  style: theme.textTheme.bodySmall
-                      ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+              Text(
+                friendlyError(error),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
               const SizedBox(height: 16),
               OutlinedButton.icon(
                 onPressed: () =>
@@ -66,19 +71,28 @@ class PriceListAssignmentsScreen extends ConsumerWidget {
                     onPressed: () => context.go('/pricing/$priceListId'),
                   ),
                   const SizedBox(width: 8),
-                  Icon(Icons.people_outline,
-                      size: 28, color: theme.colorScheme.primary),
+                  Icon(
+                    Icons.people_outline,
+                    size: 28,
+                    color: theme.colorScheme.primary,
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Customer Assignments',
-                            style: theme.textTheme.headlineSmall
-                                ?.copyWith(fontWeight: FontWeight.w600)),
-                        Text('${assignments.length} assignments',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant)),
+                        Text(
+                          'Customer Assignments',
+                          style: theme.textTheme.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        Text(
+                          '${assignments.length} assignments',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -86,24 +100,27 @@ class PriceListAssignmentsScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 20),
               if (assignments.isEmpty)
-                Text('No customers assigned yet',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant))
+                Text(
+                  'No customers assigned yet',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                )
               else
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
-                    border:
-                        Border.all(color: theme.colorScheme.outlineVariant),
+                    border: Border.all(color: theme.colorScheme.outlineVariant),
                   ),
                   child: Column(
                     children: assignments
-                        .map((a) => _AssignmentTile(
-                              assignment: a,
-                              onEdit: () =>
-                                  _assign(context, ref, existing: a),
-                            ))
+                        .map(
+                          (a) => _AssignmentTile(
+                            assignment: a,
+                            onEdit: () => _assign(context, ref, existing: a),
+                          ),
+                        )
                         .toList(),
                   ),
                 ),
@@ -120,56 +137,22 @@ class PriceListAssignmentsScreen extends ConsumerWidget {
     CustomerPriceListAssignment? existing,
   }) async {
     final isEdit = existing != null;
-    final values = await showEditDialog(
+    // assigned_by is stamped server-side from the caller; it is never sent.
+    final request = await showDialog<CustomerPriceListAssignmentSaveRequest>(
       context: context,
-      title: isEdit ? 'Edit Assignment' : 'Assign Customer',
-      saveLabel: isEdit ? 'Save' : 'Assign',
-      fields: [
-        DialogField(
-          key: 'customer',
-          label: 'Customer ID',
-          required: true,
-          initialValue: existing?.customerId ?? '',
-        ),
-        DialogField(
-          key: 'status',
-          label: 'Status',
-          type: DialogFieldType.dropdown,
-          options: _statusOptions,
-          initialValue: isEdit
-              ? (existing.status ==
-                      CustomerPriceListAssignmentStatus
-                          .CUSTOMER_PRICE_LIST_ASSIGNMENT_STATUS_INACTIVE
-                  ? 'Inactive'
-                  : 'Active')
-              : 'Active',
-        ),
-      ],
+      builder: (_) =>
+          _AssignmentDialog(priceListId: priceListId, existing: existing),
     );
-    if (values == null || !context.mounted) return;
-
-    final customerId = (values['customer'] ?? '').trim();
-    if (customerId.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Customer ID is required')),
-      );
-      return;
-    }
-
-    final request = CustomerPriceListAssignmentSaveRequest()
-      ..priceListId = priceListId
-      ..customerId = customerId
-      ..status = (values['status'] ?? 'Active') == 'Inactive'
-          ? CustomerPriceListAssignmentStatus
-              .CUSTOMER_PRICE_LIST_ASSIGNMENT_STATUS_INACTIVE
-          : CustomerPriceListAssignmentStatus
-              .CUSTOMER_PRICE_LIST_ASSIGNMENT_STATUS_ACTIVE;
-    if (isEdit) request.id = existing.id;
+    if (request == null || !context.mounted) return;
 
     try {
       await ref.read(pricingNotifierProvider.notifier).saveAssignment(request);
-      ref.invalidate(priceListAssignmentListProvider(
-          (priceListId: priceListId, customerId: null)));
+      ref.invalidate(
+        priceListAssignmentListProvider((
+          priceListId: priceListId,
+          customerId: null,
+        )),
+      );
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -179,10 +162,97 @@ class PriceListAssignmentsScreen extends ConsumerWidget {
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Error: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     }
+  }
+}
+
+class _AssignmentDialog extends StatefulWidget {
+  const _AssignmentDialog({required this.priceListId, this.existing});
+
+  final String priceListId;
+  final CustomerPriceListAssignment? existing;
+
+  @override
+  State<_AssignmentDialog> createState() => _AssignmentDialogState();
+}
+
+class _AssignmentDialogState extends State<_AssignmentDialog> {
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _customer;
+  late bool _active;
+
+  @override
+  void initState() {
+    super.initState();
+    _customer = TextEditingController(text: widget.existing?.customerId ?? '');
+    _active =
+        widget.existing?.status !=
+        CustomerPriceListAssignmentStatus
+            .CUSTOMER_PRICE_LIST_ASSIGNMENT_STATUS_INACTIVE;
+  }
+
+  @override
+  void dispose() {
+    _customer.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    if (!_formKey.currentState!.validate()) return;
+    final request = CustomerPriceListAssignmentSaveRequest()
+      ..priceListId = widget.priceListId
+      ..customerId = _customer.text.trim()
+      ..status = _active
+          ? CustomerPriceListAssignmentStatus
+                .CUSTOMER_PRICE_LIST_ASSIGNMENT_STATUS_ACTIVE
+          : CustomerPriceListAssignmentStatus
+                .CUSTOMER_PRICE_LIST_ASSIGNMENT_STATUS_INACTIVE;
+    if (widget.existing != null) request.id = widget.existing!.id;
+    Navigator.of(context).pop(request);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isEdit = widget.existing != null;
+    return AlertDialog(
+      title: Text(isEdit ? 'Edit Assignment' : 'Assign Customer'),
+      content: SizedBox(
+        width: 400,
+        child: Form(
+          key: _formKey,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                CustomerIdField(controller: _customer),
+                const SizedBox(height: 16),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  value: _active,
+                  onChanged: (v) => setState(() => _active = v),
+                  title: const Text('Active'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: _submit,
+          child: Text(isEdit ? 'Save' : 'Assign'),
+        ),
+      ],
+    );
   }
 }
 
@@ -206,15 +276,19 @@ class _AssignmentTile extends StatelessWidget {
               color: theme.colorScheme.secondaryContainer.withAlpha(80),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(Icons.person_outline,
-                size: 18, color: theme.colorScheme.secondary),
+            child: Icon(
+              Icons.person_outline,
+              size: 18,
+              color: theme.colorScheme.secondary,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
               assignment.customerId,
-              style: theme.textTheme.bodyMedium
-                  ?.copyWith(fontWeight: FontWeight.w500),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w500,
+              ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
@@ -223,18 +297,21 @@ class _AssignmentTile extends StatelessWidget {
             value: assignment.status,
             mapper: (s) => switch (s) {
               CustomerPriceListAssignmentStatus
-                    .CUSTOMER_PRICE_LIST_ASSIGNMENT_STATUS_ACTIVE =>
+                  .CUSTOMER_PRICE_LIST_ASSIGNMENT_STATUS_ACTIVE =>
                 ('Active', Colors.green, null),
               CustomerPriceListAssignmentStatus
-                    .CUSTOMER_PRICE_LIST_ASSIGNMENT_STATUS_INACTIVE =>
+                  .CUSTOMER_PRICE_LIST_ASSIGNMENT_STATUS_INACTIVE =>
                 ('Inactive', Colors.grey, null),
               _ => ('Unknown', Colors.grey, null),
             },
           ),
           if (onEdit != null)
             IconButton(
-              icon: Icon(Icons.edit_outlined,
-                  size: 18, color: theme.colorScheme.onSurfaceVariant),
+              icon: Icon(
+                Icons.edit_outlined,
+                size: 18,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
               onPressed: onEdit,
             ),
         ],

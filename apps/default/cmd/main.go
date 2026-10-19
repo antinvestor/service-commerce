@@ -40,6 +40,7 @@ import (
 	"github.com/antinvestor/service-commerce/gen/go/commerce/v1/commercev1connect"
 	"github.com/antinvestor/service-commerce/pkg/clients"
 	"github.com/antinvestor/service-commerce/pkg/messages"
+	workflowdefs "github.com/antinvestor/service-commerce/workflows"
 )
 
 func main() {
@@ -73,11 +74,13 @@ func main() {
 	if frame.ShouldRunSetup(&cfg) {
 		notification.RegisterTemplateSync(svc, &cfg, clients.NotificationTarget(&cfg), messages.Registry())
 
-		platform, platformErr := clients.New(ctx, &cfg)
-		if platformErr != nil {
-			log.WithError(platformErr).Fatal("could not build peer clients for setup")
+		// Only the trustage client is needed here; the runtime peers are
+		// built after the setup early return.
+		trustage, trustageErr := clients.NewWorkflowClient(ctx, &cfg)
+		if trustageErr != nil {
+			log.WithError(trustageErr).Fatal("could not build the trustage client for setup")
 		}
-		workflows.RegisterSync(svc, platform.Workflow, cfg.WorkflowsPath, workflows.Env{
+		workflows.RegisterSync(svc, trustage, workflowdefs.Definitions(), workflows.Env{
 			CommerceURI: cfg.CommerceServiceURI,
 		})
 
@@ -150,10 +153,37 @@ func setupConnectServer(
 		ledger = business.NewConnectLedgerGateway(platform.Ledger)
 	}
 
+	// Typed nils must not reach the directory as non-nil interfaces.
+	var (
+		settingsCli business.SettingsClient
+		devicesCli  business.DeviceClient
+		profilesCli business.ProfileClient
+	)
+	if platform.Settings != nil {
+		settingsCli = platform.Settings
+	}
+	if platform.Devices != nil {
+		devicesCli = platform.Devices
+	}
+	if platform.Profiles != nil {
+		profilesCli = platform.Profiles
+	}
+
+	secrets, err := business.NewSecretBox(cfg.WebhookSecretKey)
+	if err != nil {
+		util.Log(ctx).WithError(err).Fatal("invalid WEBHOOK_SECRET_KEY")
+	}
+	if !business.Sealing(secrets) {
+		util.Log(ctx).Warn("WEBHOOK_SECRET_KEY not set; shop webhook secrets are stored unencrypted")
+	}
+
 	implementation := handlers.NewCommerceServer(ctx, svc, authzMiddleware, handlers.Dependencies{
-		Checkout: checkout,
-		Ledger:   ledger,
-		Notifier: notifications.New(platform.Notification),
+		Checkout:   checkout,
+		Ledger:     ledger,
+		Currencies: business.NewConnectCurrencyDirectory(settingsCli, devicesCli, profilesCli),
+		Webhooks:   business.NewHTTPWebhookSender(ctx),
+		Secrets:    secrets,
+		Notifier:   notifications.New(platform.Notification),
 		PaymentPolicy: business.PaymentPolicy{
 			DefaultReturnURL:   cfg.CheckoutReturnURL,
 			ReturnBaseURL:      cfg.ReturnBaseURL(),

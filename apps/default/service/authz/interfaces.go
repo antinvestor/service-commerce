@@ -33,6 +33,7 @@ type Middleware interface {
 	CanPriceListManage(ctx context.Context, shopID string) error
 	CanCustomerPriceOverride(ctx context.Context, shopID string) error
 	CanDiscountManage(ctx context.Context, shopID string) error
+	CanDiscountApprove(ctx context.Context, shopID string) error
 
 	// Tuple management
 	AddShopMember(ctx context.Context, shopID string, profileID string, role string) error

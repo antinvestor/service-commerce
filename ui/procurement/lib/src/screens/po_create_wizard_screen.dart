@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../providers/procurement_providers.dart';
+import '../routing/procurement_paths.dart';
+import '../util/idempotency.dart';
 import '../widgets/supplier_card.dart';
 
 /// Multi-step wizard for creating a purchase order.
@@ -23,8 +25,7 @@ class POCreateWizardScreen extends ConsumerStatefulWidget {
       _POCreateWizardScreenState();
 }
 
-class _POCreateWizardScreenState
-    extends ConsumerState<POCreateWizardScreen> {
+class _POCreateWizardScreenState extends ConsumerState<POCreateWizardScreen> {
   int _step = 0;
   Supplier? _selectedSupplier;
   final List<_POLineItem> _lines = [];
@@ -32,19 +33,18 @@ class _POCreateWizardScreenState
   String _notes = '';
   bool _submitting = false;
 
-  static const _stepLabels = [
-    'Supplier',
-    'Lines',
-    'Delivery',
-    'Confirm',
-  ];
+  /// One key per wizard session, so resubmitting after a lost response
+  /// cannot create a duplicate purchase order.
+  final String _idempotencyKey = newIdempotencyKey();
+
+  static const _stepLabels = ['Supplier', 'Lines', 'Delivery', 'Confirm'];
 
   bool get _canAdvance => switch (_step) {
-        0 => _selectedSupplier != null,
-        1 => _lines.isNotEmpty,
-        2 => true,
-        _ => false,
-      };
+    0 => _selectedSupplier != null,
+    1 => _lines.isNotEmpty,
+    2 => true,
+    _ => false,
+  };
 
   Future<void> _createPO() async {
     if (_selectedSupplier == null || _lines.isEmpty) return;
@@ -52,32 +52,47 @@ class _POCreateWizardScreenState
     setState(() => _submitting = true);
     try {
       final request = PurchaseOrderCreateRequest()
+        ..idempotencyKey = _idempotencyKey
         ..propertyId = widget.propertyId
         ..supplierId = _selectedSupplier!.id
+        ..expectedDeliveryDate = Timestamp.fromDateTime(
+          DateTime.utc(
+            _expectedDelivery.year,
+            _expectedDelivery.month,
+            _expectedDelivery.day,
+          ),
+        )
         ..notes = _notes;
 
       for (final line in _lines) {
-        request.lines.add(PurchaseOrderLineInput()
-          ..inventoryItemId = line.itemId
-          ..orderedQuantity = line.quantity
-          ..unit = line.unit);
+        request.lines.add(
+          PurchaseOrderLineInput()
+            ..supplierItemId = line.supplierItemId
+            ..inventoryItemId = line.inventoryItemId
+            ..orderedQuantity = line.quantity
+            ..unit = line.unit,
+        );
       }
 
       final notifier = ref.read(procurementNotifierProvider.notifier);
-      await notifier.createPO(request);
-      ref.invalidate(purchaseOrderListProvider(widget.propertyId));
+      final created = await notifier.createPO(request);
+      ref.invalidate(purchaseOrderListProvider);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Purchase order created')),
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Purchase order created')));
+        context.go(
+          created.id.isNotEmpty
+              ? ProcurementPaths.order(created.id)
+              : ProcurementPaths.orders,
         );
-        context.go('/procurement/orders');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed: $e')));
       }
     } finally {
       if (mounted) setState(() => _submitting = false);
@@ -98,16 +113,22 @@ class _POCreateWizardScreenState
               children: [
                 IconButton(
                   icon: const Icon(Icons.arrow_back),
-                  onPressed: () =>
-                      context.go('/procurement/orders'),
+                  tooltip: 'Purchase orders',
+                  onPressed: () => context.go(ProcurementPaths.orders),
                 ),
                 const SizedBox(width: 8),
-                Icon(Icons.assignment_outlined,
-                    size: 28, color: theme.colorScheme.primary),
+                Icon(
+                  Icons.assignment_outlined,
+                  size: 28,
+                  color: theme.colorScheme.primary,
+                ),
                 const SizedBox(width: 12),
-                Text('New Purchase Order',
-                    style: theme.textTheme.headlineSmall
-                        ?.copyWith(fontWeight: FontWeight.w600)),
+                Text(
+                  'New Purchase Order',
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ],
             ),
           ),
@@ -128,20 +149,22 @@ class _POCreateWizardScreenState
                         backgroundColor: isDone
                             ? theme.colorScheme.primary
                             : isActive
-                                ? theme.colorScheme.primaryContainer
-                                : theme.colorScheme
-                                    .surfaceContainerHighest,
+                            ? theme.colorScheme.primaryContainer
+                            : theme.colorScheme.surfaceContainerHighest,
                         child: isDone
-                            ? const Icon(Icons.check,
-                                size: 16, color: Colors.white)
-                            : Text('${i + 1}',
-                                style: theme.textTheme.labelSmall
-                                    ?.copyWith(
+                            ? const Icon(
+                                Icons.check,
+                                size: 16,
+                                color: Colors.white,
+                              )
+                            : Text(
+                                '${i + 1}',
+                                style: theme.textTheme.labelSmall?.copyWith(
                                   color: isActive
                                       ? theme.colorScheme.primary
-                                      : theme.colorScheme
-                                          .onSurfaceVariant,
-                                )),
+                                      : theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
                       ),
                       const SizedBox(height: 4),
                       Text(
@@ -169,29 +192,31 @@ class _POCreateWizardScreenState
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: switch (_step) {
                 0 => _StepSupplier(
-                    selected: _selectedSupplier,
-                    onSelected: (s) =>
-                        setState(() => _selectedSupplier = s),
-                  ),
+                  selected: _selectedSupplier,
+                  onSelected: (s) => setState(() {
+                    // Lines reference the previous supplier's catalogue.
+                    if (s.id != _selectedSupplier?.id) _lines.clear();
+                    _selectedSupplier = s;
+                  }),
+                ),
                 1 => _StepLines(
-                    lines: _lines,
-                    onAdd: (l) => setState(() => _lines.add(l)),
-                    onRemove: (i) =>
-                        setState(() => _lines.removeAt(i)),
-                  ),
+                  supplierId: _selectedSupplier!.id,
+                  lines: _lines,
+                  onAdd: (l) => setState(() => _lines.add(l)),
+                  onRemove: (i) => setState(() => _lines.removeAt(i)),
+                ),
                 2 => _StepDelivery(
-                    date: _expectedDelivery,
-                    notes: _notes,
-                    onDateChanged: (d) =>
-                        setState(() => _expectedDelivery = d),
-                    onNotesChanged: (n) =>
-                        setState(() => _notes = n),
-                  ),
+                  date: _expectedDelivery,
+                  notes: _notes,
+                  onDateChanged: (d) => setState(() => _expectedDelivery = d),
+                  onNotesChanged: (n) => setState(() => _notes = n),
+                ),
                 3 => _StepConfirm(
-                    supplier: _selectedSupplier,
-                    lines: _lines,
-                    expectedDelivery: _expectedDelivery,
-                  ),
+                  supplier: _selectedSupplier,
+                  lines: _lines,
+                  expectedDelivery: _expectedDelivery,
+                  notes: _notes,
+                ),
                 _ => const SizedBox.shrink(),
               },
             ),
@@ -223,7 +248,9 @@ class _POCreateWizardScreenState
                             width: 18,
                             height: 18,
                             child: CircularProgressIndicator(
-                                strokeWidth: 2, color: Colors.white),
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
                           )
                         : const Icon(Icons.check, size: 18),
                     label: const Text('Create PO'),
@@ -248,19 +275,26 @@ class _StepSupplier extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final asyncSuppliers = ref.watch(supplierListProvider(null));
+    final asyncSuppliers = ref.watch(
+      supplierListProvider((
+        type: null,
+        status: SupplierStatus.SUPPLIER_STATUS_ACTIVE,
+      )),
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Select Supplier',
-            style: theme.textTheme.titleSmall
-                ?.copyWith(fontWeight: FontWeight.w600)),
+        Text(
+          'Select Supplier',
+          style: theme.textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
         const SizedBox(height: 12),
         Expanded(
           child: asyncSuppliers.when(
-            loading: () =>
-                const Center(child: CircularProgressIndicator()),
+            loading: () => const Center(child: CircularProgressIndicator()),
             error: (e, _) => Text('Error: $e'),
             data: (suppliers) => ListView.builder(
               itemCount: suppliers.length,
@@ -273,7 +307,9 @@ class _StepSupplier extends ConsumerWidget {
                     decoration: isSelected
                         ? BoxDecoration(
                             border: Border.all(
-                                color: theme.colorScheme.primary, width: 2),
+                              color: theme.colorScheme.primary,
+                              width: 2,
+                            ),
                             borderRadius: BorderRadius.circular(14),
                           )
                         : null,
@@ -292,104 +328,175 @@ class _StepSupplier extends ConsumerWidget {
   }
 }
 
-class _StepLines extends StatefulWidget {
+class _StepLines extends ConsumerStatefulWidget {
   const _StepLines({
+    required this.supplierId,
     required this.lines,
     required this.onAdd,
     required this.onRemove,
   });
 
+  final String supplierId;
   final List<_POLineItem> lines;
   final ValueChanged<_POLineItem> onAdd;
   final ValueChanged<int> onRemove;
 
   @override
-  State<_StepLines> createState() => _StepLinesState();
+  ConsumerState<_StepLines> createState() => _StepLinesState();
 }
 
-class _StepLinesState extends State<_StepLines> {
-  final _itemIdController = TextEditingController();
+class _StepLinesState extends ConsumerState<_StepLines> {
+  SupplierItem? _item;
   final _qtyController = TextEditingController(text: '1');
-  final _unitController = TextEditingController(text: 'kg');
+  final _unitController = TextEditingController();
 
   @override
   void dispose() {
-    _itemIdController.dispose();
     _qtyController.dispose();
     _unitController.dispose();
     super.dispose();
   }
 
+  void _selectItem(SupplierItem? item) {
+    setState(() {
+      _item = item;
+      _unitController.text = item?.unit ?? '';
+      if (item != null && item.minOrderQuantity > 0) {
+        _qtyController.text = _formatQty(item.minOrderQuantity);
+      }
+    });
+  }
+
+  void _addLine() {
+    final item = _item;
+    final qty = double.tryParse(_qtyController.text.trim()) ?? 0;
+    if (item == null || qty <= 0) return;
+    final unit = _unitController.text.trim();
+    widget.onAdd(
+      _POLineItem(
+        supplierItemId: item.id,
+        inventoryItemId: item.inventoryItemId,
+        label: item.supplierSku.isNotEmpty
+            ? item.supplierSku
+            : item.inventoryItemId,
+        quantity: qty,
+        unit: unit.isNotEmpty ? unit : item.unit,
+      ),
+    );
+    _selectItem(null);
+    _qtyController.text = '1';
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final asyncItems = ref.watch(supplierItemListProvider(widget.supplierId));
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Add Order Lines',
-            style: theme.textTheme.titleSmall
-                ?.copyWith(fontWeight: FontWeight.w600)),
+        Text(
+          'Add Order Lines',
+          style: theme.textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
         const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              flex: 3,
-              child: TextField(
-                controller: _itemIdController,
-                decoration: const InputDecoration(
-                  labelText: 'Item ID',
-                  isDense: true,
+        asyncItems.when(
+          loading: () => const LinearProgressIndicator(),
+          error: (e, _) => Text(
+            'Failed to load supplier items: $e',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.error,
+            ),
+          ),
+          data: (all) {
+            final items = all
+                .where(
+                  (i) =>
+                      i.status !=
+                      SupplierItemStatus.SUPPLIER_ITEM_STATUS_DISCONTINUED,
+                )
+                .toList();
+            if (items.isEmpty) {
+              return Text(
+                'This supplier has no active items. Add items on the '
+                'supplier page first.',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
                 ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: TextField(
-                controller: _qtyController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Qty',
-                  isDense: true,
+              );
+            }
+            return Row(
+              children: [
+                Expanded(
+                  flex: 3,
+                  child: DropdownButtonFormField<SupplierItem>(
+                    key: ValueKey(_item?.id),
+                    initialValue: _item,
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Supplier item',
+                      isDense: true,
+                    ),
+                    items: [
+                      for (final i in items)
+                        DropdownMenuItem(
+                          value: i,
+                          child: Text(
+                            i.supplierSku.isNotEmpty
+                                ? '${i.supplierSku} (${i.inventoryItemId})'
+                                : i.inventoryItemId,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                    ],
+                    onChanged: _selectItem,
+                  ),
                 ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: TextField(
-                controller: _unitController,
-                decoration: const InputDecoration(
-                  labelText: 'Unit',
-                  isDense: true,
+                const SizedBox(width: 8),
+                Expanded(
+                  child: TextField(
+                    controller: _qtyController,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    decoration: const InputDecoration(
+                      labelText: 'Qty',
+                      isDense: true,
+                    ),
+                  ),
                 ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            IconButton(
-              icon: const Icon(Icons.add_circle),
-              onPressed: () {
-                final itemId = _itemIdController.text.trim();
-                final qty =
-                    double.tryParse(_qtyController.text.trim()) ?? 1;
-                final unit = _unitController.text.trim();
-                if (itemId.isNotEmpty) {
-                  widget.onAdd(_POLineItem(
-                    itemId: itemId,
-                    quantity: qty,
-                    unit: unit,
-                  ));
-                  _itemIdController.clear();
-                }
-              },
-            ),
-          ],
+                const SizedBox(width: 8),
+                Expanded(
+                  child: TextField(
+                    controller: _unitController,
+                    decoration: const InputDecoration(
+                      labelText: 'Unit',
+                      isDense: true,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                IconButton(
+                  icon: const Icon(Icons.add_circle),
+                  tooltip: 'Add line',
+                  onPressed: _item == null ? null : _addLine,
+                ),
+              ],
+            );
+          },
         ),
         const SizedBox(height: 16),
         Expanded(
           child: widget.lines.isEmpty
               ? Center(
-                  child: Text('No lines added',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant)),
+                  child: Text(
+                    'No lines added',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
                 )
               : ListView.builder(
                   itemCount: widget.lines.length,
@@ -397,11 +504,12 @@ class _StepLinesState extends State<_StepLines> {
                     final line = widget.lines[index];
                     return ListTile(
                       dense: true,
-                      title: Text(line.itemId),
-                      subtitle: Text('${line.quantity} ${line.unit}'),
+                      title: Text(line.label),
+                      subtitle: Text(
+                        '${_formatQty(line.quantity)} ${line.unit}',
+                      ),
                       trailing: IconButton(
-                        icon: const Icon(
-                            Icons.remove_circle_outline, size: 20),
+                        icon: const Icon(Icons.remove_circle_outline, size: 20),
                         onPressed: () => widget.onRemove(index),
                       ),
                     );
@@ -412,6 +520,9 @@ class _StepLinesState extends State<_StepLines> {
     );
   }
 }
+
+String _formatQty(double qty) =>
+    qty == qty.roundToDouble() ? qty.toStringAsFixed(0) : qty.toString();
 
 class _StepDelivery extends StatelessWidget {
   const _StepDelivery({
@@ -432,22 +543,25 @@ class _StepDelivery extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Delivery Details',
-            style: theme.textTheme.titleSmall
-                ?.copyWith(fontWeight: FontWeight.w600)),
+        Text(
+          'Delivery Details',
+          style: theme.textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
         const SizedBox(height: 12),
         ListTile(
           leading: const Icon(Icons.calendar_today),
           title: Text(
-              '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}'),
+            '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}',
+          ),
           subtitle: const Text('Expected delivery date'),
           onTap: () async {
             final picked = await showDatePicker(
               context: context,
               initialDate: date,
               firstDate: DateTime.now(),
-              lastDate:
-                  DateTime.now().add(const Duration(days: 365)),
+              lastDate: DateTime.now().add(const Duration(days: 365)),
             );
             if (picked != null) onDateChanged(picked);
           },
@@ -456,10 +570,7 @@ class _StepDelivery extends StatelessWidget {
         TextField(
           onChanged: onNotesChanged,
           maxLines: 3,
-          decoration: const InputDecoration(
-            labelText: 'Notes',
-            isDense: true,
-          ),
+          decoration: const InputDecoration(labelText: 'Notes', isDense: true),
         ),
       ],
     );
@@ -471,11 +582,13 @@ class _StepConfirm extends StatelessWidget {
     this.supplier,
     required this.lines,
     required this.expectedDelivery,
+    required this.notes,
   });
 
   final Supplier? supplier;
   final List<_POLineItem> lines;
   final DateTime expectedDelivery;
+  final String notes;
 
   @override
   Widget build(BuildContext context) {
@@ -483,9 +596,12 @@ class _StepConfirm extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Confirm Purchase Order',
-            style: theme.textTheme.titleSmall
-                ?.copyWith(fontWeight: FontWeight.w600)),
+        Text(
+          'Confirm Purchase Order',
+          style: theme.textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
         const SizedBox(height: 16),
         _Row(label: 'Supplier', value: supplier?.name ?? 'None'),
         _Row(label: 'Lines', value: '${lines.length} items'),
@@ -493,6 +609,20 @@ class _StepConfirm extends StatelessWidget {
           label: 'Delivery',
           value:
               '${expectedDelivery.year}-${expectedDelivery.month.toString().padLeft(2, '0')}-${expectedDelivery.day.toString().padLeft(2, '0')}',
+        ),
+        if (notes.isNotEmpty) _Row(label: 'Notes', value: notes),
+        const SizedBox(height: 8),
+        Expanded(
+          child: ListView(
+            children: [
+              for (final line in lines)
+                ListTile(
+                  dense: true,
+                  title: Text(line.label),
+                  trailing: Text('${_formatQty(line.quantity)} ${line.unit}'),
+                ),
+            ],
+          ),
         ),
       ],
     );
@@ -514,13 +644,21 @@ class _Row extends StatelessWidget {
         children: [
           SizedBox(
             width: 110,
-            child: Text(label,
-                style: theme.textTheme.bodySmall
-                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+            child: Text(
+              label,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
           ),
-          Text(value,
-              style: theme.textTheme.bodySmall
-                  ?.copyWith(fontWeight: FontWeight.w500)),
+          Expanded(
+            child: Text(
+              value,
+              style: theme.textTheme.bodySmall?.copyWith(
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -529,12 +667,16 @@ class _Row extends StatelessWidget {
 
 class _POLineItem {
   const _POLineItem({
-    required this.itemId,
+    required this.supplierItemId,
+    required this.inventoryItemId,
+    required this.label,
     required this.quantity,
     required this.unit,
   });
 
-  final String itemId;
+  final String supplierItemId;
+  final String inventoryItemId;
+  final String label;
   final double quantity;
   final String unit;
 }

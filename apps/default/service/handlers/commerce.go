@@ -17,6 +17,7 @@ package handlers
 import (
 	"context"
 	"errors"
+	"slices"
 
 	"connectrpc.com/connect"
 	"github.com/pitabwire/frame/v2"
@@ -42,6 +43,7 @@ import (
 type CommerceServer struct {
 	authz              authz.Middleware
 	shopBusiness       business.ShopBusiness
+	currencies         business.CurrencyResolver
 	catalogBusiness    business.CatalogBusiness
 	cartBusiness       business.CartBusiness
 	orderBusiness      business.OrderBusiness
@@ -49,6 +51,7 @@ type CommerceServer struct {
 	pricingBusiness    business.PricingBusiness
 	paymentBusiness    business.PaymentBusiness
 	ledgerBusiness     business.LedgerBusiness
+	eventBusiness      business.EventBusiness
 
 	commercev1connect.UnimplementedCommerceServiceHandler
 }
@@ -57,6 +60,9 @@ type CommerceServer struct {
 type Dependencies struct {
 	Checkout      business.CheckoutGateway
 	Ledger        business.LedgerGateway
+	Currencies    business.CurrencyDirectory
+	Webhooks      business.WebhookSender
+	Secrets       business.SecretBox
 	Notifier      notifications.Notifier
 	PaymentPolicy business.PaymentPolicy
 	LedgerPolicy  business.LedgerPolicy
@@ -89,6 +95,8 @@ func NewCommerceServer(
 	overrideRepo := repository.NewCustomerPriceOverrideRepository(ctx, dbPool, workMan)
 	discountRuleRepo := repository.NewDiscountRuleRepository(ctx, dbPool, workMan)
 	postingRepo := repository.NewLedgerPostingRepository(ctx, dbPool, workMan)
+	eventRepo := repository.NewOrderEventRepository(ctx, dbPool, workMan)
+	events := business.NewEventBusiness(eventRepo, shopRepo, deps.Notifier, deps.Webhooks, deps.Secrets)
 
 	pricingBusiness := business.NewPricingBusiness(
 		ctx,
@@ -102,9 +110,12 @@ func NewCommerceServer(
 		shopRepo,
 	)
 
+	currencies := business.NewCurrencyResolver(deps.Currencies)
+
 	return &CommerceServer{
 		authz:           authzMiddleware,
-		shopBusiness:    business.NewShopBusiness(ctx, shopRepo, authzMiddleware),
+		currencies:      currencies,
+		shopBusiness:    business.NewShopBusiness(ctx, shopRepo, authzMiddleware, currencies, deps.Secrets),
 		catalogBusiness: business.NewCatalogBusiness(ctx, productRepo, variantRepo, shopRepo),
 		cartBusiness:    business.NewCartBusiness(ctx, cartRepo, cartLineRepo, variantRepo),
 		orderBusiness: business.NewOrderBusiness(
@@ -129,12 +140,13 @@ func NewCommerceServer(
 			deps.Notifier,
 		),
 		paymentBusiness: business.NewPaymentBusiness(
-			ctx, orderRepo, shopRepo, deps.Checkout, deps.Notifier, deps.PaymentPolicy,
+			ctx, orderRepo, shopRepo, deps.Checkout, deps.Notifier, events, deps.PaymentPolicy,
 		),
 		ledgerBusiness: business.NewLedgerBusiness(
 			ctx, orderRepo, shopRepo, postingRepo, deps.Ledger, deps.Notifier, deps.LedgerPolicy,
 		),
 		pricingBusiness: pricingBusiness,
+		eventBusiness:   events,
 	}
 }
 
@@ -195,6 +207,16 @@ func (cs *CommerceServer) ListShops(
 		return nil, errorutil.CleanErr(err)
 	}
 	return connect.NewResponse(&commercev1.ListShopsResponse{Shops: page.Shops, NextPage: page.NextPage}), nil
+}
+
+// ResolveDefaultCurrency tells the console which currency to offer when the
+// caller sets up a shop. shops_list is enforced by the interceptor.
+func (cs *CommerceServer) ResolveDefaultCurrency(
+	ctx context.Context,
+	_ *connect.Request[commercev1.ResolveDefaultCurrencyRequest],
+) (*connect.Response[commercev1.ResolveDefaultCurrencyResponse], error) {
+	code, source := cs.currencies.DefaultCurrency(ctx)
+	return connect.NewResponse(&commercev1.ResolveDefaultCurrencyResponse{Currency: code, Source: source}), nil
 }
 
 // ----------------------
@@ -453,14 +475,15 @@ func (cs *CommerceServer) CheckoutOrder(
 	if _, err := cs.authorizedOrder(ctx, req.Msg.GetOrderId(), cs.authz.CanOrdersManage); err != nil {
 		return nil, err
 	}
-	order, err := cs.paymentBusiness.CheckoutOrder(ctx, req.Msg)
+	result, err := cs.paymentBusiness.CheckoutOrder(ctx, req.Msg)
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
 	return connect.NewResponse(&commercev1.CheckoutOrderResponse{
-		Order:       order,
-		CheckoutUrl: order.GetCheckoutUrl(),
-		SessionRef:  order.GetPaymentSessionRef(),
+		Order:       result.Order,
+		CheckoutUrl: result.Order.GetCheckoutUrl(),
+		SessionRef:  result.Order.GetPaymentSessionRef(),
+		Amount:      result.Amount,
 	}), nil
 }
 
@@ -510,10 +533,12 @@ func (cs *CommerceServer) ReconcilePayments(
 		return nil, errorutil.CleanErr(err)
 	}
 	return connect.NewResponse(&commercev1.ReconcilePaymentsResponse{
-		Examined: summary.Examined,
-		Paid:     summary.Paid,
-		Expired:  summary.Expired,
-		Failed:   summary.Failed,
+		Examined:        summary.Examined,
+		Paid:            summary.Paid,
+		Expired:         summary.Expired,
+		Failed:          summary.Failed,
+		Overdue:         summary.Overdue,
+		EventsDelivered: summary.EventsDelivered,
 	}), nil
 }
 
@@ -756,8 +781,24 @@ func (cs *CommerceServer) DiscountRuleSave(
 	ctx context.Context,
 	req *connect.Request[commercev1.DiscountRuleSaveRequest],
 ) (*connect.Response[commercev1.DiscountRuleSaveResponse], error) {
-	if err := cs.authz.CanDiscountManage(ctx, req.Msg.GetShopId()); err != nil {
+	shopID := req.Msg.GetShopId()
+	if req.Msg.GetId() != "" {
+		// Updates are scoped by the stored shop, not whatever the client sent.
+		stored, err := cs.pricingBusiness.GetDiscountRuleShopID(ctx, req.Msg.GetId())
+		if err != nil {
+			return nil, errorutil.CleanErr(err)
+		}
+		shopID = stored
+	}
+	if err := cs.authz.CanDiscountManage(ctx, shopID); err != nil {
 		return nil, authorizer.ToConnectError(err)
+	}
+	// Waiving a rule's approval requirement is an approver's decision.
+	if req.Msg.GetId() != "" && !req.Msg.GetRequiresApproval() &&
+		slices.Contains(req.Msg.GetUpdateMask().GetPaths(), "requires_approval") {
+		if err := cs.authz.CanDiscountApprove(ctx, shopID); err != nil {
+			return nil, authorizer.ToConnectError(err)
+		}
 	}
 	rule, err := cs.pricingBusiness.SaveDiscountRule(ctx, req.Msg)
 	if err != nil {
@@ -926,4 +967,114 @@ func (cs *CommerceServer) checkOverrideSearchAuthz(
 		return errorutil.CleanErr(shopErr)
 	}
 	return authorizer.ToConnectError(cs.authz.CanCustomerPriceOverride(ctx, shopID))
+}
+
+// RecordOrderPayment applies an instalment the shop took itself. Staff only:
+// unlike checkout, a buyer cannot vouch for their own payment.
+func (cs *CommerceServer) RecordOrderPayment(
+	ctx context.Context,
+	req *connect.Request[commercev1.RecordOrderPaymentRequest],
+) (*connect.Response[commercev1.RecordOrderPaymentResponse], error) {
+	if err := cs.requireOrderPermission(ctx, req.Msg.GetOrderId(), cs.authz.CanOrdersManage); err != nil {
+		return nil, err
+	}
+	order, err := cs.paymentBusiness.RecordOrderPayment(ctx, business.RecordedPayment{
+		OrderID:    req.Msg.GetOrderId(),
+		Amount:     req.Msg.GetAmount(),
+		Reference:  req.Msg.GetReference(),
+		Note:       req.Msg.GetNote(),
+		RecordedBy: callerSubject(ctx),
+	})
+	if err != nil {
+		return nil, errorutil.CleanErr(err)
+	}
+	return connect.NewResponse(&commercev1.RecordOrderPaymentResponse{Order: order}), nil
+}
+
+// ListOrderEvents serves an order's signals to its buyer or to staff, and a
+// shop's to staff.
+func (cs *CommerceServer) ListOrderEvents(
+	ctx context.Context,
+	req *connect.Request[commercev1.ListOrderEventsRequest],
+) (*connect.Response[commercev1.ListOrderEventsResponse], error) {
+	shopID, orderID := req.Msg.GetShopId(), req.Msg.GetOrderId()
+	switch {
+	case orderID != "":
+		order, err := cs.authorizedOrder(ctx, orderID, cs.authz.CanOrdersView)
+		if err != nil {
+			return nil, err
+		}
+		if shopID != "" && shopID != order.GetShopId() {
+			return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("order is not in that shop"))
+		}
+		shopID = ""
+	case shopID != "":
+		if err := cs.authz.CanOrdersView(ctx, shopID); err != nil {
+			return nil, authorizer.ToConnectError(err)
+		}
+	default:
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("shop_id or order_id is required"))
+	}
+	page, err := business.PageFromSearch(req.Msg.GetSearch())
+	if err != nil {
+		return nil, err
+	}
+	events, err := cs.eventBusiness.List(ctx, shopID, orderID, page)
+	if err != nil {
+		return nil, errorutil.CleanErr(err)
+	}
+	return connect.NewResponse(&commercev1.ListOrderEventsResponse{
+		Events: events.Events, NextPage: events.NextPage,
+	}), nil
+}
+
+func (cs *CommerceServer) UpdateProduct(
+	ctx context.Context,
+	req *connect.Request[commercev1.UpdateProductRequest],
+) (*connect.Response[commercev1.UpdateProductResponse], error) {
+	existing, err := cs.catalogBusiness.GetProduct(ctx, req.Msg.GetId())
+	if err != nil {
+		return nil, errorutil.CleanErr(err)
+	}
+	if authzErr := cs.authz.CanProductsManage(ctx, existing.GetShopId()); authzErr != nil {
+		return nil, authorizer.ToConnectError(authzErr)
+	}
+	product, err := cs.catalogBusiness.UpdateProduct(ctx, req.Msg)
+	if err != nil {
+		return nil, errorutil.CleanErr(err)
+	}
+	return connect.NewResponse(&commercev1.UpdateProductResponse{Product: product}), nil
+}
+
+// ListFulfilments lets a buyer track their own order and staff see any.
+func (cs *CommerceServer) ListFulfilments(
+	ctx context.Context,
+	req *connect.Request[commercev1.ListFulfilmentsRequest],
+) (*connect.Response[commercev1.ListFulfilmentsResponse], error) {
+	if _, err := cs.authorizedOrder(ctx, req.Msg.GetOrderId(), cs.authz.CanOrdersView); err != nil {
+		return nil, err
+	}
+	fulfilments, err := cs.fulfilmentBusiness.ListFulfilments(ctx, req.Msg.GetOrderId())
+	if err != nil {
+		return nil, errorutil.CleanErr(err)
+	}
+	return connect.NewResponse(&commercev1.ListFulfilmentsResponse{Fulfilments: fulfilments}), nil
+}
+
+func (cs *CommerceServer) DiscountRuleApprove(
+	ctx context.Context,
+	req *connect.Request[commercev1.DiscountRuleApproveRequest],
+) (*connect.Response[commercev1.DiscountRuleApproveResponse], error) {
+	shopID, err := cs.pricingBusiness.GetDiscountRuleShopID(ctx, req.Msg.GetId())
+	if err != nil {
+		return nil, errorutil.CleanErr(err)
+	}
+	if authzErr := cs.authz.CanDiscountApprove(ctx, shopID); authzErr != nil {
+		return nil, authorizer.ToConnectError(authzErr)
+	}
+	rule, err := cs.pricingBusiness.ApproveDiscountRule(ctx, req.Msg.GetId())
+	if err != nil {
+		return nil, errorutil.CleanErr(err)
+	}
+	return connect.NewResponse(&commercev1.DiscountRuleApproveResponse{DiscountRule: rule}), nil
 }

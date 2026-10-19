@@ -36,11 +36,10 @@ class POLineTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  itemName.isNotEmpty
-                      ? itemName
-                      : line.inventoryItemId,
-                  style: theme.textTheme.bodyMedium
-                      ?.copyWith(fontWeight: FontWeight.w500),
+                  itemName.isNotEmpty ? itemName : line.inventoryItemId,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w500,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -53,8 +52,7 @@ class POLineTile extends StatelessWidget {
               ],
             ),
           ),
-          if (line.hasUnitPrice())
-            AmountDisplay(amount: line.unitPrice),
+          if (line.hasUnitPrice()) AmountDisplay(amount: line.unitPrice),
         ],
       ),
     );

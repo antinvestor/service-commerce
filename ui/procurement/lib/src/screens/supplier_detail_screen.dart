@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../providers/procurement_providers.dart';
+import '../routing/procurement_paths.dart';
 import '../widgets/supplier_rating_badge.dart';
 import 'supplier_form.dart';
 import 'supplier_item_form.dart';
@@ -29,15 +30,23 @@ class SupplierDetailScreen extends ConsumerWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.error_outline,
-                  size: 48, color: theme.colorScheme.error),
+              Icon(
+                Icons.error_outline,
+                size: 48,
+                color: theme.colorScheme.error,
+              ),
               const SizedBox(height: 16),
-              Text('Failed to load supplier',
-                  style: theme.textTheme.titleMedium),
+              Text(
+                'Failed to load supplier',
+                style: theme.textTheme.titleMedium,
+              ),
               const SizedBox(height: 8),
-              Text(friendlyError(error),
-                  style: theme.textTheme.bodySmall
-                      ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+              Text(
+                friendlyError(error),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
             ],
           ),
         ),
@@ -50,28 +59,33 @@ class SupplierDetailScreen extends ConsumerWidget {
                 children: [
                   IconButton(
                     icon: const Icon(Icons.arrow_back),
-                    onPressed: () =>
-                        context.go('/procurement/suppliers'),
+                    tooltip: 'Suppliers',
+                    onPressed: () => context.go(ProcurementPaths.suppliers),
                   ),
                   const SizedBox(width: 8),
-                  Icon(Icons.business_outlined,
-                      size: 28, color: theme.colorScheme.primary),
+                  Icon(
+                    Icons.business_outlined,
+                    size: 28,
+                    color: theme.colorScheme.primary,
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          supplier.name.isNotEmpty
-                              ? supplier.name
-                              : 'Supplier',
-                          style: theme.textTheme.headlineSmall
-                              ?.copyWith(fontWeight: FontWeight.w600),
+                          supplier.name.isNotEmpty ? supplier.name : 'Supplier',
+                          style: theme.textTheme.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
-                        Text(supplier.id,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
-                                fontFamily: 'monospace')),
+                        Text(
+                          supplier.id,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                            fontFamily: 'monospace',
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -79,7 +93,10 @@ class SupplierDetailScreen extends ConsumerWidget {
                     icon: const Icon(Icons.edit_outlined),
                     tooltip: 'Edit supplier',
                     onPressed: () => showSupplierForm(
-                        context: context, ref: ref, existing: supplier),
+                      context: context,
+                      ref: ref,
+                      existing: supplier,
+                    ),
                   ),
                 ],
               ),
@@ -91,12 +108,21 @@ class SupplierDetailScreen extends ConsumerWidget {
                   StatusBadge.fromEnum(
                     value: supplier.status,
                     mapper: (s) => switch (s) {
-                      SupplierStatus.SUPPLIER_STATUS_ACTIVE =>
-                        ('Active', Colors.green, null),
-                      SupplierStatus.SUPPLIER_STATUS_SUSPENDED =>
-                        ('Suspended', Colors.orange, null),
-                      SupplierStatus.SUPPLIER_STATUS_INACTIVE =>
-                        ('Inactive', Colors.grey, null),
+                      SupplierStatus.SUPPLIER_STATUS_ACTIVE => (
+                        'Active',
+                        Colors.green,
+                        null,
+                      ),
+                      SupplierStatus.SUPPLIER_STATUS_SUSPENDED => (
+                        'Suspended',
+                        Colors.orange,
+                        null,
+                      ),
+                      SupplierStatus.SUPPLIER_STATUS_INACTIVE => (
+                        'Inactive',
+                        Colors.grey,
+                        null,
+                      ),
                       _ => ('Unknown', Colors.grey, null),
                     },
                   ),
@@ -106,11 +132,13 @@ class SupplierDetailScreen extends ConsumerWidget {
               const SizedBox(height: 20),
               _DetailRow(label: 'Currency', value: supplier.currency),
               _DetailRow(
-                  label: 'Payment Terms',
-                  value: '${supplier.paymentTermsDays} days'),
+                label: 'Payment Terms',
+                value: '${supplier.paymentTermsDays} days',
+              ),
               _DetailRow(
-                  label: 'Lead Time',
-                  value: '${supplier.leadTimeDays} days'),
+                label: 'Lead Time',
+                value: '${supplier.leadTimeDays} days',
+              ),
               if (supplier.notes.isNotEmpty)
                 _DetailRow(label: 'Notes', value: supplier.notes),
               const SizedBox(height: 24),
@@ -139,13 +167,19 @@ class _SupplierItemsSection extends ConsumerWidget {
       children: [
         Row(
           children: [
-            Icon(Icons.inventory_2_outlined,
-                size: 22, color: theme.colorScheme.primary),
+            Icon(
+              Icons.inventory_2_outlined,
+              size: 22,
+              color: theme.colorScheme.primary,
+            ),
             const SizedBox(width: 8),
             Expanded(
-              child: Text('Supplied Items',
-                  style: theme.textTheme.titleMedium
-                      ?.copyWith(fontWeight: FontWeight.w600)),
+              child: Text(
+                'Supplied Items',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
             TextButton.icon(
               onPressed: () => showSupplierItemForm(
@@ -165,21 +199,26 @@ class _SupplierItemsSection extends ConsumerWidget {
             padding: EdgeInsets.symmetric(vertical: 16),
             child: Center(child: CircularProgressIndicator()),
           ),
-          error: (error, _) => Text(friendlyError(error),
-              style: theme.textTheme.bodySmall
-                  ?.copyWith(color: theme.colorScheme.error)),
+          error: (error, _) => Text(
+            friendlyError(error),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.error,
+            ),
+          ),
           data: (items) {
             if (items.isEmpty) {
-              return Text('No items yet',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant));
+              return Text(
+                'No items yet',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              );
             }
             return Column(
               children: items
-                  .map((item) => _SupplierItemTile(
-                        item: item,
-                        supplier: supplier,
-                      ))
+                  .map(
+                    (item) => _SupplierItemTile(item: item, supplier: supplier),
+                  )
                   .toList(),
             );
           },
@@ -207,15 +246,17 @@ class _SupplierItemTile extends ConsumerWidget {
       ),
       child: ListTile(
         title: Text(
-          item.supplierSku.isNotEmpty
-              ? item.supplierSku
-              : item.inventoryItemId,
-          style: theme.textTheme.titleSmall
-              ?.copyWith(fontWeight: FontWeight.w600),
+          item.supplierSku.isNotEmpty ? item.supplierSku : item.inventoryItemId,
+          style: theme.textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
         ),
-        subtitle: Text(item.inventoryItemId,
-            style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant)),
+        subtitle: Text(
+          item.inventoryItemId,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -254,14 +295,20 @@ class _DetailRow extends StatelessWidget {
         children: [
           SizedBox(
             width: 110,
-            child: Text(label,
-                style: theme.textTheme.bodySmall
-                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+            child: Text(
+              label,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
           ),
           Expanded(
-            child: Text(value,
-                style: theme.textTheme.bodySmall
-                    ?.copyWith(fontWeight: FontWeight.w500)),
+            child: Text(
+              value,
+              style: theme.textTheme.bodySmall?.copyWith(
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ),
         ],
       ),

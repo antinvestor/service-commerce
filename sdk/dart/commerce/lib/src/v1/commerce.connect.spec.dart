@@ -42,6 +42,17 @@ abstract final class CommerceService {
     v1commerce.ListShopsResponse.new,
   );
 
+  /// Resolves the currency the caller most likely trades in: their currency
+  /// setting, else the locale of the device they are signed in on, else the
+  /// country of their first profile address. CreateShop applies the same
+  /// default when no currency is given.
+  static const resolveDefaultCurrency = connect.Spec(
+    '/$name/ResolveDefaultCurrency',
+    connect.StreamType.unary,
+    v1commerce.ResolveDefaultCurrencyRequest.new,
+    v1commerce.ResolveDefaultCurrencyResponse.new,
+  );
+
   /// Creates a new product in the catalog.
   static const createProduct = connect.Spec(
     '/$name/CreateProduct',
@@ -80,6 +91,15 @@ abstract final class CommerceService {
     connect.StreamType.unary,
     v1commerce.UpdateProductVariantRequest.new,
     v1commerce.UpdateProductVariantResponse.new,
+  );
+
+  /// Updates a product: details, fulfilment type, status, and its payment
+  /// policy override.
+  static const updateProduct = connect.Spec(
+    '/$name/UpdateProduct',
+    connect.StreamType.unary,
+    v1commerce.UpdateProductRequest.new,
+    v1commerce.UpdateProductResponse.new,
   );
 
   /// Lists the variants of a product.
@@ -185,6 +205,25 @@ abstract final class CommerceService {
     v1commerce.CancelOrderResponse.new,
   );
 
+  /// Records a payment the shop took itself (cash, bank transfer, a till) as
+  /// an instalment against the order. Staff only. A reference already
+  /// recorded on the order is returned as-is, so retries are safe.
+  static const recordOrderPayment = connect.Spec(
+    '/$name/RecordOrderPayment',
+    connect.StreamType.unary,
+    v1commerce.RecordOrderPaymentRequest.new,
+    v1commerce.RecordOrderPaymentResponse.new,
+  );
+
+  /// Lists payment and lifecycle signals for an order, or for every order in
+  /// a shop, oldest first. The same events are pushed to the shop's webhook.
+  static const listOrderEvents = connect.Spec(
+    '/$name/ListOrderEvents',
+    connect.StreamType.unary,
+    v1commerce.ListOrderEventsRequest.new,
+    v1commerce.ListOrderEventsResponse.new,
+  );
+
   /// Reconciles orders awaiting payment against the payment service and
   /// expires reservations whose payment window has lapsed. Scheduled.
   static const reconcilePayments = connect.Spec(
@@ -227,6 +266,14 @@ abstract final class CommerceService {
     connect.StreamType.unary,
     v1commerce.GetFulfilmentRequest.new,
     v1commerce.GetFulfilmentResponse.new,
+  );
+
+  /// Lists an order's fulfilments, oldest first.
+  static const listFulfilments = connect.Spec(
+    '/$name/ListFulfilments',
+    connect.StreamType.unary,
+    v1commerce.ListFulfilmentsRequest.new,
+    v1commerce.ListFulfilmentsResponse.new,
   );
 
   /// Creates or updates a price list.
@@ -307,6 +354,15 @@ abstract final class CommerceService {
     connect.StreamType.unary,
     v1commerce.DiscountRuleSearchRequest.new,
     v1commerce.DiscountRuleSearchResponse.new,
+  );
+
+  /// Approves a discount rule that requires approval, so pricing may apply
+  /// it automatically.
+  static const discountRuleApprove = connect.Spec(
+    '/$name/DiscountRuleApprove',
+    connect.StreamType.unary,
+    v1commerce.DiscountRuleApproveRequest.new,
+    v1commerce.DiscountRuleApproveResponse.new,
   );
 
   /// Resolves the effective price for a variant given customer and quantity context.

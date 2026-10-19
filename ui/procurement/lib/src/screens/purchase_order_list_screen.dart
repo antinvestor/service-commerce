@@ -1,11 +1,12 @@
 import 'package:antinvestor_api_procurement/antinvestor_api_procurement.dart';
-import 'package:antinvestor_ui_core/widgets/edit_dialog.dart';
 import 'package:antinvestor_ui_core/widgets/error_helpers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../providers/procurement_providers.dart';
+import '../routing/procurement_paths.dart';
+import '../widgets/po_actions.dart';
 import '../widgets/purchase_order_card.dart';
 
 /// Screen listing purchase orders for a property.
@@ -21,18 +22,26 @@ class PurchaseOrderListScreen extends ConsumerStatefulWidget {
 
 class _PurchaseOrderListScreenState
     extends ConsumerState<PurchaseOrderListScreen> {
+  static const _statusFilters = <String, PurchaseOrderStatus>{
+    'Draft': PurchaseOrderStatus.PURCHASE_ORDER_STATUS_DRAFT,
+    'Submitted': PurchaseOrderStatus.PURCHASE_ORDER_STATUS_SUBMITTED,
+    'Confirmed': PurchaseOrderStatus.PURCHASE_ORDER_STATUS_CONFIRMED,
+    'Partially received':
+        PurchaseOrderStatus.PURCHASE_ORDER_STATUS_PARTIALLY_RECEIVED,
+    'Received': PurchaseOrderStatus.PURCHASE_ORDER_STATUS_RECEIVED,
+    'Cancelled': PurchaseOrderStatus.PURCHASE_ORDER_STATUS_CANCELLED,
+  };
+
   PurchaseOrderStatus? _selectedStatus;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final asyncOrders =
-        ref.watch(purchaseOrderListProvider(widget.propertyId));
+    final asyncOrders = ref.watch(purchaseOrderListProvider(widget.propertyId));
 
     return Scaffold(
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () =>
-            context.go('/procurement/orders/new'),
+        onPressed: () => context.go(ProcurementPaths.newOrder),
         icon: const Icon(Icons.add),
         label: const Text('New PO'),
       ),
@@ -42,23 +51,29 @@ class _PurchaseOrderListScreenState
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.error_outline,
-                  size: 48, color: theme.colorScheme.error),
+              Icon(
+                Icons.error_outline,
+                size: 48,
+                color: theme.colorScheme.error,
+              ),
               const SizedBox(height: 16),
-              Text('Failed to load purchase orders',
-                  style: theme.textTheme.titleMedium),
+              Text(
+                'Failed to load purchase orders',
+                style: theme.textTheme.titleMedium,
+              ),
               const SizedBox(height: 8),
-              Text(friendlyError(error),
-                  style: theme.textTheme.bodySmall
-                      ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+              Text(
+                friendlyError(error),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
             ],
           ),
         ),
         data: (orders) {
           final filtered = _selectedStatus != null
-              ? orders
-                  .where((o) => o.status == _selectedStatus)
-                  .toList()
+              ? orders.where((o) => o.status == _selectedStatus).toList()
               : orders;
           return _buildContent(context, theme, filtered);
         },
@@ -66,55 +81,11 @@ class _PurchaseOrderListScreenState
     );
   }
 
-  Future<void> _submitOrder(PurchaseOrder order) async {
-    try {
-      final notifier = ref.read(procurementNotifierProvider.notifier);
-      await notifier.submitPO(PurchaseOrderSubmitRequest()..id = order.id);
-      ref.invalidate(purchaseOrderListProvider(widget.propertyId));
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Purchase order submitted')),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed: ${friendlyError(e)}')),
-        );
-      }
-    }
-  }
-
-  Future<void> _cancelOrder(PurchaseOrder order) async {
-    final confirmed = await showConfirmDialog(
-      context: context,
-      title: 'Cancel Purchase Order',
-      message: order.orderNumber.isNotEmpty
-          ? 'Cancel PO #${order.orderNumber}? This cannot be undone.'
-          : 'Cancel this purchase order? This cannot be undone.',
-      confirmLabel: 'Cancel PO',
-    );
-    if (!confirmed || !mounted) return;
-    try {
-      final notifier = ref.read(procurementNotifierProvider.notifier);
-      await notifier.cancelPO(PurchaseOrderCancelRequest()..id = order.id);
-      ref.invalidate(purchaseOrderListProvider(widget.propertyId));
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Purchase order cancelled')),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed: ${friendlyError(e)}')),
-        );
-      }
-    }
-  }
-
-  Widget _buildContent(BuildContext context, ThemeData theme,
-      List<PurchaseOrder> orders) {
+  Widget _buildContent(
+    BuildContext context,
+    ThemeData theme,
+    List<PurchaseOrder> orders,
+  ) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -122,25 +93,39 @@ class _PurchaseOrderListScreenState
         children: [
           Row(
             children: [
-              Icon(Icons.assignment_outlined,
-                  size: 28, color: theme.colorScheme.primary),
+              IconButton(
+                icon: const Icon(Icons.arrow_back),
+                tooltip: 'Procurement',
+                onPressed: () => context.go(ProcurementPaths.root),
+              ),
+              const SizedBox(width: 8),
+              Icon(
+                Icons.assignment_outlined,
+                size: 28,
+                color: theme.colorScheme.primary,
+              ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Purchase Orders',
-                        style: theme.textTheme.headlineSmall
-                            ?.copyWith(fontWeight: FontWeight.w600)),
-                    Text('${orders.length} orders',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant)),
+                    Text(
+                      'Purchase Orders',
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    Text(
+                      '${orders.length} orders',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
                   ],
                 ),
               ),
               FilledButton.icon(
-                onPressed: () =>
-                    context.go('/procurement/orders/new'),
+                onPressed: () => context.go(ProcurementPaths.newOrder),
                 icon: const Icon(Icons.add, size: 18),
                 label: const Text('New PO'),
               ),
@@ -149,38 +134,20 @@ class _PurchaseOrderListScreenState
           const SizedBox(height: 20),
           Wrap(
             spacing: 8,
+            runSpacing: 4,
             children: [
               FilterChip(
                 label: const Text('All'),
                 selected: _selectedStatus == null,
-                onSelected: (_) =>
-                    setState(() => _selectedStatus = null),
+                onSelected: (_) => setState(() => _selectedStatus = null),
               ),
-              FilterChip(
-                label: const Text('Draft'),
-                selected: _selectedStatus ==
-                    PurchaseOrderStatus.PURCHASE_ORDER_STATUS_DRAFT,
-                onSelected: (_) => setState(() => _selectedStatus =
-                    PurchaseOrderStatus.PURCHASE_ORDER_STATUS_DRAFT),
-              ),
-              FilterChip(
-                label: const Text('Submitted'),
-                selected: _selectedStatus ==
-                    PurchaseOrderStatus
-                        .PURCHASE_ORDER_STATUS_SUBMITTED,
-                onSelected: (_) => setState(() => _selectedStatus =
-                    PurchaseOrderStatus
-                        .PURCHASE_ORDER_STATUS_SUBMITTED),
-              ),
-              FilterChip(
-                label: const Text('Received'),
-                selected: _selectedStatus ==
-                    PurchaseOrderStatus
-                        .PURCHASE_ORDER_STATUS_RECEIVED,
-                onSelected: (_) => setState(() => _selectedStatus =
-                    PurchaseOrderStatus
-                        .PURCHASE_ORDER_STATUS_RECEIVED),
-              ),
+              for (final entry in _statusFilters.entries)
+                FilterChip(
+                  label: Text(entry.key),
+                  selected: _selectedStatus == entry.value,
+                  onSelected: (_) =>
+                      setState(() => _selectedStatus = entry.value),
+                ),
             ],
           ),
           const SizedBox(height: 16),
@@ -189,36 +156,37 @@ class _PurchaseOrderListScreenState
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.assignment_outlined,
-                      size: 48,
-                      color: theme.colorScheme.onSurfaceVariant
-                          .withAlpha(120)),
+                  Icon(
+                    Icons.assignment_outlined,
+                    size: 48,
+                    color: theme.colorScheme.onSurfaceVariant.withAlpha(120),
+                  ),
                   const SizedBox(height: 12),
-                  Text('No purchase orders',
-                      style: theme.textTheme.bodyLarge),
+                  Text('No purchase orders', style: theme.textTheme.bodyLarge),
                 ],
               ),
             )
           else
-            ...orders.map((o) => Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: PurchaseOrderCard(
-                          order: o,
-                          onTap: () => context
-                              .go('/procurement/orders/${o.id}'),
-                        ),
-                      ),
-                      _POActionsMenu(
+            ...orders.map(
+              (o) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: PurchaseOrderCard(
                         order: o,
-                        onSubmit: () => _submitOrder(o),
-                        onCancel: () => _cancelOrder(o),
+                        onTap: () => context.go(ProcurementPaths.order(o.id)),
                       ),
-                    ],
-                  ),
-                )),
+                    ),
+                    _POActionsMenu(
+                      order: o,
+                      onSubmit: () => submitPurchaseOrder(context, ref, o),
+                      onCancel: () => cancelPurchaseOrder(context, ref, o),
+                    ),
+                  ],
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -242,11 +210,8 @@ class _POActionsMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final canSubmit =
-        order.status == PurchaseOrderStatus.PURCHASE_ORDER_STATUS_DRAFT;
-    final canCancel = order.status !=
-            PurchaseOrderStatus.PURCHASE_ORDER_STATUS_RECEIVED &&
-        order.status != PurchaseOrderStatus.PURCHASE_ORDER_STATUS_CANCELLED;
+    final canSubmit = canSubmitPO(order);
+    final canCancel = canCancelPO(order);
 
     if (!canSubmit && !canCancel) return const SizedBox.shrink();
 

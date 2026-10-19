@@ -4,21 +4,28 @@ import 'package:antinvestor_api_commerce/antinvestor_api_commerce.dart';
 import 'package:antinvestor_ui_core/widgets/error_helpers.dart';
 import 'package:antinvestor_ui_core/widgets/form_field_card.dart';
 import 'package:antinvestor_ui_core/widgets/gradient_button.dart';
+import 'package:antinvestor_ui_core/widgets/money_helpers.dart'
+    show validateCurrency;
 import 'package:fixnum/fixnum.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../providers/catalog_providers.dart';
+import '../utils/price_input.dart';
 
 /// Screen for creating a new product variant using a Stepper:
 /// 1. SKU (auto-generated)
 /// 2. Name & Price
 /// 3. Confirm
+///
+/// The currency defaults to the shop's currency: from [shopId] when given,
+/// otherwise from the shop that owns the product.
 class VariantCreateScreen extends ConsumerStatefulWidget {
-  const VariantCreateScreen({super.key, required this.productId});
+  const VariantCreateScreen({super.key, required this.productId, this.shopId});
 
   final String productId;
+  final String? shopId;
 
   @override
   ConsumerState<VariantCreateScreen> createState() =>
@@ -30,7 +37,8 @@ class _VariantCreateScreenState extends ConsumerState<VariantCreateScreen> {
   late final TextEditingController _skuController;
   final _nameController = TextEditingController();
   final _priceUnitsController = TextEditingController();
-  final _currencyController = TextEditingController(text: 'KES');
+  final _currencyController = TextEditingController();
+  bool _currencyEdited = false;
   final _stockController = TextEditingController(text: '0');
   bool _isLoading = false;
   String? _error;
@@ -39,6 +47,18 @@ class _VariantCreateScreenState extends ConsumerState<VariantCreateScreen> {
   void initState() {
     super.initState();
     _skuController = TextEditingController(text: _generateSku());
+    final shopId = widget.shopId;
+    final currencySource = shopId != null && shopId.isNotEmpty
+        ? shopCurrencyProvider(shopId)
+        : productCurrencyProvider(widget.productId);
+    ref.listenManual<AsyncValue<String>>(currencySource, (_, next) {
+      final currency = next.value;
+      if (currency != null && currency.isNotEmpty && !_currencyEdited) {
+        // The controller repaints its field; no setState needed (this can
+        // fire during initState).
+        _currencyController.text = currency;
+      }
+    }, fireImmediately: true);
   }
 
   @override
@@ -54,8 +74,10 @@ class _VariantCreateScreenState extends ConsumerState<VariantCreateScreen> {
   String _generateSku() {
     final rand = Random();
     final chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    final suffix =
-        List.generate(8, (_) => chars[rand.nextInt(chars.length)]).join();
+    final suffix = List.generate(
+      8,
+      (_) => chars[rand.nextInt(chars.length)],
+    ).join();
     return 'SKU-$suffix';
   }
 
@@ -65,16 +87,32 @@ class _VariantCreateScreenState extends ConsumerState<VariantCreateScreen> {
       return;
     }
 
+    final ({Int64 units, int nanos}) price;
+    try {
+      price = parsePriceAmount(
+        _priceUnitsController.text.isEmpty ? '0' : _priceUnitsController.text,
+      );
+    } on FormatException catch (e) {
+      setState(() => _error = e.message);
+      return;
+    }
+    final currency = _currencyController.text.trim().toUpperCase();
+    if (validateCurrency(currency) != null) {
+      setState(() => _error = 'Currency must be a 3-letter code.');
+      return;
+    }
+    final stock = int.tryParse(_stockController.text.trim());
+    if (stock == null || stock < 0) {
+      setState(() => _error = 'Stock must be a whole number of 0 or more.');
+      return;
+    }
+
     setState(() {
       _isLoading = true;
       _error = null;
     });
 
     try {
-      final priceUnits = int.tryParse(_priceUnitsController.text.trim()) ?? 0;
-      final stock = int.tryParse(_stockController.text.trim()) ?? 0;
-      final currency = _currencyController.text.trim();
-
       final request = CreateProductVariantRequest()
         ..productId = widget.productId
         ..sku = _skuController.text.trim()
@@ -82,8 +120,9 @@ class _VariantCreateScreenState extends ConsumerState<VariantCreateScreen> {
         ..stockQuantity = Int64(stock);
 
       request.ensurePrice()
-        ..currencyCode = currency.isNotEmpty ? currency : 'KES'
-        ..units = Int64(priceUnits);
+        ..currencyCode = currency
+        ..units = price.units
+        ..nanos = price.nanos;
 
       await ref.read(variantNotifierProvider.notifier).create(request);
 
@@ -150,9 +189,7 @@ class _VariantCreateScreenState extends ConsumerState<VariantCreateScreen> {
           Step(
             title: const Text('SKU'),
             isActive: _currentStep >= 0,
-            state: _currentStep > 0
-                ? StepState.complete
-                : StepState.indexed,
+            state: _currentStep > 0 ? StepState.complete : StepState.indexed,
             content: Column(
               children: [
                 FormFieldCard(
@@ -167,7 +204,8 @@ class _VariantCreateScreenState extends ConsumerState<VariantCreateScreen> {
                         icon: const Icon(Icons.refresh, size: 18),
                         tooltip: 'Regenerate',
                         onPressed: () => setState(
-                            () => _skuController.text = _generateSku()),
+                          () => _skuController.text = _generateSku(),
+                        ),
                       ),
                     ),
                   ),
@@ -178,9 +216,7 @@ class _VariantCreateScreenState extends ConsumerState<VariantCreateScreen> {
           Step(
             title: const Text('Name & Price'),
             isActive: _currentStep >= 1,
-            state: _currentStep > 1
-                ? StepState.complete
-                : StepState.indexed,
+            state: _currentStep > 1 ? StepState.complete : StepState.indexed,
             content: Column(
               children: [
                 FormFieldCard(
@@ -193,23 +229,29 @@ class _VariantCreateScreenState extends ConsumerState<VariantCreateScreen> {
                   ),
                 ),
                 FormFieldCard(
-                  label: 'Price (whole units)',
+                  label: 'Price',
                   description:
-                      'Enter the price in whole currency units (e.g. 100 for 100 KES).',
+                      'Amount in the currency below; decimals are allowed '
+                      '(e.g. 99.50).',
                   child: TextFormField(
+                    key: const ValueKey('variant-create-price'),
                     controller: _priceUnitsController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      hintText: '0',
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
                     ),
+                    decoration: const InputDecoration(hintText: '0.00'),
                   ),
                 ),
                 FormFieldCard(
                   label: 'Currency Code',
+                  description: "Defaults to the shop's currency.",
                   child: TextFormField(
+                    key: const ValueKey('variant-create-currency'),
                     controller: _currencyController,
+                    textCapitalization: TextCapitalization.characters,
+                    onChanged: (_) => _currencyEdited = true,
                     decoration: const InputDecoration(
-                      hintText: 'KES',
+                      hintText: 'ISO 4217 code',
                     ),
                   ),
                 ),
@@ -218,9 +260,7 @@ class _VariantCreateScreenState extends ConsumerState<VariantCreateScreen> {
                   child: TextFormField(
                     controller: _stockController,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      hintText: '0',
-                    ),
+                    decoration: const InputDecoration(hintText: '0'),
                   ),
                 ),
               ],
@@ -232,19 +272,20 @@ class _VariantCreateScreenState extends ConsumerState<VariantCreateScreen> {
             content: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Review your variant:',
-                    style: theme.textTheme.titleSmall),
+                Text('Review your variant:', style: theme.textTheme.titleSmall),
                 const SizedBox(height: 12),
                 _ConfirmRow('SKU', _skuController.text.trim()),
                 _ConfirmRow(
-                    'Name',
-                    _nameController.text.trim().isEmpty
-                        ? '(none)'
-                        : _nameController.text.trim()),
+                  'Name',
+                  _nameController.text.trim().isEmpty
+                      ? '(none)'
+                      : _nameController.text.trim(),
+                ),
                 _ConfirmRow(
-                    'Price',
-                    '${_priceUnitsController.text.trim().isEmpty ? '0' : _priceUnitsController.text.trim()}'
-                    ' ${_currencyController.text.trim()}'),
+                  'Price',
+                  '${_priceUnitsController.text.trim().isEmpty ? '0' : _priceUnitsController.text.trim()}'
+                      ' ${_currencyController.text.trim()}',
+                ),
                 _ConfirmRow('Stock', _stockController.text.trim()),
                 _ConfirmRow('Product', widget.productId),
                 if (_error != null) ...[
@@ -280,14 +321,20 @@ class _ConfirmRow extends StatelessWidget {
         children: [
           SizedBox(
             width: 110,
-            child: Text(label,
-                style: theme.textTheme.bodySmall
-                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+            child: Text(
+              label,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
           ),
           Expanded(
-            child: Text(value,
-                style: theme.textTheme.bodySmall
-                    ?.copyWith(fontWeight: FontWeight.w500)),
+            child: Text(
+              value,
+              style: theme.textTheme.bodySmall?.copyWith(
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ),
         ],
       ),

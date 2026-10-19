@@ -19,81 +19,80 @@ class CatalogRouteModule extends RouteModule {
 
   @override
   List<RouteBase> buildRoutes() => [
+    GoRoute(
+      path: '/catalog',
+      builder: (context, state) => CatalogBrowseScreen(shopId: shopId),
+      routes: [
         GoRoute(
-          path: '/catalog',
-          builder: (context, state) =>
-              CatalogBrowseScreen(shopId: shopId),
+          path: 'new',
+          builder: (context, state) => ProductCreateScreen(shopId: shopId),
+        ),
+        GoRoute(
+          path: ':productId',
+          builder: (context, state) => ProductDetailScreen(
+            productId: state.pathParameters['productId']!,
+          ),
           routes: [
             GoRoute(
-              path: 'new',
-              builder: (context, state) =>
-                  ProductCreateScreen(shopId: shopId),
-            ),
-            GoRoute(
-              path: ':productId',
-              builder: (context, state) => ProductDetailScreen(
+              path: 'variants/new',
+              builder: (context, state) => VariantCreateScreen(
                 productId: state.pathParameters['productId']!,
+                shopId: shopId,
               ),
-              routes: [
-                GoRoute(
-                  path: 'variants/new',
-                  builder: (context, state) => VariantCreateScreen(
-                    productId: state.pathParameters['productId']!,
-                  ),
-                ),
-              ],
             ),
           ],
         ),
-      ];
+      ],
+    ),
+  ];
 
   @override
   List<NavItem> buildNavItems() => [
-        const NavItem(
-          id: 'catalog',
-          label: 'Catalog',
-          icon: Icons.storefront_outlined,
-          activeIcon: Icons.storefront,
-          route: '/catalog',
-          requiredPermissions: {'catalog_view'},
-        ),
-      ];
+    const NavItem(
+      id: 'catalog',
+      label: 'Catalog',
+      icon: Icons.storefront_outlined,
+      activeIcon: Icons.storefront,
+      route: '/catalog',
+      requiredPermissions: {'catalog_view'},
+    ),
+  ];
 
   @override
   Map<String, Set<String>> get routePermissions => {
-        '/catalog': {'catalog_view'},
-        '/catalog/new': {'product_create'},
-      };
+    '/catalog': {'catalog_view'},
+    '/catalog/new': {'product_create'},
+  };
 
   @override
   PermissionManifest get permissionManifest => const PermissionManifest(
-        namespace: 'service_commerce',
-        permissions: [
-          PermissionEntry(
-            key: 'catalog_view',
-            label: 'View Catalog',
-            scope: PermissionScope.service,
-          ),
-          PermissionEntry(
-            key: 'product_create',
-            label: 'Create Products',
-            scope: PermissionScope.action,
-          ),
-          PermissionEntry(
-            key: 'product_update',
-            label: 'Update Products',
-            scope: PermissionScope.action,
-          ),
-          PermissionEntry(
-            key: 'variant_create',
-            label: 'Create Variants',
-            scope: PermissionScope.action,
-          ),
-          PermissionEntry(
-            key: 'variant_update',
-            label: 'Update Variants',
-            scope: PermissionScope.action,
-          ),
-        ],
-      );
+    namespace: 'service_commerce',
+    permissions: [
+      PermissionEntry(
+        key: 'catalog_view',
+        label: 'View Catalog',
+        scope: PermissionScope.service,
+      ),
+      PermissionEntry(
+        key: 'product_create',
+        label: 'Create Products',
+        scope: PermissionScope.action,
+      ),
+      PermissionEntry(
+        key: 'product_update',
+        label: 'Update Products',
+        scope: PermissionScope.action,
+      ),
+      PermissionEntry(
+        key: 'variant_create',
+        label: 'Create Variants',
+        scope: PermissionScope.action,
+      ),
+      PermissionEntry(
+        key: 'variant_update',
+        label: 'Update Variants',
+        scope: PermissionScope.action,
+      ),
+    ],
+  );
 }

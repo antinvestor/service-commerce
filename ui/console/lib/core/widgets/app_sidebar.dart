@@ -1,8 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../router/console_modules.dart';
 import '../theme/app_colors.dart';
 import 'nav_item.dart';
+
+/// Drops items (and child items) whose route the router does not serve.
+List<NavItem> visibleNavItems(List<NavItem> items, Set<String> registered) {
+  final visible = <NavItem>[];
+  for (final item in items) {
+    if (!isRouteRegistered(registered, item.route)) continue;
+    final children = [
+      for (final child in item.children)
+        if (isRouteRegistered(registered, child.route)) child,
+    ];
+    visible.add(
+      NavItem(
+        label: item.label,
+        icon: item.icon,
+        route: item.route,
+        isGroup: item.isGroup,
+        group: item.group,
+        children: children,
+      ),
+    );
+  }
+  return visible;
+}
 
 class AppSidebar extends ConsumerWidget {
   const AppSidebar({
@@ -22,8 +46,10 @@ class AppSidebar extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // Group secondary items by their `group` label so the drawer/sidebar
     // renders matching sections.
+    final registered = ref.watch(registeredRoutePathsProvider);
+    final primary = visibleNavItems(primaryNavItems, registered);
     final groups = <String, List<NavItem>>{};
-    for (final item in secondaryNavItems) {
+    for (final item in visibleNavItems(secondaryNavItems, registered)) {
       groups.putIfAbsent(item.group ?? 'Other', () => []).add(item);
     }
 
@@ -38,10 +64,9 @@ class AppSidebar extends ConsumerWidget {
           const SizedBox(height: 8),
           Expanded(
             child: ListView(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
               children: [
-                for (final item in primaryNavItems)
+                for (final item in primary)
                   _NavTile(
                     item: item,
                     isActive: _isActive(item.route),
@@ -52,21 +77,16 @@ class AppSidebar extends ConsumerWidget {
                 for (final entry in groups.entries) ...[
                   if (!collapsed)
                     Padding(
-                      padding:
-                          const EdgeInsets.fromLTRB(12, 12, 12, 6),
+                      padding: const EdgeInsets.fromLTRB(12, 12, 12, 6),
                       child: Text(
                         entry.key.toUpperCase(),
-                        style: Theme.of(context)
-                            .textTheme
-                            .labelSmall
-                            ?.copyWith(
-                              color: AppColors.sidebarText
-                                  .withValues(alpha: 0.5),
-                              letterSpacing: 1.2,
-                            ),
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: AppColors.sidebarText.withValues(alpha: 0.5),
+                          letterSpacing: 1.2,
+                        ),
                       ),
                     ),
-                  for (final item in entry.value)
+                  for (final item in entry.value) ...[
                     _NavTile(
                       item: item,
                       isActive: _isActive(item.route),
@@ -74,14 +94,28 @@ class AppSidebar extends ConsumerWidget {
                       onTap: () => onNavigate(item.route),
                       compact: true,
                     ),
+                    // Sub-pages are listed under their parent once the
+                    // operator is inside that module.
+                    if (!collapsed && item.hasChildren && _isActive(item.route))
+                      for (final child in item.children)
+                        Padding(
+                          padding: const EdgeInsets.only(left: 20),
+                          child: _NavTile(
+                            item: child,
+                            isActive: _isExactlyActive(child.route),
+                            collapsed: false,
+                            onTap: () => onNavigate(child.route),
+                            compact: true,
+                          ),
+                        ),
+                  ],
                 ],
               ],
             ),
           ),
           const Divider(color: AppColors.sidebarActiveBg, height: 1),
           Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             child: Column(
               children: bottomNavItems
                   .map(
@@ -136,23 +170,16 @@ class AppSidebar extends ConsumerWidget {
                 children: [
                   Text(
                     'Antinvestor',
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleMedium
-                        ?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w700,
-                        ),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                   Text(
                     'Console',
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodySmall
-                        ?.copyWith(
-                          color: AppColors.sidebarText
-                              .withValues(alpha: 0.7),
-                        ),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppColors.sidebarText.withValues(alpha: 0.7),
+                    ),
                   ),
                 ],
               ),
@@ -171,6 +198,29 @@ class AppSidebar extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  /// Active for [route] itself but not its sub-pages, so a child that
+  /// shares its parent's route ("Price lists" → `/pricing`) is not
+  /// highlighted alongside a sibling sub-page.
+  bool _isExactlyActive(String route) {
+    final path = Uri.parse(currentRoute).path;
+    if (path == route) return true;
+    if (!path.startsWith('$route/')) return false;
+    // A deeper page (e.g. a price list detail) keeps its nearest entry lit
+    // unless another child claims it.
+    return !_childRoutesOf(route).any(
+      (other) =>
+          other != route && (path == other || path.startsWith('$other/')),
+    );
+  }
+
+  Iterable<String> _childRoutesOf(String route) sync* {
+    for (final item in secondaryNavItems) {
+      if (item.route == route || item.children.any((c) => c.route == route)) {
+        yield* item.children.map((c) => c.route);
+      }
+    }
   }
 
   bool _isActive(String route) {
@@ -206,8 +256,8 @@ class _NavTileState extends State<_NavTile> {
     final bg = widget.isActive
         ? AppColors.sidebarActiveBg
         : _hovered
-            ? AppColors.sidebarHoverBg.withValues(alpha: 0.5)
-            : Colors.transparent;
+        ? AppColors.sidebarHoverBg.withValues(alpha: 0.5)
+        : Colors.transparent;
 
     final fg = widget.isActive
         ? AppColors.sidebarActiveText
@@ -233,11 +283,7 @@ class _NavTileState extends State<_NavTile> {
                   ? Center(
                       child: Tooltip(
                         message: widget.item.label,
-                        child: Icon(
-                          widget.item.icon,
-                          color: fg,
-                          size: 22,
-                        ),
+                        child: Icon(widget.item.icon, color: fg, size: 22),
                       ),
                     )
                   : Row(
@@ -251,9 +297,7 @@ class _NavTileState extends State<_NavTile> {
                         Expanded(
                           child: Text(
                             widget.item.label,
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium
+                            style: Theme.of(context).textTheme.bodyMedium
                                 ?.copyWith(
                                   color: fg,
                                   fontSize: widget.compact ? 13 : null,

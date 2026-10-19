@@ -190,13 +190,21 @@ type DeviceClient interface {
 	) (*devicev1.GetBySessionIdResponse, error)
 }
 
-// ProfileClient is the subset of the generated profile client the
-// directory uses.
+// ProfileClient is the subset of the generated profile client commerce uses:
+// address country for the default currency, and buyer lookup and creation.
 type ProfileClient interface {
 	GetById(
 		context.Context,
 		*profilev1.GetByIdRequest,
 	) (*profilev1.GetByIdResponse, error)
+	GetByContact(
+		context.Context,
+		*profilev1.GetByContactRequest,
+	) (*profilev1.GetByContactResponse, error)
+	Create(
+		context.Context,
+		*profilev1.CreateRequest,
+	) (*profilev1.CreateResponse, error)
 }
 
 // NewConnectCurrencyDirectory wraps the generated peer clients. Any of them

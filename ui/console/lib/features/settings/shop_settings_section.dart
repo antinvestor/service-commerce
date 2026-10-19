@@ -11,6 +11,7 @@ import '../../core/services/commerce_client_provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/shop_switcher.dart';
 import 'data/shop_providers.dart';
+import 'storefront_settings.dart';
 import 'webhook_settings.dart';
 
 /// Settings panel body for the commerce shop the console operates on.
@@ -138,6 +139,8 @@ class _ShopDetails extends ConsumerWidget {
             ),
           ],
         ),
+        const Divider(height: 32),
+        StorefrontSettingsSection(shop: shop),
         const Divider(height: 32),
         _PaymentPolicySummary(shop: shop),
         const Divider(height: 32),

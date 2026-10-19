@@ -1012,8 +1012,13 @@ type Shop struct {
 	WebhookUrl string `protobuf:"bytes,17,opt,name=webhook_url,json=webhookUrl,proto3" json:"webhook_url,omitempty"`
 	// Whether a webhook secret is set. The secret itself is never returned.
 	WebhookSecretSet bool `protobuf:"varint,18,opt,name=webhook_secret_set,json=webhookSecretSet,proto3" json:"webhook_secret_set,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	// Whether anyone may browse the shop and buy from its public page without
+	// signing in. Off by default.
+	PublicStorefront bool `protobuf:"varint,19,opt,name=public_storefront,json=publicStorefront,proto3" json:"public_storefront,omitempty"`
+	// The public shop page; empty while public_storefront is off.
+	StorefrontUrl string `protobuf:"bytes,20,opt,name=storefront_url,json=storefrontUrl,proto3" json:"storefront_url,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Shop) Reset() {
@@ -1139,6 +1144,20 @@ func (x *Shop) GetWebhookSecretSet() bool {
 	return false
 }
 
+func (x *Shop) GetPublicStorefront() bool {
+	if x != nil {
+		return x.PublicStorefront
+	}
+	return false
+}
+
+func (x *Shop) GetStorefrontUrl() string {
+	if x != nil {
+		return x.StorefrontUrl
+	}
+	return ""
+}
+
 func (x *Shop) SetId(v string) {
 	x.Id = v
 }
@@ -1193,6 +1212,14 @@ func (x *Shop) SetWebhookUrl(v string) {
 
 func (x *Shop) SetWebhookSecretSet(v bool) {
 	x.WebhookSecretSet = v
+}
+
+func (x *Shop) SetPublicStorefront(v bool) {
+	x.PublicStorefront = v
+}
+
+func (x *Shop) SetStorefrontUrl(v string) {
+	x.StorefrontUrl = v
 }
 
 func (x *Shop) HasCreatedAt() bool {
@@ -1256,6 +1283,11 @@ type Shop_builder struct {
 	WebhookUrl string
 	// Whether a webhook secret is set. The secret itself is never returned.
 	WebhookSecretSet bool
+	// Whether anyone may browse the shop and buy from its public page without
+	// signing in. Off by default.
+	PublicStorefront bool
+	// The public shop page; empty while public_storefront is off.
+	StorefrontUrl string
 }
 
 func (b0 Shop_builder) Build() *Shop {
@@ -1276,6 +1308,8 @@ func (b0 Shop_builder) Build() *Shop {
 	x.PaymentPolicy = b.PaymentPolicy
 	x.WebhookUrl = b.WebhookUrl
 	x.WebhookSecretSet = b.WebhookSecretSet
+	x.PublicStorefront = b.PublicStorefront
+	x.StorefrontUrl = b.StorefrontUrl
 	return m0
 }
 
@@ -1462,6 +1496,7 @@ type CreateShopRequest struct {
 	PaymentPolicy     *PaymentPolicy `protobuf:"bytes,8,opt,name=payment_policy,json=paymentPolicy,proto3" json:"payment_policy,omitempty"`
 	WebhookUrl        string         `protobuf:"bytes,9,opt,name=webhook_url,json=webhookUrl,proto3" json:"webhook_url,omitempty"`
 	WebhookSecret     string         `protobuf:"bytes,10,opt,name=webhook_secret,json=webhookSecret,proto3" json:"webhook_secret,omitempty"`
+	PublicStorefront  bool           `protobuf:"varint,11,opt,name=public_storefront,json=publicStorefront,proto3" json:"public_storefront,omitempty"`
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
 }
@@ -1561,6 +1596,13 @@ func (x *CreateShopRequest) GetWebhookSecret() string {
 	return ""
 }
 
+func (x *CreateShopRequest) GetPublicStorefront() bool {
+	if x != nil {
+		return x.PublicStorefront
+	}
+	return false
+}
+
 func (x *CreateShopRequest) SetName(v string) {
 	x.Name = v
 }
@@ -1601,6 +1643,10 @@ func (x *CreateShopRequest) SetWebhookSecret(v string) {
 	x.WebhookSecret = v
 }
 
+func (x *CreateShopRequest) SetPublicStorefront(v bool) {
+	x.PublicStorefront = v
+}
+
 func (x *CreateShopRequest) HasPaymentPolicy() bool {
 	if x == nil {
 		return false
@@ -1626,6 +1672,7 @@ type CreateShopRequest_builder struct {
 	PaymentPolicy     *PaymentPolicy
 	WebhookUrl        string
 	WebhookSecret     string
+	PublicStorefront  bool
 }
 
 func (b0 CreateShopRequest_builder) Build() *CreateShopRequest {
@@ -1642,6 +1689,7 @@ func (b0 CreateShopRequest_builder) Build() *CreateShopRequest {
 	x.PaymentPolicy = b.PaymentPolicy
 	x.WebhookUrl = b.WebhookUrl
 	x.WebhookSecret = b.WebhookSecret
+	x.PublicStorefront = b.PublicStorefront
 	return m0
 }
 
@@ -1728,9 +1776,10 @@ type UpdateShopRequest struct {
 	PaymentPolicy     *PaymentPolicy         `protobuf:"bytes,11,opt,name=payment_policy,json=paymentPolicy,proto3" json:"payment_policy,omitempty"`
 	WebhookUrl        string                 `protobuf:"bytes,12,opt,name=webhook_url,json=webhookUrl,proto3" json:"webhook_url,omitempty"`
 	// Write-only. Empty with "webhook_secret" in the mask clears it.
-	WebhookSecret string `protobuf:"bytes,13,opt,name=webhook_secret,json=webhookSecret,proto3" json:"webhook_secret,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	WebhookSecret    string `protobuf:"bytes,13,opt,name=webhook_secret,json=webhookSecret,proto3" json:"webhook_secret,omitempty"`
+	PublicStorefront bool   `protobuf:"varint,14,opt,name=public_storefront,json=publicStorefront,proto3" json:"public_storefront,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *UpdateShopRequest) Reset() {
@@ -1849,6 +1898,13 @@ func (x *UpdateShopRequest) GetWebhookSecret() string {
 	return ""
 }
 
+func (x *UpdateShopRequest) GetPublicStorefront() bool {
+	if x != nil {
+		return x.PublicStorefront
+	}
+	return false
+}
+
 func (x *UpdateShopRequest) SetId(v string) {
 	x.Id = v
 }
@@ -1901,6 +1957,10 @@ func (x *UpdateShopRequest) SetWebhookSecret(v string) {
 	x.WebhookSecret = v
 }
 
+func (x *UpdateShopRequest) SetPublicStorefront(v bool) {
+	x.PublicStorefront = v
+}
+
 func (x *UpdateShopRequest) HasUpdateMask() bool {
 	if x == nil {
 		return false
@@ -1950,7 +2010,8 @@ type UpdateShopRequest_builder struct {
 	PaymentPolicy     *PaymentPolicy
 	WebhookUrl        string
 	// Write-only. Empty with "webhook_secret" in the mask clears it.
-	WebhookSecret string
+	WebhookSecret    string
+	PublicStorefront bool
 }
 
 func (b0 UpdateShopRequest_builder) Build() *UpdateShopRequest {
@@ -1970,6 +2031,7 @@ func (b0 UpdateShopRequest_builder) Build() *UpdateShopRequest {
 	x.PaymentPolicy = b.PaymentPolicy
 	x.WebhookUrl = b.WebhookUrl
 	x.WebhookSecret = b.WebhookSecret
+	x.PublicStorefront = b.PublicStorefront
 	return m0
 }
 
@@ -12633,7 +12695,7 @@ var File_v1_commerce_proto protoreflect.FileDescriptor
 
 const file_v1_commerce_proto_rawDesc = "" +
 	"\n" +
-	"\x11v1/commerce.proto\x12\vcommerce.v1\x1a\x1bbuf/validate/validate.proto\x1a\x16common/v1/common.proto\x1a\x15common/v1/money.proto\x1a\x1bcommon/v1/permissions.proto\x1a$gnostic/openapi/v3/annotations.proto\x1a google/protobuf/field_mask.proto\x1a\x1cgoogle/protobuf/struct.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xb2\x04\n" +
+	"\x11v1/commerce.proto\x12\vcommerce.v1\x1a\x1bbuf/validate/validate.proto\x1a\x16common/v1/common.proto\x1a\x15common/v1/money.proto\x1a\x1bcommon/v1/permissions.proto\x1a$gnostic/openapi/v3/annotations.proto\x1a google/protobuf/field_mask.proto\x1a\x1cgoogle/protobuf/struct.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\x86\x05\n" +
 	"\x04Shop\x12+\n" +
 	"\x02id\x18\x01 \x01(\tB\x1b\xbaH\x18r\x16\x10\x03\x18(2\x10[0-9a-z_-]{3,40}R\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
@@ -12652,7 +12714,9 @@ const file_v1_commerce_proto_rawDesc = "" +
 	"\x0epayment_policy\x18\x10 \x01(\v2\x1a.commerce.v1.PaymentPolicyR\rpaymentPolicy\x12\x1f\n" +
 	"\vwebhook_url\x18\x11 \x01(\tR\n" +
 	"webhookUrl\x12,\n" +
-	"\x12webhook_secret_set\x18\x12 \x01(\bR\x10webhookSecretSet\"\x92\x03\n" +
+	"\x12webhook_secret_set\x18\x12 \x01(\bR\x10webhookSecretSet\x12+\n" +
+	"\x11public_storefront\x18\x13 \x01(\bR\x10publicStorefront\x12%\n" +
+	"\x0estorefront_url\x18\x14 \x01(\tR\rstorefrontUrl\"\x92\x03\n" +
 	"\rPaymentPolicy\x12+\n" +
 	"\x11allow_instalments\x18\x01 \x01(\bR\x10allowInstalments\x129\n" +
 	"\x13min_deposit_percent\x18\x02 \x01(\x05B\t\xbaH\x06\x1a\x04\x18d(\x00R\x11minDepositPercent\x12?\n" +
@@ -12661,7 +12725,7 @@ const file_v1_commerce_proto_rawDesc = "" +
 	"\xbaH\a\x1a\x05\x18\xc2\x1c(\x00R\x0ebalanceDueDays\x125\n" +
 	"\x11fulfil_at_percent\x18\x05 \x01(\x05B\t\xbaH\x06\x1a\x04\x18d(\x00R\x0ffulfilAtPercent\x12;\n" +
 	"\x11signal_thresholds\x18\x06 \x03(\x05B\x0e\xbaH\v\x92\x01\b\"\x06\x1a\x04\x18d \x00R\x10signalThresholds\x12.\n" +
-	"\x13cancel_when_overdue\x18\a \x01(\bR\x11cancelWhenOverdue\"\xf0\x02\n" +
+	"\x13cancel_when_overdue\x18\a \x01(\bR\x11cancelWhenOverdue\"\x9d\x03\n" +
 	"\x11CreateShopRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x12\n" +
 	"\x04slug\x18\x02 \x01(\tR\x04slug\x12 \n" +
@@ -12675,9 +12739,10 @@ const file_v1_commerce_proto_rawDesc = "" +
 	"\vwebhook_url\x18\t \x01(\tR\n" +
 	"webhookUrl\x12%\n" +
 	"\x0ewebhook_secret\x18\n" +
-	" \x01(\tR\rwebhookSecret\";\n" +
+	" \x01(\tR\rwebhookSecret\x12+\n" +
+	"\x11public_storefront\x18\v \x01(\bR\x10publicStorefront\";\n" +
 	"\x12CreateShopResponse\x12%\n" +
-	"\x04shop\x18\x01 \x01(\v2\x11.commerce.v1.ShopR\x04shop\"\xa6\x04\n" +
+	"\x04shop\x18\x01 \x01(\v2\x11.commerce.v1.ShopR\x04shop\"\xd3\x04\n" +
 	"\x11UpdateShopRequest\x12+\n" +
 	"\x02id\x18\x01 \x01(\tB\x1b\xbaH\x18r\x16\x10\x03\x18(2\x10[0-9a-z_-]{3,40}R\x02id\x12;\n" +
 	"\vupdate_mask\x18\x02 \x01(\v2\x1a.google.protobuf.FieldMaskR\n" +
@@ -12695,7 +12760,8 @@ const file_v1_commerce_proto_rawDesc = "" +
 	"\x0epayment_policy\x18\v \x01(\v2\x1a.commerce.v1.PaymentPolicyR\rpaymentPolicy\x12\x1f\n" +
 	"\vwebhook_url\x18\f \x01(\tR\n" +
 	"webhookUrl\x12%\n" +
-	"\x0ewebhook_secret\x18\r \x01(\tR\rwebhookSecret\";\n" +
+	"\x0ewebhook_secret\x18\r \x01(\tR\rwebhookSecret\x12+\n" +
+	"\x11public_storefront\x18\x0e \x01(\bR\x10publicStorefront\";\n" +
 	"\x12UpdateShopResponse\x12%\n" +
 	"\x04shop\x18\x01 \x01(\v2\x11.commerce.v1.ShopR\x04shop\"=\n" +
 	"\x0eGetShopRequest\x12+\n" +

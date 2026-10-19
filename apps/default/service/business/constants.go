@@ -16,6 +16,9 @@ package business
 
 // Field name constants used in update masks.
 const (
+	// schemeHTTPS is the only scheme commerce sends buyers or webhooks to.
+	schemeHTTPS = "https"
+
 	fieldStatus      = "status"
 	fieldName        = "name"
 	fieldMediaIDs    = "media_ids"
@@ -30,4 +33,5 @@ const (
 	fieldPaymentPolicy     = "payment_policy"
 	fieldWebhookURL        = "webhook_url"
 	fieldWebhookSecret     = "webhook_secret"
+	fieldPublicStorefront  = "public_storefront"
 )

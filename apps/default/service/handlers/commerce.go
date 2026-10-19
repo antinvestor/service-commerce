@@ -51,6 +51,7 @@ type CommerceServer struct {
 	paymentBusiness    business.PaymentBusiness
 	ledgerBusiness     business.LedgerBusiness
 	eventBusiness      business.EventBusiness
+	storefront         business.StorefrontBusiness
 
 	commercev1connect.UnimplementedCommerceServiceHandler
 }
@@ -65,6 +66,11 @@ type Dependencies struct {
 	Notifier      notifications.Notifier
 	PaymentPolicy business.PaymentPolicy
 	LedgerPolicy  business.LedgerPolicy
+	// Buyers resolves storefront guests to profiles; nil disables guest
+	// checkout.
+	Buyers business.BuyerDirectory
+	// StorefrontBaseURL is where shops' public pages are served.
+	StorefrontBaseURL string
 }
 
 func NewCommerceServer(
@@ -111,24 +117,32 @@ func NewCommerceServer(
 
 	currencies := business.NewCurrencyResolver(deps.Currencies)
 
+	catalogBusiness := business.NewCatalogBusiness(ctx, productRepo, variantRepo, shopRepo)
+	orderBusiness := business.NewOrderBusiness(
+		ctx,
+		orderRepo,
+		orderLineRepo,
+		variantRepo,
+		productRepo,
+		shopRepo,
+		cartRepo,
+		cartLineRepo,
+		pricingBusiness,
+		business.OrderPolicy{PaymentWindow: deps.PaymentPolicy.PaymentWindow},
+	)
+	paymentBusiness := business.NewPaymentBusiness(
+		ctx, orderRepo, shopRepo, deps.Checkout, deps.Notifier, events, deps.PaymentPolicy,
+	)
+
 	return &CommerceServer{
-		authz:           authzMiddleware,
-		currencies:      currencies,
-		shopBusiness:    business.NewShopBusiness(ctx, shopRepo, authzMiddleware, currencies, deps.Secrets),
-		catalogBusiness: business.NewCatalogBusiness(ctx, productRepo, variantRepo, shopRepo),
-		cartBusiness:    business.NewCartBusiness(ctx, cartRepo, cartLineRepo, variantRepo),
-		orderBusiness: business.NewOrderBusiness(
-			ctx,
-			orderRepo,
-			orderLineRepo,
-			variantRepo,
-			productRepo,
-			shopRepo,
-			cartRepo,
-			cartLineRepo,
-			pricingBusiness,
-			business.OrderPolicy{PaymentWindow: deps.PaymentPolicy.PaymentWindow},
+		authz:      authzMiddleware,
+		currencies: currencies,
+		shopBusiness: business.NewShopBusiness(
+			ctx, shopRepo, authzMiddleware, currencies, deps.Secrets, deps.StorefrontBaseURL,
 		),
+		catalogBusiness: catalogBusiness,
+		cartBusiness:    business.NewCartBusiness(ctx, cartRepo, cartLineRepo, variantRepo),
+		orderBusiness:   orderBusiness,
 		fulfilmentBusiness: business.NewFulfilmentBusiness(
 			ctx,
 			fulfilmentRepo,
@@ -138,14 +152,15 @@ func NewCommerceServer(
 			shopRepo,
 			deps.Notifier,
 		),
-		paymentBusiness: business.NewPaymentBusiness(
-			ctx, orderRepo, shopRepo, deps.Checkout, deps.Notifier, events, deps.PaymentPolicy,
-		),
+		paymentBusiness: paymentBusiness,
 		ledgerBusiness: business.NewLedgerBusiness(
 			ctx, orderRepo, shopRepo, postingRepo, deps.Ledger, deps.Notifier, deps.LedgerPolicy,
 		),
 		pricingBusiness: pricingBusiness,
 		eventBusiness:   events,
+		storefront: business.NewStorefrontBusiness(
+			shopRepo, catalogBusiness, orderBusiness, paymentBusiness, deps.Buyers, deps.StorefrontBaseURL,
+		),
 	}
 }
 

@@ -385,7 +385,7 @@ func (bts *BusinessTestSuite) TestWebhookSecret_SealedAtRestAndUsedToSign() {
 
 		box, err := business.NewSecretBox(base64.StdEncoding.EncodeToString([]byte(strings.Repeat("k", 32))))
 		require.NoError(t, err)
-		shops := business.NewShopBusiness(ctx, shopRepo, nil, nil, box)
+		shops := business.NewShopBusiness(ctx, shopRepo, nil, nil, box, "")
 		shop, err := shops.CreateShop(ctx, &commercev1.CreateShopRequest{
 			Name: "Sealed " + util.RandomAlphaNumericString(6), Currency: "USD",
 			WebhookUrl: "https://hooks.example/c", WebhookSecret: "s3cret",

@@ -376,6 +376,8 @@ const Shop$json = {
     {'1': 'payment_policy', '3': 16, '4': 1, '5': 11, '6': '.commerce.v1.PaymentPolicy', '10': 'paymentPolicy'},
     {'1': 'webhook_url', '3': 17, '4': 1, '5': 9, '10': 'webhookUrl'},
     {'1': 'webhook_secret_set', '3': 18, '4': 1, '5': 8, '10': 'webhookSecretSet'},
+    {'1': 'public_storefront', '3': 19, '4': 1, '5': 8, '10': 'publicStorefront'},
+    {'1': 'storefront_url', '3': 20, '4': 1, '5': 9, '10': 'storefrontUrl'},
   ],
 };
 
@@ -391,7 +393,8 @@ final $typed_data.Uint8List shopDescriptor = $convert.base64Decode(
     '9vZ2xlLnByb3RvYnVmLlN0cnVjdFIFZXh0cmESQQoOcGF5bWVudF9wb2xpY3kYECABKAsyGi5j'
     'b21tZXJjZS52MS5QYXltZW50UG9saWN5Ug1wYXltZW50UG9saWN5Eh8KC3dlYmhvb2tfdXJsGB'
     'EgASgJUgp3ZWJob29rVXJsEiwKEndlYmhvb2tfc2VjcmV0X3NldBgSIAEoCFIQd2ViaG9va1Nl'
-    'Y3JldFNldA==');
+    'Y3JldFNldBIrChFwdWJsaWNfc3RvcmVmcm9udBgTIAEoCFIQcHVibGljU3RvcmVmcm9udBIlCg'
+    '5zdG9yZWZyb250X3VybBgUIAEoCVINc3RvcmVmcm9udFVybA==');
 
 @$core.Deprecated('Use paymentPolicyDescriptor instead')
 const PaymentPolicy$json = {
@@ -432,6 +435,7 @@ const CreateShopRequest$json = {
     {'1': 'payment_policy', '3': 8, '4': 1, '5': 11, '6': '.commerce.v1.PaymentPolicy', '10': 'paymentPolicy'},
     {'1': 'webhook_url', '3': 9, '4': 1, '5': 9, '10': 'webhookUrl'},
     {'1': 'webhook_secret', '3': 10, '4': 1, '5': 9, '10': 'webhookSecret'},
+    {'1': 'public_storefront', '3': 11, '4': 1, '5': 8, '10': 'publicStorefront'},
   ],
 };
 
@@ -443,7 +447,8 @@ final $typed_data.Uint8List createShopRequestDescriptor = $convert.base64Decode(
     'YgAygJUghtZWRpYUlkcxIuChNjaGVja291dF9yZXR1cm5fdXJsGAcgASgJUhFjaGVja291dFJl'
     'dHVyblVybBJBCg5wYXltZW50X3BvbGljeRgIIAEoCzIaLmNvbW1lcmNlLnYxLlBheW1lbnRQb2'
     'xpY3lSDXBheW1lbnRQb2xpY3kSHwoLd2ViaG9va191cmwYCSABKAlSCndlYmhvb2tVcmwSJQoO'
-    'd2ViaG9va19zZWNyZXQYCiABKAlSDXdlYmhvb2tTZWNyZXQ=');
+    'd2ViaG9va19zZWNyZXQYCiABKAlSDXdlYmhvb2tTZWNyZXQSKwoRcHVibGljX3N0b3JlZnJvbn'
+    'QYCyABKAhSEHB1YmxpY1N0b3JlZnJvbnQ=');
 
 @$core.Deprecated('Use createShopResponseDescriptor instead')
 const CreateShopResponse$json = {
@@ -475,6 +480,7 @@ const UpdateShopRequest$json = {
     {'1': 'payment_policy', '3': 11, '4': 1, '5': 11, '6': '.commerce.v1.PaymentPolicy', '10': 'paymentPolicy'},
     {'1': 'webhook_url', '3': 12, '4': 1, '5': 9, '10': 'webhookUrl'},
     {'1': 'webhook_secret', '3': 13, '4': 1, '5': 9, '10': 'webhookSecret'},
+    {'1': 'public_storefront', '3': 14, '4': 1, '5': 8, '10': 'publicStorefront'},
   ],
 };
 
@@ -489,7 +495,8 @@ final $typed_data.Uint8List updateShopRequestDescriptor = $convert.base64Decode(
     'HQoKY29udGFjdF9pZBgJIAEoCVIJY29udGFjdElkEi4KE2NoZWNrb3V0X3JldHVybl91cmwYCi'
     'ABKAlSEWNoZWNrb3V0UmV0dXJuVXJsEkEKDnBheW1lbnRfcG9saWN5GAsgASgLMhouY29tbWVy'
     'Y2UudjEuUGF5bWVudFBvbGljeVINcGF5bWVudFBvbGljeRIfCgt3ZWJob29rX3VybBgMIAEoCV'
-    'IKd2ViaG9va1VybBIlCg53ZWJob29rX3NlY3JldBgNIAEoCVINd2ViaG9va1NlY3JldA==');
+    'IKd2ViaG9va1VybBIlCg53ZWJob29rX3NlY3JldBgNIAEoCVINd2ViaG9va1NlY3JldBIrChFw'
+    'dWJsaWNfc3RvcmVmcm9udBgOIAEoCFIQcHVibGljU3RvcmVmcm9udA==');
 
 @$core.Deprecated('Use updateShopResponseDescriptor instead')
 const UpdateShopResponse$json = {

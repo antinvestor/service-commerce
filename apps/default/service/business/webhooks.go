@@ -85,7 +85,7 @@ func validateWebhookURL(raw string) error {
 	if err != nil || u.Host == "" {
 		return invalid("must be an absolute URL")
 	}
-	if u.Scheme != "https" {
+	if u.Scheme != schemeHTTPS {
 		return invalid("must use https")
 	}
 	if u.User != nil {

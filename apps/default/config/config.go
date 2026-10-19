@@ -59,6 +59,9 @@ type CommerceConfig struct {
 	// returns buyers to (/payments/return), where the payment is verified on
 	// arrival. Defaults to CommerceServiceURI.
 	PaymentReturnBaseURL string `env:"PAYMENT_RETURN_BASE_URL" envDefault:""`
+	// StorefrontBaseURL is where shops' public pages are served. Empty uses
+	// the payment return address, which is commerce itself.
+	StorefrontBaseURL string `env:"STOREFRONT_BASE_URL" envDefault:""`
 	// PaymentSettleGrace keeps an overdue order reserved while a payment
 	// prompt is still outstanding at the provider.
 	PaymentSettleGrace time.Duration `env:"PAYMENT_SETTLE_GRACE" envDefault:"1h"`
@@ -89,6 +92,14 @@ func (c *CommerceConfig) ReturnBaseURL() string {
 		return c.PaymentReturnBaseURL
 	}
 	return c.CommerceServiceURI
+}
+
+// StorefrontURL is the base of shops' public pages.
+func (c *CommerceConfig) StorefrontURL() string {
+	if c.StorefrontBaseURL != "" {
+		return c.StorefrontBaseURL
+	}
+	return c.ReturnBaseURL()
 }
 
 // LedgerEnabled reports whether end-of-day posting is wired.

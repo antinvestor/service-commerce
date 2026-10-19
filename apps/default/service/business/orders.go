@@ -57,6 +57,11 @@ type PriceResolver interface {
 
 type OrderBusiness interface {
 	CreateOrder(ctx context.Context, req *commercev1.CreateOrderRequest) (*commercev1.Order, error)
+	// CreateGuestOrder places an order for a buyer who has not signed in.
+	// It must be paid before it is confirmed (stock is held only for the
+	// payment window) and is priced at list prices: the buyer's identity is
+	// only what they typed, so customer-specific prices do not apply.
+	CreateGuestOrder(ctx context.Context, req *commercev1.CreateOrderRequest) (*commercev1.Order, error)
 	// CreateOrderFromCart converts an active cart into an order. The order is
 	// placed for the cart's profile; the request profile is used only when the
 	// cart has none.
@@ -113,15 +118,32 @@ func (ob *orderBusiness) CreateOrder(
 	ctx context.Context,
 	req *commercev1.CreateOrderRequest,
 ) (*commercev1.Order, error) {
-	return ob.createOrder(ctx, req, "", 0, false)
+	return ob.createOrder(ctx, req, orderPlacement{})
+}
+
+func (ob *orderBusiness) CreateGuestOrder(
+	ctx context.Context,
+	req *commercev1.CreateOrderRequest,
+) (*commercev1.Order, error) {
+	return ob.createOrder(ctx, req, orderPlacement{awaitPayment: true, listPrices: true})
+}
+
+// orderPlacement is how an order comes about.
+type orderPlacement struct {
+	// cartID is the cart the order converts, which is then set to
+	// cartStatus.
+	cartID     string
+	cartStatus int32
+	// awaitPayment holds the order pending payment instead of confirming it.
+	awaitPayment bool
+	// listPrices ignores prices specific to the order's profile.
+	listPrices bool
 }
 
 func (ob *orderBusiness) createOrder(
 	ctx context.Context,
 	req *commercev1.CreateOrderRequest,
-	convertCartID string,
-	convertedCartStatus int32,
-	awaitPayment bool,
+	placement orderPlacement,
 ) (*commercev1.Order, error) {
 	if len(req.GetLines()) == 0 {
 		return nil, connect.NewError(connect.CodeInvalidArgument, "order must have at least one line")
@@ -143,10 +165,14 @@ func (ob *orderBusiness) createOrder(
 		return nil, connect.NewError(connect.CodeFailedPrecondition, "shop is not active")
 	}
 
+	pricingCustomer := req.GetProfileId()
+	if placement.listPrices {
+		pricingCustomer = ""
+	}
 	orderLines, linePolicies, subtotalCurrency, subtotalUnits, subtotalNanos, err := ob.buildOrderLines(
 		ctx,
 		req.GetShopId(),
-		req.GetProfileId(),
+		pricingCustomer,
 		req.GetLines(),
 	)
 	if err != nil {
@@ -160,7 +186,7 @@ func (ob *orderBusiness) createOrder(
 
 	status := commercev1.OrderStatus_ORDER_STATUS_CONFIRMED
 	var paymentDue *time.Time
-	if awaitPayment {
+	if placement.awaitPayment {
 		// Buyer orders hold stock only for the payment window; the
 		// reconciler releases it afterwards.
 		status = commercev1.OrderStatus_ORDER_STATUS_PENDING_PAYMENT
@@ -189,7 +215,7 @@ func (ob *orderBusiness) createOrder(
 	}
 
 	createErr := ob.orderRepo.CreateWithLinesAndStock(
-		ctx, order, orderLines, convertCartID, convertedCartStatus,
+		ctx, order, orderLines, placement.cartID, placement.cartStatus,
 	)
 	if createErr != nil {
 		return ob.mapCreateOrderError(ctx, req.GetIdempotencyKey(), createErr)
@@ -286,13 +312,11 @@ func (ob *orderBusiness) CreateOrderFromCart(
 		IdempotencyKey: "cart:" + cart.GetID(),
 	}
 
-	return ob.createOrder(
-		ctx,
-		orderReq,
-		cart.GetID(),
-		int32(commercev1.CartStatus_CART_STATUS_CONVERTED),
-		true,
-	)
+	return ob.createOrder(ctx, orderReq, orderPlacement{
+		cartID:       cart.GetID(),
+		cartStatus:   int32(commercev1.CartStatus_CART_STATUS_CONVERTED),
+		awaitPayment: true,
+	})
 }
 
 func (ob *orderBusiness) GetOrder(ctx context.Context, id string) (*commercev1.Order, error) {

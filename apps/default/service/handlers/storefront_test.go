@@ -16,6 +16,7 @@ package handlers_test
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -161,16 +162,30 @@ func TestStorefrontCheckout_LimitsOneVisitor(t *testing.T) {
 	h := handlers.NewStorefrontHandler(stub)
 	form := url.Values{"key": {"k-12345678"}, "name": {"Jane"}, "contact": {"j@x.io"}, "qty.v-small": {"1"}}
 
+	// Through the gateway: the client, then the Cloudflare hop Cloud Run saw.
+	// Whatever the caller wrote before them is ignored.
 	codes := map[int]int{}
-	for range 12 {
+	for i := range 12 {
 		req := checkoutForm(form)
-		req.Header.Set("Cf-Connecting-Ip", "203.0.113.9")
+		req.Header.Set("X-Forwarded-For", fmt.Sprintf("10.0.0.%d, 203.0.113.9, 172.70.1.1", i))
 		codes[serveStorefront(t, h, req).Code]++
 	}
 	require.Equal(t, 10, codes[http.StatusSeeOther])
 	require.Equal(t, 2, codes[http.StatusTooManyRequests])
 
 	other := checkoutForm(form)
-	other.Header.Set("Cf-Connecting-Ip", "203.0.113.10")
+	other.Header.Set("X-Forwarded-For", "203.0.113.10, 172.70.1.1")
 	require.Equal(t, http.StatusSeeOther, serveStorefront(t, h, other).Code, "other visitors are unaffected")
+
+	// Straight to Cloud Run, the caller cannot pose as someone else.
+	for i := range 11 {
+		req := checkoutForm(form)
+		req.Header.Set("X-Forwarded-For", fmt.Sprintf("203.0.113.%d, 198.51.100.7", 100+i))
+		req.Header.Set("Cf-Connecting-Ip", fmt.Sprintf("203.0.113.%d", 100+i))
+		if i == 10 {
+			require.Equal(t, http.StatusTooManyRequests, serveStorefront(t, h, req).Code)
+		} else {
+			require.Equal(t, http.StatusSeeOther, serveStorefront(t, h, req).Code)
+		}
+	}
 }

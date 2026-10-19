@@ -20,6 +20,7 @@ import (
 	"sync"
 	"testing"
 
+	commonv1 "buf.build/gen/go/antinvestor/common/protocolbuffers/go/common/v1"
 	"connectrpc.com/connect/v2"
 	"github.com/pitabwire/frame/v3"
 	"github.com/pitabwire/frame/v3/datastore"
@@ -144,6 +145,43 @@ func (bts *BusinessTestSuite) TestStorefront_GuestBuysFromAPublicShop() {
 // shopTenant is the tenant the test service's claims create shops in.
 func shopTenant(ctx context.Context) string {
 	return security.ClaimsFromContext(ctx).GetTenantID()
+}
+
+func (bts *BusinessTestSuite) TestStorefront_GuestsPayListPrices() {
+	t := bts.T()
+
+	bts.WithTestDependancies(t, func(t *testing.T, dep *definition.DependencyOption) {
+		ctx, svc := bts.CreateService(t, dep)
+		biz := bts.getBusiness(ctx, svc)
+		// Anyone can type a valued customer's email address.
+		buyers := &fakeBuyers{profiles: map[string]string{"vip@example.com": "vip-profile"}}
+		front := bts.storefront(ctx, svc, biz, buyers)
+		shop := bts.publicShop(ctx, biz)
+		_, variant := bts.createTestProductWithVariant(ctx, biz, shop.GetId())
+
+		_, err := biz.pricingBiz.SaveCustomerPriceOverride(ctx, &commercev1.CustomerPriceOverrideSaveRequest{
+			CustomerId: "vip-profile", ProductVariantId: variant.GetId(),
+			UnitPrice: &commonv1.Money{CurrencyCode: "USD", Units: 5},
+		})
+		require.NoError(t, err)
+		vip, err := biz.pricingBiz.ResolvePrice(ctx, &commercev1.ResolvePriceRequest{
+			CustomerId: "vip-profile", ProductVariantId: variant.GetId(), Quantity: 2,
+		})
+		require.NoError(t, err)
+		require.Equal(t, int64(5), vip.GetUnitPrice().GetUnits(), "the customer's own price")
+
+		_, err = front.Checkout(context.Background(), shop.GetSlug(), business.StorefrontOrder{
+			Name: "Not The VIP", Contact: "vip@example.com", Key: util.IDString(),
+			Quantities: map[string]int64{variant.GetId(): 2},
+		})
+		require.NoError(t, err)
+
+		orders, err := biz.orderBiz.ListOrders(ctx, &commercev1.ListOrdersRequest{ShopId: shop.GetId()})
+		require.NoError(t, err)
+		require.Len(t, orders.Orders, 1)
+		require.Equal(t, "vip-profile", orders.Orders[0].GetProfileId())
+		require.Equal(t, int64(21), orders.Orders[0].GetTotal().GetUnits(), "list price, 2 x 10.50")
+	})
 }
 
 func (bts *BusinessTestSuite) TestStorefront_HidesShopsThatHaveNotOptedIn() {

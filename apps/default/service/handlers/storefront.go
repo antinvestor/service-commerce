@@ -20,6 +20,7 @@ import (
 	"html/template"
 	"net"
 	"net/http"
+	"net/netip"
 	"strconv"
 	"strings"
 	"sync"
@@ -143,7 +144,8 @@ func (h *StorefrontHandler) checkout(w http.ResponseWriter, r *http.Request) {
 	}
 	// The target is the https checkout page the payment service issued for
 	// this order, never anything from the request.
-	http.Redirect(w, r, target, http.StatusSeeOther)
+	w.Header().Set("Location", target)
+	w.WriteHeader(http.StatusSeeOther)
 }
 
 // storefrontFailure maps a checkout error to a status and a message fit for
@@ -284,18 +286,68 @@ func variantView(variant *commercev1.ProductVariant, siblings int, typed map[str
 	}
 }
 
-// visitorAddress is the caller's IP: Cloudflare's header when present (the
-// gateway in front of commerce), else the connection's.
+// visitorAddress is the caller's IP as reported by infrastructure commerce
+// trusts. Cloud Run's front end appends the address it saw to
+// X-Forwarded-For, so the last entry cannot be forged by the caller. When
+// that address is Cloudflare's, the request came through the API gateway,
+// which appends the client it saw just before; anything earlier is the
+// caller's to write and is ignored.
 func visitorAddress(r *http.Request) string {
-	if ip := strings.TrimSpace(r.Header.Get("Cf-Connecting-Ip")); ip != "" {
-		return ip
+	var hops []string
+	for _, value := range r.Header.Values("X-Forwarded-For") {
+		for hop := range strings.SplitSeq(value, ",") {
+			if hop = strings.TrimSpace(hop); hop != "" {
+				hops = append(hops, hop)
+			}
+		}
 	}
-	host, _, err := net.SplitHostPort(r.RemoteAddr)
-	if err != nil {
-		return r.RemoteAddr
+	if len(hops) == 0 {
+		host, _, err := net.SplitHostPort(r.RemoteAddr)
+		if err != nil {
+			return r.RemoteAddr
+		}
+		return host
 	}
-	return host
+	last := hops[len(hops)-1]
+	if len(hops) > 1 && isCloudflare(last) {
+		return hops[len(hops)-2]
+	}
+	return last
 }
+
+func isCloudflare(ip string) bool {
+	addr, err := netip.ParseAddr(ip)
+	if err != nil {
+		return false
+	}
+	addr = addr.Unmap()
+	for _, prefix := range cloudflareRanges {
+		if prefix.Contains(addr) {
+			return true
+		}
+	}
+	return false
+}
+
+// cloudflareRanges are Cloudflare's published edge ranges
+// (https://www.cloudflare.com/ips/).
+//
+//nolint:gochecknoglobals // parsed once, immutable afterwards
+var cloudflareRanges = func() []netip.Prefix {
+	ranges := []string{
+		"173.245.48.0/20", "103.21.244.0/22", "103.22.200.0/22", "103.31.4.0/22",
+		"141.101.64.0/18", "108.162.192.0/18", "190.93.240.0/20", "188.114.96.0/20",
+		"197.234.240.0/22", "198.41.128.0/17", "162.158.0.0/15", "104.16.0.0/13",
+		"104.24.0.0/14", "172.64.0.0/13", "131.0.72.0/22",
+		"2400:cb00::/32", "2606:4700::/32", "2803:f800::/32", "2405:b500::/32",
+		"2405:8100::/32", "2a06:98c0::/29", "2c0f:f248::/32",
+	}
+	prefixes := make([]netip.Prefix, 0, len(ranges))
+	for _, r := range ranges {
+		prefixes = append(prefixes, netip.MustParsePrefix(r))
+	}
+	return prefixes
+}()
 
 // visitorLimiter allows each visitor a number of actions per fixed window.
 // It is per instance and best effort: it slows down a script hammering one

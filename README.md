@@ -65,7 +65,8 @@ Submitting the form:
    creates a person profile for it. Commerce keeps no buyer records, so a
    guest who later signs in with the same contact sees the same orders;
 2. places the order for that profile in the shop's tenancy, awaiting payment
-   like any buyer order;
+   like any buyer order. It is priced at list prices: the contact is not
+   verified, so customer-specific prices and price lists do not apply;
 3. starts hosted checkout with the storefront as the return page and
    redirects there. After paying, the buyer comes back through
    `/payments/return` to the storefront, which says how the payment went.
@@ -73,7 +74,9 @@ Submitting the form:
 The form carries a key, so submitting it twice places one order and reuses
 one checkout session. Pages are not cached, render no scripts, and accept at
 most 50 lines of up to 99 each; each visitor IP may start 10 checkouts per
-10 minutes on an instance. A shop that is not active, or has the storefront
+10 minutes on an instance. The IP is the last `X-Forwarded-For` hop, which
+Cloud Run's front end adds, or the one before it when that hop is Cloudflare
+(the API gateway); what callers write themselves is ignored. A shop that is not active, or has the storefront
 off, looks like it does not exist. Without a profile service the page is
 still shown but checkout is refused. Commerce's service account needs
 `profile_view` and `profile_create` on the profile service.

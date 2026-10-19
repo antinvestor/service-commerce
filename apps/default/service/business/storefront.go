@@ -189,7 +189,7 @@ func (sb *storefrontBusiness) Checkout(ctx context.Context, slug string, order S
 	if err != nil {
 		return "", err
 	}
-	placed, err := sb.orders.CreateBuyerOrder(ctx, &commercev1.CreateOrderRequest{
+	placed, err := sb.orders.CreateGuestOrder(ctx, &commercev1.CreateOrderRequest{
 		ShopId:         shop.GetID(),
 		ProfileId:      buyer.ProfileID,
 		ContactId:      buyer.ContactID,

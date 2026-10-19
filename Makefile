@@ -22,3 +22,7 @@ proto-generate-dart: $(BIN)/buf ## Regenerate the per-module dart SDKs
 	done
 
 proto-generate: proto-generate-dart
+
+.PHONY: proto-generate-go
+proto-generate-go: $(BIN)/buf ## Regenerate the local Go code for the commerce API (gen/go/commerce)
+	@cd $(PROTO_DIR) && buf generate --template buf.gen.local-go.yaml commerce

@@ -20,12 +20,12 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/pitabwire/frame/v2/config"
-	"github.com/pitabwire/frame/v2/frametests"
-	"github.com/pitabwire/frame/v2/frametests/definition"
-	"github.com/pitabwire/frame/v2/frametests/deps/testpostgres"
-	"github.com/pitabwire/frame/v2/security"
-	"github.com/pitabwire/frame/v2/security/authorizer"
+	"github.com/pitabwire/frame/v3/config"
+	"github.com/pitabwire/frame/v3/frametests"
+	"github.com/pitabwire/frame/v3/frametests/definition"
+	"github.com/pitabwire/frame/v3/frametests/deps/testpostgres"
+	"github.com/pitabwire/frame/v3/security"
+	"github.com/pitabwire/frame/v3/security/authorizer"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/antinvestor/service-commerce/apps/default/service/authz"

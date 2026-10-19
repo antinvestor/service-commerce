@@ -16,14 +16,13 @@ package handlers_test
 
 import (
 	"context"
-	"errors"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"testing"
 
 	commonv1 "buf.build/gen/go/antinvestor/common/protocolbuffers/go/common/v1"
-	"connectrpc.com/connect"
+	"connectrpc.com/connect/v2"
 	"github.com/stretchr/testify/require"
 
 	commercev1 "github.com/antinvestor/service-commerce/gen/go/commerce/v1"
@@ -102,7 +101,7 @@ func TestPaymentReturn_RendersStatusWithoutStorefront(t *testing.T) {
 }
 
 func TestPaymentReturn_RejectsBadInput(t *testing.T) {
-	stub := &stubPayments{err: connect.NewError(connect.CodeNotFound, errors.New("order not found"))}
+	stub := &stubPayments{err: connect.NewError(connect.CodeNotFound, "order not found")}
 
 	rec := serveReturn(t, stub, http.MethodGet, "/payments/return?order=order-1&session=wrong-ref-123")
 	require.Equal(t, http.StatusNotFound, rec.Code)
@@ -119,7 +118,7 @@ func TestPaymentReturn_RejectsBadInput(t *testing.T) {
 	rec = serveReturn(t, stub, http.MethodGet, "/payments/return?order=order-1&session=Ab12Cd34Ef56")
 	require.Equal(t, http.StatusOK, rec.Code)
 
-	stub = &stubPayments{err: connect.NewError(connect.CodeUnavailable, errors.New("checkout down"))}
+	stub = &stubPayments{err: connect.NewError(connect.CodeUnavailable, "checkout down")}
 	rec = serveReturn(t, stub, http.MethodGet, "/payments/return?order=order-1&session=Ab12Cd34Ef56")
 	require.Equal(t, http.StatusServiceUnavailable, rec.Code)
 	require.Contains(t, rec.Body.String(), `http-equiv="refresh"`)

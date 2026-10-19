@@ -21,7 +21,6 @@ import (
 	"testing/fstest"
 
 	workflowv1 "buf.build/gen/go/antinvestor/workflow/protocolbuffers/go/v1"
-	"connectrpc.com/connect"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/encoding/protojson"
 
@@ -44,43 +43,43 @@ type fakeWorkflowClient struct {
 
 func (f *fakeWorkflowClient) CreateWorkflow(
 	_ context.Context,
-	req *connect.Request[workflowv1.CreateWorkflowRequest],
-) (*connect.Response[workflowv1.CreateWorkflowResponse], error) {
+	req *workflowv1.CreateWorkflowRequest,
+) (*workflowv1.CreateWorkflowResponse, error) {
 	if f.createErr != nil {
 		return nil, f.createErr
 	}
-	f.created = append(f.created, req.Msg)
-	name := req.Msg.GetDsl().GetFields()["name"].GetStringValue()
+	f.created = append(f.created, req)
+	name := req.GetDsl().GetFields()["name"].GetStringValue()
 	status := workflowv1.WorkflowStatus_WORKFLOW_STATUS_DRAFT
 	if live, ok := f.live[name]; ok {
 		status = live
 	}
-	return connect.NewResponse(&workflowv1.CreateWorkflowResponse{
+	return &workflowv1.CreateWorkflowResponse{
 		Workflow: workflowv1.WorkflowDefinition_builder{Id: "new-" + name, Name: name, Status: status}.Build(),
-	}), nil
+	}, nil
 }
 
 func (f *fakeWorkflowClient) ActivateWorkflow(
 	_ context.Context,
-	req *connect.Request[workflowv1.ActivateWorkflowRequest],
-) (*connect.Response[workflowv1.ActivateWorkflowResponse], error) {
-	f.activated = append(f.activated, req.Msg.GetId())
-	return connect.NewResponse(&workflowv1.ActivateWorkflowResponse{}), nil
+	req *workflowv1.ActivateWorkflowRequest,
+) (*workflowv1.ActivateWorkflowResponse, error) {
+	f.activated = append(f.activated, req.GetId())
+	return &workflowv1.ActivateWorkflowResponse{}, nil
 }
 
 func (f *fakeWorkflowClient) ListWorkflows(
 	_ context.Context,
-	_ *connect.Request[workflowv1.ListWorkflowsRequest],
-) (*connect.Response[workflowv1.ListWorkflowsResponse], error) {
-	return connect.NewResponse(&workflowv1.ListWorkflowsResponse{Items: f.active}), nil
+	_ *workflowv1.ListWorkflowsRequest,
+) (*workflowv1.ListWorkflowsResponse, error) {
+	return &workflowv1.ListWorkflowsResponse{Items: f.active}, nil
 }
 
 func (f *fakeWorkflowClient) ArchiveWorkflow(
 	_ context.Context,
-	req *connect.Request[workflowv1.ArchiveWorkflowRequest],
-) (*connect.Response[workflowv1.ArchiveWorkflowResponse], error) {
-	f.archived = append(f.archived, req.Msg.GetId())
-	return connect.NewResponse(&workflowv1.ArchiveWorkflowResponse{}), nil
+	req *workflowv1.ArchiveWorkflowRequest,
+) (*workflowv1.ArchiveWorkflowResponse, error) {
+	f.archived = append(f.archived, req.GetId())
+	return &workflowv1.ArchiveWorkflowResponse{}, nil
 }
 
 const testDoc = `{"version":"1.0","name":"commerce.test","schedules":[{"name":"n","cron_expr":"0 1 * * *"}],

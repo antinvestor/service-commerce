@@ -15,15 +15,14 @@
 package business_test
 
 import (
-	"errors"
 	"net/url"
 	"strings"
 	"testing"
 	"time"
 
 	commonv1 "buf.build/gen/go/antinvestor/common/protocolbuffers/go/common/v1"
-	"connectrpc.com/connect"
-	"github.com/pitabwire/frame/v2/frametests/definition"
+	"connectrpc.com/connect/v2"
+	"github.com/pitabwire/frame/v3/frametests/definition"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/known/structpb"
 
@@ -67,7 +66,7 @@ func (bts *BusinessTestSuite) TestCheckoutOrder_UnreadableSessionIsNotReplaced()
 		first, err := checkoutOrder(ctx, biz.paymentBiz, &commercev1.CheckoutOrderRequest{OrderId: order.GetId()})
 		require.NoError(t, err)
 
-		biz.checkout.setGetErr(connect.NewError(connect.CodeUnavailable, errors.New("checkout down")))
+		biz.checkout.setGetErr(connect.NewError(connect.CodeUnavailable, "checkout down"))
 		_, err = checkoutOrder(ctx, biz.paymentBiz, &commercev1.CheckoutOrderRequest{OrderId: order.GetId()})
 		require.Equal(t, connect.CodeUnavailable, connect.CodeOf(err))
 		require.Equal(t, 1, biz.checkout.createdSessions())
@@ -194,7 +193,7 @@ func (bts *BusinessTestSuite) TestReconcile_UnreadableSessionNeverExpires() {
 		require.NoError(t, err)
 		bts.backdatePaymentDue(ctx, svc, order.GetId(), -3*time.Hour)
 
-		biz.checkout.setGetErr(connect.NewError(connect.CodeUnavailable, errors.New("checkout down")))
+		biz.checkout.setGetErr(connect.NewError(connect.CodeUnavailable, "checkout down"))
 		summary, err := biz.paymentBiz.ReconcilePayments(ctx, shop.GetId(), 0)
 		require.NoError(t, err)
 		require.Equal(t, int32(1), summary.Failed)

@@ -25,9 +25,9 @@ import (
 	"strings"
 	"time"
 
-	"connectrpc.com/connect"
-	"github.com/pitabwire/frame/v2"
-	"github.com/pitabwire/frame/v2/data"
+	"connectrpc.com/connect/v2"
+	"github.com/pitabwire/frame/v3"
+	"github.com/pitabwire/frame/v3/data"
 	"github.com/pitabwire/util"
 
 	commercev1 "github.com/antinvestor/service-commerce/gen/go/commerce/v1"
@@ -124,7 +124,7 @@ func (ob *orderBusiness) createOrder(
 	awaitPayment bool,
 ) (*commercev1.Order, error) {
 	if len(req.GetLines()) == 0 {
-		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("order must have at least one line"))
+		return nil, connect.NewError(connect.CodeInvalidArgument, "order must have at least one line")
 	}
 
 	requestHash := orderRequestHash(req)
@@ -137,10 +137,10 @@ func (ob *orderBusiness) createOrder(
 
 	shop, shopErr := ob.shopRepo.GetByID(ctx, req.GetShopId())
 	if shopErr != nil {
-		return nil, connect.NewError(connect.CodeNotFound, errors.New("shop not found"))
+		return nil, connect.NewError(connect.CodeNotFound, "shop not found")
 	}
 	if shop.Status != int32(commercev1.ShopStatus_SHOP_STATUS_ACTIVE) {
-		return nil, connect.NewError(connect.CodeFailedPrecondition, errors.New("shop is not active"))
+		return nil, connect.NewError(connect.CodeFailedPrecondition, "shop is not active")
 	}
 
 	orderLines, linePolicies, subtotalCurrency, subtotalUnits, subtotalNanos, err := ob.buildOrderLines(
@@ -217,7 +217,7 @@ func (ob *orderBusiness) replayedOrder(
 	}
 	if existing.RequestHash != "" && existing.RequestHash != requestHash {
 		return nil, connect.NewError(connect.CodeAlreadyExists,
-			errors.New("idempotency key already used for a different order request"))
+			"idempotency key already used for a different order request")
 	}
 	return existing.ToAPI(), nil
 }
@@ -232,7 +232,7 @@ func (ob *orderBusiness) mapCreateOrderError(
 ) (*commercev1.Order, error) {
 	if errors.Is(createErr, repository.ErrInsufficientStock) ||
 		errors.Is(createErr, repository.ErrCartNotConvertible) {
-		return nil, connect.NewError(connect.CodeFailedPrecondition, createErr)
+		return nil, connect.NewError(connect.CodeFailedPrecondition, createErr.Error()).WithCause(createErr)
 	}
 	if idempotencyKey != "" && data.ErrorIsDuplicateKey(createErr) {
 		if existing, getErr := ob.orderRepo.GetByIdempotencyKey(ctx, idempotencyKey); getErr == nil {
@@ -252,11 +252,11 @@ func (ob *orderBusiness) CreateOrderFromCart(
 	}
 
 	if cart.Status != int32(commercev1.CartStatus_CART_STATUS_ACTIVE) {
-		return nil, connect.NewError(connect.CodeFailedPrecondition, errors.New("cart is not active"))
+		return nil, connect.NewError(connect.CodeFailedPrecondition, "cart is not active")
 	}
 
 	if len(cart.Lines) == 0 {
-		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("cart has no items"))
+		return nil, connect.NewError(connect.CodeInvalidArgument, "cart has no items")
 	}
 
 	createLines := make([]*commercev1.CreateOrderLine, 0, len(cart.Lines))
@@ -324,7 +324,7 @@ func (ob *orderBusiness) ListOrdersForProfile(
 	req *commercev1.ListOrdersRequest,
 ) (*OrderPage, error) {
 	if profileID == "" {
-		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("profile is required"))
+		return nil, connect.NewError(connect.CodeInvalidArgument, "profile is required")
 	}
 	page, err := pageFromSearch(req.GetSearch())
 	if err != nil {
@@ -371,17 +371,17 @@ func (ob *orderBusiness) buildOrderLines(
 	for _, line := range lines {
 		if line.GetQuantity() <= 0 {
 			return nil, nil, "", 0, 0, connect.NewError(connect.CodeInvalidArgument,
-				fmt.Errorf("quantity must be positive for variant %s", line.GetVariantId()))
+				fmt.Sprintf("quantity must be positive for variant %s", line.GetVariantId()))
 		}
 
 		variant, err := ob.variantRepo.GetByID(ctx, line.GetVariantId())
 		if err != nil {
 			return nil, nil, "", 0, 0, connect.NewError(connect.CodeNotFound,
-				fmt.Errorf("variant %s not found", line.GetVariantId()))
+				fmt.Sprintf("variant %s not found", line.GetVariantId()))
 		}
 		if variant.Status != int32(commercev1.ProductVariantStatus_PRODUCT_VARIANT_STATUS_ACTIVE) {
 			return nil, nil, "", 0, 0, connect.NewError(connect.CodeFailedPrecondition,
-				fmt.Errorf("variant %s is not available for sale", line.GetVariantId()))
+				fmt.Sprintf("variant %s is not available for sale", line.GetVariantId()))
 		}
 
 		product, shopErr := ob.variantProduct(ctx, variant)
@@ -390,11 +390,11 @@ func (ob *orderBusiness) buildOrderLines(
 		}
 		if product.ShopID != shopID {
 			return nil, nil, "", 0, 0, connect.NewError(connect.CodeInvalidArgument,
-				fmt.Errorf("variant %s does not belong to shop %s", line.GetVariantId(), shopID))
+				fmt.Sprintf("variant %s does not belong to shop %s", line.GetVariantId(), shopID))
 		}
 		if product.Status != int32(commercev1.ProductStatus_PRODUCT_STATUS_ACTIVE) {
 			return nil, nil, "", 0, 0, connect.NewError(connect.CodeFailedPrecondition,
-				fmt.Errorf("product for variant %s is not available for sale", line.GetVariantId()))
+				fmt.Sprintf("product for variant %s is not available for sale", line.GetVariantId()))
 		}
 
 		currency, unitUnits, unitNanos, err := ob.unitPrice(ctx, variant, customerID, line.GetQuantity())
@@ -406,14 +406,14 @@ func (ob *orderBusiness) buildOrderLines(
 			subtotalCurrency = currency
 		} else if currency != subtotalCurrency {
 			return nil, nil, "", 0, 0, connect.NewError(connect.CodeInvalidArgument,
-				fmt.Errorf("variant %s is priced in %s but the order is in %s",
+				fmt.Sprintf("variant %s is priced in %s but the order is in %s",
 					line.GetVariantId(), currency, subtotalCurrency))
 		}
 
 		// Advisory stock check; CreateWithLinesAndStock re-checks under row update.
 		if variant.StockQuantity < line.GetQuantity() {
 			return nil, nil, "", 0, 0, connect.NewError(connect.CodeFailedPrecondition,
-				fmt.Errorf("insufficient stock for variant %s: requested %d, available %d",
+				fmt.Sprintf("insufficient stock for variant %s: requested %d, available %d",
 					line.GetVariantId(), line.GetQuantity(), variant.StockQuantity))
 		}
 
@@ -468,7 +468,7 @@ func (ob *orderBusiness) unitPrice(
 	}
 	if currency == "" {
 		return "", 0, 0, connect.NewError(connect.CodeFailedPrecondition,
-			fmt.Errorf("variant %s has no price", variant.GetID()))
+			fmt.Sprintf("variant %s has no price", variant.GetID()))
 	}
 	units, nanos = models.RoundToCents(units, nanos)
 	return currency, units, nanos, nil
@@ -484,7 +484,7 @@ func (ob *orderBusiness) variantProduct(
 	product, err := ob.productRepo.GetByID(ctx, variant.ProductID)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeNotFound,
-			fmt.Errorf("product for variant %s not found", variant.GetID()))
+			fmt.Sprintf("product for variant %s not found", variant.GetID()))
 	}
 	return product, nil
 }

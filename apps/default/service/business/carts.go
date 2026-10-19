@@ -16,11 +16,10 @@ package business
 
 import (
 	"context"
-	"errors"
 
-	"connectrpc.com/connect"
-	"github.com/pitabwire/frame/v2"
-	"github.com/pitabwire/frame/v2/data"
+	"connectrpc.com/connect/v2"
+	"github.com/pitabwire/frame/v3"
+	"github.com/pitabwire/frame/v3/data"
 
 	commercev1 "github.com/antinvestor/service-commerce/gen/go/commerce/v1"
 
@@ -56,7 +55,7 @@ type cartBusiness struct {
 
 func (cb *cartBusiness) CreateCart(ctx context.Context, req *commercev1.CreateCartRequest) (*commercev1.Cart, error) {
 	if req.GetShopId() == "" {
-		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("shop_id is required"))
+		return nil, connect.NewError(connect.CodeInvalidArgument, "shop_id is required")
 	}
 	cart := &models.Cart{
 		ShopID:    req.GetShopId(),
@@ -87,25 +86,25 @@ func (cb *cartBusiness) AddCartLine(ctx context.Context, req *commercev1.AddCart
 	}
 
 	if cart.Status != int32(commercev1.CartStatus_CART_STATUS_ACTIVE) {
-		return nil, connect.NewError(connect.CodeFailedPrecondition, errors.New("cart is not active"))
+		return nil, connect.NewError(connect.CodeFailedPrecondition, "cart is not active")
 	}
 
 	if req.GetQuantity() <= 0 {
-		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("quantity must be positive"))
+		return nil, connect.NewError(connect.CodeInvalidArgument, "quantity must be positive")
 	}
 
 	variant, variantErr := cb.variantRepo.GetByID(ctx, req.GetProductVariantId())
 	if variantErr != nil {
-		return nil, connect.NewError(connect.CodeNotFound, errors.New("product variant not found"))
+		return nil, connect.NewError(connect.CodeNotFound, "product variant not found")
 	}
 	if variant.Status != int32(commercev1.ProductVariantStatus_PRODUCT_VARIANT_STATUS_ACTIVE) {
-		return nil, connect.NewError(connect.CodeFailedPrecondition, errors.New("product variant is not available"))
+		return nil, connect.NewError(connect.CodeFailedPrecondition, "product variant is not available")
 	}
 	// A cart belongs to one shop; a variant from another shop is rejected here
 	// rather than failing at checkout.
 	if variant.Product == nil || variant.Product.ShopID != cart.ShopID {
 		return nil, connect.NewError(connect.CodeInvalidArgument,
-			errors.New("product variant does not belong to the cart's shop"))
+			"product variant does not belong to the cart's shop")
 	}
 
 	// Check if line already exists for this variant
@@ -146,7 +145,7 @@ func (cb *cartBusiness) RemoveCartLine(
 	}
 
 	if cart.Status != int32(commercev1.CartStatus_CART_STATUS_ACTIVE) {
-		return nil, connect.NewError(connect.CodeFailedPrecondition, errors.New("cart is not active"))
+		return nil, connect.NewError(connect.CodeFailedPrecondition, "cart is not active")
 	}
 
 	line, lineErr := cb.cartLineRepo.GetByID(ctx, req.GetCartLineId())
@@ -154,7 +153,7 @@ func (cb *cartBusiness) RemoveCartLine(
 		return nil, data.ErrorConvertToAPI(lineErr)
 	}
 	if line.CartID != cart.GetID() {
-		return nil, connect.NewError(connect.CodeNotFound, errors.New("cart line not found in this cart"))
+		return nil, connect.NewError(connect.CodeNotFound, "cart line not found in this cart")
 	}
 
 	if deleteErr := cb.cartLineRepo.Delete(ctx, req.GetCartLineId()); deleteErr != nil {

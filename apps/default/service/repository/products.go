@@ -19,9 +19,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/pitabwire/frame/v2/datastore"
-	"github.com/pitabwire/frame/v2/datastore/pool"
-	"github.com/pitabwire/frame/v2/workerpool"
+	"github.com/pitabwire/frame/v3/datastore"
+	"github.com/pitabwire/frame/v3/datastore/pool"
+	"github.com/pitabwire/frame/v3/workerpool"
 	"gorm.io/gorm"
 
 	"github.com/antinvestor/service-commerce/apps/default/service/models"

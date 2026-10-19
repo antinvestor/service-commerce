@@ -16,12 +16,15 @@ managed:
     - file_option: go_package_prefix
       module: buf.build/gnostic/gnostic
       value: buf.build/gen/go/gnostic/gnostic/protocolbuffers/go
+# Remote plugins are pinned so the output never depends on whatever
+# protoc-gen-* happens to be installed locally (connect-go v2 is what the
+# rest of the platform runs).
 plugins:
-  - local: protoc-gen-go
+  - remote: buf.build/protocolbuffers/go:v1.36.12
     out: ../gen/go/commerce
     opt:
       - paths=source_relative
       - default_api_level=API_HYBRID
-  - local: protoc-gen-connect-go
+  - remote: buf.build/connectrpc/go:v2.0.0
     out: ../gen/go/commerce
     opt: paths=source_relative

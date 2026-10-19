@@ -16,11 +16,10 @@ package business
 
 import (
 	"context"
-	"errors"
 	"time"
 
-	"connectrpc.com/connect"
-	"github.com/pitabwire/frame/v2/data"
+	"connectrpc.com/connect/v2"
+	"github.com/pitabwire/frame/v3/data"
 	"github.com/pitabwire/util"
 	"google.golang.org/protobuf/encoding/protojson"
 
@@ -233,7 +232,7 @@ func (eb *eventBusiness) List(
 	page repository.Page,
 ) (*EventPage, error) {
 	if shopID == "" && orderID == "" {
-		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("shop_id or order_id is required"))
+		return nil, connect.NewError(connect.CodeInvalidArgument, "shop_id or order_id is required")
 	}
 	events, next, err := eb.eventRepo.List(ctx, shopID, orderID, page)
 	if err != nil {

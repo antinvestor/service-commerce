@@ -14,7 +14,7 @@
 
 package authz
 
-import "github.com/pitabwire/frame/v2/security"
+import "github.com/pitabwire/frame/v3/security"
 
 // BuildAccessTuple creates a member relation tuple in the tenancy_access namespace,
 // recording that a profile has access to a tenant/partition combination.

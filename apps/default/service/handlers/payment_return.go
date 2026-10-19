@@ -22,8 +22,8 @@ import (
 	"net/url"
 	"regexp"
 
-	"connectrpc.com/connect"
-	"github.com/pitabwire/frame/v2/tenancy"
+	"connectrpc.com/connect/v2"
+	"github.com/pitabwire/frame/v3/tenancy"
 	"github.com/pitabwire/util"
 
 	commercev1 "github.com/antinvestor/service-commerce/gen/go/commerce/v1"

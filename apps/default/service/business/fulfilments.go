@@ -16,12 +16,11 @@ package business
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
-	"connectrpc.com/connect"
-	"github.com/pitabwire/frame/v2/data"
+	"connectrpc.com/connect/v2"
+	"github.com/pitabwire/frame/v3/data"
 	"github.com/pitabwire/util"
 
 	commercev1 "github.com/antinvestor/service-commerce/gen/go/commerce/v1"
@@ -80,22 +79,22 @@ func (fb *fulfilmentBusiness) CreateFulfilment(
 	}
 
 	if order.Status == int32(commercev1.OrderStatus_ORDER_STATUS_CANCELLED) {
-		return nil, connect.NewError(connect.CodeFailedPrecondition, errors.New("cannot fulfil a cancelled order"))
+		return nil, connect.NewError(connect.CodeFailedPrecondition, "cannot fulfil a cancelled order")
 	}
 	if order.Status == int32(commercev1.OrderStatus_ORDER_STATUS_PENDING_PAYMENT) {
-		return nil, connect.NewError(connect.CodeFailedPrecondition, errors.New("order has not been paid"))
+		return nil, connect.NewError(connect.CodeFailedPrecondition, "order has not been paid")
 	}
 	// A part-paid order ships only once the policy's share is paid.
 	if order.PaymentStatus == int32(commercev1.PaymentStatus_PAYMENT_STATUS_PARTIALLY_PAID) {
 		if mark := fulfilMark(order.PaymentPolicy); order.PaidPercent() < mark {
 			return nil, connect.NewError(connect.CodeFailedPrecondition,
-				fmt.Errorf("order is %d%% paid; %d%% must be paid before it can be fulfilled",
+				fmt.Sprintf("order is %d%% paid; %d%% must be paid before it can be fulfilled",
 					order.PaidPercent(), mark))
 		}
 	}
 
 	if len(req.GetLines()) == 0 {
-		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("fulfilment must have at least one line"))
+		return nil, connect.NewError(connect.CodeInvalidArgument, "fulfilment must have at least one line")
 	}
 
 	if validErr := fb.validateFulfilmentLines(ctx, order, req.GetLines()); validErr != nil {
@@ -144,11 +143,11 @@ func (fb *fulfilmentBusiness) validateFulfilmentLines(
 	for _, fl := range lines {
 		if fl.GetQuantity() <= 0 {
 			return connect.NewError(connect.CodeInvalidArgument,
-				fmt.Errorf("quantity must be positive for order line %s", fl.GetOrderLineId()))
+				fmt.Sprintf("quantity must be positive for order line %s", fl.GetOrderLineId()))
 		}
 		if _, ok := orderLineMap[fl.GetOrderLineId()]; !ok {
 			return connect.NewError(connect.CodeInvalidArgument,
-				fmt.Errorf("order line %s not found in order", fl.GetOrderLineId()))
+				fmt.Sprintf("order line %s not found in order", fl.GetOrderLineId()))
 		}
 		requested[fl.GetOrderLineId()] += fl.GetQuantity()
 	}
@@ -157,7 +156,7 @@ func (fb *fulfilmentBusiness) validateFulfilmentLines(
 		remaining := orderLineMap[orderLineID].Quantity - fulfilled[orderLineID]
 		if qty > remaining {
 			return connect.NewError(connect.CodeFailedPrecondition,
-				fmt.Errorf("quantity %d exceeds remaining unfulfilled quantity %d for order line %s",
+				fmt.Sprintf("quantity %d exceeds remaining unfulfilled quantity %d for order line %s",
 					qty, remaining, orderLineID))
 		}
 	}
@@ -298,12 +297,12 @@ func applyFulfilmentStatus(
 	if current == commercev1.FulfilmentStatus_FULFILMENT_STATUS_CANCELLED ||
 		current == commercev1.FulfilmentStatus_FULFILMENT_STATUS_DELIVERED {
 		return nil, connect.NewError(connect.CodeFailedPrecondition,
-			errors.New("fulfilment is in a terminal state"))
+			"fulfilment is in a terminal state")
 	}
 	if newStatus != commercev1.FulfilmentStatus_FULFILMENT_STATUS_CANCELLED &&
 		fulfilmentStatusRank(int32(newStatus)) < fulfilmentStatusRank(fulfilment.Status) {
 		return nil, connect.NewError(connect.CodeFailedPrecondition,
-			fmt.Errorf("fulfilment cannot move backwards from %s to %s", current, newStatus))
+			fmt.Sprintf("fulfilment cannot move backwards from %s to %s", current, newStatus))
 	}
 
 	fulfilment.Status = int32(newStatus)

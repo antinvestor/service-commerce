@@ -21,10 +21,10 @@ import (
 	"time"
 
 	procurementv1 "buf.build/gen/go/antinvestor/procurement/protocolbuffers/go/v1"
-	"connectrpc.com/connect"
-	"github.com/pitabwire/frame/v2"
-	"github.com/pitabwire/frame/v2/data"
-	"github.com/pitabwire/frame/v2/security"
+	"connectrpc.com/connect/v2"
+	"github.com/pitabwire/frame/v3"
+	"github.com/pitabwire/frame/v3/data"
+	"github.com/pitabwire/frame/v3/security"
 	"github.com/pitabwire/util"
 
 	"github.com/antinvestor/service-commerce/apps/procurement/service/models"
@@ -106,7 +106,7 @@ func (grb *goodsReceiptBusiness) CreateGoodsReceipt(
 	if createErr := grb.grRepo.CreateWithLines(ctx, gr, lines); createErr != nil {
 		switch {
 		case errors.Is(createErr, repository.ErrOverReceipt):
-			return nil, connect.NewError(connect.CodeFailedPrecondition, createErr)
+			return nil, connect.NewError(connect.CodeFailedPrecondition, createErr.Error()).WithCause(createErr)
 		case req.GetIdempotencyKey() != "" && data.ErrorIsDuplicateKey(createErr):
 			existing, getErr := grb.grRepo.GetByIdempotencyKey(ctx, req.GetIdempotencyKey())
 			if getErr == nil {
@@ -134,20 +134,17 @@ func (grb *goodsReceiptBusiness) validateGoodsReceipt(
 	if po.Status == int32(procurementv1.PurchaseOrderStatus_PURCHASE_ORDER_STATUS_CANCELLED) {
 		return nil, nil, connect.NewError(
 			connect.CodeFailedPrecondition,
-			errors.New("cannot receive goods for a cancelled purchase order"),
-		)
+			"cannot receive goods for a cancelled purchase order")
 	}
 	if po.Status == int32(procurementv1.PurchaseOrderStatus_PURCHASE_ORDER_STATUS_RECEIVED) {
 		return nil, nil, connect.NewError(
 			connect.CodeFailedPrecondition,
-			errors.New("purchase order is already fully received"),
-		)
+			"purchase order is already fully received")
 	}
 	if len(req.GetLines()) == 0 {
 		return nil, nil, connect.NewError(
 			connect.CodeInvalidArgument,
-			errors.New("goods receipt must have at least one line"),
-		)
+			"goods receipt must have at least one line")
 	}
 
 	poLineMap := make(map[string]*models.PurchaseOrderLine, len(po.Lines))
@@ -161,16 +158,16 @@ func (grb *goodsReceiptBusiness) validateGoodsReceipt(
 	for _, grLine := range req.GetLines() {
 		if grLine.GetReceivedQuantity() <= 0 {
 			return nil, nil, connect.NewError(connect.CodeInvalidArgument,
-				fmt.Errorf("received quantity must be positive for PO line %s", grLine.GetPurchaseOrderLineId()))
+				fmt.Sprintf("received quantity must be positive for PO line %s", grLine.GetPurchaseOrderLineId()))
 		}
 		pol, ok := poLineMap[grLine.GetPurchaseOrderLineId()]
 		if !ok {
 			return nil, nil, connect.NewError(connect.CodeInvalidArgument,
-				fmt.Errorf("purchase order line %s not found in purchase order", grLine.GetPurchaseOrderLineId()))
+				fmt.Sprintf("purchase order line %s not found in purchase order", grLine.GetPurchaseOrderLineId()))
 		}
 		if pol.Status == int32(procurementv1.PurchaseOrderLineStatus_PURCHASE_ORDER_LINE_STATUS_CANCELLED) {
 			return nil, nil, connect.NewError(connect.CodeFailedPrecondition,
-				fmt.Errorf("purchase order line %s is cancelled", grLine.GetPurchaseOrderLineId()))
+				fmt.Sprintf("purchase order line %s is cancelled", grLine.GetPurchaseOrderLineId()))
 		}
 		requested[grLine.GetPurchaseOrderLineId()] += grLine.GetReceivedQuantity()
 	}
@@ -179,7 +176,7 @@ func (grb *goodsReceiptBusiness) validateGoodsReceipt(
 		remaining := pol.OrderedQuantity - pol.ReceivedQuantity
 		if qty > remaining {
 			return nil, nil, connect.NewError(connect.CodeFailedPrecondition,
-				fmt.Errorf("received quantity %.2f exceeds remaining quantity %.2f for PO line %s",
+				fmt.Sprintf("received quantity %.2f exceeds remaining quantity %.2f for PO line %s",
 					qty, remaining, lineID))
 		}
 	}
@@ -261,8 +258,7 @@ func (grb *goodsReceiptBusiness) SearchGoodsReceipts(
 	default:
 		return nil, connect.NewError(
 			connect.CodeInvalidArgument,
-			errors.New("purchase_order_id or property_id is required"),
-		)
+			"purchase_order_id or property_id is required")
 	}
 
 	if err != nil {

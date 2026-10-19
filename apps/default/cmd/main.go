@@ -18,15 +18,16 @@ import (
 	"context"
 	"net/http"
 
-	"connectrpc.com/connect"
+	"connectrpc.com/connect/v2"
+	"connectrpc.com/connect/v2/connecthttp"
 	"github.com/antinvestor/common/notification"
-	"github.com/antinvestor/common/v2/permissions"
-	"github.com/pitabwire/frame/v2"
-	"github.com/pitabwire/frame/v2/config"
-	"github.com/pitabwire/frame/v2/datastore"
-	"github.com/pitabwire/frame/v2/security/authorizer"
-	connectInterceptors "github.com/pitabwire/frame/v2/security/interceptors/connect"
-	"github.com/pitabwire/frame/v2/setup"
+	"github.com/antinvestor/common/v3/permissions"
+	"github.com/pitabwire/frame/v3"
+	"github.com/pitabwire/frame/v3/config"
+	"github.com/pitabwire/frame/v3/datastore"
+	"github.com/pitabwire/frame/v3/security/authorizer"
+	connectInterceptors "github.com/pitabwire/frame/v3/security/interceptors/connect"
+	"github.com/pitabwire/frame/v3/setup"
 	"github.com/pitabwire/util"
 
 	aconfig "github.com/antinvestor/service-commerce/apps/default/config"
@@ -197,12 +198,12 @@ func setupConnectServer(
 		},
 	})
 
-	_, serverHandler := commercev1connect.NewCommerceServiceHandler(
-		implementation, connect.WithInterceptors(defaultInterceptorList...))
+	server := connect.NewServer(defaultInterceptorList...)
+	commercev1connect.RegisterCommerceServiceHandler(server, implementation)
 
 	mux := http.NewServeMux()
 	mux.Handle(business.PaymentReturnPath, implementation.PaymentReturnHandler())
-	mux.Handle("/", serverHandler)
+	connecthttp.Mount(mux, server)
 
 	return mux
 }

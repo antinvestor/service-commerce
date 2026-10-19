@@ -20,10 +20,10 @@ import (
 	"testing"
 	"time"
 
-	"connectrpc.com/connect"
-	"github.com/pitabwire/frame/v2"
-	"github.com/pitabwire/frame/v2/datastore"
-	"github.com/pitabwire/frame/v2/frametests/definition"
+	"connectrpc.com/connect/v2"
+	"github.com/pitabwire/frame/v3"
+	"github.com/pitabwire/frame/v3/datastore"
+	"github.com/pitabwire/frame/v3/frametests/definition"
 	"github.com/stretchr/testify/require"
 
 	"github.com/antinvestor/service-commerce/apps/default/service/repository"

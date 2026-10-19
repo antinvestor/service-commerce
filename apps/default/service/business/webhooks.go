@@ -31,8 +31,8 @@ import (
 	"syscall"
 	"time"
 
-	"connectrpc.com/connect"
-	"github.com/pitabwire/frame/v2/client"
+	"connectrpc.com/connect/v2"
+	"github.com/pitabwire/frame/v3/client"
 )
 
 // Webhook request headers.
@@ -76,7 +76,7 @@ func validateWebhookURL(raw string) error {
 		return nil
 	}
 	invalid := func(reason string) error {
-		return connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("webhook_url %s", reason))
+		return connect.NewError(connect.CodeInvalidArgument, fmt.Sprintf("webhook_url %s", reason))
 	}
 	if len(raw) > maxWebhookURLLength {
 		return invalid("is too long")

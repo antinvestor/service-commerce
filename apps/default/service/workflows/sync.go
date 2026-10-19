@@ -35,9 +35,8 @@ import (
 
 	commonv1 "buf.build/gen/go/antinvestor/common/protocolbuffers/go/common/v1"
 	workflowv1 "buf.build/gen/go/antinvestor/workflow/protocolbuffers/go/v1"
-	"connectrpc.com/connect"
-	"github.com/pitabwire/frame/v2"
-	"github.com/pitabwire/frame/v2/setup"
+	"github.com/pitabwire/frame/v3"
+	"github.com/pitabwire/frame/v3/setup"
 	"github.com/pitabwire/util"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -61,20 +60,20 @@ const (
 type Client interface {
 	CreateWorkflow(
 		context.Context,
-		*connect.Request[workflowv1.CreateWorkflowRequest],
-	) (*connect.Response[workflowv1.CreateWorkflowResponse], error)
+		*workflowv1.CreateWorkflowRequest,
+	) (*workflowv1.CreateWorkflowResponse, error)
 	ActivateWorkflow(
 		context.Context,
-		*connect.Request[workflowv1.ActivateWorkflowRequest],
-	) (*connect.Response[workflowv1.ActivateWorkflowResponse], error)
+		*workflowv1.ActivateWorkflowRequest,
+	) (*workflowv1.ActivateWorkflowResponse, error)
 	ListWorkflows(
 		context.Context,
-		*connect.Request[workflowv1.ListWorkflowsRequest],
-	) (*connect.Response[workflowv1.ListWorkflowsResponse], error)
+		*workflowv1.ListWorkflowsRequest,
+	) (*workflowv1.ListWorkflowsResponse, error)
 	ArchiveWorkflow(
 		context.Context,
-		*connect.Request[workflowv1.ArchiveWorkflowRequest],
-	) (*connect.Response[workflowv1.ArchiveWorkflowResponse], error)
+		*workflowv1.ArchiveWorkflowRequest,
+	) (*workflowv1.ArchiveWorkflowResponse, error)
 }
 
 // Env values substituted into the DSL before registration, so one set of
@@ -227,13 +226,13 @@ func loadOne(defs fs.FS, file, base string) (Document, error) {
 }
 
 func syncOne(ctx context.Context, cli Client, doc Document) (bool, error) {
-	createResp, err := cli.CreateWorkflow(ctx, connect.NewRequest(
+	createResp, err := cli.CreateWorkflow(ctx,
 		workflowv1.CreateWorkflowRequest_builder{Dsl: doc.DSL}.Build(),
-	))
+	)
 	if err != nil {
 		return false, fmt.Errorf("create workflow: %w", err)
 	}
-	wf := createResp.Msg.GetWorkflow()
+	wf := createResp.GetWorkflow()
 	log := util.Log(ctx).WithFields(map[string]any{
 		"workflow": doc.Name, "id": wf.GetId(), "version": wf.GetVersion(),
 	})
@@ -241,9 +240,9 @@ func syncOne(ctx context.Context, cli Client, doc Document) (bool, error) {
 		log.Debug("trustage workflow unchanged")
 		return false, nil
 	}
-	if _, err = cli.ActivateWorkflow(ctx, connect.NewRequest(
+	if _, err = cli.ActivateWorkflow(ctx,
 		workflowv1.ActivateWorkflowRequest_builder{Id: wf.GetId()}.Build(),
-	)); err != nil {
+	); err != nil {
 		return false, fmt.Errorf("activate workflow %s: %w", wf.GetId(), err)
 	}
 	log.Info("trustage workflow activated")
@@ -258,27 +257,27 @@ func archiveRetired(ctx context.Context, cli Client, shipped map[string]bool) (i
 		search := commonv1.SearchRequest_builder{
 			Cursor: commonv1.PageCursor_builder{Limit: listPageSize, Page: cursor.GetPage()}.Build(),
 		}.Build()
-		resp, err := cli.ListWorkflows(ctx, connect.NewRequest(workflowv1.ListWorkflowsRequest_builder{
+		resp, err := cli.ListWorkflows(ctx, workflowv1.ListWorkflowsRequest_builder{
 			Status: workflowv1.WorkflowStatus_WORKFLOW_STATUS_ACTIVE,
 			Search: search,
-		}.Build()))
+		}.Build())
 		if err != nil {
 			return archived, fmt.Errorf("list active workflows: %w", err)
 		}
-		for _, wf := range resp.Msg.GetItems() {
+		for _, wf := range resp.GetItems() {
 			if !strings.HasPrefix(wf.GetName(), NamePrefix) || shipped[wf.GetName()] {
 				continue
 			}
-			if _, err = cli.ArchiveWorkflow(ctx, connect.NewRequest(
+			if _, err = cli.ArchiveWorkflow(ctx,
 				workflowv1.ArchiveWorkflowRequest_builder{Id: wf.GetId()}.Build(),
-			)); err != nil {
+			); err != nil {
 				return archived, fmt.Errorf("archive retired workflow %s: %w", wf.GetName(), err)
 			}
 			util.Log(ctx).WithField("workflow", wf.GetName()).Info("retired trustage workflow archived")
 			archived++
 		}
-		cursor = resp.Msg.GetNextCursor()
-		if cursor.GetPage() == "" || len(resp.Msg.GetItems()) == 0 {
+		cursor = resp.GetNextCursor()
+		if cursor.GetPage() == "" || len(resp.GetItems()) == 0 {
 			return archived, nil
 		}
 	}

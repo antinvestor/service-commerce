@@ -16,15 +16,14 @@ package business
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
 	commonv1 "buf.build/gen/go/antinvestor/common/protocolbuffers/go/common/v1"
 	ledgerv1 "buf.build/gen/go/antinvestor/ledger/protocolbuffers/go/v1"
-	"connectrpc.com/connect"
-	"github.com/pitabwire/frame/v2"
-	"github.com/pitabwire/frame/v2/data"
+	"connectrpc.com/connect/v2"
+	"github.com/pitabwire/frame/v3"
+	"github.com/pitabwire/frame/v3/data"
 	"github.com/pitabwire/util"
 	"google.golang.org/protobuf/types/known/structpb"
 
@@ -110,16 +109,16 @@ func (lb *ledgerBusiness) RunEndOfDayLedger(
 	shopID, date string,
 ) ([]*commercev1.LedgerPosting, error) {
 	if lb.gateway == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errors.New("ledger posting is not configured"))
+		return nil, connect.NewError(connect.CodeUnimplemented, "ledger posting is not configured")
 	}
 
 	loc, err := lb.location()
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, connect.NewError(connect.CodeInternal, err.Error()).WithCause(err)
 	}
 	day, from, to, err := tradingDayBounds(date, loc)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInvalidArgument, err)
+		return nil, connect.NewError(connect.CodeInvalidArgument, err.Error()).WithCause(err)
 	}
 
 	shops, err := lb.targetShops(ctx, shopID)
@@ -429,24 +428,24 @@ func (lb *ledgerBusiness) save(ctx context.Context, posting *models.LedgerPostin
 type ledgerClient interface {
 	GetBook(
 		context.Context,
-		*connect.Request[ledgerv1.GetBookRequest],
-	) (*connect.Response[ledgerv1.GetBookResponse], error)
+		*ledgerv1.GetBookRequest,
+	) (*ledgerv1.GetBookResponse, error)
 	CreateBook(
 		context.Context,
-		*connect.Request[ledgerv1.CreateBookRequest],
-	) (*connect.Response[ledgerv1.CreateBookResponse], error)
+		*ledgerv1.CreateBookRequest,
+	) (*ledgerv1.CreateBookResponse, error)
 	CreateLedger(
 		context.Context,
-		*connect.Request[ledgerv1.CreateLedgerRequest],
-	) (*connect.Response[ledgerv1.CreateLedgerResponse], error)
+		*ledgerv1.CreateLedgerRequest,
+	) (*ledgerv1.CreateLedgerResponse, error)
 	CreateAccount(
 		context.Context,
-		*connect.Request[ledgerv1.CreateAccountRequest],
-	) (*connect.Response[ledgerv1.CreateAccountResponse], error)
+		*ledgerv1.CreateAccountRequest,
+	) (*ledgerv1.CreateAccountResponse, error)
 	CreateTransaction(
 		context.Context,
-		*connect.Request[ledgerv1.CreateTransactionRequest],
-	) (*connect.Response[ledgerv1.CreateTransactionResponse], error)
+		*ledgerv1.CreateTransactionRequest,
+	) (*ledgerv1.CreateTransactionResponse, error)
 }
 
 type connectLedgerGateway struct {
@@ -476,19 +475,19 @@ func (g *connectLedgerGateway) EnsureShopBook(
 	bookID := shopBookID(shop.GetID())
 	if _, err := g.cli.GetBook(
 		ctx,
-		connect.NewRequest(ledgerv1.GetBookRequest_builder{Id: bookID}.Build()),
+		ledgerv1.GetBookRequest_builder{Id: bookID}.Build(),
 	); err != nil {
 		if !frame.ErrorIsNotFound(err) && connect.CodeOf(err) != connect.CodeNotFound {
 			return nil, fmt.Errorf("get book: %w", err)
 		}
 		meta, _ := structpb.NewStruct(map[string]any{metadataShopID: shop.GetID(), metadataSource: sourceCommerce})
-		_, err = g.cli.CreateBook(ctx, connect.NewRequest(ledgerv1.CreateBookRequest_builder{
+		_, err = g.cli.CreateBook(ctx, ledgerv1.CreateBookRequest_builder{
 			Id:       bookID,
 			Name:     shop.Name,
 			Type:     bookType,
 			Currency: shop.Currency,
 			Data:     meta,
-		}.Build()))
+		}.Build())
 		if err != nil && !isAlreadyExists(err) {
 			return nil, fmt.Errorf("create book: %w", err)
 		}
@@ -515,16 +514,16 @@ func (g *connectLedgerGateway) ensureAccount(
 	meta, _ := structpb.NewStruct(map[string]any{
 		"name": shop.Name + " " + kind, metadataShopID: shop.GetID(), "book_id": bookID, metadataSource: sourceCommerce,
 	})
-	if _, err := g.cli.CreateLedger(ctx, connect.NewRequest(ledgerv1.CreateLedgerRequest_builder{
+	if _, err := g.cli.CreateLedger(ctx, ledgerv1.CreateLedgerRequest_builder{
 		Id: ledgerID, Type: ledgerType, Data: meta,
-	}.Build())); err != nil && !isAlreadyExists(err) {
+	}.Build()); err != nil && !isAlreadyExists(err) {
 		return "", fmt.Errorf("create %s ledger: %w", kind, err)
 	}
 
 	accountID := shopAccountID(shop.GetID(), kind)
-	if _, err := g.cli.CreateAccount(ctx, connect.NewRequest(ledgerv1.CreateAccountRequest_builder{
+	if _, err := g.cli.CreateAccount(ctx, ledgerv1.CreateAccountRequest_builder{
 		Id: accountID, LedgerId: ledgerID, Currency: shop.Currency, Data: meta,
-	}.Build())); err != nil && !isAlreadyExists(err) {
+	}.Build()); err != nil && !isAlreadyExists(err) {
 		return "", fmt.Errorf("create %s account: %w", kind, err)
 	}
 	return accountID, nil
@@ -534,7 +533,7 @@ func (g *connectLedgerGateway) PostTransaction(
 	ctx context.Context,
 	req *ledgerv1.CreateTransactionRequest,
 ) (string, error) {
-	resp, err := g.cli.CreateTransaction(ctx, connect.NewRequest(req))
+	resp, err := g.cli.CreateTransaction(ctx, req)
 	if err != nil {
 		if isAlreadyExists(err) {
 			// A retry after a lost response: the id is deterministic, so the
@@ -543,7 +542,7 @@ func (g *connectLedgerGateway) PostTransaction(
 		}
 		return "", err
 	}
-	return resp.Msg.GetData().GetId(), nil
+	return resp.GetData().GetId(), nil
 }
 
 func isAlreadyExists(err error) bool {

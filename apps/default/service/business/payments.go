@@ -16,7 +16,6 @@ package business
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/url"
 	"strings"
@@ -24,9 +23,9 @@ import (
 
 	commonv1 "buf.build/gen/go/antinvestor/common/protocolbuffers/go/common/v1"
 	checkoutv1 "buf.build/gen/go/antinvestor/payment/protocolbuffers/go/checkout/v1"
-	"connectrpc.com/connect"
-	"github.com/pitabwire/frame/v2"
-	"github.com/pitabwire/frame/v2/data"
+	"connectrpc.com/connect/v2"
+	"github.com/pitabwire/frame/v3"
+	"github.com/pitabwire/frame/v3/data"
 	"github.com/pitabwire/util"
 
 	"github.com/antinvestor/service-commerce/apps/default/service/models"
@@ -303,7 +302,7 @@ func (pb *paymentBusiness) applyCompleted(ctx context.Context, order *models.Ord
 				Error("checkout session amount does not match what it was issued for; not applying")
 			if firstErr == nil {
 				firstErr = connect.NewError(connect.CodeFailedPrecondition,
-					errors.New("the payment amount does not match the amount requested"))
+					"the payment amount does not match the amount requested")
 			}
 			continue
 		}
@@ -354,7 +353,7 @@ func (pb *paymentBusiness) CheckoutOrder(
 	req *commercev1.CheckoutOrderRequest,
 ) (*CheckoutResult, error) {
 	if pb.gateway == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errors.New("online payment is not configured"))
+		return nil, connect.NewError(connect.CodeUnimplemented, "online payment is not configured")
 	}
 	order, err := pb.orderRepo.GetWithLines(ctx, req.GetOrderId())
 	if err != nil {
@@ -396,7 +395,8 @@ func (pb *paymentBusiness) CheckoutOrder(
 	}
 	session, err := pb.gateway.CreateSession(ctx, pb.buildSessionRequest(shop, order, req, amount))
 	if err != nil {
-		return nil, connect.NewError(connect.CodeUnavailable, fmt.Errorf("create checkout session: %w", err))
+		return nil, connect.NewError(connect.CodeUnavailable, fmt.Sprintf("create checkout session: %v", err)).
+			WithCause(err)
 	}
 	if err = pb.orderRepo.AttachPaymentSession(
 		ctx, order.GetID(), session.GetRef(), session.GetPageUrl(), amount,
@@ -448,7 +448,7 @@ func currentSessionReusable(order *models.Order, scan *sessionScan, amount int64
 	}
 	if scan.unreadable > 0 {
 		return false, connect.NewError(connect.CodeUnavailable,
-			fmt.Errorf("verify existing checkout session: %w", scan.lastErr))
+			fmt.Sprintf("verify existing checkout session: %v", scan.lastErr)).WithCause(scan.lastErr)
 	}
 	return false, nil
 }
@@ -462,14 +462,14 @@ func awaitingPayment(order *models.Order) bool {
 func checkoutable(order *models.Order) error {
 	switch {
 	case order.PaymentStatus == int32(commercev1.PaymentStatus_PAYMENT_STATUS_PAID):
-		return connect.NewError(connect.CodeFailedPrecondition, errors.New("order is already paid"))
+		return connect.NewError(connect.CodeFailedPrecondition, "order is already paid")
 	case order.Status == int32(commercev1.OrderStatus_ORDER_STATUS_PENDING_PAYMENT):
 		return nil
 	case order.Status == int32(commercev1.OrderStatus_ORDER_STATUS_CONFIRMED) &&
 		order.PaymentStatus == int32(commercev1.PaymentStatus_PAYMENT_STATUS_PARTIALLY_PAID):
 		return nil
 	default:
-		return connect.NewError(connect.CodeFailedPrecondition, errors.New("order is not awaiting payment"))
+		return connect.NewError(connect.CodeFailedPrecondition, "order is not awaiting payment")
 	}
 }
 
@@ -482,7 +482,7 @@ func requestedInstalment(order *models.Order, requested *commonv1.Money) (int64,
 	}
 	if !strings.EqualFold(requested.GetCurrencyCode(), order.TotalCurrency) {
 		return 0, connect.NewError(connect.CodeInvalidArgument,
-			fmt.Errorf("amount must be in %s", order.TotalCurrency))
+			fmt.Sprintf("amount must be in %s", order.TotalCurrency))
 	}
 	units, nanos := models.RoundToCents(requested.GetUnits(), requested.GetNanos())
 	amount := models.MoneyNanos(units, nanos)
@@ -491,12 +491,12 @@ func requestedInstalment(order *models.Order, requested *commonv1.Money) (int64,
 	}
 	if order.PaymentPolicy == nil || !order.PaymentPolicy.AllowInstalments {
 		return 0, connect.NewError(connect.CodeFailedPrecondition,
-			errors.New("this order must be paid in full"))
+			"this order must be paid in full")
 	}
 	minimum, maximum := instalmentRange(order)
 	if amount <= 0 || amount > maximum {
 		return 0, connect.NewError(connect.CodeInvalidArgument,
-			fmt.Errorf("amount must be between %s and %s %s",
+			fmt.Sprintf("amount must be between %s and %s %s",
 				formatMoneyNanos(minimum), formatMoneyNanos(maximum), order.TotalCurrency))
 	}
 	if amount < minimum {
@@ -505,7 +505,7 @@ func requestedInstalment(order *models.Order, requested *commonv1.Money) (int64,
 			what = "deposit"
 		}
 		return 0, connect.NewError(connect.CodeInvalidArgument,
-			fmt.Errorf("the minimum %s is %s %s", what, formatMoneyNanos(minimum), order.TotalCurrency))
+			fmt.Sprintf("the minimum %s is %s %s", what, formatMoneyNanos(minimum), order.TotalCurrency))
 	}
 	return amount, nil
 }
@@ -630,10 +630,10 @@ func (pb *paymentBusiness) ConfirmOrderPayment(ctx context.Context, orderID stri
 		return order.ToAPI(), nil
 	}
 	if checkoutable(order) != nil {
-		return nil, connect.NewError(connect.CodeFailedPrecondition, errors.New("order is not awaiting payment"))
+		return nil, connect.NewError(connect.CodeFailedPrecondition, "order is not awaiting payment")
 	}
 	if pb.gateway == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errors.New("online payment is not configured"))
+		return nil, connect.NewError(connect.CodeUnimplemented, "online payment is not configured")
 	}
 
 	scan, err := pb.scanSessions(ctx, order)
@@ -641,7 +641,7 @@ func (pb *paymentBusiness) ConfirmOrderPayment(ctx context.Context, orderID stri
 		return nil, err
 	}
 	if len(scan.refs) == 0 {
-		return nil, connect.NewError(connect.CodeFailedPrecondition, errors.New("order has no checkout session"))
+		return nil, connect.NewError(connect.CodeFailedPrecondition, "order has no checkout session")
 	}
 	applied, err := pb.applyCompleted(ctx, order, scan)
 	if err != nil {
@@ -653,7 +653,7 @@ func (pb *paymentBusiness) ConfirmOrderPayment(ctx context.Context, orderID stri
 	}
 	if len(scan.sessions) == 0 && scan.unreadable > 0 {
 		return nil, connect.NewError(connect.CodeUnavailable,
-			fmt.Errorf("verify checkout session: %w", scan.lastErr))
+			fmt.Sprintf("verify checkout session: %v", scan.lastErr)).WithCause(scan.lastErr)
 	}
 
 	status := checkoutv1.SessionStatus_SESSION_STATUS_EXPIRED
@@ -661,7 +661,7 @@ func (pb *paymentBusiness) ConfirmOrderPayment(ctx context.Context, orderID stri
 		status = current.GetStatus()
 	}
 	return nil, connect.NewError(connect.CodeFailedPrecondition,
-		fmt.Errorf("checkout session is %s, not completed", status))
+		fmt.Sprintf("checkout session is %s, not completed", status))
 }
 
 func (pb *paymentBusiness) refresh(ctx context.Context, orderID string) (*commercev1.Order, error) {
@@ -680,7 +680,7 @@ func (pb *paymentBusiness) RecordOrderPayment(
 ) (*commercev1.Order, error) {
 	reference := strings.TrimSpace(recorded.Reference)
 	if reference == "" {
-		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("reference is required"))
+		return nil, connect.NewError(connect.CodeInvalidArgument, "reference is required")
 	}
 	order, err := pb.orderRepo.GetWithLines(ctx, recorded.OrderID)
 	if err != nil {
@@ -690,32 +690,30 @@ func (pb *paymentBusiness) RecordOrderPayment(
 		return order.ToAPI(), nil
 	}
 	if order.Status == int32(commercev1.OrderStatus_ORDER_STATUS_CANCELLED) {
-		return nil, connect.NewError(connect.CodeFailedPrecondition, errors.New("order is cancelled"))
+		return nil, connect.NewError(connect.CodeFailedPrecondition, "order is cancelled")
 	}
 	if order.PaymentStatus == int32(commercev1.PaymentStatus_PAYMENT_STATUS_PAID) {
-		return nil, connect.NewError(connect.CodeFailedPrecondition, errors.New("order is already paid"))
+		return nil, connect.NewError(connect.CodeFailedPrecondition, "order is already paid")
 	}
 	amount := recorded.Amount
 	if !strings.EqualFold(amount.GetCurrencyCode(), order.TotalCurrency) {
 		return nil, connect.NewError(
 			connect.CodeInvalidArgument,
-			fmt.Errorf("amount must be in %s", order.TotalCurrency),
-		)
+			fmt.Sprintf("amount must be in %s", order.TotalCurrency))
 	}
 	units, nanos := models.RoundToCents(amount.GetUnits(), amount.GetNanos())
 	amountNanos := models.MoneyNanos(units, nanos)
 	if amountNanos <= 0 {
-		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("amount must be positive"))
+		return nil, connect.NewError(connect.CodeInvalidArgument, "amount must be positive")
 	}
 	if amountNanos > order.BalanceNanos() {
 		return nil, connect.NewError(
 			connect.CodeInvalidArgument,
-			fmt.Errorf(
+			fmt.Sprintf(
 				"amount exceeds the balance of %s %s",
 				formatMoneyNanos(order.BalanceNanos()),
 				order.TotalCurrency,
-			),
-		)
+			))
 	}
 
 	shop, err := pb.shopRepo.GetByID(ctx, order.ShopID)
@@ -744,10 +742,10 @@ func (pb *paymentBusiness) HandlePaymentReturn(
 	orderID, sessionRef string,
 ) (*PaymentReturn, error) {
 	if pb.gateway == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errors.New("online payment is not configured"))
+		return nil, connect.NewError(connect.CodeUnimplemented, "online payment is not configured")
 	}
 	if orderID == "" || sessionRef == "" {
-		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("order and session are required"))
+		return nil, connect.NewError(connect.CodeInvalidArgument, "order and session are required")
 	}
 
 	order, err := pb.orderRepo.GetWithLines(ctx, orderID)
@@ -760,7 +758,7 @@ func (pb *paymentBusiness) HandlePaymentReturn(
 	}
 	if _, known := scan.expected[sessionRef]; !known {
 		// Indistinguishable from a missing order so refs cannot be probed.
-		return nil, connect.NewError(connect.CodeNotFound, errors.New("order not found"))
+		return nil, connect.NewError(connect.CodeNotFound, "order not found")
 	}
 	if checkoutable(order) == nil {
 		// A mismatch is logged inside applyCompleted and the order stays as is.
@@ -795,14 +793,14 @@ func (pb *paymentBusiness) CancelOrder(
 	if order.Status == int32(commercev1.OrderStatus_ORDER_STATUS_FULFILLED) ||
 		order.FulfilmentStatus >= int32(commercev1.FulfilmentStatus_FULFILMENT_STATUS_SHIPPED) {
 		return nil, connect.NewError(connect.CodeFailedPrecondition,
-			errors.New("order has shipped and can no longer be cancelled"))
+			"order has shipped and can no longer be cancelled")
 	}
 
 	paid := order.AmountPaidNanos > 0 ||
 		order.PaymentStatus == int32(commercev1.PaymentStatus_PAYMENT_STATUS_PAID)
 	if paid && !staff {
 		return nil, connect.NewError(connect.CodePermissionDenied,
-			errors.New("a paid order can only be cancelled by the shop"))
+			"a paid order can only be cancelled by the shop")
 	}
 
 	// A buyer cancelling an order they have in fact just paid would
@@ -814,7 +812,7 @@ func (pb *paymentBusiness) CancelOrder(
 	if order.AmountPaidNanos > before {
 		if !staff {
 			return nil, connect.NewError(connect.CodeFailedPrecondition,
-				errors.New("the order has been paid and can only be cancelled by the shop"))
+				"the order has been paid and can only be cancelled by the shop")
 		}
 		paid = true
 	}
@@ -843,7 +841,7 @@ func (pb *paymentBusiness) CancelOrder(
 		return nil, data.ErrorConvertToAPI(err)
 	}
 	if !ok {
-		return nil, connect.NewError(connect.CodeFailedPrecondition, errors.New("order changed; reload and retry"))
+		return nil, connect.NewError(connect.CodeFailedPrecondition, "order changed; reload and retry")
 	}
 
 	pb.notifier.OrderCancelled(ctx, shop, order, reason)
@@ -1064,12 +1062,12 @@ type connectCheckoutGateway struct {
 type checkoutClient interface {
 	CreateCheckoutSession(
 		context.Context,
-		*connect.Request[checkoutv1.CreateCheckoutSessionRequest],
-	) (*connect.Response[checkoutv1.CreateCheckoutSessionResponse], error)
+		*checkoutv1.CreateCheckoutSessionRequest,
+	) (*checkoutv1.CreateCheckoutSessionResponse, error)
 	GetCheckoutSession(
 		context.Context,
-		*connect.Request[checkoutv1.GetCheckoutSessionRequest],
-	) (*connect.Response[checkoutv1.GetCheckoutSessionResponse], error)
+		*checkoutv1.GetCheckoutSessionRequest,
+	) (*checkoutv1.GetCheckoutSessionResponse, error)
 }
 
 // NewConnectCheckoutGateway wraps a generated checkout client. A nil client
@@ -1085,22 +1083,22 @@ func (g *connectCheckoutGateway) CreateSession(
 	ctx context.Context,
 	req *checkoutv1.CreateCheckoutSessionRequest,
 ) (*checkoutv1.CheckoutSession, error) {
-	resp, err := g.cli.CreateCheckoutSession(ctx, connect.NewRequest(req))
+	resp, err := g.cli.CreateCheckoutSession(ctx, req)
 	if err != nil {
 		return nil, err
 	}
-	return resp.Msg.GetData(), nil
+	return resp.GetData(), nil
 }
 
 func (g *connectCheckoutGateway) GetSession(ctx context.Context, ref string) (*checkoutv1.CheckoutSession, error) {
-	resp, err := g.cli.GetCheckoutSession(ctx, connect.NewRequest(
+	resp, err := g.cli.GetCheckoutSession(ctx,
 		checkoutv1.GetCheckoutSessionRequest_builder{Ref: ref}.Build(),
-	))
+	)
 	if err != nil {
 		if frame.ErrorIsNotFound(err) {
 			return nil, fmt.Errorf("checkout session %s: %w", ref, err)
 		}
 		return nil, err
 	}
-	return resp.Msg.GetData(), nil
+	return resp.GetData(), nil
 }

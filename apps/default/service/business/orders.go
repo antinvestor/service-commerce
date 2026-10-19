@@ -57,6 +57,9 @@ type PriceResolver interface {
 
 type OrderBusiness interface {
 	CreateOrder(ctx context.Context, req *commercev1.CreateOrderRequest) (*commercev1.Order, error)
+	// CreateBuyerOrder places an order the buyer must pay before it is
+	// confirmed; stock is held only for the payment window.
+	CreateBuyerOrder(ctx context.Context, req *commercev1.CreateOrderRequest) (*commercev1.Order, error)
 	// CreateOrderFromCart converts an active cart into an order. The order is
 	// placed for the cart's profile; the request profile is used only when the
 	// cart has none.
@@ -114,6 +117,13 @@ func (ob *orderBusiness) CreateOrder(
 	req *commercev1.CreateOrderRequest,
 ) (*commercev1.Order, error) {
 	return ob.createOrder(ctx, req, "", 0, false)
+}
+
+func (ob *orderBusiness) CreateBuyerOrder(
+	ctx context.Context,
+	req *commercev1.CreateOrderRequest,
+) (*commercev1.Order, error) {
+	return ob.createOrder(ctx, req, "", 0, true)
 }
 
 func (ob *orderBusiness) createOrder(

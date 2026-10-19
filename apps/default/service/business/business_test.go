@@ -99,7 +99,7 @@ func (bts *BusinessTestSuite) getBusiness(ctx context.Context, svc *frame.Servic
 	}
 
 	return allBiz{
-		shopBiz:    business.NewShopBusiness(ctx, shopRepo, nil, nil, nil),
+		shopBiz:    business.NewShopBusiness(ctx, shopRepo, nil, nil, nil, "https://api.example/commerce/"),
 		catalogBiz: business.NewCatalogBusiness(ctx, productRepo, variantRepo, shopRepo),
 		cartBiz:    business.NewCartBusiness(ctx, cartRepo, cartLineRepo, variantRepo),
 		orderBiz: business.NewOrderBusiness(

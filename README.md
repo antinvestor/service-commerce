@@ -50,6 +50,34 @@ Flutter widget packages and console (`ui/`), a Hugo storefront module
 
 Back-office sales (`CreateOrder`) start confirmed and skip the payment window.
 
+## Public storefront
+
+A shop with `public_storefront` on (a switch in the console's shop settings)
+gets a page at `STOREFRONT_BASE_URL/shop/{slug}`, returned on the shop as
+`storefront_url`. Anyone can open it without signing in. It lists the shop's
+active products and the variants that have a price, and offers a form for a
+name, an email or phone number, quantities and, when the shop takes
+instalments, an amount to pay now.
+
+Submitting the form:
+
+1. finds the buyer's profile in the profile service by the contact, or
+   creates a person profile for it. Commerce keeps no buyer records, so a
+   guest who later signs in with the same contact sees the same orders;
+2. places the order for that profile in the shop's tenancy, awaiting payment
+   like any buyer order;
+3. starts hosted checkout with the storefront as the return page and
+   redirects there. After paying, the buyer comes back through
+   `/payments/return` to the storefront, which says how the payment went.
+
+The form carries a key, so submitting it twice places one order and reuses
+one checkout session. Pages are not cached, render no scripts, and accept at
+most 50 lines of up to 99 each; each visitor IP may start 10 checkouts per
+10 minutes on an instance. A shop that is not active, or has the storefront
+off, looks like it does not exist. Without a profile service the page is
+still shown but checkout is refused. Commerce's service account needs
+`profile_view` and `profile_create` on the profile service.
+
 ## Paying in instalments
 
 A shop's `PaymentPolicy` (overridable per product) lets buyers pay in
@@ -131,6 +159,7 @@ Standard Frame settings apply. Commerce adds:
 | `*_WORKLOAD_API_TARGET_PATH` | Workload identity path per peer (defaults match the platform layout). |
 | `COMMERCE_SERVICE_URI` | Public address trustage calls back into; substituted into the workflow DSL. |
 | `CHECKOUT_RETURN_URL` | Storefront page buyers are forwarded to after paying; `{order_id}` is substituted and `order_id`/`payment` are appended. Shops can override it. Empty shows commerce's own status page. |
+| `STOREFRONT_BASE_URL` | Where `/shop/{slug}` pages are served (default `PAYMENT_RETURN_BASE_URL`, then `COMMERCE_SERVICE_URI`). |
 | `PAYMENT_RETURN_BASE_URL` | Commerce's public address for `/payments/return` (default `COMMERCE_SERVICE_URI`). Empty on both sends buyers straight to the storefront URL. |
 | `PAYMENT_SETTLE_GRACE` | Extra time stock stays reserved while a payment prompt is outstanding (default 1h). |
 | `ORDER_PAYMENT_WINDOW` | How long stock is held for an unpaid order (default 45m). |

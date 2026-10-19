@@ -40,6 +40,8 @@ class Shop extends $pb.GeneratedMessage {
     PaymentPolicy? paymentPolicy,
     $core.String? webhookUrl,
     $core.bool? webhookSecretSet,
+    $core.bool? publicStorefront,
+    $core.String? storefrontUrl,
   }) {
     final $result = create();
     if (id != null) {
@@ -84,6 +86,12 @@ class Shop extends $pb.GeneratedMessage {
     if (webhookSecretSet != null) {
       $result.webhookSecretSet = webhookSecretSet;
     }
+    if (publicStorefront != null) {
+      $result.publicStorefront = publicStorefront;
+    }
+    if (storefrontUrl != null) {
+      $result.storefrontUrl = storefrontUrl;
+    }
     return $result;
   }
   Shop._() : super();
@@ -105,6 +113,8 @@ class Shop extends $pb.GeneratedMessage {
     ..aOM<PaymentPolicy>(16, _omitFieldNames ? '' : 'paymentPolicy', subBuilder: PaymentPolicy.create)
     ..aOS(17, _omitFieldNames ? '' : 'webhookUrl')
     ..aOB(18, _omitFieldNames ? '' : 'webhookSecretSet')
+    ..aOB(19, _omitFieldNames ? '' : 'publicStorefront')
+    ..aOS(20, _omitFieldNames ? '' : 'storefrontUrl')
     ..hasRequiredFields = false
   ;
 
@@ -266,6 +276,27 @@ class Shop extends $pb.GeneratedMessage {
   $core.bool hasWebhookSecretSet() => $_has(13);
   @$pb.TagNumber(18)
   void clearWebhookSecretSet() => clearField(18);
+
+  /// Whether anyone may browse the shop and buy from its public page without
+  /// signing in. Off by default.
+  @$pb.TagNumber(19)
+  $core.bool get publicStorefront => $_getBF(14);
+  @$pb.TagNumber(19)
+  set publicStorefront($core.bool v) { $_setBool(14, v); }
+  @$pb.TagNumber(19)
+  $core.bool hasPublicStorefront() => $_has(14);
+  @$pb.TagNumber(19)
+  void clearPublicStorefront() => clearField(19);
+
+  /// The public shop page; empty while public_storefront is off.
+  @$pb.TagNumber(20)
+  $core.String get storefrontUrl => $_getSZ(15);
+  @$pb.TagNumber(20)
+  set storefrontUrl($core.String v) { $_setString(15, v); }
+  @$pb.TagNumber(20)
+  $core.bool hasStorefrontUrl() => $_has(15);
+  @$pb.TagNumber(20)
+  void clearStorefrontUrl() => clearField(20);
 }
 
 /// PaymentPolicy governs paying for an order in instalments and the signals
@@ -424,6 +455,7 @@ class CreateShopRequest extends $pb.GeneratedMessage {
     PaymentPolicy? paymentPolicy,
     $core.String? webhookUrl,
     $core.String? webhookSecret,
+    $core.bool? publicStorefront,
   }) {
     final $result = create();
     if (name != null) {
@@ -456,6 +488,9 @@ class CreateShopRequest extends $pb.GeneratedMessage {
     if (webhookSecret != null) {
       $result.webhookSecret = webhookSecret;
     }
+    if (publicStorefront != null) {
+      $result.publicStorefront = publicStorefront;
+    }
     return $result;
   }
   CreateShopRequest._() : super();
@@ -473,6 +508,7 @@ class CreateShopRequest extends $pb.GeneratedMessage {
     ..aOM<PaymentPolicy>(8, _omitFieldNames ? '' : 'paymentPolicy', subBuilder: PaymentPolicy.create)
     ..aOS(9, _omitFieldNames ? '' : 'webhookUrl')
     ..aOS(10, _omitFieldNames ? '' : 'webhookSecret')
+    ..aOB(11, _omitFieldNames ? '' : 'publicStorefront')
     ..hasRequiredFields = false
   ;
 
@@ -583,6 +619,15 @@ class CreateShopRequest extends $pb.GeneratedMessage {
   $core.bool hasWebhookSecret() => $_has(9);
   @$pb.TagNumber(10)
   void clearWebhookSecret() => clearField(10);
+
+  @$pb.TagNumber(11)
+  $core.bool get publicStorefront => $_getBF(10);
+  @$pb.TagNumber(11)
+  set publicStorefront($core.bool v) { $_setBool(10, v); }
+  @$pb.TagNumber(11)
+  $core.bool hasPublicStorefront() => $_has(10);
+  @$pb.TagNumber(11)
+  void clearPublicStorefront() => clearField(11);
 }
 
 class CreateShopResponse extends $pb.GeneratedMessage {
@@ -652,6 +697,7 @@ class UpdateShopRequest extends $pb.GeneratedMessage {
     PaymentPolicy? paymentPolicy,
     $core.String? webhookUrl,
     $core.String? webhookSecret,
+    $core.bool? publicStorefront,
   }) {
     final $result = create();
     if (id != null) {
@@ -693,6 +739,9 @@ class UpdateShopRequest extends $pb.GeneratedMessage {
     if (webhookSecret != null) {
       $result.webhookSecret = webhookSecret;
     }
+    if (publicStorefront != null) {
+      $result.publicStorefront = publicStorefront;
+    }
     return $result;
   }
   UpdateShopRequest._() : super();
@@ -713,6 +762,7 @@ class UpdateShopRequest extends $pb.GeneratedMessage {
     ..aOM<PaymentPolicy>(11, _omitFieldNames ? '' : 'paymentPolicy', subBuilder: PaymentPolicy.create)
     ..aOS(12, _omitFieldNames ? '' : 'webhookUrl')
     ..aOS(13, _omitFieldNames ? '' : 'webhookSecret')
+    ..aOB(14, _omitFieldNames ? '' : 'publicStorefront')
     ..hasRequiredFields = false
   ;
 
@@ -854,6 +904,15 @@ class UpdateShopRequest extends $pb.GeneratedMessage {
   $core.bool hasWebhookSecret() => $_has(12);
   @$pb.TagNumber(13)
   void clearWebhookSecret() => clearField(13);
+
+  @$pb.TagNumber(14)
+  $core.bool get publicStorefront => $_getBF(13);
+  @$pb.TagNumber(14)
+  set publicStorefront($core.bool v) { $_setBool(13, v); }
+  @$pb.TagNumber(14)
+  $core.bool hasPublicStorefront() => $_has(13);
+  @$pb.TagNumber(14)
+  void clearPublicStorefront() => clearField(14);
 }
 
 class UpdateShopResponse extends $pb.GeneratedMessage {

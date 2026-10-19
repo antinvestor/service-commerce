@@ -196,6 +196,8 @@ func setupConnectServer(
 			BookType: cfg.LedgerBookType,
 			Timezone: cfg.LedgerTimezone,
 		},
+		Buyers:            business.NewProfileBuyerDirectory(profilesCli),
+		StorefrontBaseURL: cfg.StorefrontURL(),
 	})
 
 	server := connect.NewServer(defaultInterceptorList...)
@@ -203,6 +205,7 @@ func setupConnectServer(
 
 	mux := http.NewServeMux()
 	mux.Handle(business.PaymentReturnPath, implementation.PaymentReturnHandler())
+	implementation.MountStorefront(mux)
 	connecthttp.Mount(mux, server)
 
 	return mux

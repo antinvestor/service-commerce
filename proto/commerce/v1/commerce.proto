@@ -590,6 +590,11 @@ message Shop {
   string webhook_url = 17;
   // Whether a webhook secret is set. The secret itself is never returned.
   bool webhook_secret_set = 18;
+  // Whether anyone may browse the shop and buy from its public page without
+  // signing in. Off by default.
+  bool public_storefront = 19;
+  // The public shop page; empty while public_storefront is off.
+  string storefront_url = 20;
 }
 
 // PaymentPolicy governs paying for an order in instalments and the signals
@@ -651,6 +656,7 @@ message CreateShopRequest {
   PaymentPolicy payment_policy = 8;
   string webhook_url = 9;
   string webhook_secret = 10;
+  bool public_storefront = 11;
 }
 
 message CreateShopResponse {
@@ -677,6 +683,7 @@ message UpdateShopRequest {
   string webhook_url = 12;
   // Write-only. Empty with "webhook_secret" in the mask clears it.
   string webhook_secret = 13;
+  bool public_storefront = 14;
 }
 
 message UpdateShopResponse {

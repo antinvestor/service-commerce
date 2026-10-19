@@ -5,6 +5,7 @@ import 'package:console/core/services/commerce_client_provider.dart';
 import 'package:console/features/auth/data/auth_state_provider.dart';
 import 'package:console/features/settings/data/shop_providers.dart';
 import 'package:console/features/settings/shop_settings_section.dart';
+import 'package:console/features/settings/storefront_settings.dart';
 import 'package:console/features/settings/webhook_settings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -285,6 +286,63 @@ void main() {
       expect(updates[1].webhookSecret, isEmpty);
       expect(updates[2].updateMask.paths, ['webhook_url', 'webhook_secret']);
       expect(updates[2].webhookSecret, 'new');
+    });
+  });
+
+  group('Storefront', () {
+    test('masks public_storefront so closing it is written', () async {
+      final updates = <UpdateShopRequest>[];
+      final container = ProviderContainer(
+        overrides: [
+          consoleAuthStateProvider.overrideWith(_SignedIn.new),
+          commerceServiceClientProvider.overrideWithValue(
+            _client(updates: updates),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+      final notifier = container.read(shopNotifierProvider.notifier);
+
+      await notifier.updateStorefront(id: 's1', enabled: true);
+      await notifier.updateStorefront(id: 's1', enabled: false);
+
+      expect(updates.map((u) => u.updateMask.paths), [
+        ['public_storefront'],
+        ['public_storefront'],
+      ]);
+      expect(updates.map((u) => u.publicStorefront), [true, false]);
+    });
+
+    testWidgets('shows the link when open and toggles it', (tester) async {
+      final updates = <UpdateShopRequest>[];
+      final shop = Shop(
+        id: 's1',
+        status: ShopStatus.SHOP_STATUS_ACTIVE,
+        publicStorefront: true,
+        storefrontUrl: 'https://api.example/commerce/shop/corner',
+      );
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            consoleAuthStateProvider.overrideWith(_SignedIn.new),
+            commerceServiceClientProvider.overrideWithValue(
+              _client(updates: updates),
+            ),
+          ],
+          child: MaterialApp(
+            home: Scaffold(body: StorefrontSettingsSection(shop: shop)),
+          ),
+        ),
+      );
+
+      expect(
+        find.text('https://api.example/commerce/shop/corner'),
+        findsOneWidget,
+      );
+      await tester.tap(find.byKey(const Key('storefront-switch')));
+      await tester.pumpAndSettle();
+      expect(updates.single.publicStorefront, isFalse);
+      expect(find.text('Storefront closed.'), findsOneWidget);
     });
   });
 

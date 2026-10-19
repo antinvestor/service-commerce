@@ -90,6 +90,9 @@ type Shop struct {
 	// WebhookURL receives order events signed with WebhookSecret.
 	WebhookURL    string `gorm:"type:varchar(1024)"`
 	WebhookSecret string `gorm:"type:varchar(255)"`
+	// PublicStorefront lets anyone browse and buy from the shop's public
+	// page without signing in.
+	PublicStorefront bool `gorm:"default:false"`
 }
 
 func (s *Shop) ToAPI() *commercev1.Shop {
@@ -108,6 +111,7 @@ func (s *Shop) ToAPI() *commercev1.Shop {
 		PaymentPolicy:     s.PaymentPolicy.ToAPI(),
 		WebhookUrl:        s.WebhookURL,
 		WebhookSecretSet:  s.WebhookSecret != "",
+		PublicStorefront:  s.PublicStorefront,
 	}
 }
 

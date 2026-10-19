@@ -2289,6 +2289,9 @@ components:
         webhookSecret:
           type: string
           title: webhook_secret
+        publicStorefront:
+          type: boolean
+          title: public_storefront
       title: CreateShopRequest
       additionalProperties: false
     commerce.v1.CreateShopResponse:
@@ -4130,6 +4133,16 @@ components:
           type: boolean
           title: webhook_secret_set
           description: Whether a webhook secret is set. The secret itself is never returned.
+        publicStorefront:
+          type: boolean
+          title: public_storefront
+          description: |-
+            Whether anyone may browse the shop and buy from its public page without
+             signing in. Off by default.
+        storefrontUrl:
+          type: string
+          title: storefront_url
+          description: The public shop page; empty while public_storefront is off.
       title: Shop
       additionalProperties: false
     commerce.v1.ShopStatus:
@@ -4336,6 +4349,9 @@ components:
           type: string
           title: webhook_secret
           description: Write-only. Empty with "webhook_secret" in the mask clears it.
+        publicStorefront:
+          type: boolean
+          title: public_storefront
       title: UpdateShopRequest
       additionalProperties: false
     commerce.v1.UpdateShopResponse:

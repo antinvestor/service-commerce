@@ -116,12 +116,6 @@ class ShopNotifier extends Notifier<AsyncValue<void>> {
     }
   }
 
-  /// Updates the shop's webhook settings.
-  ///
-  /// Only the fields that are passed are written: [url] updates
-  /// `webhook_url` (empty disables delivery) and [secret] updates the
-  /// write-only `webhook_secret` (empty clears it). Other shop fields are
-  /// left untouched because they are not in the update mask.
   /// Replaces the shop's payment policy. A null [policy] removes it, so
   /// orders are paid in full again. Only `payment_policy` is in the mask.
   Future<Shop> updatePaymentPolicy({
@@ -146,6 +140,37 @@ class ShopNotifier extends Notifier<AsyncValue<void>> {
     }
   }
 
+  /// Opens or closes the shop's public storefront page, where anyone can
+  /// buy without an account. Only `public_storefront` is in the mask, so
+  /// turning it off is written too.
+  Future<Shop> updateStorefront({
+    required String id,
+    required bool enabled,
+  }) async {
+    state = const AsyncValue.loading();
+    try {
+      final response = await _client.updateShop(
+        UpdateShopRequest(
+          id: id,
+          publicStorefront: enabled,
+          updateMask: FieldMask(paths: const ['public_storefront']),
+        ),
+      );
+      state = const AsyncValue.data(null);
+      ref.invalidate(shopListProvider);
+      return response.shop;
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+      rethrow;
+    }
+  }
+
+  /// Updates the shop's webhook settings.
+  ///
+  /// Only the fields that are passed are written: [url] updates
+  /// `webhook_url` (empty disables delivery) and [secret] updates the
+  /// write-only `webhook_secret` (empty clears it). Other shop fields are
+  /// left untouched because they are not in the update mask.
   Future<Shop> updateWebhook({
     required String id,
     String? url,

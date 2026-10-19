@@ -58,6 +58,7 @@ func NewShopBusiness(
 	authzMw authz.Middleware,
 	currencies CurrencyResolver,
 	secrets SecretBox,
+	storefrontBaseURL string,
 ) ShopBusiness {
 	if currencies == nil {
 		currencies = NewCurrencyResolver(nil)
@@ -65,7 +66,10 @@ func NewShopBusiness(
 	if secrets == nil {
 		secrets = plainBox{}
 	}
-	return &shopBusiness{shopRepo: shopRepo, authz: authzMw, currencies: currencies, secrets: secrets}
+	return &shopBusiness{
+		shopRepo: shopRepo, authz: authzMw, currencies: currencies, secrets: secrets,
+		storefrontBaseURL: storefrontBaseURL,
+	}
 }
 
 type shopBusiness struct {
@@ -73,6 +77,23 @@ type shopBusiness struct {
 	authz      authz.Middleware
 	currencies CurrencyResolver
 	secrets    SecretBox
+	// storefrontBaseURL is where public shop pages are served; empty hides
+	// storefront links.
+	storefrontBaseURL string
+}
+
+// StorefrontPath is where a shop's public page lives, under the storefront
+// base URL.
+const StorefrontPath = "/shop/"
+
+// toAPI adds what only the service knows, the public page address, to the
+// stored shop.
+func (sb *shopBusiness) toAPI(shop *models.Shop) *commercev1.Shop {
+	api := shop.ToAPI()
+	if shop.PublicStorefront {
+		api.StorefrontUrl = StorefrontURL(sb.storefrontBaseURL, shop.Slug)
+	}
+	return api
 }
 
 func (sb *shopBusiness) CreateShop(ctx context.Context, req *commercev1.CreateShopRequest) (*commercev1.Shop, error) {
@@ -125,6 +146,7 @@ func (sb *shopBusiness) CreateShop(ctx context.Context, req *commercev1.CreateSh
 		MediaIDs:          models.StringArray(req.GetMediaIds()),
 		Properties:        data.JSONMap{},
 		PaymentPolicy:     models.PaymentPolicyFromAPI(req.GetPaymentPolicy()),
+		PublicStorefront:  req.GetPublicStorefront(),
 		WebhookURL:        webhookURL,
 	}
 	if shop.WebhookSecret, err = sb.secrets.Seal(strings.TrimSpace(req.GetWebhookSecret())); err != nil {
@@ -144,7 +166,7 @@ func (sb *shopBusiness) CreateShop(ctx context.Context, req *commercev1.CreateSh
 			fmt.Sprintf("grant shop ownership: %v", ownerErr)).WithCause(ownerErr)
 	}
 
-	return shop.ToAPI(), nil
+	return sb.toAPI(shop), nil
 }
 
 // validateShopInput rejects values the database or the hosted checkout would
@@ -157,7 +179,7 @@ func validateShopInput(name, checkoutReturnURL string) error {
 	}
 	if raw := strings.TrimSpace(checkoutReturnURL); raw != "" {
 		u, err := url.Parse(strings.ReplaceAll(raw, "{order_id}", "order"))
-		if err != nil || (u.Scheme != "https" && u.Scheme != "http") || u.Host == "" {
+		if err != nil || (u.Scheme != schemeHTTPS && u.Scheme != "http") || u.Host == "" {
 			return connect.NewError(connect.CodeInvalidArgument,
 				"checkout_return_url must be an absolute http(s) URL")
 		}
@@ -209,7 +231,7 @@ func (sb *shopBusiness) ListShops(ctx context.Context, req *commercev1.ListShops
 	}
 	result := &ShopPage{Shops: make([]*commercev1.Shop, 0, len(shops)), NextPage: nextCursor(next)}
 	for _, shop := range shops {
-		result.Shops = append(result.Shops, shop.ToAPI())
+		result.Shops = append(result.Shops, sb.toAPI(shop))
 	}
 	return result, nil
 }
@@ -219,7 +241,7 @@ func (sb *shopBusiness) GetShop(ctx context.Context, id string) (*commercev1.Sho
 	if err != nil {
 		return nil, data.ErrorConvertToAPI(err)
 	}
-	return shop.ToAPI(), nil
+	return sb.toAPI(shop), nil
 }
 
 func (sb *shopBusiness) UpdateShop(ctx context.Context, req *commercev1.UpdateShopRequest) (*commercev1.Shop, error) {
@@ -250,7 +272,7 @@ func (sb *shopBusiness) UpdateShop(ctx context.Context, req *commercev1.UpdateSh
 		}
 	}
 
-	return shop.ToAPI(), nil
+	return sb.toAPI(shop), nil
 }
 
 // applyShopFields copies requested fields onto the shop and returns the
@@ -263,7 +285,7 @@ func applyShopFields(shop *models.Shop, req *commercev1.UpdateShopRequest) []str
 		fields = []string{
 			fieldName, fieldDescription, fieldMediaIDs, fieldStatus, "extra",
 			fieldCurrency, fieldContactID, fieldCheckoutReturnURL,
-			fieldPaymentPolicy, fieldWebhookURL, fieldWebhookSecret,
+			fieldPaymentPolicy, fieldWebhookURL, fieldWebhookSecret, fieldPublicStorefront,
 		}
 	}
 
@@ -313,6 +335,12 @@ func applyShopField(
 		return applyShopSettingField(shop, req, field, explicitMask)
 	case fieldPaymentPolicy, fieldWebhookURL, fieldWebhookSecret:
 		return applyShopPaymentField(shop, req, field, explicitMask)
+	case fieldPublicStorefront:
+		// Turning the storefront off needs the field in the mask.
+		if explicitMask || req.GetPublicStorefront() {
+			shop.PublicStorefront = req.GetPublicStorefront()
+			return fieldPublicStorefront, true
+		}
 	}
 	return "", false
 }

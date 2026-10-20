@@ -164,7 +164,6 @@ class _ProductDetailContent extends StatelessWidget {
                           ? product.description
                           : '—',
                     ),
-                    _OvRow('Shop ID', product.shopId),
                     _OvRow('Status', productStatusLabel(product.status)),
                     _OvRow(
                       'Fulfilment',

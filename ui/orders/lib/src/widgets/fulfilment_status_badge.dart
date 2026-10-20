@@ -25,7 +25,8 @@ class FulfilmentStatusBadge extends StatelessWidget {
           ('Delivered', Colors.green, null),
         FulfilmentStatus.FULFILMENT_STATUS_CANCELLED =>
           ('Cancelled', Colors.red, null),
-        _ => ('Unknown', Colors.grey, null),
+        // Nothing has been fulfilled yet.
+        _ => ('Not fulfilled', Colors.grey, null),
       },
     );
   }

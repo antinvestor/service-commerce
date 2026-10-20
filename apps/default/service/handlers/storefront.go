@@ -21,6 +21,7 @@ import (
 	"net"
 	"net/http"
 	"net/netip"
+	"net/url"
 	"strconv"
 	"strings"
 	"sync"
@@ -47,6 +48,9 @@ const (
 	storefrontCheckoutsPerWindow = 10
 	storefrontCheckoutWindow     = 10 * time.Minute
 	storefrontVisitorsTracked    = 10_000
+
+	// checkoutSuffix follows a storefront's address to reach its checkout.
+	checkoutSuffix = "/checkout"
 )
 
 // MountStorefront serves shops' public pages on mux: the catalogue at
@@ -75,7 +79,7 @@ func NewStorefrontHandler(storefront business.StorefrontBusiness) *StorefrontHan
 // Mount registers the storefront routes on mux.
 func (h *StorefrontHandler) Mount(mux *http.ServeMux) {
 	mux.HandleFunc("GET "+business.StorefrontPath+"{slug}", h.page)
-	mux.HandleFunc("POST "+business.StorefrontPath+"{slug}/checkout", h.checkout)
+	mux.HandleFunc("POST "+business.StorefrontPath+"{slug}"+checkoutSuffix, h.checkout)
 }
 
 func (h *StorefrontHandler) page(w http.ResponseWriter, r *http.Request) {
@@ -83,6 +87,10 @@ func (h *StorefrontHandler) page(w http.ResponseWriter, r *http.Request) {
 	switch r.URL.Query().Get("payment") {
 	case returnStatePaid:
 		view.Notice = "Payment received. Thank you, the shop has your order and will be in touch."
+	case returnStatePartPaid:
+		view.Notice = "Payment received. Thank you, the shop has your order and will be in touch about the balance."
+	case returnStateUnpaid:
+		view.Notice = "Your payment did not go through and nothing was charged. You can try again below."
 	case returnStatePending:
 		view.Notice = "We are still confirming your payment. You will hear from the shop once it is through."
 	case returnStateCancelled:
@@ -257,7 +265,12 @@ func (v *storefrontView) fill(front *business.Storefront) {
 	v.Shop = shop.GetName()
 	v.Description = shop.GetDescription()
 	v.Currency = shop.GetCurrency()
-	v.Action = business.StorefrontPath + shop.GetSlug() + "/checkout"
+	// The page's public address carries any gateway prefix the path here
+	// lacks, so post back through it when it is known.
+	v.Action = business.StorefrontPath + url.PathEscape(shop.GetSlug()) + checkoutSuffix
+	if public := shop.GetStorefrontUrl(); public != "" {
+		v.Action = public + checkoutSuffix
+	}
 	if policy := shop.GetPaymentPolicy(); policy.GetAllowInstalments() {
 		v.Instalments = true
 		v.MinDeposit = policy.GetMinDepositPercent()

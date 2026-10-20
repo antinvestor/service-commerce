@@ -32,8 +32,16 @@ HttpClient runtimeHttpClient(AuthRuntime runtime) {
       throw ConnectException(_codeFor(e.code), e.message, cause: e);
     }
 
+    // The runtime hands back the body already decoded (browsers and
+    // dart:io both undo Content-Encoding), but the headers still describe
+    // the compressed bytes on the wire. Passing them on would make Connect
+    // decompress again or reject the body's length, so drop them.
     final responseHeaders = Headers();
-    response.headers.forEach(responseHeaders.add);
+    response.headers.forEach((name, value) {
+      if (!_wireOnlyHeaders.contains(name.toLowerCase())) {
+        responseHeaders.add(name, value);
+      }
+    });
     return HttpResponse(
       response.status,
       responseHeaders,
@@ -53,6 +61,10 @@ Transport runtimeTransport(AuthRuntime runtime, String baseUrl) {
     useHttpGet: false,
   );
 }
+
+/// Response headers that describe the transfer rather than the body the
+/// runtime returns.
+const _wireOnlyHeaders = {'content-encoding', 'content-length'};
 
 Future<Uint8List> _collect(Stream<Uint8List>? body) async {
   if (body == null) return Uint8List(0);

@@ -92,12 +92,19 @@ func (cb *catalogBusiness) CreateProduct(
 		return nil, err
 	}
 
+	// Most of what shops sell is handed over physically; say so when the
+	// caller does not.
+	fulfilment := req.GetFulfilmentType()
+	if fulfilment == commercev1.FulfilmentType_FULFILMENT_TYPE_UNSPECIFIED {
+		fulfilment = commercev1.FulfilmentType_FULFILMENT_TYPE_PHYSICAL
+	}
+
 	product := &models.Product{
 		ShopID:         req.GetShopId(),
 		Name:           name,
 		Description:    req.GetDescription(),
 		Attributes:     models.MapToJSONMap(req.GetAttributes()),
-		FulfilmentType: int32(req.GetFulfilmentType()),
+		FulfilmentType: int32(fulfilment),
 		Status:         int32(commercev1.ProductStatus_PRODUCT_STATUS_ACTIVE),
 		MediaIDs:       models.StringArray(req.GetMediaIds()),
 		PaymentPolicy:  models.PaymentPolicyFromAPI(req.GetPaymentPolicy()),

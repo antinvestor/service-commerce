@@ -340,6 +340,8 @@ func (bts *BusinessTestSuite) TestCreateProduct() {
 		require.NoError(t, err)
 		require.NotEmpty(t, product.GetId())
 		require.Equal(t, "Laptop", product.GetName())
+		require.Equal(t, commercev1.FulfilmentType_FULFILMENT_TYPE_PHYSICAL, product.GetFulfilmentType(),
+			"an unspecified fulfilment type is physical")
 
 		// Also test GetProduct
 		retrieved, err := biz.catalogBiz.GetProduct(ctx, product.GetId())

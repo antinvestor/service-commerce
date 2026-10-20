@@ -205,6 +205,15 @@ runtime serves Connect RPC only.
 
 ## Development
 
+To run commerce, the console and the storefront together on one machine,
+with sign-in and a payment simulator standing in for the platform, see
+[tools/devstack](tools/devstack/README.md):
+
+```bash
+make dev-deps && make dev-stack   # Postgres, Keto; devstack on :8090
+make dev-migrate && make dev-commerce && make dev-seed
+```
+
 ```bash
 make proto-generate   # OpenAPI, OPL, Dart SDKs from proto/
 make proto-generate-go   # local Go code for the commerce module into gen/go

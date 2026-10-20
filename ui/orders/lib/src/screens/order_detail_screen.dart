@@ -1,5 +1,7 @@
 import 'package:antinvestor_ui_core/widgets/amount_display.dart';
 import 'package:antinvestor_ui_core/widgets/error_helpers.dart';
+import 'package:antinvestor_ui_profile/antinvestor_ui_profile.dart'
+    show ProfileBadgeById;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -120,7 +122,13 @@ class OrderDetailScreen extends ConsumerWidget {
               const SizedBox(height: 20),
 
               // Details
-              _DetailRow(label: 'Customer', value: order.profileId),
+              _DetailRow(
+                label: 'Customer',
+                child: ProfileBadgeById(
+                  profileId: order.profileId,
+                  avatarSize: 24,
+                ),
+              ),
               if (order.hasCreatedAt())
                 _DetailRow(
                   label: 'Created',

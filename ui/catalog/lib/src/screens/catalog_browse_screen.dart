@@ -474,7 +474,6 @@ class _ProductDetailPanel extends StatelessWidget {
         if (product.description.isNotEmpty)
           _DetailRow(label: 'Description', value: product.description),
         if (product.shopId.isNotEmpty)
-          _DetailRow(label: 'Shop ID', value: product.shopId),
         if (product.attributes.isNotEmpty) ...[
           const SizedBox(height: 8),
           Text(

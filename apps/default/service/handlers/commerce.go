@@ -52,9 +52,11 @@ type CommerceServer struct {
 	ledgerBusiness     business.LedgerBusiness
 	eventBusiness      business.EventBusiness
 	storefront         business.StorefrontBusiness
-
-	commercev1connect.UnimplementedCommerceServiceHandler
 }
+
+// CommerceServer answers every RPC itself; a new one in the proto fails the
+// build here rather than reaching callers as unimplemented.
+var _ commercev1connect.CommerceServiceHandler = (*CommerceServer)(nil)
 
 // Dependencies are the peers and policies the server is built with.
 type Dependencies struct {
@@ -298,6 +300,24 @@ func (cs *CommerceServer) CreateProductVariant(
 		return nil, errorutil.CleanErr(err)
 	}
 	return &commercev1.CreateProductVariantResponse{ProductVariant: variant}, nil
+}
+
+func (cs *CommerceServer) ListProductVariants(
+	ctx context.Context,
+	req *commercev1.ListProductVariantsRequest,
+) (*commercev1.ListProductVariantsResponse, error) {
+	product, err := cs.catalogBusiness.GetProduct(ctx, req.GetProductId())
+	if err != nil {
+		return nil, errorutil.CleanErr(err)
+	}
+	if authzErr := cs.authz.CanProductsView(ctx, product.GetShopId()); authzErr != nil {
+		return nil, authorizer.ToConnectError(authzErr)
+	}
+	variants, err := cs.catalogBusiness.ListProductVariants(ctx, product.GetId())
+	if err != nil {
+		return nil, errorutil.CleanErr(err)
+	}
+	return &commercev1.ListProductVariantsResponse{ProductVariants: variants}, nil
 }
 
 func (cs *CommerceServer) UpdateProductVariant(

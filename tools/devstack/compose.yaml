@@ -1,0 +1,50 @@
+# Postgres and Keto for running commerce locally. See tools/devstack/README.md.
+name: commerce-dev
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: ant
+      POSTGRES_PASSWORD: ant
+      POSTGRES_DB: service_commerce
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./initdb:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ant -d service_commerce"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  keto-migrate:
+    image: oryd/keto:v26.2.0
+    command: migrate up --yes --config /home/ory/keto.yml
+    environment:
+      DSN: postgres://ant:ant@postgres:5432/keto?sslmode=disable
+    volumes:
+      - ./keto.yml:/home/ory/keto.yml:ro
+      - ../../.tmp/devstack/namespaces.ts:/home/ory/namespaces.ts:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  keto:
+    image: oryd/keto:v26.2.0
+    command: serve --config /home/ory/keto.yml
+    environment:
+      DSN: postgres://ant:ant@postgres:5432/keto?sslmode=disable
+    ports:
+      - "127.0.0.1:4466:4466"
+      - "127.0.0.1:4467:4467"
+    volumes:
+      - ./keto.yml:/home/ory/keto.yml:ro
+      - ../../.tmp/devstack/namespaces.ts:/home/ory/namespaces.ts:ro
+    depends_on:
+      keto-migrate:
+        condition: service_completed_successfully
+
+volumes:
+  pgdata:

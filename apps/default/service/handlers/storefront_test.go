@@ -106,6 +106,17 @@ func TestStorefrontPage_ListsWhatIsForSale(t *testing.T) {
 	require.Contains(t, rec.Header().Get("Content-Security-Policy"), "frame-ancestors 'none'")
 }
 
+func TestStorefrontPage_PostsThroughItsPublicAddress(t *testing.T) {
+	front := cornerShop()
+	front.Shop.StorefrontUrl = "https://api.example/commerce/shop/corner"
+	rec := serveStorefront(t, handlers.NewStorefrontHandler(&stubStorefront{front: front}),
+		httptest.NewRequest(http.MethodGet, "/shop/corner", nil))
+
+	require.Equal(t, http.StatusOK, rec.Code)
+	require.Contains(t, rec.Body.String(), `action="https://api.example/commerce/shop/corner/checkout"`,
+		"the gateway prefix the request path lost is kept")
+}
+
 func TestStorefrontPage_UnknownShop(t *testing.T) {
 	stub := &stubStorefront{err: connect.NewError(connect.CodeNotFound, "shop not found")}
 	rec := serveStorefront(t, handlers.NewStorefrontHandler(stub),

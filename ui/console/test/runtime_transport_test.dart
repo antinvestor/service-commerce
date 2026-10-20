@@ -74,6 +74,31 @@ void main() {
     },
   );
 
+  test('a body the browser already decompressed is accepted', () async {
+    final shop = GetShopResponse(shop: Shop(id: 'shop-1', name: 'Duka'));
+    final decoded = Uint8List.fromList(shop.writeToBuffer());
+    // What a browser reports for a gzipped response: the wire headers with
+    // the decoded body.
+    final runtime = _FakeRuntime(
+      () async => ApiResponse(
+        status: 200,
+        headers: {
+          'content-type': 'application/proto',
+          'content-encoding': 'gzip',
+          'content-length': '${decoded.length + 18}',
+        },
+        body: decoded,
+      ),
+    );
+    final client = CommerceServiceClient(
+      runtimeTransport(runtime, 'https://api.example/commerce'),
+    );
+
+    final response = await client.getShop(GetShopRequest(id: 'shop-1'));
+
+    expect(response.shop.name, 'Duka');
+  });
+
   test('a session problem surfaces as unauthenticated', () async {
     final runtime = _FakeRuntime(
       () async => throw AuthError(AuthErrorCode.tokenRefreshFailed, 'expired'),

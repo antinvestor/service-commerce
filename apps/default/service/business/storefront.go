@@ -16,6 +16,7 @@ package business
 
 import (
 	"context"
+	"net/netip"
 	"net/url"
 	"regexp"
 	"strconv"
@@ -209,10 +210,28 @@ func (sb *storefrontBusiness) Checkout(ctx context.Context, slug string, order S
 		return "", err
 	}
 	target, err := url.Parse(result.Order.GetCheckoutUrl())
-	if err != nil || target.Scheme != schemeHTTPS || target.Host == "" {
+	if err != nil || target.Host == "" || !securePaymentPage(target) {
 		return "", connect.NewError(connect.CodeFailedPrecondition, "this order has no payment page to send you to")
 	}
 	return target.String(), nil
+}
+
+// securePaymentPage reports whether buyers may be sent to target to pay: it
+// must use https, unless it is on this machine, which only a local payment
+// simulator is.
+func securePaymentPage(target *url.URL) bool {
+	if target.Scheme == schemeHTTPS {
+		return true
+	}
+	if target.Scheme != "http" {
+		return false
+	}
+	host := target.Hostname()
+	if host == "localhost" {
+		return true
+	}
+	ip, err := netip.ParseAddr(host)
+	return err == nil && ip.IsLoopback()
 }
 
 // openShop finds the public shop with slug and returns a context bound to

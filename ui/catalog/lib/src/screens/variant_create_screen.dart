@@ -287,7 +287,6 @@ class _VariantCreateScreenState extends ConsumerState<VariantCreateScreen> {
                       ' ${_currencyController.text.trim()}',
                 ),
                 _ConfirmRow('Stock', _stockController.text.trim()),
-                _ConfirmRow('Product', widget.productId),
                 if (_error != null) ...[
                   const SizedBox(height: 12),
                   Text(

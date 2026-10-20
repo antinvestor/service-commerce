@@ -28,6 +28,7 @@ require (
 	connectrpc.com/connect/v2 v2.0.1
 	github.com/antinvestor/common/notification v0.2.0
 	github.com/antinvestor/common/v3 v3.0.1
+	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/pitabwire/frame/v3 v3.0.0
 	github.com/pitabwire/util v0.9.1
 	github.com/stretchr/testify v1.12.1
@@ -75,7 +76,6 @@ require (
 	github.com/go-logr/logr v1.4.4 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
-	github.com/golang-jwt/jwt/v5 v5.3.1 // indirect
 	github.com/google/s2a-go v0.1.11 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/google/wire v0.7.0 // indirect

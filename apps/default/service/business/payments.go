@@ -81,6 +81,9 @@ type PaymentReturn struct {
 	// RedirectURL is the storefront page to forward the buyer to; empty when
 	// commerce should render the status itself.
 	RedirectURL string
+	// Unpaid means the session the buyer came back from ended without taking
+	// payment: they cancelled, it failed, or it expired with nothing pending.
+	Unpaid bool
 }
 
 // CheckoutResult is the order and the amount its checkout session charges.
@@ -768,6 +771,15 @@ func (pb *paymentBusiness) HandlePaymentReturn(
 	result := &PaymentReturn{}
 	if session, ok := scan.sessions[sessionRef]; ok {
 		result.RedirectURL = session.GetMetadata()[metadataReturnTo]
+		switch session.GetStatus() {
+		case checkoutv1.SessionStatus_SESSION_STATUS_FAILED:
+			result.Unpaid = true
+		case checkoutv1.SessionStatus_SESSION_STATUS_EXPIRED:
+			result.Unpaid = session.GetPromptId() == ""
+		case checkoutv1.SessionStatus_SESSION_STATUS_PENDING_UNSPECIFIED,
+			checkoutv1.SessionStatus_SESSION_STATUS_PROCESSING,
+			checkoutv1.SessionStatus_SESSION_STATUS_COMPLETED:
+		}
 	}
 	result.Order, err = pb.refresh(ctx, order.GetID())
 	if err != nil {

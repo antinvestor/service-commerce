@@ -85,6 +85,16 @@ class AuthStateNotifier extends AsyncNotifier<AuthState> {
 }
 
 final consoleAuthStateProvider =
-    AsyncNotifierProvider<AuthStateNotifier, AuthState>(
-  AuthStateNotifier.new,
-);
+    AsyncNotifierProvider<AuthStateNotifier, AuthState>(AuthStateNotifier.new);
+
+/// Decoded ID-token claims of the signed-in user, `{}` otherwise.
+///
+/// Keyed off [consoleAuthStateProvider] rather than the runtime's
+/// stream-based providers: a session restored on page load is already
+/// authenticated before anything subscribes, so the stream never replays
+/// that state and claims read through it stay empty.
+final consoleClaimsProvider = FutureProvider<Map<String, dynamic>>((ref) async {
+  final auth = ref.watch(consoleAuthStateProvider).value;
+  if (auth != AuthState.authenticated) return const <String, dynamic>{};
+  return ref.watch(runtime.authRuntimeProvider).getClaims();
+});

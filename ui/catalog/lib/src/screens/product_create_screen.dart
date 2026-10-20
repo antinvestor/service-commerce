@@ -312,7 +312,6 @@ class _ProductCreateScreenState extends ConsumerState<ProductCreateScreen> {
                       ? 'Shop policy'
                       : describePaymentPolicy(_paymentPolicy!),
                 ),
-                _ConfirmRow('Shop', widget.shopId),
                 if (_error != null) ...[
                   const SizedBox(height: 12),
                   Text(

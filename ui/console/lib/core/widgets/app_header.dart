@@ -1,17 +1,14 @@
-import 'package:antinvestor_auth_runtime/antinvestor_auth_runtime.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../features/auth/data/auth_state_provider.dart'
+    show consoleClaimsProvider;
 
 import '../theme/app_colors.dart';
 import 'shop_switcher.dart';
 
 class AppHeader extends ConsumerWidget implements PreferredSizeWidget {
-  const AppHeader({
-    super.key,
-    this.onMenuTap,
-    this.showMenuButton = false,
-  });
+  const AppHeader({super.key, this.onMenuTap, this.showMenuButton = false});
 
   final VoidCallback? onMenuTap;
   final bool showMenuButton;
@@ -42,9 +39,7 @@ class AppHeader extends ConsumerWidget implements PreferredSizeWidget {
             const SizedBox(width: 8),
           ],
           Flexible(
-            child: ShopSwitcher(
-              onCreateShop: () => context.go('/settings'),
-            ),
+            child: ShopSwitcher(onCreateShop: () => context.go('/settings')),
           ),
           const Spacer(),
           if (!isCompact) ...[
@@ -59,7 +54,9 @@ class AppHeader extends ConsumerWidget implements PreferredSizeWidget {
             ),
             const SizedBox(width: 8),
           ],
-          Flexible(child: _UserAvatar(ref: ref, compact: isCompact)),
+          Flexible(
+            child: _UserAvatar(ref: ref, compact: isCompact),
+          ),
         ],
       ),
     );
@@ -102,7 +99,7 @@ class _UserAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final claimsAsync = ref.watch(userClaimsProvider);
+    final claimsAsync = ref.watch(consoleClaimsProvider);
     final claims = claimsAsync.whenOrNull(data: (info) => info);
     final name = _resolveName(claims);
     final subtitle = _resolveSubtitle(claims);
@@ -144,9 +141,9 @@ class _UserAvatar extends StatelessWidget {
           child: Text(
             initials.isNotEmpty ? initials : 'O',
             style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                ),
+              color: Colors.white,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ),
       ],

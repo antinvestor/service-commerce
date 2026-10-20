@@ -1,6 +1,6 @@
-import 'package:antinvestor_auth_runtime/antinvestor_auth_runtime.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../auth/data/auth_state_provider.dart' show consoleClaimsProvider;
 
 import '../../core/router/console_modules.dart';
 import '../../core/theme/app_colors.dart';
@@ -14,7 +14,7 @@ import 'widgets/recent_activity.dart';
 /// Console landing page.
 ///
 /// Four sections stacked vertically:
-/// 1. Welcome banner (driven by `userClaimsProvider`)
+/// 1. Welcome banner (driven by `consoleClaimsProvider`)
 /// 2. KPI strip — commerce + manufacturing health
 /// 3. Module grid — primary entry points into each domain
 /// 4. Recent activity feed
@@ -24,20 +24,12 @@ class DashboardPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final claimsAsync = ref.watch(userClaimsProvider);
-    final kpisAsync = ref.watch(dashboardKpisProvider);
-    final activity = ref.watch(recentActivityProvider);
+    final claimsAsync = ref.watch(consoleClaimsProvider);
+    final activity =
+        ref.watch(recentActivityProvider).value ??
+        const <RecentActivityEntry>[];
     final screenSize = screenSizeOf(context);
     final registered = ref.watch(registeredRoutePathsProvider);
-
-    // Render whatever data we have (including the empty sentinel before
-    // the tenant scope resolves); error and loading states fall back to
-    // the empty snapshot so the strip never disappears.
-    final kpis = kpisAsync.when(
-      data: (data) => data,
-      loading: () => DashboardKpis.empty(),
-      error: (_, _) => DashboardKpis.empty(),
-    );
 
     final displayName = claimsAsync.maybeWhen(
       data: (claims) =>
@@ -61,7 +53,7 @@ class DashboardPage extends ConsumerWidget {
                 breadcrumbs: const ['Dashboard'],
               ),
               const SizedBox(height: 24),
-              _KpiStrip(kpis: kpis, screenSize: screenSize),
+              _KpiStrip(screenSize: screenSize),
               const SizedBox(height: 32),
               Text(
                 'Modules',
@@ -168,46 +160,36 @@ class DashboardPage extends ConsumerWidget {
   ];
 }
 
-class _KpiStrip extends StatelessWidget {
-  const _KpiStrip({required this.kpis, required this.screenSize});
+/// A count, or a dash when it could not be loaded.
+String _count(int? value) => value?.toString() ?? '—';
 
-  final DashboardKpis kpis;
+class _KpiStrip extends ConsumerWidget {
+  const _KpiStrip({required this.screenSize});
+
   final ScreenSize screenSize;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final cards = <Widget>[
       KpiCard(
         label: "Today's sales",
-        value: kpis.todaysSales,
+        value: ref.watch(todaysSalesProvider).value ?? '—',
         icon: Icons.attach_money,
-        change: '+8% vs yesterday',
+      ),
+      KpiCard(
+        label: 'Awaiting payment',
+        value: _count(ref.watch(awaitingPaymentProvider).value),
+        icon: Icons.hourglass_bottom_outlined,
       ),
       KpiCard(
         label: 'Open POs',
-        value: kpis.openPurchaseOrders.toString(),
+        value: _count(ref.watch(openPurchaseOrdersProvider).value),
         icon: Icons.local_shipping_outlined,
-        change: '3 awaiting receipt',
       ),
       KpiCard(
         label: 'Active batches',
-        value: kpis.activeBatches.toString(),
+        value: _count(ref.watch(activeBatchesProvider).value),
         icon: Icons.precision_manufacturing_outlined,
-        change: '1 finishing soon',
-      ),
-      KpiCard(
-        label: 'Low stock',
-        value: kpis.lowStockItems.toString(),
-        icon: Icons.warning_amber_outlined,
-        change: 'Across 2 warehouses',
-        changePositive: false,
-      ),
-      KpiCard(
-        label: 'Expiring stock',
-        value: kpis.expiringStockItems.toString(),
-        icon: Icons.schedule_outlined,
-        change: 'Within 7 days',
-        changePositive: false,
       ),
     ];
 

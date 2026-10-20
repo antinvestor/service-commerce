@@ -38,8 +38,11 @@ func spa(dir string) http.Handler {
 				files.ServeHTTP(w, r)
 				return
 			}
-			if index := path.Join(name, "index.html"); fileExists(site, index) {
-				http.ServeFileFS(w, r, site, index)
+			if fileExists(site, path.Join(name, "index.html")) {
+				// The file server answers a directory with its index.html.
+				dir := r.Clone(r.Context())
+				dir.URL.Path = "/" + name + "/"
+				files.ServeHTTP(w, dir)
 				return
 			}
 		}

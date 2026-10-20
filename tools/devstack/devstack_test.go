@@ -246,6 +246,8 @@ func TestConsoleServesFilesCallbackAndRoutes(t *testing.T) {
 	require.Equal(t, "js", body)
 	_, body = get("/auth/callback?code=x")
 	require.Equal(t, "callback", body)
+	_, body = get("/")
+	require.Equal(t, "app", body)
 	_, body = get("/orders/123")
 	require.Equal(t, "app", body, "app routes fall back to the app")
 	code, _ = get("/missing.js")

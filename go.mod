@@ -21,11 +21,11 @@ require (
 	buf.build/gen/go/antinvestor/profile/protocolbuffers/go v1.36.12-20261010180548-eeb7b4541358.2
 	buf.build/gen/go/antinvestor/settingz/connectrpc/go/v2 v2.0.1-20261010180548-c7910134e0de.1
 	buf.build/gen/go/antinvestor/settingz/protocolbuffers/go v1.36.12-20261010180548-c7910134e0de.2
-	buf.build/gen/go/antinvestor/workflow/connectrpc/go/v2 v2.0.1-20260511135803-9b0e411394e1.1
+	buf.build/gen/go/antinvestor/workflow/connectrpc/go/v2 v2.0.2-20260511135803-9b0e411394e1.1
 	buf.build/gen/go/antinvestor/workflow/protocolbuffers/go v1.36.12-20260511135803-9b0e411394e1.2
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.12-20260825204119-511051f7f437.2
 	buf.build/gen/go/gnostic/gnostic/protocolbuffers/go v1.36.12-20230414000709-087bc8072ce4.2
-	connectrpc.com/connect/v2 v2.0.1
+	connectrpc.com/connect/v2 v2.0.2
 	github.com/antinvestor/common/notification v0.2.0
 	github.com/antinvestor/common/v3 v3.0.1
 	github.com/pitabwire/frame/v3 v3.0.0

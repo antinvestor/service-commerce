@@ -4,8 +4,8 @@ buf.build/gen/go/antinvestor/device/connectrpc/go/v2 v2.0.1-20261010180548-2c1e5
 buf.build/gen/go/antinvestor/device/connectrpc/go/v2 v2.0.1-20261010180548-2c1e50223410.1/go.mod h1:rP3mhRqy9qnr8ipswaQoXjy/3GZGOtaoRe5T73Sj3yg=
 buf.build/gen/go/antinvestor/device/protocolbuffers/go v1.36.12-20261010180548-2c1e50223410.2 h1:DHR4w4rzYSZE9rUFGQnfr3iiDCJn8+/+H2urYj3/0ZE=
 buf.build/gen/go/antinvestor/device/protocolbuffers/go v1.36.12-20261010180548-2c1e50223410.2/go.mod h1:6KA5A+fCDj7zA5WcsFwbKJ1ZKUYN+TRZr8n+wJquw3w=
-buf.build/gen/go/antinvestor/ledger/connectrpc/go/v2 v2.0.1-20261011184341-460358e58550.1 h1:4t5kf9TAyCRn1FXgruHYKUWkzlaXpiFHRp3x+5ow2ZU=
-buf.build/gen/go/antinvestor/ledger/connectrpc/go/v2 v2.0.1-20261011184341-460358e58550.1/go.mod h1:1UbBy1epVQ233zUUXGkytg9feO1oQmrjlf97NkhNlGE=
+buf.build/gen/go/antinvestor/ledger/connectrpc/go/v2 v2.0.2-20261011184341-460358e58550.1 h1:ljMfkRGQtvfA+mmAm6B7J8apvE8S4MHvrm5s31aGChk=
+buf.build/gen/go/antinvestor/ledger/connectrpc/go/v2 v2.0.2-20261011184341-460358e58550.1/go.mod h1:a8bxvDCqhR8ZSTMS8hETSshfMNraGm3bVP402ENc2xw=
 buf.build/gen/go/antinvestor/ledger/protocolbuffers/go v1.36.12-20261011184341-460358e58550.2 h1:n3btReYznxfVquXh8j4da71ctrR4FOWuslmDINqyd4w=
 buf.build/gen/go/antinvestor/ledger/protocolbuffers/go v1.36.12-20261011184341-460358e58550.2/go.mod h1:p2FtdNopFlAWpXjF+uDgq6W+aMCIchivPD8HXRlr4e4=
 buf.build/gen/go/antinvestor/manufacturing/connectrpc/go/v2 v2.0.1-20260911062319-cb4cec5af873.1 h1:Te6h66T+iB7nOSxB59aNEHISDL1BKV62WGbuNpP8MAw=
@@ -62,8 +62,8 @@ cloud.google.com/go/pubsub/v2 v2.7.0 h1:MFrBTZZa6PDWZzCi4NJRsHKMm2w0a4oAaYNqwjgb
 cloud.google.com/go/pubsub/v2 v2.7.0/go.mod h1:JaFvWNVRk3Knoil/4M1ECeLOaI9D8drbmJWypQlK5aM=
 connectrpc.com/connect v1.21.0 h1:LhqSJt7jHf5NJBo9Jq/t/9FjcYAideif0mg+qe2jCUs=
 connectrpc.com/connect v1.21.0/go.mod h1:A2ygJrukXwWy32vkCAAHNVguZrqZ+jeZ9rGRnGR4dN4=
-connectrpc.com/connect/v2 v2.0.1 h1:WTAycxe87UqxSM5oxS30d1dalZ+C5xz8Ec8O6zVYkHQ=
-connectrpc.com/connect/v2 v2.0.1/go.mod h1:N32OLrstcPUzkykFynnefFro3+xzSdOrZlK2jHmS/xo=
+connectrpc.com/connect/v2 v2.0.2 h1:PoPDmOlhc46elsuCdKCKTxjNBb3HJlKF+s/sP2oucPw=
+connectrpc.com/connect/v2 v2.0.2/go.mod h1:N32OLrstcPUzkykFynnefFro3+xzSdOrZlK2jHmS/xo=
 connectrpc.com/otelconnect v0.12.0 h1:SOQ2LvyPUON2WekzWUWhXEy2NHusTevV64xa6kAHsrQ=
 connectrpc.com/otelconnect v0.12.0/go.mod h1:BB9a3Z9DDsx8AAJREAdKVIENfa70XB1KQXWKRbfpLxw=
 dario.cat/mergo v1.0.2 h1:85+piFYR1tMbRrLcDwR18y4UKJ3aH1Tbzi24VRW1TK8=

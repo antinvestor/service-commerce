@@ -390,7 +390,7 @@ func (ob *orderBusiness) ListOrders(
 	if err != nil {
 		return nil, err
 	}
-	orders, next, err := ob.orderRepo.ListByShopID(ctx, req.GetShopId(), page)
+	orders, next, err := ob.orderRepo.ListByShopID(ctx, req.GetShopId(), orderStatusFilter(req), page)
 	if err != nil {
 		return nil, data.ErrorConvertToAPI(err)
 	}
@@ -411,11 +411,23 @@ func (ob *orderBusiness) ListOrdersForProfile(
 	}
 	// A shop filter narrows the buyer's history to that shop, in the query
 	// so every page is full.
-	orders, next, err := ob.orderRepo.ListByProfileID(ctx, profileID, req.GetShopId(), page)
+	orders, next, err := ob.orderRepo.ListByProfileID(ctx, profileID, req.GetShopId(), orderStatusFilter(req), page)
 	if err != nil {
 		return nil, data.ErrorConvertToAPI(err)
 	}
 	return toOrderPage(orders, next), nil
+}
+
+// orderStatusFilter reads the request's order and payment status filters.
+func orderStatusFilter(req *commercev1.ListOrdersRequest) repository.OrderStatusFilter {
+	filter := repository.OrderStatusFilter{}
+	for _, s := range req.GetStatuses() {
+		filter.Statuses = append(filter.Statuses, int32(s))
+	}
+	for _, s := range req.GetPaymentStatuses() {
+		filter.PaymentStatuses = append(filter.PaymentStatuses, int32(s))
+	}
+	return filter
 }
 
 func toOrderPage(orders []*models.Order, next *repository.PageKey) *OrderPage {

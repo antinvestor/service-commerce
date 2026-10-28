@@ -1323,6 +1323,19 @@ message ListOrdersRequest {
   // any profile; anyone else lists their own orders and may name only
   // themselves.
   string profile_id = 3 [(buf.validate.field).string.max_len = 40];
+
+  // Only orders in any of these statuses; empty lists every status.
+  repeated OrderStatus statuses = 4 [
+    (buf.validate.field).repeated.max_items = 10,
+    (buf.validate.field).repeated.items.enum.defined_only = true
+  ];
+
+  // Only orders whose payment is in any of these statuses; empty lists
+  // every payment status.
+  repeated PaymentStatus payment_statuses = 5 [
+    (buf.validate.field).repeated.max_items = 10,
+    (buf.validate.field).repeated.items.enum.defined_only = true
+  ];
 }
 
 message ListOrdersResponse {

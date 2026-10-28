@@ -66,15 +66,33 @@ func (r *orderRepository) GetByIdempotencyKey(ctx context.Context, key string) (
 	return order, err
 }
 
+// OrderStatusFilter narrows an order list to any of the given order and
+// payment statuses; an empty list does not filter.
+type OrderStatusFilter struct {
+	Statuses        []int32
+	PaymentStatuses []int32
+}
+
+func (f OrderStatusFilter) apply(query *gorm.DB) *gorm.DB {
+	if len(f.Statuses) > 0 {
+		query = query.Where("status IN ?", f.Statuses)
+	}
+	if len(f.PaymentStatuses) > 0 {
+		query = query.Where("payment_status IN ?", f.PaymentStatuses)
+	}
+	return query
+}
+
 func (r *orderRepository) ListByShopID(
 	ctx context.Context,
 	shopID string,
+	filter OrderStatusFilter,
 	page Page,
 ) ([]*models.Order, *PageKey, error) {
 	var orders []*models.Order
-	query := r.Pool().DB(ctx, true).
+	query := filter.apply(r.Pool().DB(ctx, true).
 		Preload(clause.Associations).
-		Where("shop_id = ?", shopID)
+		Where("shop_id = ?", shopID))
 	if err := applyKeyset(query, page).Find(&orders).Error; err != nil {
 		return nil, nil, err
 	}
@@ -85,12 +103,13 @@ func (r *orderRepository) ListByShopID(
 func (r *orderRepository) ListByProfileID(
 	ctx context.Context,
 	profileID, shopID string,
+	filter OrderStatusFilter,
 	page Page,
 ) ([]*models.Order, *PageKey, error) {
 	var orders []*models.Order
-	query := r.Pool().DB(ctx, true).
+	query := filter.apply(r.Pool().DB(ctx, true).
 		Preload(clause.Associations).
-		Where("profile_id = ?", profileID)
+		Where("profile_id = ?", profileID))
 	if shopID != "" {
 		query = query.Where("shop_id = ?", shopID)
 	}

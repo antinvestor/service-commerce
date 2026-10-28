@@ -76,10 +76,20 @@ type OrderRepository interface {
 	datastore.BaseRepository[*models.Order]
 	GetWithLines(ctx context.Context, id string) (*models.Order, error)
 	GetByIdempotencyKey(ctx context.Context, key string) (*models.Order, error)
-	ListByShopID(ctx context.Context, shopID string, page Page) ([]*models.Order, *PageKey, error)
+	ListByShopID(
+		ctx context.Context,
+		shopID string,
+		filter OrderStatusFilter,
+		page Page,
+	) ([]*models.Order, *PageKey, error)
 	// ListByProfileID pages a buyer's orders, narrowed to one shop when
 	// shopID is set.
-	ListByProfileID(ctx context.Context, profileID, shopID string, page Page) ([]*models.Order, *PageKey, error)
+	ListByProfileID(
+		ctx context.Context,
+		profileID, shopID string,
+		filter OrderStatusFilter,
+		page Page,
+	) ([]*models.Order, *PageKey, error)
 	// CreateWithLinesAndStock allocates the order number, inserts the order and
 	// lines, and decrements stock for each line inside a single transaction.
 	// If opts.ConvertCartID is non-empty, marks that cart as converted in the

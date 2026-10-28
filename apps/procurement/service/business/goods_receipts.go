@@ -63,6 +63,14 @@ type GoodsReceiptBusiness interface {
 	// DeliverPending pushes up to limit lines still pending, least-tried
 	// first. Every line lands at most once however often it runs.
 	DeliverPending(ctx context.Context, limit int) (DeliverySummary, error)
+	// ResolveLine settles a line that needs staff: BOOKED_MANUALLY marks a
+	// PENDING_TRANSFER or FAILED line resolved; RETRY puts a FAILED product
+	// variant line back to pending and pushes it once. It returns the
+	// receipt as it stands afterwards.
+	ResolveLine(
+		ctx context.Context,
+		req *procurementv1.GoodsReceiptLineResolveRequest,
+	) (*procurementv1.GoodsReceipt, error)
 }
 
 func NewGoodsReceiptBusiness(

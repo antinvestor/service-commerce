@@ -200,11 +200,13 @@ func (rts *RepositoryTestSuite) TestListByProfileIDFiltersByShopBeforePaging() {
 			place(other.GetID(), otherVariant)
 		}
 
-		page, next, err := orderRepo.ListByProfileID(ctx, profile, mine.GetID(), repository.Page{Limit: 2})
+		page, next, err := orderRepo.ListByProfileID(ctx, profile, mine.GetID(), repository.OrderStatusFilter{},
+			repository.Page{Limit: 2})
 		rts.Require().NoError(err)
 		rts.Require().Len(page, 2)
 		rts.Require().NotNil(next)
-		rest, _, err := orderRepo.ListByProfileID(ctx, profile, mine.GetID(), repository.Page{Limit: 2, After: next})
+		rest, _, err := orderRepo.ListByProfileID(ctx, profile, mine.GetID(), repository.OrderStatusFilter{},
+			repository.Page{Limit: 2, After: next})
 		rts.Require().NoError(err)
 		rts.Require().Len(rest, 1)
 		for _, o := range append(page, rest...) {

@@ -238,14 +238,20 @@ type GoodsReceiptLine struct {
 	RejectionReason     string   `gorm:"type:text"`
 	// DeliveryStatus tracks the accepted stock to its destination
 	// (procurementv1.StockDeliveryStatus); it is written with the receipt and
-	// moves once, PENDING to DELIVERED or FAILED.
+	// moves PENDING to DELIVERED or FAILED. Staff move PENDING_TRANSFER and
+	// FAILED lines to RESOLVED once booked by hand, or a FAILED line back to
+	// PENDING to try again.
 	DeliveryStatus   int32
 	DeliveryAttempts int32
 	DeliveryNote     string `gorm:"type:text"`
 	DeliveredAt      *time.Time
-	LotNumber        string `gorm:"type:varchar(255)"`
-	ExpiryDate       *time.Time
-	Unit             string `gorm:"type:varchar(50)"`
+	// Who marked the line resolved, when, and why.
+	ResolvedBy     string `gorm:"type:varchar(50)"`
+	ResolvedAt     *time.Time
+	ResolutionNote string `gorm:"type:text"`
+	LotNumber      string `gorm:"type:varchar(255)"`
+	ExpiryDate     *time.Time
+	Unit           string `gorm:"type:varchar(50)"`
 
 	GoodsReceipt *GoodsReceipt `gorm:"foreignKey:GoodsReceiptID"`
 }
@@ -266,10 +272,15 @@ func (grl *GoodsReceiptLine) ToAPI() *procurementv1.GoodsReceiptLine {
 		ProductVariantId:    grl.ProductVariantID,
 		DeliveryStatus:      procurementv1.StockDeliveryStatus(grl.DeliveryStatus),
 		DeliveryNote:        grl.DeliveryNote,
+		ResolvedBy:          grl.ResolvedBy,
+		ResolutionNote:      grl.ResolutionNote,
 	}
 
 	if grl.ExpiryDate != nil {
 		result.ExpiryDate = timestamppb.New(*grl.ExpiryDate)
+	}
+	if grl.ResolvedAt != nil {
+		result.ResolvedAt = timestamppb.New(*grl.ResolvedAt)
 	}
 
 	return result

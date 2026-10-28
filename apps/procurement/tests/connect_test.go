@@ -195,6 +195,22 @@ func (cs *ConnectTestSuite) TestRPCsServedAndReceiptAuthorisedOnPOProperty() {
 		_, err = client.GoodsReceiptSearch(a, &procurementv1.GoodsReceiptSearchRequest{PurchaseOrderId: po.GetId()})
 		require.NoError(t, err)
 
+		// Resolving a line is authorised on the receipt's stored property:
+		// another property's receipt looks missing.
+		resolveReq := &procurementv1.GoodsReceiptLineResolveRequest{
+			GoodsReceiptId: receipt.GetGoodsReceipt().GetId(),
+			LineId:         receipt.GetGoodsReceipt().GetLines()[0].GetId(),
+			Resolution:     procurementv1.GoodsReceiptLineResolution_GOODS_RECEIPT_LINE_RESOLUTION_BOOKED_MANUALLY,
+			Note:           "booked by hand",
+		}
+		_, err = client.GoodsReceiptLineResolve(b, resolveReq)
+		require.Equal(t, connect.CodeNotFound, connect.CodeOf(err))
+		resolved, err := client.GoodsReceiptLineResolve(a, resolveReq)
+		require.NoError(t, err)
+		require.Equal(t, procurementv1.StockDeliveryStatus_STOCK_DELIVERY_STATUS_RESOLVED,
+			resolved.GetGoodsReceipt().GetLines()[0].GetDeliveryStatus())
+		require.Equal(t, "buyer-a", resolved.GetGoodsReceipt().GetLines()[0].GetResolvedBy())
+
 		// The same key on another order never returns the first receipt.
 		other := newPO()
 		otherSubmitted, err := client.PurchaseOrderSubmit(a, &procurementv1.PurchaseOrderSubmitRequest{

@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"testing"
 
 	commonv1 "buf.build/gen/go/antinvestor/common/protocolbuffers/go/common/v1"
@@ -231,6 +232,103 @@ func (gts *GoodsReceiptTestSuite) TestReceipt_RawMaterialAwaitsManufacturingTran
 		require.NoError(t, err)
 		require.Equal(t, business.DeliverySummary{}, summary)
 		require.Zero(t, biz.stock.calls)
+	})
+}
+
+// Staff settle lines that need a person: a raw material booked by hand is
+// marked resolved with who, when and why; a refused variant line is retried
+// once straight away and, if it fails again, booked by hand. Lines that do
+// not need a person cannot be resolved.
+func (gts *GoodsReceiptTestSuite) TestReceipt_StaffResolveLines() {
+	t := gts.T()
+
+	gts.WithTestDependancies(t, func(t *testing.T, dep *definition.DependencyOption) {
+		ctx, svc := gts.CreateService(t, dep)
+		biz := gts.getBusiness(ctx, svc)
+		ctx = gts.WithAuthClaims(ctx, "tenant-1", "partition-1", "profile-storekeeper")
+
+		resolve := func(gr *procurementv1.GoodsReceipt, resolution procurementv1.GoodsReceiptLineResolution,
+			note string) (*procurementv1.GoodsReceipt, error) {
+			return biz.grBiz.ResolveLine(ctx, &procurementv1.GoodsReceiptLineResolveRequest{
+				GoodsReceiptId: gr.GetId(), LineId: gr.GetLines()[0].GetId(), Resolution: resolution, Note: note,
+			})
+		}
+		booked := procurementv1.GoodsReceiptLineResolution_GOODS_RECEIPT_LINE_RESOLUTION_BOOKED_MANUALLY
+		retry := procurementv1.GoodsReceiptLineResolution_GOODS_RECEIPT_LINE_RESOLUTION_RETRY
+
+		// A raw material awaiting transfer is booked by hand.
+		matSupplier, material := gts.supplierWith(ctx, biz, &procurementv1.SupplierItemSaveRequest{
+			InventoryItemId: "flour", Unit: "kg",
+		})
+		matPO := gts.submittedPO(ctx, biz, matSupplier.GetId(), material.GetId(), 5)
+		matGR, err := biz.grBiz.CreateGoodsReceipt(ctx, receiveOn(matPO, 5))
+		require.NoError(t, err)
+
+		_, err = resolve(matGR, retry, "")
+		require.Equal(t, connect.CodeFailedPrecondition, connect.CodeOf(err), "raw materials are not pushed")
+		_, err = resolve(matGR, procurementv1.GoodsReceiptLineResolution_GOODS_RECEIPT_LINE_RESOLUTION_UNSPECIFIED, "")
+		require.Equal(t, connect.CodeInvalidArgument, connect.CodeOf(err))
+		_, err = resolve(matGR, booked, strings.Repeat("x", 1001))
+		require.Equal(t, connect.CodeInvalidArgument, connect.CodeOf(err))
+		_, err = biz.grBiz.ResolveLine(ctx, &procurementv1.GoodsReceiptLineResolveRequest{
+			GoodsReceiptId: matGR.GetId(), LineId: "missing-line", Resolution: booked,
+		})
+		require.Equal(t, connect.CodeNotFound, connect.CodeOf(err))
+
+		resolved, err := resolve(matGR, booked, "booked into store 1, GRN 42")
+		require.NoError(t, err)
+		line := resolved.GetLines()[0]
+		require.Equal(t, procurementv1.StockDeliveryStatus_STOCK_DELIVERY_STATUS_RESOLVED, line.GetDeliveryStatus())
+		require.Equal(t, "profile-storekeeper", line.GetResolvedBy())
+		require.Equal(t, "booked into store 1, GRN 42", line.GetResolutionNote())
+		require.NotNil(t, line.GetResolvedAt())
+
+		// Once resolved it needs nothing more.
+		_, err = resolve(matGR, booked, "again")
+		require.Equal(t, connect.CodeFailedPrecondition, connect.CodeOf(err))
+
+		// A variant line refused by commerce is retried once now.
+		varSupplier, variant := gts.supplierWith(ctx, biz, &procurementv1.SupplierItemSaveRequest{
+			SupplyKind: procurementv1.SupplyKind_SUPPLY_KIND_PRODUCT_VARIANT, ProductVariantId: "variant-9",
+		})
+		varPO := gts.submittedPO(ctx, biz, varSupplier.GetId(), variant.GetId(), 3)
+		biz.stock.failNext = []error{fmt.Errorf("%w: variant not found", business.ErrDeliveryRefused)}
+		varGR, err := biz.grBiz.CreateGoodsReceipt(ctx, receiveOn(varPO, 3))
+		require.NoError(t, err)
+		require.Equal(t, procurementv1.StockDeliveryStatus_STOCK_DELIVERY_STATUS_FAILED,
+			varGR.GetLines()[0].GetDeliveryStatus())
+
+		retried, err := resolve(varGR, retry, "variant restored")
+		require.NoError(t, err)
+		require.Equal(t, procurementv1.StockDeliveryStatus_STOCK_DELIVERY_STATUS_DELIVERED,
+			retried.GetLines()[0].GetDeliveryStatus())
+		require.Equal(t, int64(3), biz.stock.stock["variant-9"])
+
+		// A delivered line needs nothing: neither retried nor booked.
+		_, err = resolve(varGR, retry, "")
+		require.Equal(t, connect.CodeFailedPrecondition, connect.CodeOf(err))
+		_, err = resolve(varGR, booked, "")
+		require.Equal(t, connect.CodeFailedPrecondition, connect.CodeOf(err))
+
+		// A retry that fails for now stays pending for the sweep; refused
+		// again, staff book it by hand.
+		biz.stock.failNext = []error{fmt.Errorf("%w: variant not found", business.ErrDeliveryRefused)}
+		againGR, err := biz.grBiz.CreateGoodsReceipt(ctx, receiveOn(gts.submittedPO(ctx, biz,
+			varSupplier.GetId(), variant.GetId(), 2), 2))
+		require.NoError(t, err)
+		biz.stock.failNext = []error{connect.NewError(connect.CodeUnavailable, "down")}
+		pending, err := resolve(againGR, retry, "")
+		require.NoError(t, err)
+		require.Equal(t, procurementv1.StockDeliveryStatus_STOCK_DELIVERY_STATUS_PENDING,
+			pending.GetLines()[0].GetDeliveryStatus())
+		biz.stock.failNext = []error{fmt.Errorf("%w: variant not found", business.ErrDeliveryRefused)}
+		summary, err := biz.grBiz.DeliverPending(ctx, 10)
+		require.NoError(t, err)
+		require.Equal(t, business.DeliverySummary{Failed: 1}, summary)
+		bookedLine, err := resolve(againGR, booked, "counted into the shop by hand")
+		require.NoError(t, err)
+		require.Equal(t, procurementv1.StockDeliveryStatus_STOCK_DELIVERY_STATUS_RESOLVED,
+			bookedLine.GetLines()[0].GetDeliveryStatus())
 	})
 }
 

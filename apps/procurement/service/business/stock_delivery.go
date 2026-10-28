@@ -19,8 +19,10 @@ import (
 	"errors"
 	"fmt"
 	"time"
+	"unicode/utf8"
 
 	"connectrpc.com/connect/v2"
+	"github.com/pitabwire/frame/v3/data"
 	"github.com/pitabwire/util"
 
 	commercev1 "github.com/antinvestor/service-commerce/gen/go/commerce/v1"
@@ -179,4 +181,82 @@ func (grb *goodsReceiptBusiness) DeliverPending(ctx context.Context, limit int) 
 		}).Info("procurement stock deliveries")
 	}
 	return summary, nil
+}
+
+// maxResolutionNote bounds the note staff leave on a resolved line.
+const maxResolutionNote = 1000
+
+func (grb *goodsReceiptBusiness) ResolveLine(
+	ctx context.Context,
+	req *procurementv1.GoodsReceiptLineResolveRequest,
+) (*procurementv1.GoodsReceipt, error) {
+	if req.GetGoodsReceiptId() == "" || req.GetLineId() == "" {
+		return nil, connect.NewError(connect.CodeInvalidArgument, "goods_receipt_id and line_id are required")
+	}
+	if utf8.RuneCountInString(req.GetNote()) > maxResolutionNote {
+		return nil, connect.NewError(connect.CodeInvalidArgument,
+			fmt.Sprintf("note is at most %d characters", maxResolutionNote))
+	}
+	line, err := grb.grlRepo.GetInReceipt(ctx, req.GetGoodsReceiptId(), req.GetLineId())
+	if err != nil {
+		return nil, data.ErrorConvertToAPI(err)
+	}
+
+	switch req.GetResolution() {
+	case procurementv1.GoodsReceiptLineResolution_GOODS_RECEIPT_LINE_RESOLUTION_BOOKED_MANUALLY:
+		err = grb.resolveBookedManually(ctx, line, req.GetNote())
+	case procurementv1.GoodsReceiptLineResolution_GOODS_RECEIPT_LINE_RESOLUTION_RETRY:
+		err = grb.retryDelivery(ctx, line, req.GetNote())
+	case procurementv1.GoodsReceiptLineResolution_GOODS_RECEIPT_LINE_RESOLUTION_UNSPECIFIED:
+		return nil, connect.NewError(connect.CodeInvalidArgument, "resolution is BOOKED_MANUALLY or RETRY")
+	default:
+		return nil, connect.NewError(connect.CodeInvalidArgument, "resolution is BOOKED_MANUALLY or RETRY")
+	}
+	if err != nil {
+		return nil, err
+	}
+	return grb.GetGoodsReceipt(ctx, req.GetGoodsReceiptId())
+}
+
+// resolveBookedManually records that staff booked the line's stock by hand.
+func (grb *goodsReceiptBusiness) resolveBookedManually(
+	ctx context.Context,
+	line *models.GoodsReceiptLine,
+	note string,
+) error {
+	awaiting := []int32{
+		int32(procurementv1.StockDeliveryStatus_STOCK_DELIVERY_STATUS_PENDING_TRANSFER),
+		int32(procurementv1.StockDeliveryStatus_STOCK_DELIVERY_STATUS_FAILED),
+	}
+	ok, err := grb.grlRepo.Resolve(ctx, line.GetID(), awaiting, resolveReceivedBy(ctx), note, time.Now())
+	if err != nil {
+		return data.ErrorConvertToAPI(err)
+	}
+	if !ok {
+		return connect.NewError(connect.CodeFailedPrecondition,
+			"only a line awaiting transfer or refused by its destination can be marked booked")
+	}
+	return nil
+}
+
+// retryDelivery puts a refused product variant line back in the queue and
+// pushes it once now; whatever is not settled stays pending for the sweep.
+func (grb *goodsReceiptBusiness) retryDelivery(ctx context.Context, line *models.GoodsReceiptLine, note string) error {
+	if line.SupplyKind != int32(procurementv1.SupplyKind_SUPPLY_KIND_PRODUCT_VARIANT) {
+		return connect.NewError(connect.CodeFailedPrecondition,
+			"only product variant lines are delivered automatically; book raw materials by hand")
+	}
+	if note == "" {
+		note = "retry requested"
+	}
+	ok, err := grb.grlRepo.Requeue(ctx, line.GetID(), note)
+	if err != nil {
+		return data.ErrorConvertToAPI(err)
+	}
+	if !ok {
+		return connect.NewError(connect.CodeFailedPrecondition, "only a line refused by its destination can be retried")
+	}
+	line.DeliveryStatus = int32(procurementv1.StockDeliveryStatus_STOCK_DELIVERY_STATUS_PENDING)
+	grb.deliverLine(ctx, line)
+	return nil
 }

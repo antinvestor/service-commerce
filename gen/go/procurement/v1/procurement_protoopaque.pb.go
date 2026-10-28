@@ -457,6 +457,9 @@ const (
 	StockDeliveryStatus_STOCK_DELIVERY_STATUS_PENDING_TRANSFER StockDeliveryStatus = 3
 	// The destination refused it for good (see delivery_note); needs staff.
 	StockDeliveryStatus_STOCK_DELIVERY_STATUS_FAILED StockDeliveryStatus = 4
+	// Booked at its destination by hand and marked so by staff (see
+	// resolved_by, resolved_at and resolution_note).
+	StockDeliveryStatus_STOCK_DELIVERY_STATUS_RESOLVED StockDeliveryStatus = 5
 )
 
 // Enum value maps for StockDeliveryStatus.
@@ -467,6 +470,7 @@ var (
 		2: "STOCK_DELIVERY_STATUS_DELIVERED",
 		3: "STOCK_DELIVERY_STATUS_PENDING_TRANSFER",
 		4: "STOCK_DELIVERY_STATUS_FAILED",
+		5: "STOCK_DELIVERY_STATUS_RESOLVED",
 	}
 	StockDeliveryStatus_value = map[string]int32{
 		"STOCK_DELIVERY_STATUS_UNSPECIFIED":      0,
@@ -474,6 +478,7 @@ var (
 		"STOCK_DELIVERY_STATUS_DELIVERED":        2,
 		"STOCK_DELIVERY_STATUS_PENDING_TRANSFER": 3,
 		"STOCK_DELIVERY_STATUS_FAILED":           4,
+		"STOCK_DELIVERY_STATUS_RESOLVED":         5,
 	}
 )
 
@@ -496,6 +501,55 @@ func (StockDeliveryStatus) Type() protoreflect.EnumType {
 }
 
 func (x StockDeliveryStatus) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// How staff settle a receipt line that needs action.
+type GoodsReceiptLineResolution int32
+
+const (
+	GoodsReceiptLineResolution_GOODS_RECEIPT_LINE_RESOLUTION_UNSPECIFIED GoodsReceiptLineResolution = 0
+	// The stock was booked at its destination by hand (PENDING_TRANSFER or
+	// FAILED lines); the line becomes STOCK_DELIVERY_STATUS_RESOLVED.
+	GoodsReceiptLineResolution_GOODS_RECEIPT_LINE_RESOLUTION_BOOKED_MANUALLY GoodsReceiptLineResolution = 1
+	// Try a FAILED product variant line again: it goes back to PENDING and is
+	// pushed once straight away; the sweep retries it if that fails.
+	GoodsReceiptLineResolution_GOODS_RECEIPT_LINE_RESOLUTION_RETRY GoodsReceiptLineResolution = 2
+)
+
+// Enum value maps for GoodsReceiptLineResolution.
+var (
+	GoodsReceiptLineResolution_name = map[int32]string{
+		0: "GOODS_RECEIPT_LINE_RESOLUTION_UNSPECIFIED",
+		1: "GOODS_RECEIPT_LINE_RESOLUTION_BOOKED_MANUALLY",
+		2: "GOODS_RECEIPT_LINE_RESOLUTION_RETRY",
+	}
+	GoodsReceiptLineResolution_value = map[string]int32{
+		"GOODS_RECEIPT_LINE_RESOLUTION_UNSPECIFIED":     0,
+		"GOODS_RECEIPT_LINE_RESOLUTION_BOOKED_MANUALLY": 1,
+		"GOODS_RECEIPT_LINE_RESOLUTION_RETRY":           2,
+	}
+)
+
+func (x GoodsReceiptLineResolution) Enum() *GoodsReceiptLineResolution {
+	p := new(GoodsReceiptLineResolution)
+	*p = x
+	return p
+}
+
+func (x GoodsReceiptLineResolution) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (GoodsReceiptLineResolution) Descriptor() protoreflect.EnumDescriptor {
+	return file_v1_procurement_proto_enumTypes[9].Descriptor()
+}
+
+func (GoodsReceiptLineResolution) Type() protoreflect.EnumType {
+	return &file_v1_procurement_proto_enumTypes[9]
+}
+
+func (x GoodsReceiptLineResolution) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
@@ -1644,6 +1698,9 @@ type GoodsReceiptLine struct {
 	xxx_hidden_ProductVariantId    string                 `protobuf:"bytes,13,opt,name=product_variant_id,json=productVariantId,proto3"`
 	xxx_hidden_DeliveryStatus      StockDeliveryStatus    `protobuf:"varint,14,opt,name=delivery_status,json=deliveryStatus,proto3,enum=procurement.v1.StockDeliveryStatus"`
 	xxx_hidden_DeliveryNote        string                 `protobuf:"bytes,15,opt,name=delivery_note,json=deliveryNote,proto3"`
+	xxx_hidden_ResolvedBy          string                 `protobuf:"bytes,16,opt,name=resolved_by,json=resolvedBy,proto3"`
+	xxx_hidden_ResolvedAt          *timestamppb.Timestamp `protobuf:"bytes,17,opt,name=resolved_at,json=resolvedAt,proto3"`
+	xxx_hidden_ResolutionNote      string                 `protobuf:"bytes,18,opt,name=resolution_note,json=resolutionNote,proto3"`
 	unknownFields                  protoimpl.UnknownFields
 	sizeCache                      protoimpl.SizeCache
 }
@@ -1778,6 +1835,27 @@ func (x *GoodsReceiptLine) GetDeliveryNote() string {
 	return ""
 }
 
+func (x *GoodsReceiptLine) GetResolvedBy() string {
+	if x != nil {
+		return x.xxx_hidden_ResolvedBy
+	}
+	return ""
+}
+
+func (x *GoodsReceiptLine) GetResolvedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.xxx_hidden_ResolvedAt
+	}
+	return nil
+}
+
+func (x *GoodsReceiptLine) GetResolutionNote() string {
+	if x != nil {
+		return x.xxx_hidden_ResolutionNote
+	}
+	return ""
+}
+
 func (x *GoodsReceiptLine) SetId(v string) {
 	x.xxx_hidden_Id = v
 }
@@ -1838,6 +1916,18 @@ func (x *GoodsReceiptLine) SetDeliveryNote(v string) {
 	x.xxx_hidden_DeliveryNote = v
 }
 
+func (x *GoodsReceiptLine) SetResolvedBy(v string) {
+	x.xxx_hidden_ResolvedBy = v
+}
+
+func (x *GoodsReceiptLine) SetResolvedAt(v *timestamppb.Timestamp) {
+	x.xxx_hidden_ResolvedAt = v
+}
+
+func (x *GoodsReceiptLine) SetResolutionNote(v string) {
+	x.xxx_hidden_ResolutionNote = v
+}
+
 func (x *GoodsReceiptLine) HasExpiryDate() bool {
 	if x == nil {
 		return false
@@ -1845,8 +1935,19 @@ func (x *GoodsReceiptLine) HasExpiryDate() bool {
 	return x.xxx_hidden_ExpiryDate != nil
 }
 
+func (x *GoodsReceiptLine) HasResolvedAt() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_ResolvedAt != nil
+}
+
 func (x *GoodsReceiptLine) ClearExpiryDate() {
 	x.xxx_hidden_ExpiryDate = nil
+}
+
+func (x *GoodsReceiptLine) ClearResolvedAt() {
+	x.xxx_hidden_ResolvedAt = nil
 }
 
 type GoodsReceiptLine_builder struct {
@@ -1867,6 +1968,10 @@ type GoodsReceiptLine_builder struct {
 	ProductVariantId    string
 	DeliveryStatus      StockDeliveryStatus
 	DeliveryNote        string
+	// Who marked the line resolved, when, and their note.
+	ResolvedBy     string
+	ResolvedAt     *timestamppb.Timestamp
+	ResolutionNote string
 }
 
 func (b0 GoodsReceiptLine_builder) Build() *GoodsReceiptLine {
@@ -1888,6 +1993,9 @@ func (b0 GoodsReceiptLine_builder) Build() *GoodsReceiptLine {
 	x.xxx_hidden_ProductVariantId = b.ProductVariantId
 	x.xxx_hidden_DeliveryStatus = b.DeliveryStatus
 	x.xxx_hidden_DeliveryNote = b.DeliveryNote
+	x.xxx_hidden_ResolvedBy = b.ResolvedBy
+	x.xxx_hidden_ResolvedAt = b.ResolvedAt
+	x.xxx_hidden_ResolutionNote = b.ResolutionNote
 	return m0
 }
 
@@ -5101,6 +5209,174 @@ func (b0 GoodsReceiptDeliverResponse_builder) Build() *GoodsReceiptDeliverRespon
 	return m0
 }
 
+type GoodsReceiptLineResolveRequest struct {
+	state                     protoimpl.MessageState     `protogen:"opaque.v1"`
+	xxx_hidden_GoodsReceiptId string                     `protobuf:"bytes,1,opt,name=goods_receipt_id,json=goodsReceiptId,proto3"`
+	xxx_hidden_LineId         string                     `protobuf:"bytes,2,opt,name=line_id,json=lineId,proto3"`
+	xxx_hidden_Resolution     GoodsReceiptLineResolution `protobuf:"varint,3,opt,name=resolution,proto3,enum=procurement.v1.GoodsReceiptLineResolution"`
+	xxx_hidden_Note           string                     `protobuf:"bytes,4,opt,name=note,proto3"`
+	unknownFields             protoimpl.UnknownFields
+	sizeCache                 protoimpl.SizeCache
+}
+
+func (x *GoodsReceiptLineResolveRequest) Reset() {
+	*x = GoodsReceiptLineResolveRequest{}
+	mi := &file_v1_procurement_proto_msgTypes[42]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GoodsReceiptLineResolveRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GoodsReceiptLineResolveRequest) ProtoMessage() {}
+
+func (x *GoodsReceiptLineResolveRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_procurement_proto_msgTypes[42]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *GoodsReceiptLineResolveRequest) GetGoodsReceiptId() string {
+	if x != nil {
+		return x.xxx_hidden_GoodsReceiptId
+	}
+	return ""
+}
+
+func (x *GoodsReceiptLineResolveRequest) GetLineId() string {
+	if x != nil {
+		return x.xxx_hidden_LineId
+	}
+	return ""
+}
+
+func (x *GoodsReceiptLineResolveRequest) GetResolution() GoodsReceiptLineResolution {
+	if x != nil {
+		return x.xxx_hidden_Resolution
+	}
+	return GoodsReceiptLineResolution_GOODS_RECEIPT_LINE_RESOLUTION_UNSPECIFIED
+}
+
+func (x *GoodsReceiptLineResolveRequest) GetNote() string {
+	if x != nil {
+		return x.xxx_hidden_Note
+	}
+	return ""
+}
+
+func (x *GoodsReceiptLineResolveRequest) SetGoodsReceiptId(v string) {
+	x.xxx_hidden_GoodsReceiptId = v
+}
+
+func (x *GoodsReceiptLineResolveRequest) SetLineId(v string) {
+	x.xxx_hidden_LineId = v
+}
+
+func (x *GoodsReceiptLineResolveRequest) SetResolution(v GoodsReceiptLineResolution) {
+	x.xxx_hidden_Resolution = v
+}
+
+func (x *GoodsReceiptLineResolveRequest) SetNote(v string) {
+	x.xxx_hidden_Note = v
+}
+
+type GoodsReceiptLineResolveRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	GoodsReceiptId string
+	LineId         string
+	Resolution     GoodsReceiptLineResolution
+	// Why, or where the stock was booked; at most 1000 characters.
+	Note string
+}
+
+func (b0 GoodsReceiptLineResolveRequest_builder) Build() *GoodsReceiptLineResolveRequest {
+	m0 := &GoodsReceiptLineResolveRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_GoodsReceiptId = b.GoodsReceiptId
+	x.xxx_hidden_LineId = b.LineId
+	x.xxx_hidden_Resolution = b.Resolution
+	x.xxx_hidden_Note = b.Note
+	return m0
+}
+
+type GoodsReceiptLineResolveResponse struct {
+	state                   protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_GoodsReceipt *GoodsReceipt          `protobuf:"bytes,1,opt,name=goods_receipt,json=goodsReceipt,proto3"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
+}
+
+func (x *GoodsReceiptLineResolveResponse) Reset() {
+	*x = GoodsReceiptLineResolveResponse{}
+	mi := &file_v1_procurement_proto_msgTypes[43]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GoodsReceiptLineResolveResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GoodsReceiptLineResolveResponse) ProtoMessage() {}
+
+func (x *GoodsReceiptLineResolveResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_procurement_proto_msgTypes[43]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *GoodsReceiptLineResolveResponse) GetGoodsReceipt() *GoodsReceipt {
+	if x != nil {
+		return x.xxx_hidden_GoodsReceipt
+	}
+	return nil
+}
+
+func (x *GoodsReceiptLineResolveResponse) SetGoodsReceipt(v *GoodsReceipt) {
+	x.xxx_hidden_GoodsReceipt = v
+}
+
+func (x *GoodsReceiptLineResolveResponse) HasGoodsReceipt() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_GoodsReceipt != nil
+}
+
+func (x *GoodsReceiptLineResolveResponse) ClearGoodsReceipt() {
+	x.xxx_hidden_GoodsReceipt = nil
+}
+
+type GoodsReceiptLineResolveResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	GoodsReceipt *GoodsReceipt
+}
+
+func (b0 GoodsReceiptLineResolveResponse_builder) Build() *GoodsReceiptLineResolveResponse {
+	m0 := &GoodsReceiptLineResolveResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_GoodsReceipt = b.GoodsReceipt
+	return m0
+}
+
 var File_v1_procurement_proto protoreflect.FileDescriptor
 
 const file_v1_procurement_proto_rawDesc = "" +
@@ -5186,7 +5462,7 @@ const file_v1_procurement_proto_rawDesc = "" +
 	"\x05lines\x18\b \x03(\v2 .procurement.v1.GoodsReceiptLineR\x05lines\x12*\n" +
 	"\x11stock_location_id\x18\t \x01(\tR\x0fstockLocationId\x129\n" +
 	"\n" +
-	"created_at\x18\x0f \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"\xad\x05\n" +
+	"created_at\x18\x0f \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"\xb4\x06\n" +
 	"\x10GoodsReceiptLine\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12(\n" +
 	"\x10goods_receipt_id\x18\x02 \x01(\tR\x0egoodsReceiptId\x123\n" +
@@ -5206,7 +5482,12 @@ const file_v1_procurement_proto_rawDesc = "" +
 	"supplyKind\x12,\n" +
 	"\x12product_variant_id\x18\r \x01(\tR\x10productVariantId\x12L\n" +
 	"\x0fdelivery_status\x18\x0e \x01(\x0e2#.procurement.v1.StockDeliveryStatusR\x0edeliveryStatus\x12#\n" +
-	"\rdelivery_note\x18\x0f \x01(\tR\fdeliveryNote\"\xdd\x01\n" +
+	"\rdelivery_note\x18\x0f \x01(\tR\fdeliveryNote\x12\x1f\n" +
+	"\vresolved_by\x18\x10 \x01(\tR\n" +
+	"resolvedBy\x12;\n" +
+	"\vresolved_at\x18\x11 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"resolvedAt\x12'\n" +
+	"\x0fresolution_note\x18\x12 \x01(\tR\x0eresolutionNote\"\xdd\x01\n" +
 	"\x17PurchaseOrderSuggestion\x12\x1f\n" +
 	"\vsupplier_id\x18\x01 \x01(\tR\n" +
 	"supplierId\x12#\n" +
@@ -5362,7 +5643,16 @@ const file_v1_procurement_proto_rawDesc = "" +
 	"\x1bGoodsReceiptDeliverResponse\x12\x1c\n" +
 	"\tdelivered\x18\x01 \x01(\x05R\tdelivered\x12\x18\n" +
 	"\apending\x18\x02 \x01(\x05R\apending\x12\x16\n" +
-	"\x06failed\x18\x03 \x01(\x05R\x06failed*\xa2\x01\n" +
+	"\x06failed\x18\x03 \x01(\x05R\x06failed\"\xc3\x01\n" +
+	"\x1eGoodsReceiptLineResolveRequest\x12(\n" +
+	"\x10goods_receipt_id\x18\x01 \x01(\tR\x0egoodsReceiptId\x12\x17\n" +
+	"\aline_id\x18\x02 \x01(\tR\x06lineId\x12J\n" +
+	"\n" +
+	"resolution\x18\x03 \x01(\x0e2*.procurement.v1.GoodsReceiptLineResolutionR\n" +
+	"resolution\x12\x12\n" +
+	"\x04note\x18\x04 \x01(\tR\x04note\"d\n" +
+	"\x1fGoodsReceiptLineResolveResponse\x12A\n" +
+	"\rgoods_receipt\x18\x01 \x01(\v2\x1c.procurement.v1.GoodsReceiptR\fgoodsReceipt*\xa2\x01\n" +
 	"\fSupplierType\x12\x1d\n" +
 	"\x19SUPPLIER_TYPE_UNSPECIFIED\x10\x00\x12\x1e\n" +
 	"\x1aSUPPLIER_TYPE_RAW_MATERIAL\x10\x01\x12\x1b\n" +
@@ -5410,13 +5700,18 @@ const file_v1_procurement_proto_rawDesc = "" +
 	"SupplyKind\x12\x1b\n" +
 	"\x17SUPPLY_KIND_UNSPECIFIED\x10\x00\x12\x18\n" +
 	"\x14SUPPLY_KIND_MATERIAL\x10\x01\x12\x1f\n" +
-	"\x1bSUPPLY_KIND_PRODUCT_VARIANT\x10\x02*\xd2\x01\n" +
+	"\x1bSUPPLY_KIND_PRODUCT_VARIANT\x10\x02*\xf6\x01\n" +
 	"\x13StockDeliveryStatus\x12%\n" +
 	"!STOCK_DELIVERY_STATUS_UNSPECIFIED\x10\x00\x12!\n" +
 	"\x1dSTOCK_DELIVERY_STATUS_PENDING\x10\x01\x12#\n" +
 	"\x1fSTOCK_DELIVERY_STATUS_DELIVERED\x10\x02\x12*\n" +
 	"&STOCK_DELIVERY_STATUS_PENDING_TRANSFER\x10\x03\x12 \n" +
-	"\x1cSTOCK_DELIVERY_STATUS_FAILED\x10\x042\xb4\x18\n" +
+	"\x1cSTOCK_DELIVERY_STATUS_FAILED\x10\x04\x12\"\n" +
+	"\x1eSTOCK_DELIVERY_STATUS_RESOLVED\x10\x05*\xa7\x01\n" +
+	"\x1aGoodsReceiptLineResolution\x12-\n" +
+	")GOODS_RECEIPT_LINE_RESOLUTION_UNSPECIFIED\x10\x00\x121\n" +
+	"-GOODS_RECEIPT_LINE_RESOLUTION_BOOKED_MANUALLY\x10\x01\x12'\n" +
+	"#GOODS_RECEIPT_LINE_RESOLUTION_RETRY\x10\x022\xaa\x1a\n" +
 	"\x12ProcurementService\x12p\n" +
 	"\fSupplierSave\x12#.procurement.v1.SupplierSaveRequest\x1a$.procurement.v1.SupplierSaveResponse\"\x15\x82\xb5\x18\x11\n" +
 	"\x0fsupplier_manage\x12k\n" +
@@ -5447,10 +5742,12 @@ const file_v1_procurement_proto_rawDesc = "" +
 	"\x12GoodsReceiptSearch\x12).procurement.v1.GoodsReceiptSearchRequest\x1a*.procurement.v1.GoodsReceiptSearchResponse\"\x18\x82\xb5\x18\x14\n" +
 	"\x12goods_receipt_view\x12\x8b\x01\n" +
 	"\x13GoodsReceiptDeliver\x12*.procurement.v1.GoodsReceiptDeliverRequest\x1a+.procurement.v1.GoodsReceiptDeliverResponse\"\x1b\x82\xb5\x18\x17\n" +
-	"\x15goods_receipt_deliver\x12\x91\x01\n" +
+	"\x15goods_receipt_deliver\x12\x97\x01\n" +
+	"\x17GoodsReceiptLineResolve\x12..procurement.v1.GoodsReceiptLineResolveRequest\x1a/.procurement.v1.GoodsReceiptLineResolveResponse\"\x1b\x82\xb5\x18\x17\n" +
+	"\x15goods_receipt_resolve\x12\x91\x01\n" +
 	"\x15SuggestPurchaseOrders\x12,.procurement.v1.SuggestPurchaseOrdersRequest\x1a-.procurement.v1.SuggestPurchaseOrdersResponse\"\x1b\x82\xb5\x18\x17\n" +
-	"\x15purchase_order_create\x1a\xd1\a\x82\xb5\x18\xcc\a\n" +
-	"\x13service_procurement\x12\rsupplier_view\x12\x0fsupplier_manage\x12\x13purchase_order_view\x12\x15purchase_order_create\x12\x15purchase_order_submit\x12\x15purchase_order_cancel\x12\x12goods_receipt_view\x12\x14goods_receipt_create\x12\x15goods_receipt_deliver\x1a\xbd\x01\b\x01\x12\rsupplier_view\x12\x0fsupplier_manage\x12\x13purchase_order_view\x12\x15purchase_order_create\x12\x15purchase_order_submit\x12\x15purchase_order_cancel\x12\x12goods_receipt_view\x12\x14goods_receipt_create\x12\x15goods_receipt_deliver\x1a\xbd\x01\b\x02\x12\rsupplier_view\x12\x0fsupplier_manage\x12\x13purchase_order_view\x12\x15purchase_order_create\x12\x15purchase_order_submit\x12\x15purchase_order_cancel\x12\x12goods_receipt_view\x12\x14goods_receipt_create\x12\x15goods_receipt_deliver\x1a~\b\x03\x12\rsupplier_view\x12\x13purchase_order_view\x12\x15purchase_order_create\x12\x15purchase_order_submit\x12\x12goods_receipt_view\x12\x14goods_receipt_create\x1a:\b\x04\x12\rsupplier_view\x12\x13purchase_order_view\x12\x12goods_receipt_view\x1a\xbd\x01\b\x06\x12\rsupplier_view\x12\x0fsupplier_manage\x12\x13purchase_order_view\x12\x15purchase_order_create\x12\x15purchase_order_submit\x12\x15purchase_order_cancel\x12\x12goods_receipt_view\x12\x14goods_receipt_create\x12\x15goods_receipt_deliverB\x8b\x04\xbaG\xbb\x02\x12\x8f\x02\n" +
+	"\x15purchase_order_create\x1a\xad\b\x82\xb5\x18\xa8\b\n" +
+	"\x13service_procurement\x12\rsupplier_view\x12\x0fsupplier_manage\x12\x13purchase_order_view\x12\x15purchase_order_create\x12\x15purchase_order_submit\x12\x15purchase_order_cancel\x12\x12goods_receipt_view\x12\x14goods_receipt_create\x12\x15goods_receipt_deliver\x12\x15goods_receipt_resolve\x1a\xd4\x01\b\x01\x12\rsupplier_view\x12\x0fsupplier_manage\x12\x13purchase_order_view\x12\x15purchase_order_create\x12\x15purchase_order_submit\x12\x15purchase_order_cancel\x12\x12goods_receipt_view\x12\x14goods_receipt_create\x12\x15goods_receipt_deliver\x12\x15goods_receipt_resolve\x1a\xd4\x01\b\x02\x12\rsupplier_view\x12\x0fsupplier_manage\x12\x13purchase_order_view\x12\x15purchase_order_create\x12\x15purchase_order_submit\x12\x15purchase_order_cancel\x12\x12goods_receipt_view\x12\x14goods_receipt_create\x12\x15goods_receipt_deliver\x12\x15goods_receipt_resolve\x1a~\b\x03\x12\rsupplier_view\x12\x13purchase_order_view\x12\x15purchase_order_create\x12\x15purchase_order_submit\x12\x12goods_receipt_view\x12\x14goods_receipt_create\x1a:\b\x04\x12\rsupplier_view\x12\x13purchase_order_view\x12\x12goods_receipt_view\x1a\xd4\x01\b\x06\x12\rsupplier_view\x12\x0fsupplier_manage\x12\x13purchase_order_view\x12\x15purchase_order_create\x12\x15purchase_order_submit\x12\x15purchase_order_cancel\x12\x12goods_receipt_view\x12\x14goods_receipt_create\x12\x15goods_receipt_deliver\x12\x15goods_receipt_resolveB\x8b\x04\xbaG\xbb\x02\x12\x8f\x02\n" +
 	"\x0fProcurement API\x12NProcurement API for supplier management, purchase orders, and goods receiving.\"Y\n" +
 	"\x10Ant Investor Ltd\x12/https://github.com/antinvestor/service-commerce\x1a\x14info@antinvestor.com*I\n" +
 	"\x0eApache License\x127https://github.com/antinvestor/apis/blob/master/LICENSE2\x06v1.0.0*':%\n" +
@@ -5461,162 +5758,170 @@ const file_v1_procurement_proto_rawDesc = "" +
 	"\x04http*\x06bearer2\x03JWT\n" +
 	"\x12com.procurement.v1B\x10ProcurementProtoP\x01ZKgithub.com/antinvestor/service-commerce/gen/go/procurement/v1;procurementv1\xa2\x02\x03PXX\xaa\x02\x0eProcurement.V1\xca\x02\x0eProcurement\\V1\xe2\x02\x1aProcurement\\V1\\GPBMetadata\xea\x02\x0fProcurement::V1b\x06proto3"
 
-var file_v1_procurement_proto_enumTypes = make([]protoimpl.EnumInfo, 9)
-var file_v1_procurement_proto_msgTypes = make([]protoimpl.MessageInfo, 42)
+var file_v1_procurement_proto_enumTypes = make([]protoimpl.EnumInfo, 10)
+var file_v1_procurement_proto_msgTypes = make([]protoimpl.MessageInfo, 44)
 var file_v1_procurement_proto_goTypes = []any{
-	(SupplierType)(0),                     // 0: procurement.v1.SupplierType
-	(SupplierStatus)(0),                   // 1: procurement.v1.SupplierStatus
-	(SupplierRating)(0),                   // 2: procurement.v1.SupplierRating
-	(SupplierItemStatus)(0),               // 3: procurement.v1.SupplierItemStatus
-	(PurchaseOrderStatus)(0),              // 4: procurement.v1.PurchaseOrderStatus
-	(PurchaseOrderLineStatus)(0),          // 5: procurement.v1.PurchaseOrderLineStatus
-	(GoodsReceiptStatus)(0),               // 6: procurement.v1.GoodsReceiptStatus
-	(SupplyKind)(0),                       // 7: procurement.v1.SupplyKind
-	(StockDeliveryStatus)(0),              // 8: procurement.v1.StockDeliveryStatus
-	(*Supplier)(nil),                      // 9: procurement.v1.Supplier
-	(*SupplierItem)(nil),                  // 10: procurement.v1.SupplierItem
-	(*PurchaseOrder)(nil),                 // 11: procurement.v1.PurchaseOrder
-	(*PurchaseOrderLine)(nil),             // 12: procurement.v1.PurchaseOrderLine
-	(*GoodsReceipt)(nil),                  // 13: procurement.v1.GoodsReceipt
-	(*GoodsReceiptLine)(nil),              // 14: procurement.v1.GoodsReceiptLine
-	(*PurchaseOrderSuggestion)(nil),       // 15: procurement.v1.PurchaseOrderSuggestion
-	(*PurchaseOrderSuggestionLine)(nil),   // 16: procurement.v1.PurchaseOrderSuggestionLine
-	(*SupplierSaveRequest)(nil),           // 17: procurement.v1.SupplierSaveRequest
-	(*SupplierSaveResponse)(nil),          // 18: procurement.v1.SupplierSaveResponse
-	(*SupplierGetRequest)(nil),            // 19: procurement.v1.SupplierGetRequest
-	(*SupplierGetResponse)(nil),           // 20: procurement.v1.SupplierGetResponse
-	(*SupplierSearchRequest)(nil),         // 21: procurement.v1.SupplierSearchRequest
-	(*SupplierSearchResponse)(nil),        // 22: procurement.v1.SupplierSearchResponse
-	(*SupplierItemSaveRequest)(nil),       // 23: procurement.v1.SupplierItemSaveRequest
-	(*SupplierItemSaveResponse)(nil),      // 24: procurement.v1.SupplierItemSaveResponse
-	(*SupplierItemSearchRequest)(nil),     // 25: procurement.v1.SupplierItemSearchRequest
-	(*SupplierItemSearchResponse)(nil),    // 26: procurement.v1.SupplierItemSearchResponse
-	(*PurchaseOrderCreateRequest)(nil),    // 27: procurement.v1.PurchaseOrderCreateRequest
-	(*PurchaseOrderLineInput)(nil),        // 28: procurement.v1.PurchaseOrderLineInput
-	(*PurchaseOrderCreateResponse)(nil),   // 29: procurement.v1.PurchaseOrderCreateResponse
-	(*PurchaseOrderGetRequest)(nil),       // 30: procurement.v1.PurchaseOrderGetRequest
-	(*PurchaseOrderGetResponse)(nil),      // 31: procurement.v1.PurchaseOrderGetResponse
-	(*PurchaseOrderSearchRequest)(nil),    // 32: procurement.v1.PurchaseOrderSearchRequest
-	(*PurchaseOrderSearchResponse)(nil),   // 33: procurement.v1.PurchaseOrderSearchResponse
-	(*PurchaseOrderSubmitRequest)(nil),    // 34: procurement.v1.PurchaseOrderSubmitRequest
-	(*PurchaseOrderSubmitResponse)(nil),   // 35: procurement.v1.PurchaseOrderSubmitResponse
-	(*PurchaseOrderCancelRequest)(nil),    // 36: procurement.v1.PurchaseOrderCancelRequest
-	(*PurchaseOrderCancelResponse)(nil),   // 37: procurement.v1.PurchaseOrderCancelResponse
-	(*PurchaseOrderCloseRequest)(nil),     // 38: procurement.v1.PurchaseOrderCloseRequest
-	(*PurchaseOrderCloseResponse)(nil),    // 39: procurement.v1.PurchaseOrderCloseResponse
-	(*GoodsReceiptCreateRequest)(nil),     // 40: procurement.v1.GoodsReceiptCreateRequest
-	(*GoodsReceiptLineInput)(nil),         // 41: procurement.v1.GoodsReceiptLineInput
-	(*GoodsReceiptCreateResponse)(nil),    // 42: procurement.v1.GoodsReceiptCreateResponse
-	(*GoodsReceiptGetRequest)(nil),        // 43: procurement.v1.GoodsReceiptGetRequest
-	(*GoodsReceiptGetResponse)(nil),       // 44: procurement.v1.GoodsReceiptGetResponse
-	(*GoodsReceiptSearchRequest)(nil),     // 45: procurement.v1.GoodsReceiptSearchRequest
-	(*GoodsReceiptSearchResponse)(nil),    // 46: procurement.v1.GoodsReceiptSearchResponse
-	(*SuggestPurchaseOrdersRequest)(nil),  // 47: procurement.v1.SuggestPurchaseOrdersRequest
-	(*SuggestPurchaseOrdersResponse)(nil), // 48: procurement.v1.SuggestPurchaseOrdersResponse
-	(*GoodsReceiptDeliverRequest)(nil),    // 49: procurement.v1.GoodsReceiptDeliverRequest
-	(*GoodsReceiptDeliverResponse)(nil),   // 50: procurement.v1.GoodsReceiptDeliverResponse
-	(*timestamppb.Timestamp)(nil),         // 51: google.protobuf.Timestamp
-	(*v1.Money)(nil),                      // 52: common.v1.Money
-	(*v1.SearchRequest)(nil),              // 53: common.v1.SearchRequest
+	(SupplierType)(0),                       // 0: procurement.v1.SupplierType
+	(SupplierStatus)(0),                     // 1: procurement.v1.SupplierStatus
+	(SupplierRating)(0),                     // 2: procurement.v1.SupplierRating
+	(SupplierItemStatus)(0),                 // 3: procurement.v1.SupplierItemStatus
+	(PurchaseOrderStatus)(0),                // 4: procurement.v1.PurchaseOrderStatus
+	(PurchaseOrderLineStatus)(0),            // 5: procurement.v1.PurchaseOrderLineStatus
+	(GoodsReceiptStatus)(0),                 // 6: procurement.v1.GoodsReceiptStatus
+	(SupplyKind)(0),                         // 7: procurement.v1.SupplyKind
+	(StockDeliveryStatus)(0),                // 8: procurement.v1.StockDeliveryStatus
+	(GoodsReceiptLineResolution)(0),         // 9: procurement.v1.GoodsReceiptLineResolution
+	(*Supplier)(nil),                        // 10: procurement.v1.Supplier
+	(*SupplierItem)(nil),                    // 11: procurement.v1.SupplierItem
+	(*PurchaseOrder)(nil),                   // 12: procurement.v1.PurchaseOrder
+	(*PurchaseOrderLine)(nil),               // 13: procurement.v1.PurchaseOrderLine
+	(*GoodsReceipt)(nil),                    // 14: procurement.v1.GoodsReceipt
+	(*GoodsReceiptLine)(nil),                // 15: procurement.v1.GoodsReceiptLine
+	(*PurchaseOrderSuggestion)(nil),         // 16: procurement.v1.PurchaseOrderSuggestion
+	(*PurchaseOrderSuggestionLine)(nil),     // 17: procurement.v1.PurchaseOrderSuggestionLine
+	(*SupplierSaveRequest)(nil),             // 18: procurement.v1.SupplierSaveRequest
+	(*SupplierSaveResponse)(nil),            // 19: procurement.v1.SupplierSaveResponse
+	(*SupplierGetRequest)(nil),              // 20: procurement.v1.SupplierGetRequest
+	(*SupplierGetResponse)(nil),             // 21: procurement.v1.SupplierGetResponse
+	(*SupplierSearchRequest)(nil),           // 22: procurement.v1.SupplierSearchRequest
+	(*SupplierSearchResponse)(nil),          // 23: procurement.v1.SupplierSearchResponse
+	(*SupplierItemSaveRequest)(nil),         // 24: procurement.v1.SupplierItemSaveRequest
+	(*SupplierItemSaveResponse)(nil),        // 25: procurement.v1.SupplierItemSaveResponse
+	(*SupplierItemSearchRequest)(nil),       // 26: procurement.v1.SupplierItemSearchRequest
+	(*SupplierItemSearchResponse)(nil),      // 27: procurement.v1.SupplierItemSearchResponse
+	(*PurchaseOrderCreateRequest)(nil),      // 28: procurement.v1.PurchaseOrderCreateRequest
+	(*PurchaseOrderLineInput)(nil),          // 29: procurement.v1.PurchaseOrderLineInput
+	(*PurchaseOrderCreateResponse)(nil),     // 30: procurement.v1.PurchaseOrderCreateResponse
+	(*PurchaseOrderGetRequest)(nil),         // 31: procurement.v1.PurchaseOrderGetRequest
+	(*PurchaseOrderGetResponse)(nil),        // 32: procurement.v1.PurchaseOrderGetResponse
+	(*PurchaseOrderSearchRequest)(nil),      // 33: procurement.v1.PurchaseOrderSearchRequest
+	(*PurchaseOrderSearchResponse)(nil),     // 34: procurement.v1.PurchaseOrderSearchResponse
+	(*PurchaseOrderSubmitRequest)(nil),      // 35: procurement.v1.PurchaseOrderSubmitRequest
+	(*PurchaseOrderSubmitResponse)(nil),     // 36: procurement.v1.PurchaseOrderSubmitResponse
+	(*PurchaseOrderCancelRequest)(nil),      // 37: procurement.v1.PurchaseOrderCancelRequest
+	(*PurchaseOrderCancelResponse)(nil),     // 38: procurement.v1.PurchaseOrderCancelResponse
+	(*PurchaseOrderCloseRequest)(nil),       // 39: procurement.v1.PurchaseOrderCloseRequest
+	(*PurchaseOrderCloseResponse)(nil),      // 40: procurement.v1.PurchaseOrderCloseResponse
+	(*GoodsReceiptCreateRequest)(nil),       // 41: procurement.v1.GoodsReceiptCreateRequest
+	(*GoodsReceiptLineInput)(nil),           // 42: procurement.v1.GoodsReceiptLineInput
+	(*GoodsReceiptCreateResponse)(nil),      // 43: procurement.v1.GoodsReceiptCreateResponse
+	(*GoodsReceiptGetRequest)(nil),          // 44: procurement.v1.GoodsReceiptGetRequest
+	(*GoodsReceiptGetResponse)(nil),         // 45: procurement.v1.GoodsReceiptGetResponse
+	(*GoodsReceiptSearchRequest)(nil),       // 46: procurement.v1.GoodsReceiptSearchRequest
+	(*GoodsReceiptSearchResponse)(nil),      // 47: procurement.v1.GoodsReceiptSearchResponse
+	(*SuggestPurchaseOrdersRequest)(nil),    // 48: procurement.v1.SuggestPurchaseOrdersRequest
+	(*SuggestPurchaseOrdersResponse)(nil),   // 49: procurement.v1.SuggestPurchaseOrdersResponse
+	(*GoodsReceiptDeliverRequest)(nil),      // 50: procurement.v1.GoodsReceiptDeliverRequest
+	(*GoodsReceiptDeliverResponse)(nil),     // 51: procurement.v1.GoodsReceiptDeliverResponse
+	(*GoodsReceiptLineResolveRequest)(nil),  // 52: procurement.v1.GoodsReceiptLineResolveRequest
+	(*GoodsReceiptLineResolveResponse)(nil), // 53: procurement.v1.GoodsReceiptLineResolveResponse
+	(*timestamppb.Timestamp)(nil),           // 54: google.protobuf.Timestamp
+	(*v1.Money)(nil),                        // 55: common.v1.Money
+	(*v1.SearchRequest)(nil),                // 56: common.v1.SearchRequest
 }
 var file_v1_procurement_proto_depIdxs = []int32{
 	0,  // 0: procurement.v1.Supplier.supplier_type:type_name -> procurement.v1.SupplierType
 	1,  // 1: procurement.v1.Supplier.status:type_name -> procurement.v1.SupplierStatus
 	2,  // 2: procurement.v1.Supplier.rating:type_name -> procurement.v1.SupplierRating
-	51, // 3: procurement.v1.Supplier.created_at:type_name -> google.protobuf.Timestamp
-	52, // 4: procurement.v1.SupplierItem.unit_price:type_name -> common.v1.Money
+	54, // 3: procurement.v1.Supplier.created_at:type_name -> google.protobuf.Timestamp
+	55, // 4: procurement.v1.SupplierItem.unit_price:type_name -> common.v1.Money
 	3,  // 5: procurement.v1.SupplierItem.status:type_name -> procurement.v1.SupplierItemStatus
 	7,  // 6: procurement.v1.SupplierItem.supply_kind:type_name -> procurement.v1.SupplyKind
-	51, // 7: procurement.v1.SupplierItem.created_at:type_name -> google.protobuf.Timestamp
+	54, // 7: procurement.v1.SupplierItem.created_at:type_name -> google.protobuf.Timestamp
 	4,  // 8: procurement.v1.PurchaseOrder.status:type_name -> procurement.v1.PurchaseOrderStatus
-	51, // 9: procurement.v1.PurchaseOrder.expected_delivery_date:type_name -> google.protobuf.Timestamp
-	51, // 10: procurement.v1.PurchaseOrder.submitted_at:type_name -> google.protobuf.Timestamp
-	52, // 11: procurement.v1.PurchaseOrder.total_amount:type_name -> common.v1.Money
-	12, // 12: procurement.v1.PurchaseOrder.lines:type_name -> procurement.v1.PurchaseOrderLine
-	51, // 13: procurement.v1.PurchaseOrder.created_at:type_name -> google.protobuf.Timestamp
-	52, // 14: procurement.v1.PurchaseOrderLine.unit_price:type_name -> common.v1.Money
+	54, // 9: procurement.v1.PurchaseOrder.expected_delivery_date:type_name -> google.protobuf.Timestamp
+	54, // 10: procurement.v1.PurchaseOrder.submitted_at:type_name -> google.protobuf.Timestamp
+	55, // 11: procurement.v1.PurchaseOrder.total_amount:type_name -> common.v1.Money
+	13, // 12: procurement.v1.PurchaseOrder.lines:type_name -> procurement.v1.PurchaseOrderLine
+	54, // 13: procurement.v1.PurchaseOrder.created_at:type_name -> google.protobuf.Timestamp
+	55, // 14: procurement.v1.PurchaseOrderLine.unit_price:type_name -> common.v1.Money
 	5,  // 15: procurement.v1.PurchaseOrderLine.status:type_name -> procurement.v1.PurchaseOrderLineStatus
 	7,  // 16: procurement.v1.PurchaseOrderLine.supply_kind:type_name -> procurement.v1.SupplyKind
-	51, // 17: procurement.v1.GoodsReceipt.received_at:type_name -> google.protobuf.Timestamp
+	54, // 17: procurement.v1.GoodsReceipt.received_at:type_name -> google.protobuf.Timestamp
 	6,  // 18: procurement.v1.GoodsReceipt.status:type_name -> procurement.v1.GoodsReceiptStatus
-	14, // 19: procurement.v1.GoodsReceipt.lines:type_name -> procurement.v1.GoodsReceiptLine
-	51, // 20: procurement.v1.GoodsReceipt.created_at:type_name -> google.protobuf.Timestamp
-	51, // 21: procurement.v1.GoodsReceiptLine.expiry_date:type_name -> google.protobuf.Timestamp
+	15, // 19: procurement.v1.GoodsReceipt.lines:type_name -> procurement.v1.GoodsReceiptLine
+	54, // 20: procurement.v1.GoodsReceipt.created_at:type_name -> google.protobuf.Timestamp
+	54, // 21: procurement.v1.GoodsReceiptLine.expiry_date:type_name -> google.protobuf.Timestamp
 	7,  // 22: procurement.v1.GoodsReceiptLine.supply_kind:type_name -> procurement.v1.SupplyKind
 	8,  // 23: procurement.v1.GoodsReceiptLine.delivery_status:type_name -> procurement.v1.StockDeliveryStatus
-	16, // 24: procurement.v1.PurchaseOrderSuggestion.lines:type_name -> procurement.v1.PurchaseOrderSuggestionLine
-	52, // 25: procurement.v1.PurchaseOrderSuggestion.estimated_total:type_name -> common.v1.Money
-	52, // 26: procurement.v1.PurchaseOrderSuggestionLine.unit_price:type_name -> common.v1.Money
-	0,  // 27: procurement.v1.SupplierSaveRequest.supplier_type:type_name -> procurement.v1.SupplierType
-	1,  // 28: procurement.v1.SupplierSaveRequest.status:type_name -> procurement.v1.SupplierStatus
-	2,  // 29: procurement.v1.SupplierSaveRequest.rating:type_name -> procurement.v1.SupplierRating
-	9,  // 30: procurement.v1.SupplierSaveResponse.supplier:type_name -> procurement.v1.Supplier
-	9,  // 31: procurement.v1.SupplierGetResponse.supplier:type_name -> procurement.v1.Supplier
-	53, // 32: procurement.v1.SupplierSearchRequest.search:type_name -> common.v1.SearchRequest
-	0,  // 33: procurement.v1.SupplierSearchRequest.supplier_type:type_name -> procurement.v1.SupplierType
-	1,  // 34: procurement.v1.SupplierSearchRequest.status:type_name -> procurement.v1.SupplierStatus
-	9,  // 35: procurement.v1.SupplierSearchResponse.suppliers:type_name -> procurement.v1.Supplier
-	52, // 36: procurement.v1.SupplierItemSaveRequest.unit_price:type_name -> common.v1.Money
-	3,  // 37: procurement.v1.SupplierItemSaveRequest.status:type_name -> procurement.v1.SupplierItemStatus
-	7,  // 38: procurement.v1.SupplierItemSaveRequest.supply_kind:type_name -> procurement.v1.SupplyKind
-	10, // 39: procurement.v1.SupplierItemSaveResponse.supplier_item:type_name -> procurement.v1.SupplierItem
-	53, // 40: procurement.v1.SupplierItemSearchRequest.search:type_name -> common.v1.SearchRequest
-	10, // 41: procurement.v1.SupplierItemSearchResponse.supplier_items:type_name -> procurement.v1.SupplierItem
-	51, // 42: procurement.v1.PurchaseOrderCreateRequest.expected_delivery_date:type_name -> google.protobuf.Timestamp
-	28, // 43: procurement.v1.PurchaseOrderCreateRequest.lines:type_name -> procurement.v1.PurchaseOrderLineInput
-	11, // 44: procurement.v1.PurchaseOrderCreateResponse.purchase_order:type_name -> procurement.v1.PurchaseOrder
-	11, // 45: procurement.v1.PurchaseOrderGetResponse.purchase_order:type_name -> procurement.v1.PurchaseOrder
-	4,  // 46: procurement.v1.PurchaseOrderSearchRequest.status:type_name -> procurement.v1.PurchaseOrderStatus
-	53, // 47: procurement.v1.PurchaseOrderSearchRequest.search:type_name -> common.v1.SearchRequest
-	11, // 48: procurement.v1.PurchaseOrderSearchResponse.purchase_orders:type_name -> procurement.v1.PurchaseOrder
-	11, // 49: procurement.v1.PurchaseOrderSubmitResponse.purchase_order:type_name -> procurement.v1.PurchaseOrder
-	11, // 50: procurement.v1.PurchaseOrderCancelResponse.purchase_order:type_name -> procurement.v1.PurchaseOrder
-	11, // 51: procurement.v1.PurchaseOrderCloseResponse.purchase_order:type_name -> procurement.v1.PurchaseOrder
-	41, // 52: procurement.v1.GoodsReceiptCreateRequest.lines:type_name -> procurement.v1.GoodsReceiptLineInput
-	51, // 53: procurement.v1.GoodsReceiptLineInput.expiry_date:type_name -> google.protobuf.Timestamp
-	13, // 54: procurement.v1.GoodsReceiptCreateResponse.goods_receipt:type_name -> procurement.v1.GoodsReceipt
-	13, // 55: procurement.v1.GoodsReceiptGetResponse.goods_receipt:type_name -> procurement.v1.GoodsReceipt
-	6,  // 56: procurement.v1.GoodsReceiptSearchRequest.status:type_name -> procurement.v1.GoodsReceiptStatus
-	53, // 57: procurement.v1.GoodsReceiptSearchRequest.search:type_name -> common.v1.SearchRequest
-	13, // 58: procurement.v1.GoodsReceiptSearchResponse.goods_receipts:type_name -> procurement.v1.GoodsReceipt
-	15, // 59: procurement.v1.SuggestPurchaseOrdersResponse.suggestions:type_name -> procurement.v1.PurchaseOrderSuggestion
-	17, // 60: procurement.v1.ProcurementService.SupplierSave:input_type -> procurement.v1.SupplierSaveRequest
-	19, // 61: procurement.v1.ProcurementService.SupplierGet:input_type -> procurement.v1.SupplierGetRequest
-	21, // 62: procurement.v1.ProcurementService.SupplierSearch:input_type -> procurement.v1.SupplierSearchRequest
-	23, // 63: procurement.v1.ProcurementService.SupplierItemSave:input_type -> procurement.v1.SupplierItemSaveRequest
-	25, // 64: procurement.v1.ProcurementService.SupplierItemSearch:input_type -> procurement.v1.SupplierItemSearchRequest
-	27, // 65: procurement.v1.ProcurementService.PurchaseOrderCreate:input_type -> procurement.v1.PurchaseOrderCreateRequest
-	30, // 66: procurement.v1.ProcurementService.PurchaseOrderGet:input_type -> procurement.v1.PurchaseOrderGetRequest
-	32, // 67: procurement.v1.ProcurementService.PurchaseOrderSearch:input_type -> procurement.v1.PurchaseOrderSearchRequest
-	34, // 68: procurement.v1.ProcurementService.PurchaseOrderSubmit:input_type -> procurement.v1.PurchaseOrderSubmitRequest
-	36, // 69: procurement.v1.ProcurementService.PurchaseOrderCancel:input_type -> procurement.v1.PurchaseOrderCancelRequest
-	38, // 70: procurement.v1.ProcurementService.PurchaseOrderClose:input_type -> procurement.v1.PurchaseOrderCloseRequest
-	40, // 71: procurement.v1.ProcurementService.GoodsReceiptCreate:input_type -> procurement.v1.GoodsReceiptCreateRequest
-	43, // 72: procurement.v1.ProcurementService.GoodsReceiptGet:input_type -> procurement.v1.GoodsReceiptGetRequest
-	45, // 73: procurement.v1.ProcurementService.GoodsReceiptSearch:input_type -> procurement.v1.GoodsReceiptSearchRequest
-	49, // 74: procurement.v1.ProcurementService.GoodsReceiptDeliver:input_type -> procurement.v1.GoodsReceiptDeliverRequest
-	47, // 75: procurement.v1.ProcurementService.SuggestPurchaseOrders:input_type -> procurement.v1.SuggestPurchaseOrdersRequest
-	18, // 76: procurement.v1.ProcurementService.SupplierSave:output_type -> procurement.v1.SupplierSaveResponse
-	20, // 77: procurement.v1.ProcurementService.SupplierGet:output_type -> procurement.v1.SupplierGetResponse
-	22, // 78: procurement.v1.ProcurementService.SupplierSearch:output_type -> procurement.v1.SupplierSearchResponse
-	24, // 79: procurement.v1.ProcurementService.SupplierItemSave:output_type -> procurement.v1.SupplierItemSaveResponse
-	26, // 80: procurement.v1.ProcurementService.SupplierItemSearch:output_type -> procurement.v1.SupplierItemSearchResponse
-	29, // 81: procurement.v1.ProcurementService.PurchaseOrderCreate:output_type -> procurement.v1.PurchaseOrderCreateResponse
-	31, // 82: procurement.v1.ProcurementService.PurchaseOrderGet:output_type -> procurement.v1.PurchaseOrderGetResponse
-	33, // 83: procurement.v1.ProcurementService.PurchaseOrderSearch:output_type -> procurement.v1.PurchaseOrderSearchResponse
-	35, // 84: procurement.v1.ProcurementService.PurchaseOrderSubmit:output_type -> procurement.v1.PurchaseOrderSubmitResponse
-	37, // 85: procurement.v1.ProcurementService.PurchaseOrderCancel:output_type -> procurement.v1.PurchaseOrderCancelResponse
-	39, // 86: procurement.v1.ProcurementService.PurchaseOrderClose:output_type -> procurement.v1.PurchaseOrderCloseResponse
-	42, // 87: procurement.v1.ProcurementService.GoodsReceiptCreate:output_type -> procurement.v1.GoodsReceiptCreateResponse
-	44, // 88: procurement.v1.ProcurementService.GoodsReceiptGet:output_type -> procurement.v1.GoodsReceiptGetResponse
-	46, // 89: procurement.v1.ProcurementService.GoodsReceiptSearch:output_type -> procurement.v1.GoodsReceiptSearchResponse
-	50, // 90: procurement.v1.ProcurementService.GoodsReceiptDeliver:output_type -> procurement.v1.GoodsReceiptDeliverResponse
-	48, // 91: procurement.v1.ProcurementService.SuggestPurchaseOrders:output_type -> procurement.v1.SuggestPurchaseOrdersResponse
-	76, // [76:92] is the sub-list for method output_type
-	60, // [60:76] is the sub-list for method input_type
-	60, // [60:60] is the sub-list for extension type_name
-	60, // [60:60] is the sub-list for extension extendee
-	0,  // [0:60] is the sub-list for field type_name
+	54, // 24: procurement.v1.GoodsReceiptLine.resolved_at:type_name -> google.protobuf.Timestamp
+	17, // 25: procurement.v1.PurchaseOrderSuggestion.lines:type_name -> procurement.v1.PurchaseOrderSuggestionLine
+	55, // 26: procurement.v1.PurchaseOrderSuggestion.estimated_total:type_name -> common.v1.Money
+	55, // 27: procurement.v1.PurchaseOrderSuggestionLine.unit_price:type_name -> common.v1.Money
+	0,  // 28: procurement.v1.SupplierSaveRequest.supplier_type:type_name -> procurement.v1.SupplierType
+	1,  // 29: procurement.v1.SupplierSaveRequest.status:type_name -> procurement.v1.SupplierStatus
+	2,  // 30: procurement.v1.SupplierSaveRequest.rating:type_name -> procurement.v1.SupplierRating
+	10, // 31: procurement.v1.SupplierSaveResponse.supplier:type_name -> procurement.v1.Supplier
+	10, // 32: procurement.v1.SupplierGetResponse.supplier:type_name -> procurement.v1.Supplier
+	56, // 33: procurement.v1.SupplierSearchRequest.search:type_name -> common.v1.SearchRequest
+	0,  // 34: procurement.v1.SupplierSearchRequest.supplier_type:type_name -> procurement.v1.SupplierType
+	1,  // 35: procurement.v1.SupplierSearchRequest.status:type_name -> procurement.v1.SupplierStatus
+	10, // 36: procurement.v1.SupplierSearchResponse.suppliers:type_name -> procurement.v1.Supplier
+	55, // 37: procurement.v1.SupplierItemSaveRequest.unit_price:type_name -> common.v1.Money
+	3,  // 38: procurement.v1.SupplierItemSaveRequest.status:type_name -> procurement.v1.SupplierItemStatus
+	7,  // 39: procurement.v1.SupplierItemSaveRequest.supply_kind:type_name -> procurement.v1.SupplyKind
+	11, // 40: procurement.v1.SupplierItemSaveResponse.supplier_item:type_name -> procurement.v1.SupplierItem
+	56, // 41: procurement.v1.SupplierItemSearchRequest.search:type_name -> common.v1.SearchRequest
+	11, // 42: procurement.v1.SupplierItemSearchResponse.supplier_items:type_name -> procurement.v1.SupplierItem
+	54, // 43: procurement.v1.PurchaseOrderCreateRequest.expected_delivery_date:type_name -> google.protobuf.Timestamp
+	29, // 44: procurement.v1.PurchaseOrderCreateRequest.lines:type_name -> procurement.v1.PurchaseOrderLineInput
+	12, // 45: procurement.v1.PurchaseOrderCreateResponse.purchase_order:type_name -> procurement.v1.PurchaseOrder
+	12, // 46: procurement.v1.PurchaseOrderGetResponse.purchase_order:type_name -> procurement.v1.PurchaseOrder
+	4,  // 47: procurement.v1.PurchaseOrderSearchRequest.status:type_name -> procurement.v1.PurchaseOrderStatus
+	56, // 48: procurement.v1.PurchaseOrderSearchRequest.search:type_name -> common.v1.SearchRequest
+	12, // 49: procurement.v1.PurchaseOrderSearchResponse.purchase_orders:type_name -> procurement.v1.PurchaseOrder
+	12, // 50: procurement.v1.PurchaseOrderSubmitResponse.purchase_order:type_name -> procurement.v1.PurchaseOrder
+	12, // 51: procurement.v1.PurchaseOrderCancelResponse.purchase_order:type_name -> procurement.v1.PurchaseOrder
+	12, // 52: procurement.v1.PurchaseOrderCloseResponse.purchase_order:type_name -> procurement.v1.PurchaseOrder
+	42, // 53: procurement.v1.GoodsReceiptCreateRequest.lines:type_name -> procurement.v1.GoodsReceiptLineInput
+	54, // 54: procurement.v1.GoodsReceiptLineInput.expiry_date:type_name -> google.protobuf.Timestamp
+	14, // 55: procurement.v1.GoodsReceiptCreateResponse.goods_receipt:type_name -> procurement.v1.GoodsReceipt
+	14, // 56: procurement.v1.GoodsReceiptGetResponse.goods_receipt:type_name -> procurement.v1.GoodsReceipt
+	6,  // 57: procurement.v1.GoodsReceiptSearchRequest.status:type_name -> procurement.v1.GoodsReceiptStatus
+	56, // 58: procurement.v1.GoodsReceiptSearchRequest.search:type_name -> common.v1.SearchRequest
+	14, // 59: procurement.v1.GoodsReceiptSearchResponse.goods_receipts:type_name -> procurement.v1.GoodsReceipt
+	16, // 60: procurement.v1.SuggestPurchaseOrdersResponse.suggestions:type_name -> procurement.v1.PurchaseOrderSuggestion
+	9,  // 61: procurement.v1.GoodsReceiptLineResolveRequest.resolution:type_name -> procurement.v1.GoodsReceiptLineResolution
+	14, // 62: procurement.v1.GoodsReceiptLineResolveResponse.goods_receipt:type_name -> procurement.v1.GoodsReceipt
+	18, // 63: procurement.v1.ProcurementService.SupplierSave:input_type -> procurement.v1.SupplierSaveRequest
+	20, // 64: procurement.v1.ProcurementService.SupplierGet:input_type -> procurement.v1.SupplierGetRequest
+	22, // 65: procurement.v1.ProcurementService.SupplierSearch:input_type -> procurement.v1.SupplierSearchRequest
+	24, // 66: procurement.v1.ProcurementService.SupplierItemSave:input_type -> procurement.v1.SupplierItemSaveRequest
+	26, // 67: procurement.v1.ProcurementService.SupplierItemSearch:input_type -> procurement.v1.SupplierItemSearchRequest
+	28, // 68: procurement.v1.ProcurementService.PurchaseOrderCreate:input_type -> procurement.v1.PurchaseOrderCreateRequest
+	31, // 69: procurement.v1.ProcurementService.PurchaseOrderGet:input_type -> procurement.v1.PurchaseOrderGetRequest
+	33, // 70: procurement.v1.ProcurementService.PurchaseOrderSearch:input_type -> procurement.v1.PurchaseOrderSearchRequest
+	35, // 71: procurement.v1.ProcurementService.PurchaseOrderSubmit:input_type -> procurement.v1.PurchaseOrderSubmitRequest
+	37, // 72: procurement.v1.ProcurementService.PurchaseOrderCancel:input_type -> procurement.v1.PurchaseOrderCancelRequest
+	39, // 73: procurement.v1.ProcurementService.PurchaseOrderClose:input_type -> procurement.v1.PurchaseOrderCloseRequest
+	41, // 74: procurement.v1.ProcurementService.GoodsReceiptCreate:input_type -> procurement.v1.GoodsReceiptCreateRequest
+	44, // 75: procurement.v1.ProcurementService.GoodsReceiptGet:input_type -> procurement.v1.GoodsReceiptGetRequest
+	46, // 76: procurement.v1.ProcurementService.GoodsReceiptSearch:input_type -> procurement.v1.GoodsReceiptSearchRequest
+	50, // 77: procurement.v1.ProcurementService.GoodsReceiptDeliver:input_type -> procurement.v1.GoodsReceiptDeliverRequest
+	52, // 78: procurement.v1.ProcurementService.GoodsReceiptLineResolve:input_type -> procurement.v1.GoodsReceiptLineResolveRequest
+	48, // 79: procurement.v1.ProcurementService.SuggestPurchaseOrders:input_type -> procurement.v1.SuggestPurchaseOrdersRequest
+	19, // 80: procurement.v1.ProcurementService.SupplierSave:output_type -> procurement.v1.SupplierSaveResponse
+	21, // 81: procurement.v1.ProcurementService.SupplierGet:output_type -> procurement.v1.SupplierGetResponse
+	23, // 82: procurement.v1.ProcurementService.SupplierSearch:output_type -> procurement.v1.SupplierSearchResponse
+	25, // 83: procurement.v1.ProcurementService.SupplierItemSave:output_type -> procurement.v1.SupplierItemSaveResponse
+	27, // 84: procurement.v1.ProcurementService.SupplierItemSearch:output_type -> procurement.v1.SupplierItemSearchResponse
+	30, // 85: procurement.v1.ProcurementService.PurchaseOrderCreate:output_type -> procurement.v1.PurchaseOrderCreateResponse
+	32, // 86: procurement.v1.ProcurementService.PurchaseOrderGet:output_type -> procurement.v1.PurchaseOrderGetResponse
+	34, // 87: procurement.v1.ProcurementService.PurchaseOrderSearch:output_type -> procurement.v1.PurchaseOrderSearchResponse
+	36, // 88: procurement.v1.ProcurementService.PurchaseOrderSubmit:output_type -> procurement.v1.PurchaseOrderSubmitResponse
+	38, // 89: procurement.v1.ProcurementService.PurchaseOrderCancel:output_type -> procurement.v1.PurchaseOrderCancelResponse
+	40, // 90: procurement.v1.ProcurementService.PurchaseOrderClose:output_type -> procurement.v1.PurchaseOrderCloseResponse
+	43, // 91: procurement.v1.ProcurementService.GoodsReceiptCreate:output_type -> procurement.v1.GoodsReceiptCreateResponse
+	45, // 92: procurement.v1.ProcurementService.GoodsReceiptGet:output_type -> procurement.v1.GoodsReceiptGetResponse
+	47, // 93: procurement.v1.ProcurementService.GoodsReceiptSearch:output_type -> procurement.v1.GoodsReceiptSearchResponse
+	51, // 94: procurement.v1.ProcurementService.GoodsReceiptDeliver:output_type -> procurement.v1.GoodsReceiptDeliverResponse
+	53, // 95: procurement.v1.ProcurementService.GoodsReceiptLineResolve:output_type -> procurement.v1.GoodsReceiptLineResolveResponse
+	49, // 96: procurement.v1.ProcurementService.SuggestPurchaseOrders:output_type -> procurement.v1.SuggestPurchaseOrdersResponse
+	80, // [80:97] is the sub-list for method output_type
+	63, // [63:80] is the sub-list for method input_type
+	63, // [63:63] is the sub-list for extension type_name
+	63, // [63:63] is the sub-list for extension extendee
+	0,  // [0:63] is the sub-list for field type_name
 }
 
 func init() { file_v1_procurement_proto_init() }
@@ -5629,8 +5934,8 @@ func file_v1_procurement_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_v1_procurement_proto_rawDesc), len(file_v1_procurement_proto_rawDesc)),
-			NumEnums:      9,
-			NumMessages:   42,
+			NumEnums:      10,
+			NumMessages:   44,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

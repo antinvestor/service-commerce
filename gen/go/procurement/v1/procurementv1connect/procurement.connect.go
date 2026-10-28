@@ -83,6 +83,9 @@ const (
 	// ProcurementServiceGoodsReceiptDeliverProcedure is the procedure name of the ProcurementService's
 	// GoodsReceiptDeliver RPC.
 	ProcurementServiceGoodsReceiptDeliverProcedure = "/procurement.v1.ProcurementService/GoodsReceiptDeliver"
+	// ProcurementServiceGoodsReceiptLineResolveProcedure is the procedure name of the
+	// ProcurementService's GoodsReceiptLineResolve RPC.
+	ProcurementServiceGoodsReceiptLineResolveProcedure = "/procurement.v1.ProcurementService/GoodsReceiptLineResolve"
 	// ProcurementServiceSuggestPurchaseOrdersProcedure is the procedure name of the
 	// ProcurementService's SuggestPurchaseOrders RPC.
 	ProcurementServiceSuggestPurchaseOrdersProcedure = "/procurement.v1.ProcurementService/SuggestPurchaseOrders"
@@ -194,6 +197,13 @@ var (
 			Procedure:  ProcurementServiceGoodsReceiptDeliverProcedure,
 		}
 	})
+	procurementServiceGoodsReceiptLineResolveSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_procurement_proto.Services().ByName("ProcurementService").Methods().ByName("GoodsReceiptLineResolve"),
+			Procedure:  ProcurementServiceGoodsReceiptLineResolveProcedure,
+		}
+	})
 	procurementServiceSuggestPurchaseOrdersSpec = sync.OnceValue(func() connect.Spec {
 		return connect.Spec{
 			StreamType: connect.StreamTypeUnary,
@@ -230,6 +240,11 @@ type ProcurementServiceClient interface {
 	// product variants), oldest and least-tried first, at most limit lines.
 	// Each line lands once whatever the number of calls. Scheduled.
 	GoodsReceiptDeliver(context.Context, *v1.GoodsReceiptDeliverRequest) (*v1.GoodsReceiptDeliverResponse, error)
+	// Settles a receipt line that needs a person: stock booked by hand
+	// (BOOKED_MANUALLY) is marked resolved with who, when and why; a FAILED
+	// product variant line is put back to PENDING and pushed once (RETRY).
+	// Authorised on the receipt's property (goods_receipt_manage).
+	GoodsReceiptLineResolve(context.Context, *v1.GoodsReceiptLineResolveRequest) (*v1.GoodsReceiptLineResolveResponse, error)
 	// ---- Suggestions ----
 	SuggestPurchaseOrders(context.Context, *v1.SuggestPurchaseOrdersRequest) (*v1.SuggestPurchaseOrdersResponse, error)
 }
@@ -267,6 +282,11 @@ type ProcurementServiceHandler interface {
 	// product variants), oldest and least-tried first, at most limit lines.
 	// Each line lands once whatever the number of calls. Scheduled.
 	GoodsReceiptDeliver(context.Context, *v1.GoodsReceiptDeliverRequest) (*v1.GoodsReceiptDeliverResponse, error)
+	// Settles a receipt line that needs a person: stock booked by hand
+	// (BOOKED_MANUALLY) is marked resolved with who, when and why; a FAILED
+	// product variant line is put back to PENDING and pushed once (RETRY).
+	// Authorised on the receipt's property (goods_receipt_manage).
+	GoodsReceiptLineResolve(context.Context, *v1.GoodsReceiptLineResolveRequest) (*v1.GoodsReceiptLineResolveResponse, error)
 	// ---- Suggestions ----
 	SuggestPurchaseOrders(context.Context, *v1.SuggestPurchaseOrdersRequest) (*v1.SuggestPurchaseOrdersResponse, error)
 }
@@ -291,6 +311,7 @@ func RegisterProcurementServiceHandler(server *connect.Server, svc ProcurementSe
 		connect.Method{Spec: procurementServiceGoodsReceiptGetSpec(), Handler: adapter.goodsReceiptGet},
 		connect.Method{Spec: procurementServiceGoodsReceiptSearchSpec(), Handler: adapter.goodsReceiptSearch},
 		connect.Method{Spec: procurementServiceGoodsReceiptDeliverSpec(), Handler: adapter.goodsReceiptDeliver},
+		connect.Method{Spec: procurementServiceGoodsReceiptLineResolveSpec(), Handler: adapter.goodsReceiptLineResolve},
 		connect.Method{Spec: procurementServiceSuggestPurchaseOrdersSpec(), Handler: adapter.suggestPurchaseOrders},
 	)
 }
@@ -356,6 +377,10 @@ func (UnimplementedProcurementServiceHandler) GoodsReceiptSearch(context.Context
 
 func (UnimplementedProcurementServiceHandler) GoodsReceiptDeliver(context.Context, *v1.GoodsReceiptDeliverRequest) (*v1.GoodsReceiptDeliverResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, "procurement.v1.ProcurementService.GoodsReceiptDeliver is not implemented")
+}
+
+func (UnimplementedProcurementServiceHandler) GoodsReceiptLineResolve(context.Context, *v1.GoodsReceiptLineResolveRequest) (*v1.GoodsReceiptLineResolveResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "procurement.v1.ProcurementService.GoodsReceiptLineResolve is not implemented")
 }
 
 func (UnimplementedProcurementServiceHandler) SuggestPurchaseOrders(context.Context, *v1.SuggestPurchaseOrdersRequest) (*v1.SuggestPurchaseOrdersResponse, error) {
@@ -481,6 +506,14 @@ func (c *procurementServiceClient) GoodsReceiptSearch(ctx context.Context, req *
 func (c *procurementServiceClient) GoodsReceiptDeliver(ctx context.Context, req *v1.GoodsReceiptDeliverRequest) (*v1.GoodsReceiptDeliverResponse, error) {
 	var res v1.GoodsReceiptDeliverResponse
 	if err := c.client.CallUnary(ctx, procurementServiceGoodsReceiptDeliverSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *procurementServiceClient) GoodsReceiptLineResolve(ctx context.Context, req *v1.GoodsReceiptLineResolveRequest) (*v1.GoodsReceiptLineResolveResponse, error) {
+	var res v1.GoodsReceiptLineResolveResponse
+	if err := c.client.CallUnary(ctx, procurementServiceGoodsReceiptLineResolveSpec(), req, &res); err != nil {
 		return nil, err
 	}
 	return &res, nil
@@ -670,6 +703,18 @@ func (h procurementServiceHandler) goodsReceiptDeliver(ctx context.Context, _ co
 		return err
 	}
 	res, err := h.svc.GoodsReceiptDeliver(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h procurementServiceHandler) goodsReceiptLineResolve(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.GoodsReceiptLineResolveRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.GoodsReceiptLineResolve(ctx, &req)
 	if err != nil {
 		return err
 	}

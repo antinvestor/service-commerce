@@ -357,6 +357,34 @@ func (ps *ProcurementServer) GoodsReceiptDeliver(
 	}, nil
 }
 
+// GoodsReceiptLineResolve settles a receipt line that needs staff. The
+// receipt is authorised on its stored property: one the caller cannot see
+// looks missing, one they see but do not manage is refused.
+func (ps *ProcurementServer) GoodsReceiptLineResolve(
+	ctx context.Context,
+	req *procurementv1.GoodsReceiptLineResolveRequest,
+) (*procurementv1.GoodsReceiptLineResolveResponse, error) {
+	if req.GetGoodsReceiptId() == "" {
+		return nil, connect.NewError(connect.CodeInvalidArgument, "goods_receipt_id is required")
+	}
+	gr, err := ps.goodsReceiptBusiness.GetGoodsReceipt(ctx, req.GetGoodsReceiptId())
+	if err != nil {
+		return nil, errorutil.CleanErr(err)
+	}
+	if err = ps.authz.CanGoodsReceiptView(ctx, gr.GetPropertyId()); err != nil {
+		return nil, notVisible(authorizer.ToConnectError(err))
+	}
+	if err = ps.authz.CanGoodsReceiptManage(ctx, gr.GetPropertyId()); err != nil {
+		return nil, authorizer.ToConnectError(err)
+	}
+
+	resolved, err := ps.goodsReceiptBusiness.ResolveLine(ctx, req)
+	if err != nil {
+		return nil, errorutil.CleanErr(err)
+	}
+	return &procurementv1.GoodsReceiptLineResolveResponse{GoodsReceipt: resolved}, nil
+}
+
 // notVisible answers a read of a record the caller may not see exactly as a
 // read of one that does not exist, so ids cannot be probed for existence.
 func notVisible(err error) error {

@@ -659,12 +659,18 @@ func (rts *RepositoryTestSuite) TestOrderRepository_ListByShopID() {
 
 		shop := rts.createTestShop(ctx, shopRepo)
 
-		for range 3 {
+		// Three confirmed and paid, two cancelled and refunded, interleaved.
+		for i := range 5 {
+			status, paymentStatus := int32(1), int32(2)
+			if i%2 == 1 {
+				status, paymentStatus = 2, 4
+			}
 			order := &models.Order{
 				ShopID:           shop.GetID(),
 				OrderNumber:      "ORD-" + util.RandomAlphaNumericString(10),
 				IdempotencyKey:   "idem-" + util.RandomAlphaNumericString(10),
-				Status:           1,
+				Status:           status,
+				PaymentStatus:    paymentStatus,
 				SubtotalCurrency: "USD",
 				TotalCurrency:    "USD",
 			}
@@ -673,9 +679,34 @@ func (rts *RepositoryTestSuite) TestOrderRepository_ListByShopID() {
 			require.NoError(t, err)
 		}
 
-		orders, _, err := orderRepo.ListByShopID(ctx, shop.GetID(), repository.Page{Limit: 50})
+		orders, _, err := orderRepo.ListByShopID(ctx, shop.GetID(), repository.OrderStatusFilter{},
+			repository.Page{Limit: 50})
 		require.NoError(t, err)
-		require.Len(t, orders, 3)
+		require.Len(t, orders, 5)
+
+		// The status filter is in the query, so pages are full and the
+		// cursor walks only matching orders.
+		confirmed := repository.OrderStatusFilter{Statuses: []int32{1}}
+		first, next, err := orderRepo.ListByShopID(ctx, shop.GetID(), confirmed, repository.Page{Limit: 2})
+		require.NoError(t, err)
+		require.Len(t, first, 2)
+		require.NotNil(t, next)
+		rest, last, err := orderRepo.ListByShopID(ctx, shop.GetID(), confirmed, repository.Page{Limit: 2, After: next})
+		require.NoError(t, err)
+		require.Len(t, rest, 1)
+		require.Nil(t, last)
+		for _, o := range append(first, rest...) {
+			require.Equal(t, int32(1), o.Status)
+		}
+
+		refunded, _, err := orderRepo.ListByShopID(ctx, shop.GetID(),
+			repository.OrderStatusFilter{Statuses: []int32{1, 2}, PaymentStatuses: []int32{4}},
+			repository.Page{Limit: 50})
+		require.NoError(t, err)
+		require.Len(t, refunded, 2)
+		for _, o := range refunded {
+			require.Equal(t, int32(4), o.PaymentStatus)
+		}
 	})
 }
 

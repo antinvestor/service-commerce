@@ -17,14 +17,17 @@ package business
 import (
 	"context"
 	"errors"
-	"math"
+	"fmt"
+	"math/big"
 	"sort"
+	"strings"
 
-	commonv1 "buf.build/gen/go/antinvestor/common/protocolbuffers/go/common/v1"
-	procurementv1 "buf.build/gen/go/antinvestor/procurement/protocolbuffers/go/v1"
 	"connectrpc.com/connect/v2"
 	"github.com/pitabwire/frame/v3/data"
 	"github.com/pitabwire/util"
+	"golang.org/x/text/currency"
+
+	procurementv1 "github.com/antinvestor/service-commerce/gen/go/procurement/v1"
 
 	"github.com/antinvestor/service-commerce/apps/procurement/service/models"
 	"github.com/antinvestor/service-commerce/apps/procurement/service/repository"
@@ -77,7 +80,8 @@ type suggestionBusiness struct {
 	supplierItemRepo repository.SupplierItemRepository
 }
 
-const nanosPerUnit = 1_000_000_000
+// maxShortages bounds one suggestion run.
+const maxShortages = 500
 
 func (sb *suggestionBusiness) SuggestPurchaseOrders(
 	ctx context.Context,
@@ -85,6 +89,13 @@ func (sb *suggestionBusiness) SuggestPurchaseOrders(
 ) ([]*procurementv1.PurchaseOrderSuggestion, error) {
 	if req.GetPlanId() == "" {
 		return nil, connect.NewError(connect.CodeInvalidArgument, "plan_id is required")
+	}
+	currencyCode := strings.ToUpper(strings.TrimSpace(req.GetCurrencyCode()))
+	if currencyCode != "" {
+		if _, err := currency.ParseISO(currencyCode); err != nil || len(currencyCode) != 3 {
+			return nil, connect.NewError(connect.CodeInvalidArgument,
+				fmt.Sprintf("currency_code %q is not an ISO 4217 code", req.GetCurrencyCode()))
+		}
 	}
 	if sb.source == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented,
@@ -97,40 +108,73 @@ func (sb *suggestionBusiness) SuggestPurchaseOrders(
 		}
 		return nil, err
 	}
+	if len(shortages) > maxShortages {
+		return nil, connect.NewError(connect.CodeResourceExhausted,
+			fmt.Sprintf("the plan is short of %d materials; at most %d can be suggested at once",
+				len(shortages), maxShortages))
+	}
+
+	candidates, err := sb.candidates(ctx, shortages)
+	if err != nil {
+		return nil, err
+	}
 
 	set := newSuggestionSet()
 	for _, shortage := range shortages {
-		if shortage.Quantity <= 0 || shortage.InventoryItemID == "" {
+		quantity, qErr := models.QuantityFromFloat(shortage.Quantity)
+		if qErr != nil || quantity <= 0 || shortage.InventoryItemID == "" {
 			continue
 		}
-		item, findErr := sb.bestSupplierItem(ctx, shortage.InventoryItemID)
-		if findErr != nil {
-			return nil, findErr
-		}
+		item := bestSupplierItem(candidates[shortage.InventoryItemID], currencyCode)
 		if item == nil {
 			set.addUnsourced(shortage)
 			continue
 		}
-		set.add(shortage, item)
+		set.add(shortage, quantity, item)
 	}
 	if set.unsourced != nil {
 		util.Log(ctx).WithField("plan_id", req.GetPlanId()).WithField("items", len(set.unsourced.GetLines())).
 			Info("plan shortages with no active supplier")
 	}
-	return set.result(), nil
+	return set.result()
+}
+
+// candidates loads, in one query, the active items of active suppliers for
+// every shortage, by inventory item.
+func (sb *suggestionBusiness) candidates(
+	ctx context.Context,
+	shortages []Shortage,
+) (map[string][]*models.SupplierItem, error) {
+	seen := make(map[string]bool, len(shortages))
+	ids := make([]string, 0, len(shortages))
+	for _, shortage := range shortages {
+		if shortage.InventoryItemID != "" && !seen[shortage.InventoryItemID] {
+			seen[shortage.InventoryItemID] = true
+			ids = append(ids, shortage.InventoryItemID)
+		}
+	}
+	items, err := sb.supplierItemRepo.ListActiveForInventoryItems(ctx, ids)
+	if err != nil {
+		return nil, data.ErrorConvertToAPI(err)
+	}
+	byItem := make(map[string][]*models.SupplierItem, len(ids))
+	for _, item := range items {
+		byItem[item.InventoryItemID] = append(byItem[item.InventoryItemID], item)
+	}
+	return byItem, nil
 }
 
 // suggestionSet groups suggestion lines by supplier and currency.
 type suggestionSet struct {
 	bySupplier map[string]*procurementv1.PurchaseOrderSuggestion
-	totals     map[string]int64
+	totals     map[string]*big.Int
 	unsourced  *procurementv1.PurchaseOrderSuggestion
 }
 
 func newSuggestionSet() *suggestionSet {
 	return &suggestionSet{
 		bySupplier: map[string]*procurementv1.PurchaseOrderSuggestion{},
-		totals:     map[string]int64{},
+		totals:     map[string]*big.Int{},
 	}
 }
 
@@ -147,8 +191,8 @@ func (s *suggestionSet) addUnsourced(shortage Shortage) {
 }
 
 // add orders the shortage from item's supplier, raised to its minimum order.
-func (s *suggestionSet) add(shortage Shortage, item *models.SupplierItem) {
-	quantity := math.Max(shortage.Quantity, item.MinOrderQuantity)
+func (s *suggestionSet) add(shortage Shortage, quantity models.Quantity, item *models.SupplierItem) {
+	quantity = max(quantity, item.MinOrderQuantity)
 	key := item.SupplierID + "|" + item.CurrencyCode
 	suggestion, ok := s.bySupplier[key]
 	if !ok {
@@ -157,6 +201,7 @@ func (s *suggestionSet) add(shortage Shortage, item *models.SupplierItem) {
 			suggestion.SupplierName = item.Supplier.Name
 		}
 		s.bySupplier[key] = suggestion
+		s.totals[key] = new(big.Int)
 	}
 	unit := shortage.Unit
 	if item.Unit != "" {
@@ -165,16 +210,16 @@ func (s *suggestionSet) add(shortage Shortage, item *models.SupplierItem) {
 	suggestion.Lines = append(suggestion.Lines, &procurementv1.PurchaseOrderSuggestionLine{
 		InventoryItemId:  shortage.InventoryItemID,
 		ItemName:         shortage.ItemName,
-		ShortageQuantity: quantity,
+		ShortageQuantity: quantity.Float(),
 		Unit:             unit,
 		SupplierItemId:   item.GetID(),
-		UnitPrice:        moneyOf(item.CurrencyCode, item.PriceUnits*nanosPerUnit+int64(item.PriceNanos)),
+		UnitPrice:        models.MoneyToProto(item.CurrencyCode, item.PriceUnits, item.PriceNanos),
 	})
-	s.totals[key] += lineTotalNanos(item, quantity)
+	s.totals[key].Add(s.totals[key], lineTotal(item.PriceUnits, item.PriceNanos, quantity))
 }
 
 // result lists suppliers in a stable order, then the unsourced remainder.
-func (s *suggestionSet) result() []*procurementv1.PurchaseOrderSuggestion {
+func (s *suggestionSet) result() ([]*procurementv1.PurchaseOrderSuggestion, error) {
 	keys := make([]string, 0, len(s.bySupplier))
 	for key := range s.bySupplier {
 		keys = append(keys, key)
@@ -183,67 +228,49 @@ func (s *suggestionSet) result() []*procurementv1.PurchaseOrderSuggestion {
 	out := make([]*procurementv1.PurchaseOrderSuggestion, 0, len(keys)+1)
 	for _, key := range keys {
 		suggestion := s.bySupplier[key]
-		currency := suggestion.GetLines()[0].GetUnitPrice().GetCurrencyCode()
-		suggestion.EstimatedTotal = moneyOf(currency, s.totals[key])
+		units, nanos, err := moneyFromNanos(s.totals[key])
+		if err != nil {
+			return nil, err
+		}
+		currencyCode := suggestion.GetLines()[0].GetUnitPrice().GetCurrencyCode()
+		suggestion.EstimatedTotal = models.MoneyToProto(currencyCode, units, nanos)
 		out = append(out, suggestion)
 	}
 	if s.unsourced != nil {
 		out = append(out, s.unsourced)
 	}
-	return out
+	return out, nil
 }
 
-// bestSupplierItem picks the cheapest active item from an active supplier,
-// preferring the shorter lead time and then the smaller minimum order.
-func (sb *suggestionBusiness) bestSupplierItem(
-	ctx context.Context,
-	inventoryItemID string,
-) (*models.SupplierItem, error) {
-	items, err := sb.supplierItemRepo.ListByInventoryItemID(ctx, inventoryItemID)
-	if err != nil {
-		return nil, data.ErrorConvertToAPI(err)
-	}
+// bestSupplierItem picks the cheapest item, preferring the shorter lead time
+// and then the smaller minimum order. Prices are compared only within one
+// currency: currencyCode when given; otherwise the candidates must all share
+// one, or the material is left unsourced for the buyer to choose.
+func bestSupplierItem(items []*models.SupplierItem, currencyCode string) *models.SupplierItem {
 	var best *models.SupplierItem
 	for _, item := range items {
-		if item.Status != int32(procurementv1.SupplierItemStatus_SUPPLIER_ITEM_STATUS_ACTIVE) {
+		if currencyCode != "" && item.CurrencyCode != currencyCode {
 			continue
 		}
-		if item.Supplier != nil && item.Supplier.Status != int32(procurementv1.SupplierStatus_SUPPLIER_STATUS_ACTIVE) {
-			continue
+		if best != nil && item.CurrencyCode != best.CurrencyCode {
+			return nil
 		}
 		if best == nil || better(item, best) {
 			best = item
 		}
 	}
-	return best, nil
+	return best
 }
 
 func better(a, b *models.SupplierItem) bool {
-	pa := a.PriceUnits*nanosPerUnit + int64(a.PriceNanos)
-	pb := b.PriceUnits*nanosPerUnit + int64(b.PriceNanos)
-	if pa != pb {
-		return pa < pb
+	if a.PriceUnits != b.PriceUnits {
+		return a.PriceUnits < b.PriceUnits
+	}
+	if a.PriceNanos != b.PriceNanos {
+		return a.PriceNanos < b.PriceNanos
 	}
 	if a.LeadTimeDays != b.LeadTimeDays {
 		return a.LeadTimeDays < b.LeadTimeDays
 	}
 	return a.MinOrderQuantity < b.MinOrderQuantity
-}
-
-// lineTotalNanos is quantity times the item's price, rounded to the nano the
-// same way purchase order lines are.
-func lineTotalNanos(item *models.SupplierItem, quantity float64) int64 {
-	price := float64(item.PriceUnits*nanosPerUnit + int64(item.PriceNanos))
-	return int64(math.Round(price * quantity))
-}
-
-func moneyOf(currency string, nanos int64) *commonv1.Money {
-	if currency == "" {
-		return nil
-	}
-	return &commonv1.Money{
-		CurrencyCode: currency,
-		Units:        nanos / nanosPerUnit,
-		Nanos:        int32(nanos % nanosPerUnit),
-	}
 }

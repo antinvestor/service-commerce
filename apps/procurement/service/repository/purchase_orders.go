@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/pitabwire/frame/v3/data"
 	"github.com/pitabwire/frame/v3/datastore"
 	"github.com/pitabwire/frame/v3/datastore/pool"
 	"github.com/pitabwire/frame/v3/workerpool"
@@ -108,81 +109,64 @@ func (r *purchaseOrderRepository) Transition(
 	})
 }
 
+// CloseShort closes a partially received order under its row lock, so a
+// receipt racing it either lands first (and counts) or is refused after.
+func (r *purchaseOrderRepository) CloseShort(ctx context.Context, poID string) error {
+	return r.Pool().DB(ctx, false).Transaction(func(tx *gorm.DB) error {
+		result := tx.Model(&models.PurchaseOrder{}).
+			Where("id = ? AND status = ?", poID, poStatusPartiallyReceived).
+			UpdateColumn("status", poStatusClosed)
+		if result.Error != nil {
+			return fmt.Errorf("close purchase order: %w", result.Error)
+		}
+		if result.RowsAffected == 0 {
+			return ErrPurchaseOrderStateChanged
+		}
+		if err := tx.Model(&models.PurchaseOrderLine{}).
+			Where("purchase_order_id = ? AND status IN ?", poID, []int32{poLineStatusPending, poLineStatusPartial}).
+			UpdateColumn("status", poLineStatusClosed).Error; err != nil {
+			return fmt.Errorf("close purchase order lines: %w", err)
+		}
+		return nil
+	})
+}
+
 func (r *purchaseOrderRepository) GetWithLines(ctx context.Context, id string) (*models.PurchaseOrder, error) {
 	po := &models.PurchaseOrder{}
-	err := r.Pool().DB(ctx, true).
-		Preload("Lines").
+	err := r.Pool().DB(ctx, false).
+		Preload("Lines", orderLines).
 		First(po, "id = ?", id).Error
 	return po, err
 }
 
 func (r *purchaseOrderRepository) GetByIdempotencyKey(ctx context.Context, key string) (*models.PurchaseOrder, error) {
 	po := &models.PurchaseOrder{}
-	err := r.Pool().DB(ctx, true).
-		Preload("Lines").
+	err := r.Pool().DB(ctx, false).
+		Preload("Lines", orderLines).
 		First(po, "idempotency_key = ?", key).Error
 	return po, err
 }
 
-func (r *purchaseOrderRepository) ListByPropertyID(
+func (r *purchaseOrderRepository) ListPage(
 	ctx context.Context,
-	propertyID string,
-	limit, offset int,
-) ([]*models.PurchaseOrder, error) {
-	var orders []*models.PurchaseOrder
-	query := r.Pool().DB(ctx, true).
-		Preload("Lines").
-		Where("property_id = ?", propertyID).
-		Order("created_at DESC")
-	if limit > 0 {
-		query = query.Limit(limit)
+	filter PurchaseOrderFilter,
+	page Page,
+) ([]*models.PurchaseOrder, *PageKey, error) {
+	query := r.Pool().DB(ctx, true).Model(&models.PurchaseOrder{}).Preload("Lines", orderLines)
+	if filter.PropertyID != "" {
+		query = query.Where("property_id = ?", filter.PropertyID)
 	}
-	if offset > 0 {
-		query = query.Offset(offset)
+	if filter.SupplierID != "" {
+		query = query.Where("supplier_id = ?", filter.SupplierID)
 	}
-	err := query.Find(&orders).Error
-	return orders, err
+	if filter.Status != 0 {
+		query = query.Where("status = ?", filter.Status)
+	}
+	return findPage(query, page, func(o *models.PurchaseOrder) *data.BaseModel { return &o.BaseModel })
 }
 
-func (r *purchaseOrderRepository) ListBySupplierID(
-	ctx context.Context,
-	supplierID string,
-	limit, offset int,
-) ([]*models.PurchaseOrder, error) {
-	var orders []*models.PurchaseOrder
-	query := r.Pool().DB(ctx, true).
-		Preload("Lines").
-		Where("supplier_id = ?", supplierID).
-		Order("created_at DESC")
-	if limit > 0 {
-		query = query.Limit(limit)
-	}
-	if offset > 0 {
-		query = query.Offset(offset)
-	}
-	err := query.Find(&orders).Error
-	return orders, err
-}
-
-func (r *purchaseOrderRepository) ListByStatus(
-	ctx context.Context,
-	status int32,
-	limit, offset int,
-) ([]*models.PurchaseOrder, error) {
-	var orders []*models.PurchaseOrder
-	query := r.Pool().DB(ctx, true).
-		Preload("Lines").
-		Where("status = ?", status).
-		Order("created_at DESC")
-	if limit > 0 {
-		query = query.Limit(limit)
-	}
-	if offset > 0 {
-		query = query.Offset(offset)
-	}
-	err := query.Find(&orders).Error
-	return orders, err
-}
+// orderLines loads lines in the order they were written.
+func orderLines(db *gorm.DB) *gorm.DB { return db.Order("created_at ASC, id ASC") }
 
 type purchaseOrderLineRepository struct {
 	datastore.BaseRepository[*models.PurchaseOrderLine]

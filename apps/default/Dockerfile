@@ -14,7 +14,7 @@ ARG BUILDTIME
 COPY go.mod go.sum ./
 RUN go mod download
 
-# Copy project files. gen/ holds the locally generated commerce API code.
+# Copy project files. gen/ holds the locally generated API code.
 COPY ./apps/default ./apps/default
 COPY ./pkg ./pkg
 COPY ./gen ./gen

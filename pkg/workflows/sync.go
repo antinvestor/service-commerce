@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package workflows registers commerce's scheduled automations with the
+// Package workflows registers a service's scheduled automations with the
 // trustage orchestrator from the setup job, the same way the notification
 // templates are registered: declared once (the DSL documents embedded from
 // the repository's workflows directory), synced idempotently on every
@@ -27,7 +27,6 @@ package workflows
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io/fs"
 	"path"
@@ -79,8 +78,35 @@ type Client interface {
 // Env values substituted into the DSL before registration, so one set of
 // documents serves every environment.
 type Env struct {
-	// CommerceURI is the base URL trustage calls back into.
+	// CommerceURI is the base URL trustage calls back into for commerce's
+	// documents (the default owner).
 	CommerceURI string
+	// Owner, when set, says the documents belong to another service in this
+	// repository: they carry its name prefix and call back into its URI, and
+	// only its workflows are ever archived.
+	Owner *Owner
+}
+
+// Owner is the service a set of documents belongs to.
+type Owner struct {
+	// Prefix every workflow name carries, e.g. "procurement.".
+	Prefix string
+	// Placeholder in the documents replaced by URI, e.g. "${PROCUREMENT_URI}".
+	Placeholder string
+	URI         string
+	// URIVariable names the setting that supplies URI, for the error when it
+	// is empty.
+	URIVariable string
+}
+
+func (e Env) owner() Owner {
+	if e.Owner != nil {
+		return *e.Owner
+	}
+	return Owner{
+		Prefix: NamePrefix, Placeholder: uriPlaceholder,
+		URI: e.CommerceURI, URIVariable: "COMMERCE_SERVICE_URI",
+	}
 }
 
 // SyncOption tunes RegisterSync.
@@ -154,7 +180,7 @@ func Sync(ctx context.Context, cli Client, defs fs.FS, env Env) error {
 		}
 	}
 
-	archived, err := archiveRetired(ctx, cli, shipped)
+	archived, err := archiveRetired(ctx, cli, shipped, env.owner().Prefix)
 	if err != nil {
 		return err
 	}
@@ -168,9 +194,10 @@ func Sync(ctx context.Context, cli Client, defs fs.FS, env Env) error {
 // environment substituted. It refuses to produce callback URLs without a
 // commerce address, which would register workflows that can never succeed.
 func Load(defs fs.FS, env Env) ([]Document, error) {
-	base := strings.TrimRight(strings.TrimSpace(env.CommerceURI), "/")
+	owner := env.owner()
+	base := strings.TrimRight(strings.TrimSpace(owner.URI), "/")
 	if base == "" {
-		return nil, errors.New("COMMERCE_SERVICE_URI is required to register trustage workflows")
+		return nil, fmt.Errorf("%s is required to register trustage workflows", owner.URIVariable)
 	}
 	files, err := fs.Glob(defs, "*.json")
 	if err != nil {
@@ -179,7 +206,7 @@ func Load(defs fs.FS, env Env) ([]Document, error) {
 	docs := make([]Document, 0, len(files))
 	seen := map[string]string{}
 	for _, file := range files {
-		doc, loadErr := loadOne(defs, file, base)
+		doc, loadErr := loadOne(defs, file, base, owner)
 		if loadErr != nil {
 			return nil, loadErr
 		}
@@ -192,20 +219,20 @@ func Load(defs fs.FS, env Env) ([]Document, error) {
 	return docs, nil
 }
 
-func loadOne(defs fs.FS, file, base string) (Document, error) {
+func loadOne(defs fs.FS, file, base string, owner Owner) (Document, error) {
 	raw, err := fs.ReadFile(defs, file)
 	if err != nil {
 		return Document{}, fmt.Errorf("read %s: %w", file, err)
 	}
-	text := strings.ReplaceAll(string(raw), uriPlaceholder, base)
+	text := strings.ReplaceAll(string(raw), owner.Placeholder, base)
 
 	dsl := &structpb.Struct{}
 	if err = protojson.Unmarshal([]byte(text), dsl); err != nil {
 		return Document{}, fmt.Errorf("parse %s: %w", file, err)
 	}
 	name := dsl.GetFields()["name"].GetStringValue()
-	if !strings.HasPrefix(name, NamePrefix) || len(name) == len(NamePrefix) {
-		return Document{}, fmt.Errorf("%s: workflow name must start with %q", file, NamePrefix)
+	if !strings.HasPrefix(name, owner.Prefix) || len(name) == len(owner.Prefix) {
+		return Document{}, fmt.Errorf("%s: workflow name must start with %q", file, owner.Prefix)
 	}
 	// Trustage only fires what is listed under "schedules" (cron_expr per
 	// entry); a scheduled automation without one would register, activate and
@@ -249,8 +276,8 @@ func syncOne(ctx context.Context, cli Client, doc Document) (bool, error) {
 	return true, nil
 }
 
-// archiveRetired archives active commerce workflows whose document is gone.
-func archiveRetired(ctx context.Context, cli Client, shipped map[string]bool) (int, error) {
+// archiveRetired archives the owner's active workflows whose document is gone.
+func archiveRetired(ctx context.Context, cli Client, shipped map[string]bool, prefix string) (int, error) {
 	archived := 0
 	var cursor *commonv1.PageCursor
 	for {
@@ -265,7 +292,7 @@ func archiveRetired(ctx context.Context, cli Client, shipped map[string]bool) (i
 			return archived, fmt.Errorf("list active workflows: %w", err)
 		}
 		for _, wf := range resp.GetItems() {
-			if !strings.HasPrefix(wf.GetName(), NamePrefix) || shipped[wf.GetName()] {
+			if !strings.HasPrefix(wf.GetName(), prefix) || shipped[wf.GetName()] {
 				continue
 			}
 			if _, err = cli.ArchiveWorkflow(ctx,

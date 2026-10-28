@@ -69,6 +69,9 @@ const (
 	// CommerceServiceListProductVariantsProcedure is the procedure name of the CommerceService's
 	// ListProductVariants RPC.
 	CommerceServiceListProductVariantsProcedure = "/commerce.v1.CommerceService/ListProductVariants"
+	// CommerceServiceReceiveStockProcedure is the procedure name of the CommerceService's ReceiveStock
+	// RPC.
+	CommerceServiceReceiveStockProcedure = "/commerce.v1.CommerceService/ReceiveStock"
 	// CommerceServiceCreateCartProcedure is the procedure name of the CommerceService's CreateCart RPC.
 	CommerceServiceCreateCartProcedure = "/commerce.v1.CommerceService/CreateCart"
 	// CommerceServiceGetCartProcedure is the procedure name of the CommerceService's GetCart RPC.
@@ -243,6 +246,13 @@ var (
 			StreamType: connect.StreamTypeUnary,
 			Schema:     v1.File_v1_commerce_proto.Services().ByName("CommerceService").Methods().ByName("ListProductVariants"),
 			Procedure:  CommerceServiceListProductVariantsProcedure,
+		}
+	})
+	commerceServiceReceiveStockSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_commerce_proto.Services().ByName("CommerceService").Methods().ByName("ReceiveStock"),
+			Procedure:  CommerceServiceReceiveStockProcedure,
 		}
 	})
 	commerceServiceCreateCartSpec = sync.OnceValue(func() connect.Spec {
@@ -494,6 +504,10 @@ type CommerceServiceClient interface {
 	UpdateProduct(context.Context, *v1.UpdateProductRequest) (*v1.UpdateProductResponse, error)
 	// Lists the variants of a product.
 	ListProductVariants(context.Context, *v1.ListProductVariantsRequest) (*v1.ListProductVariantsResponse, error)
+	// Adds goods received from a supplier to a variant's stock. Internal: the
+	// procurement service calls it once per goods receipt line, and a repeated
+	// reference adds nothing (it answers with the stock as it stands).
+	ReceiveStock(context.Context, *v1.ReceiveStockRequest) (*v1.ReceiveStockResponse, error)
 	CreateCart(context.Context, *v1.CreateCartRequest) (*v1.CreateCartResponse, error)
 	GetCart(context.Context, *v1.GetCartRequest) (*v1.GetCartResponse, error)
 	AddCartLine(context.Context, *v1.AddCartLineRequest) (*v1.AddCartLineResponse, error)
@@ -614,6 +628,10 @@ type CommerceServiceHandler interface {
 	UpdateProduct(context.Context, *v1.UpdateProductRequest) (*v1.UpdateProductResponse, error)
 	// Lists the variants of a product.
 	ListProductVariants(context.Context, *v1.ListProductVariantsRequest) (*v1.ListProductVariantsResponse, error)
+	// Adds goods received from a supplier to a variant's stock. Internal: the
+	// procurement service calls it once per goods receipt line, and a repeated
+	// reference adds nothing (it answers with the stock as it stands).
+	ReceiveStock(context.Context, *v1.ReceiveStockRequest) (*v1.ReceiveStockResponse, error)
 	CreateCart(context.Context, *v1.CreateCartRequest) (*v1.CreateCartResponse, error)
 	GetCart(context.Context, *v1.GetCartRequest) (*v1.GetCartResponse, error)
 	AddCartLine(context.Context, *v1.AddCartLineRequest) (*v1.AddCartLineResponse, error)
@@ -715,6 +733,7 @@ func RegisterCommerceServiceHandler(server *connect.Server, svc CommerceServiceH
 		connect.Method{Spec: commerceServiceUpdateProductVariantSpec(), Handler: adapter.updateProductVariant},
 		connect.Method{Spec: commerceServiceUpdateProductSpec(), Handler: adapter.updateProduct},
 		connect.Method{Spec: commerceServiceListProductVariantsSpec(), Handler: adapter.listProductVariants},
+		connect.Method{Spec: commerceServiceReceiveStockSpec(), Handler: adapter.receiveStock},
 		connect.Method{Spec: commerceServiceCreateCartSpec(), Handler: adapter.createCart},
 		connect.Method{Spec: commerceServiceGetCartSpec(), Handler: adapter.getCart},
 		connect.Method{Spec: commerceServiceAddCartLineSpec(), Handler: adapter.addCartLine},
@@ -798,6 +817,10 @@ func (UnimplementedCommerceServiceHandler) UpdateProduct(context.Context, *v1.Up
 
 func (UnimplementedCommerceServiceHandler) ListProductVariants(context.Context, *v1.ListProductVariantsRequest) (*v1.ListProductVariantsResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, "commerce.v1.CommerceService.ListProductVariants is not implemented")
+}
+
+func (UnimplementedCommerceServiceHandler) ReceiveStock(context.Context, *v1.ReceiveStockRequest) (*v1.ReceiveStockResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "commerce.v1.CommerceService.ReceiveStock is not implemented")
 }
 
 func (UnimplementedCommerceServiceHandler) CreateCart(context.Context, *v1.CreateCartRequest) (*v1.CreateCartResponse, error) {
@@ -1019,6 +1042,14 @@ func (c *commerceServiceClient) UpdateProduct(ctx context.Context, req *v1.Updat
 func (c *commerceServiceClient) ListProductVariants(ctx context.Context, req *v1.ListProductVariantsRequest) (*v1.ListProductVariantsResponse, error) {
 	var res v1.ListProductVariantsResponse
 	if err := c.client.CallUnary(ctx, commerceServiceListProductVariantsSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *commerceServiceClient) ReceiveStock(ctx context.Context, req *v1.ReceiveStockRequest) (*v1.ReceiveStockResponse, error) {
+	var res v1.ReceiveStockResponse
+	if err := c.client.CallUnary(ctx, commerceServiceReceiveStockSpec(), req, &res); err != nil {
 		return nil, err
 	}
 	return &res, nil
@@ -1412,6 +1443,18 @@ func (h commerceServiceHandler) listProductVariants(ctx context.Context, _ conne
 		return err
 	}
 	res, err := h.svc.ListProductVariants(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h commerceServiceHandler) receiveStock(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.ReceiveStockRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.ReceiveStock(ctx, &req)
 	if err != nil {
 		return err
 	}

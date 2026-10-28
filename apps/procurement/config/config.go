@@ -25,4 +25,15 @@ type ProcurementConfig struct {
 	// for purchase order suggestions. Empty disables suggestions.
 	ManufacturingServiceURI                   string `env:"MANUFACTURING_SERVICE_URI"                      envDefault:""`
 	ManufacturingServiceWorkloadAPITargetPath string `env:"MANUFACTURING_SERVICE_WORKLOAD_API_TARGET_PATH" envDefault:"/ns/manufacturing/sa/service-manufacturing"`
+
+	// CommerceServiceURI is where received resale stock is pushed (product
+	// variants). Empty leaves those receipt lines pending.
+	CommerceServiceURI                   string `env:"COMMERCE_SERVICE_URI"                      envDefault:""`
+	CommerceServiceWorkloadAPITargetPath string `env:"COMMERCE_SERVICE_WORKLOAD_API_TARGET_PATH" envDefault:"/ns/commerce/sa/service-commerce"`
+
+	// Trustage runs the scheduled stock delivery retry; the setup job
+	// registers the workflow, which calls back into ProcurementServiceURI.
+	TrustageServiceURI                   string `env:"TRUSTAGE_SERVICE_URI"                      envDefault:""`
+	TrustageServiceWorkloadAPITargetPath string `env:"TRUSTAGE_SERVICE_WORKLOAD_API_TARGET_PATH" envDefault:"/ns/trustage/sa/service-trustage"`
+	ProcurementServiceURI                string `env:"PROCUREMENT_SERVICE_URI"                   envDefault:""`
 }

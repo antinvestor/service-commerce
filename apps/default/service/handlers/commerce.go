@@ -54,6 +54,7 @@ type CommerceServer struct {
 	ledgerBusiness     business.LedgerBusiness
 	eventBusiness      business.EventBusiness
 	storefront         business.StorefrontBusiness
+	stockReceipts      business.StockReceiptBusiness
 }
 
 // CommerceServer answers every RPC itself; a new one in the proto fails the
@@ -174,6 +175,9 @@ func NewCommerceServer(
 		),
 		pricingBusiness: pricingBusiness,
 		eventBusiness:   events,
+		stockReceipts: business.NewStockReceiptBusiness(
+			variantRepo, repository.NewStockReceiptRepository(dbPool),
+		),
 		storefront: business.NewStorefrontBusiness(
 			shopRepo, catalogBusiness, orderBusiness, paymentBusiness, deps.Buyers,
 			repository.NewLimitRepository(dbPool), deps.Storefront, deps.StorefrontBaseURL,
@@ -333,6 +337,25 @@ func (cs *CommerceServer) ListProductVariants(
 		return nil, errorutil.CleanErr(err)
 	}
 	return &commercev1.ListProductVariantsResponse{ProductVariants: variants}, nil
+}
+
+// ReceiveStock is for the procurement service only: stock_receive is
+// granted to its service account and bound to no role, and the caller must
+// be an internal system. The variant is found across tenants and must belong
+// to the tenant the receipt was recorded in.
+func (cs *CommerceServer) ReceiveStock(
+	ctx context.Context,
+	req *commercev1.ReceiveStockRequest,
+) (*commercev1.ReceiveStockResponse, error) {
+	claims := security.ClaimsFromContext(ctx)
+	if claims == nil || !claims.IsInternalSystem() {
+		return nil, connect.NewError(connect.CodePermissionDenied, "stock receipts come from internal services only")
+	}
+	resp, err := cs.stockReceipts.ReceiveStock(dbrole.AcrossTenants(ctx, "receive procurement stock"), req)
+	if err != nil {
+		return nil, errorutil.CleanErr(err)
+	}
+	return resp, nil
 }
 
 func (cs *CommerceServer) UpdateProductVariant(

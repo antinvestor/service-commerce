@@ -39,5 +39,6 @@ func Migrate(ctx context.Context, dbManager datastore.Manager, migrationPath str
 		&models.CustomerPriceListAssignment{}, &models.CustomerPriceOverride{},
 		&models.DiscountRule{},
 		&models.LedgerPosting{},
+		&models.StockReceipt{},
 	)
 }

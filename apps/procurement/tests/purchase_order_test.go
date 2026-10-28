@@ -19,7 +19,6 @@ import (
 	"testing"
 
 	commonv1 "buf.build/gen/go/antinvestor/common/protocolbuffers/go/common/v1"
-	procurementv1 "buf.build/gen/go/antinvestor/procurement/protocolbuffers/go/v1"
 	"connectrpc.com/connect/v2"
 	"github.com/pitabwire/frame/v3"
 	"github.com/pitabwire/frame/v3/datastore"
@@ -28,6 +27,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/protobuf/proto"
+
+	procurementv1 "github.com/antinvestor/service-commerce/gen/go/procurement/v1"
 
 	"github.com/antinvestor/service-commerce/apps/procurement/service/business"
 	"github.com/antinvestor/service-commerce/apps/procurement/service/repository"
@@ -58,7 +59,7 @@ func (pts *PurchaseOrderTestSuite) getBusiness(ctx context.Context, svc *frame.S
 
 	return allPOBiz{
 		supplierBiz: business.NewSupplierBusiness(ctx, supplierRepo, supplierItemRepo),
-		poBiz:       business.NewPurchaseOrderBusiness(ctx, poRepo, polRepo, supplierItemRepo),
+		poBiz:       business.NewPurchaseOrderBusiness(ctx, poRepo, polRepo, supplierRepo, supplierItemRepo),
 	}
 }
 

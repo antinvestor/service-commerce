@@ -18,9 +18,10 @@ import (
 	"time"
 
 	commonv1 "buf.build/gen/go/antinvestor/common/protocolbuffers/go/common/v1"
-	procurementv1 "buf.build/gen/go/antinvestor/procurement/protocolbuffers/go/v1"
 	"github.com/pitabwire/frame/v3/data"
 	"google.golang.org/protobuf/types/known/timestamppb"
+
+	procurementv1 "github.com/antinvestor/service-commerce/gen/go/procurement/v1"
 )
 
 // Supplier represents a vendor or supplier entity.
@@ -56,14 +57,18 @@ func (s *Supplier) ToAPI() *procurementv1.Supplier {
 // SupplierItem represents an item offered by a supplier.
 type SupplierItem struct {
 	data.BaseModel
-	SupplierID       string `gorm:"type:varchar(50);index:idx_supplier_item_supplier_id"`
-	InventoryItemID  string `gorm:"type:varchar(50);index:idx_supplier_item_inventory_id"`
+	SupplierID      string `gorm:"type:varchar(50);index:idx_supplier_item_supplier_id"`
+	InventoryItemID string `gorm:"type:varchar(50);index:idx_supplier_item_inventory_id"`
+	// SupplyKind says where received stock lands: a manufacturing inventory
+	// item (InventoryItemID) or a commerce product variant (ProductVariantID).
+	SupplyKind       int32  `gorm:"default:1"`
+	ProductVariantID string `gorm:"type:varchar(50)"`
 	SupplierSKU      string `gorm:"type:varchar(255)"`
 	CurrencyCode     string `gorm:"type:varchar(3)"`
 	PriceUnits       int64
 	PriceNanos       int32
-	MinOrderQuantity float64
-	Unit             string `gorm:"type:varchar(50)"`
+	MinOrderQuantity Quantity `gorm:"type:numeric(20,6);not null;default:0"`
+	Unit             string   `gorm:"type:varchar(50)"`
 	LeadTimeDays     int32
 	Status           int32 `gorm:"default:1"`
 
@@ -77,10 +82,12 @@ func (si *SupplierItem) ToAPI() *procurementv1.SupplierItem {
 		InventoryItemId:  si.InventoryItemID,
 		SupplierSku:      si.SupplierSKU,
 		UnitPrice:        MoneyToProto(si.CurrencyCode, si.PriceUnits, si.PriceNanos),
-		MinOrderQuantity: si.MinOrderQuantity,
+		MinOrderQuantity: si.MinOrderQuantity.Float(),
 		Unit:             si.Unit,
 		LeadTimeDays:     si.LeadTimeDays,
 		Status:           procurementv1.SupplierItemStatus(si.Status),
+		SupplyKind:       procurementv1.SupplyKind(si.SupplyKind),
+		ProductVariantId: si.ProductVariantID,
 		CreatedAt:        timestamppb.New(si.CreatedAt),
 	}
 }
@@ -101,6 +108,9 @@ type PurchaseOrder struct {
 	Notes                string `gorm:"type:text"`
 	PlanID               string `gorm:"type:varchar(50)"`
 	IdempotencyKey       string `gorm:"type:varchar(255)"` // unique per tenancy: migrations/0001
+	// RequestHash fingerprints the create request, so an idempotent replay
+	// answers only the same request.
+	RequestHash string `gorm:"type:varchar(64)"`
 
 	Lines    []*PurchaseOrderLine `gorm:"foreignKey:PurchaseOrderID"`
 	Supplier *Supplier            `gorm:"foreignKey:SupplierID"`
@@ -139,12 +149,14 @@ func (po *PurchaseOrder) ToAPI() *procurementv1.PurchaseOrder {
 // PurchaseOrderLine represents a line item in a purchase order.
 type PurchaseOrderLine struct {
 	data.BaseModel
-	PurchaseOrderID  string `gorm:"type:varchar(50);index:idx_pol_po_id"`
-	SupplierItemID   string `gorm:"type:varchar(50)"`
-	InventoryItemID  string `gorm:"type:varchar(50)"`
-	OrderedQuantity  float64
-	ReceivedQuantity float64
-	CurrencyCode     string `gorm:"type:varchar(3)"`
+	PurchaseOrderID  string   `gorm:"type:varchar(50);index:idx_pol_po_id"`
+	SupplierItemID   string   `gorm:"type:varchar(50)"`
+	InventoryItemID  string   `gorm:"type:varchar(50)"`
+	SupplyKind       int32    `gorm:"default:1"`
+	ProductVariantID string   `gorm:"type:varchar(50)"`
+	OrderedQuantity  Quantity `gorm:"type:numeric(20,6);not null;default:0"`
+	ReceivedQuantity Quantity `gorm:"type:numeric(20,6);not null;default:0"`
+	CurrencyCode     string   `gorm:"type:varchar(3)"`
 	PriceUnits       int64
 	PriceNanos       int32
 	Unit             string `gorm:"type:varchar(50)"`
@@ -159,11 +171,13 @@ func (pol *PurchaseOrderLine) ToAPI() *procurementv1.PurchaseOrderLine {
 		PurchaseOrderId:  pol.PurchaseOrderID,
 		SupplierItemId:   pol.SupplierItemID,
 		InventoryItemId:  pol.InventoryItemID,
-		OrderedQuantity:  pol.OrderedQuantity,
-		ReceivedQuantity: pol.ReceivedQuantity,
+		OrderedQuantity:  pol.OrderedQuantity.Float(),
+		ReceivedQuantity: pol.ReceivedQuantity.Float(),
 		UnitPrice:        MoneyToProto(pol.CurrencyCode, pol.PriceUnits, pol.PriceNanos),
 		Unit:             pol.Unit,
 		Status:           procurementv1.PurchaseOrderLineStatus(pol.Status),
+		SupplyKind:       procurementv1.SupplyKind(pol.SupplyKind),
+		ProductVariantId: pol.ProductVariantID,
 	}
 }
 
@@ -177,6 +191,9 @@ type GoodsReceipt struct {
 	Status          int32  `gorm:"default:1"`
 	Notes           string `gorm:"type:text"`
 	IdempotencyKey  string `gorm:"type:varchar(255)"` // unique per tenancy: migrations/0001
+	RequestHash     string `gorm:"type:varchar(64)"`
+	// StockLocationID is the manufacturing location raw materials go to.
+	StockLocationID string `gorm:"type:varchar(50)"`
 
 	Lines         []*GoodsReceiptLine `gorm:"foreignKey:GoodsReceiptID"`
 	PurchaseOrder *PurchaseOrder      `gorm:"foreignKey:PurchaseOrderID"`
@@ -196,6 +213,7 @@ func (gr *GoodsReceipt) ToAPI() *procurementv1.GoodsReceipt {
 		Status:          procurementv1.GoodsReceiptStatus(gr.Status),
 		Notes:           gr.Notes,
 		Lines:           lines,
+		StockLocationId: gr.StockLocationID,
 		CreatedAt:       timestamppb.New(gr.CreatedAt),
 	}
 
@@ -209,16 +227,25 @@ func (gr *GoodsReceipt) ToAPI() *procurementv1.GoodsReceipt {
 // GoodsReceiptLine represents a line item in a goods receipt.
 type GoodsReceiptLine struct {
 	data.BaseModel
-	GoodsReceiptID      string `gorm:"type:varchar(50);index:idx_grl_gr_id"`
-	PurchaseOrderLineID string `gorm:"type:varchar(50)"`
-	InventoryItemID     string `gorm:"type:varchar(50)"`
-	ReceivedQuantity    float64
-	AcceptedQuantity    float64
-	RejectedQuantity    float64
-	RejectionReason     string `gorm:"type:text"`
-	LotNumber           string `gorm:"type:varchar(255)"`
-	ExpiryDate          *time.Time
-	Unit                string `gorm:"type:varchar(50)"`
+	GoodsReceiptID      string   `gorm:"type:varchar(50);index:idx_grl_gr_id"`
+	PurchaseOrderLineID string   `gorm:"type:varchar(50)"`
+	InventoryItemID     string   `gorm:"type:varchar(50)"`
+	SupplyKind          int32    `gorm:"default:1"`
+	ProductVariantID    string   `gorm:"type:varchar(50)"`
+	ReceivedQuantity    Quantity `gorm:"type:numeric(20,6);not null;default:0"`
+	AcceptedQuantity    Quantity `gorm:"type:numeric(20,6);not null;default:0"`
+	RejectedQuantity    Quantity `gorm:"type:numeric(20,6);not null;default:0"`
+	RejectionReason     string   `gorm:"type:text"`
+	// DeliveryStatus tracks the accepted stock to its destination
+	// (procurementv1.StockDeliveryStatus); it is written with the receipt and
+	// moves once, PENDING to DELIVERED or FAILED.
+	DeliveryStatus   int32
+	DeliveryAttempts int32
+	DeliveryNote     string `gorm:"type:text"`
+	DeliveredAt      *time.Time
+	LotNumber        string `gorm:"type:varchar(255)"`
+	ExpiryDate       *time.Time
+	Unit             string `gorm:"type:varchar(50)"`
 
 	GoodsReceipt *GoodsReceipt `gorm:"foreignKey:GoodsReceiptID"`
 }
@@ -229,12 +256,16 @@ func (grl *GoodsReceiptLine) ToAPI() *procurementv1.GoodsReceiptLine {
 		GoodsReceiptId:      grl.GoodsReceiptID,
 		PurchaseOrderLineId: grl.PurchaseOrderLineID,
 		InventoryItemId:     grl.InventoryItemID,
-		ReceivedQuantity:    grl.ReceivedQuantity,
-		AcceptedQuantity:    grl.AcceptedQuantity,
-		RejectedQuantity:    grl.RejectedQuantity,
+		ReceivedQuantity:    grl.ReceivedQuantity.Float(),
+		AcceptedQuantity:    grl.AcceptedQuantity.Float(),
+		RejectedQuantity:    grl.RejectedQuantity.Float(),
 		RejectionReason:     grl.RejectionReason,
 		LotNumber:           grl.LotNumber,
 		Unit:                grl.Unit,
+		SupplyKind:          procurementv1.SupplyKind(grl.SupplyKind),
+		ProductVariantId:    grl.ProductVariantID,
+		DeliveryStatus:      procurementv1.StockDeliveryStatus(grl.DeliveryStatus),
+		DeliveryNote:        grl.DeliveryNote,
 	}
 
 	if grl.ExpiryDate != nil {

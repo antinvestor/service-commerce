@@ -18,16 +18,17 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math"
+	"math/big"
 	"strings"
 	"time"
 
-	procurementv1 "buf.build/gen/go/antinvestor/procurement/protocolbuffers/go/v1"
 	"connectrpc.com/connect/v2"
 	"github.com/pitabwire/frame/v3"
 	"github.com/pitabwire/frame/v3/data"
 	"github.com/pitabwire/frame/v3/security"
 	"github.com/pitabwire/util"
+
+	procurementv1 "github.com/antinvestor/service-commerce/gen/go/procurement/v1"
 
 	"github.com/antinvestor/service-commerce/apps/procurement/service/models"
 	"github.com/antinvestor/service-commerce/apps/procurement/service/repository"
@@ -42,7 +43,7 @@ type PurchaseOrderBusiness interface {
 	SearchPurchaseOrders(
 		ctx context.Context,
 		req *procurementv1.PurchaseOrderSearchRequest,
-	) ([]*procurementv1.PurchaseOrder, error)
+	) ([]*procurementv1.PurchaseOrder, string, error)
 	SubmitPurchaseOrder(
 		ctx context.Context,
 		req *procurementv1.PurchaseOrderSubmitRequest,
@@ -51,17 +52,29 @@ type PurchaseOrderBusiness interface {
 		ctx context.Context,
 		req *procurementv1.PurchaseOrderCancelRequest,
 	) (*procurementv1.PurchaseOrder, error)
+	// ClosePurchaseOrder closes a partially received order short: what was
+	// received stands and nothing more is accepted. Closing a closed order
+	// returns it unchanged.
+	ClosePurchaseOrder(
+		ctx context.Context,
+		req *procurementv1.PurchaseOrderCloseRequest,
+	) (*procurementv1.PurchaseOrder, error)
 }
+
+// maxOrderLines bounds one purchase order.
+const maxOrderLines = 200
 
 func NewPurchaseOrderBusiness(
 	_ context.Context,
 	poRepo repository.PurchaseOrderRepository,
 	polRepo repository.PurchaseOrderLineRepository,
+	supplierRepo repository.SupplierRepository,
 	supplierItemRepo repository.SupplierItemRepository,
 ) PurchaseOrderBusiness {
 	return &purchaseOrderBusiness{
 		poRepo:           poRepo,
 		polRepo:          polRepo,
+		supplierRepo:     supplierRepo,
 		supplierItemRepo: supplierItemRepo,
 	}
 }
@@ -69,6 +82,7 @@ func NewPurchaseOrderBusiness(
 type purchaseOrderBusiness struct {
 	poRepo           repository.PurchaseOrderRepository
 	polRepo          repository.PurchaseOrderLineRepository
+	supplierRepo     repository.SupplierRepository
 	supplierItemRepo repository.SupplierItemRepository
 }
 
@@ -76,15 +90,9 @@ func (pob *purchaseOrderBusiness) CreatePurchaseOrder(
 	ctx context.Context,
 	req *procurementv1.PurchaseOrderCreateRequest,
 ) (*procurementv1.PurchaseOrder, error) {
-	// Idempotency check
-	if req.GetIdempotencyKey() != "" {
-		existing, err := pob.poRepo.GetByIdempotencyKey(ctx, req.GetIdempotencyKey())
-		if err == nil && existing != nil {
-			return replayedPurchaseOrder(existing, req)
-		}
-		if err != nil && !frame.ErrorIsNotFound(err) {
-			return nil, data.ErrorConvertToAPI(err)
-		}
+	requestPrint := fingerprint(req)
+	if replay, found, err := pob.replay(ctx, req, requestPrint); found || err != nil {
+		return replay, err
 	}
 
 	if req.GetSupplierId() == "" {
@@ -93,10 +101,12 @@ func (pob *purchaseOrderBusiness) CreatePurchaseOrder(
 	if req.GetPropertyId() == "" {
 		return nil, connect.NewError(connect.CodeInvalidArgument, "property_id is required")
 	}
-	if len(req.GetLines()) == 0 {
-		return nil, connect.NewError(
-			connect.CodeInvalidArgument,
-			"purchase order must have at least one line")
+	if len(req.GetLines()) == 0 || len(req.GetLines()) > maxOrderLines {
+		return nil, connect.NewError(connect.CodeInvalidArgument,
+			fmt.Sprintf("a purchase order has between 1 and %d lines", maxOrderLines))
+	}
+	if err := pob.requireActiveSupplier(ctx, req.GetSupplierId()); err != nil {
+		return nil, err
 	}
 
 	// Build lines and compute total
@@ -132,13 +142,14 @@ func (pob *purchaseOrderBusiness) CreatePurchaseOrder(
 		Notes:                req.GetNotes(),
 		PlanID:               req.GetPlanId(),
 		IdempotencyKey:       idempotencyKey,
+		RequestHash:          requestPrint,
 	}
 
 	if createErr := pob.poRepo.CreateWithLines(ctx, po, orderLines); createErr != nil {
 		if req.GetIdempotencyKey() != "" && data.ErrorIsDuplicateKey(createErr) {
 			existing, getErr := pob.poRepo.GetByIdempotencyKey(ctx, req.GetIdempotencyKey())
 			if getErr == nil {
-				return replayedPurchaseOrder(existing, req)
+				return replayedPurchaseOrder(existing, req, requestPrint)
 			}
 		}
 		return nil, data.ErrorConvertToAPI(createErr)
@@ -147,14 +158,53 @@ func (pob *purchaseOrderBusiness) CreatePurchaseOrder(
 	return pob.GetPurchaseOrder(ctx, po.GetID())
 }
 
+// replay answers a request whose idempotency key already created an order.
+func (pob *purchaseOrderBusiness) replay(
+	ctx context.Context,
+	req *procurementv1.PurchaseOrderCreateRequest,
+	requestPrint string,
+) (*procurementv1.PurchaseOrder, bool, error) {
+	if req.GetIdempotencyKey() == "" {
+		return nil, false, nil
+	}
+	existing, err := pob.poRepo.GetByIdempotencyKey(ctx, req.GetIdempotencyKey())
+	if err != nil {
+		if frame.ErrorIsNotFound(err) {
+			return nil, false, nil
+		}
+		return nil, false, data.ErrorConvertToAPI(err)
+	}
+	po, err := replayedPurchaseOrder(existing, req, requestPrint)
+	return po, true, err
+}
+
+// requireActiveSupplier refuses orders to a supplier that is missing,
+// suspended or inactive.
+func (pob *purchaseOrderBusiness) requireActiveSupplier(ctx context.Context, supplierID string) error {
+	supplier, err := pob.supplierRepo.GetByID(ctx, supplierID)
+	if err != nil {
+		if frame.ErrorIsNotFound(err) {
+			return connect.NewError(connect.CodeNotFound, "supplier not found")
+		}
+		return data.ErrorConvertToAPI(err)
+	}
+	if supplier.Status != int32(procurementv1.SupplierStatus_SUPPLIER_STATUS_ACTIVE) {
+		return connect.NewError(connect.CodeFailedPrecondition, "supplier is not active")
+	}
+	return nil
+}
+
 // replayedPurchaseOrder returns the order an idempotency key already created,
-// only when the retry is for the same property and supplier; a key reused for
-// another order is refused rather than answered with someone else's order.
+// only when the retry is the same request (property, supplier and lines); a
+// key reused for anything else is refused rather than answered with another
+// order.
 func replayedPurchaseOrder(
 	existing *models.PurchaseOrder,
 	req *procurementv1.PurchaseOrderCreateRequest,
+	requestPrint string,
 ) (*procurementv1.PurchaseOrder, error) {
-	if existing.PropertyID != req.GetPropertyId() || existing.SupplierID != req.GetSupplierId() {
+	if existing.PropertyID != req.GetPropertyId() || existing.SupplierID != req.GetSupplierId() ||
+		!samePrint(existing.RequestHash, requestPrint) {
 		return nil, connect.NewError(connect.CodeAlreadyExists,
 			"idempotency_key was already used for another purchase order")
 	}
@@ -175,40 +225,29 @@ func (pob *purchaseOrderBusiness) GetPurchaseOrder(
 func (pob *purchaseOrderBusiness) SearchPurchaseOrders(
 	ctx context.Context,
 	req *procurementv1.PurchaseOrderSearchRequest,
-) ([]*procurementv1.PurchaseOrder, error) {
-	limit := 50
-	offset := 0
-	if req.GetSearch() != nil && req.GetSearch().GetCursor() != nil {
-		if req.GetSearch().GetCursor().GetLimit() > 0 {
-			limit = int(req.GetSearch().GetCursor().GetLimit())
-		}
+) ([]*procurementv1.PurchaseOrder, string, error) {
+	filter := repository.PurchaseOrderFilter{
+		PropertyID: req.GetPropertyId(),
+		SupplierID: req.GetSupplierId(),
+		Status:     int32(req.GetStatus()),
 	}
-
-	var orders []*models.PurchaseOrder
-	var err error
-
-	switch {
-	case req.GetPropertyId() != "":
-		orders, err = pob.poRepo.ListByPropertyID(ctx, req.GetPropertyId(), limit, offset)
-	case req.GetSupplierId() != "":
-		orders, err = pob.poRepo.ListBySupplierID(ctx, req.GetSupplierId(), limit, offset)
-	case req.GetStatus() != procurementv1.PurchaseOrderStatus_PURCHASE_ORDER_STATUS_UNSPECIFIED:
-		orders, err = pob.poRepo.ListByStatus(ctx, int32(req.GetStatus()), limit, offset)
-	default:
-		return nil, connect.NewError(
-			connect.CodeInvalidArgument,
+	if filter == (repository.PurchaseOrderFilter{}) {
+		return nil, "", connect.NewError(connect.CodeInvalidArgument,
 			"property_id, supplier_id, or status filter is required")
 	}
-
+	page, err := pageFromSearch(req.GetSearch())
 	if err != nil {
-		return nil, data.ErrorConvertToAPI(err)
+		return nil, "", err
 	}
-
+	orders, next, err := pob.poRepo.ListPage(ctx, filter, page)
+	if err != nil {
+		return nil, "", data.ErrorConvertToAPI(err)
+	}
 	result := make([]*procurementv1.PurchaseOrder, 0, len(orders))
 	for _, o := range orders {
 		result = append(result, o.ToAPI())
 	}
-	return result, nil
+	return result, repository.EncodePageKey(next), nil
 }
 
 func (pob *purchaseOrderBusiness) SubmitPurchaseOrder(
@@ -266,6 +305,9 @@ func (pob *purchaseOrderBusiness) CancelPurchaseOrder(
 	case procurementv1.PurchaseOrderStatus_PURCHASE_ORDER_STATUS_PARTIALLY_RECEIVED:
 		return nil, connect.NewError(connect.CodeFailedPrecondition,
 			"cannot cancel a partially received purchase order; receive or close remaining lines")
+	case procurementv1.PurchaseOrderStatus_PURCHASE_ORDER_STATUS_CLOSED:
+		return nil, connect.NewError(connect.CodeFailedPrecondition,
+			"purchase order is closed")
 	case procurementv1.PurchaseOrderStatus_PURCHASE_ORDER_STATUS_CANCELLED:
 		return po.ToAPI(), nil
 	case procurementv1.PurchaseOrderStatus_PURCHASE_ORDER_STATUS_UNSPECIFIED,
@@ -292,20 +334,49 @@ func (pob *purchaseOrderBusiness) CancelPurchaseOrder(
 	return pob.GetPurchaseOrder(ctx, po.GetID())
 }
 
+func (pob *purchaseOrderBusiness) ClosePurchaseOrder(
+	ctx context.Context,
+	req *procurementv1.PurchaseOrderCloseRequest,
+) (*procurementv1.PurchaseOrder, error) {
+	po, err := pob.poRepo.GetWithLines(ctx, req.GetId())
+	if err != nil {
+		return nil, data.ErrorConvertToAPI(err)
+	}
+	if po.Status == int32(procurementv1.PurchaseOrderStatus_PURCHASE_ORDER_STATUS_CLOSED) {
+		return po.ToAPI(), nil
+	}
+	if po.Status != int32(procurementv1.PurchaseOrderStatus_PURCHASE_ORDER_STATUS_PARTIALLY_RECEIVED) {
+		return nil, connect.NewError(connect.CodeFailedPrecondition,
+			"only a partially received purchase order can be closed short; cancel one with nothing received")
+	}
+	if err = pob.poRepo.CloseShort(ctx, po.GetID()); err != nil {
+		if errors.Is(err, repository.ErrPurchaseOrderStateChanged) {
+			return nil, connect.NewError(connect.CodeFailedPrecondition,
+				"purchase order changed; reload and retry")
+		}
+		return nil, data.ErrorConvertToAPI(err)
+	}
+	util.Log(ctx).WithFields(map[string]any{
+		"purchase_order_id": po.GetID(), "reason": req.GetReason(),
+	}).Info("purchase order closed short")
+	return pob.GetPurchaseOrder(ctx, po.GetID())
+}
+
 func (pob *purchaseOrderBusiness) buildPurchaseOrderLines(
 	ctx context.Context,
 	supplierID string,
 	lines []*procurementv1.PurchaseOrderLineInput,
 ) ([]*models.PurchaseOrderLine, string, int64, int32, error) {
-	const nanosPerUnit int64 = 1_000_000_000
-
-	var orderLines []*models.PurchaseOrderLine
+	orderLines := make([]*models.PurchaseOrderLine, 0, len(lines))
 	var totalCurrency string
-	var totalUnits int64
-	var totalNanos int64
+	total := new(big.Int)
 
 	for _, line := range lines {
-		if line.GetOrderedQuantity() <= 0 {
+		quantity, err := quantityArg("ordered_quantity", line.GetOrderedQuantity())
+		if err != nil {
+			return nil, "", 0, 0, err
+		}
+		if quantity <= 0 {
 			return nil, "", 0, 0, connect.NewError(connect.CodeInvalidArgument,
 				fmt.Sprintf("ordered quantity must be positive for supplier item %s", line.GetSupplierItemId()))
 		}
@@ -315,40 +386,11 @@ func (pob *purchaseOrderBusiness) buildPurchaseOrderLines(
 			return nil, "", 0, 0, connect.NewError(connect.CodeNotFound,
 				fmt.Sprintf("supplier item %s not found", line.GetSupplierItemId()))
 		}
-		if supplierItem.SupplierID != supplierID {
-			return nil, "", 0, 0, connect.NewError(connect.CodeInvalidArgument,
-				fmt.Sprintf("supplier item %s does not belong to supplier %s", line.GetSupplierItemId(), supplierID))
-		}
-		if supplierItem.Status != int32(procurementv1.SupplierItemStatus_SUPPLIER_ITEM_STATUS_ACTIVE) {
-			return nil, "", 0, 0, connect.NewError(connect.CodeFailedPrecondition,
-				fmt.Sprintf("supplier item %s is not active", line.GetSupplierItemId()))
-		}
-		if supplierItem.MinOrderQuantity > 0 && line.GetOrderedQuantity() < supplierItem.MinOrderQuantity {
-			return nil, "", 0, 0, connect.NewError(connect.CodeInvalidArgument,
-				fmt.Sprintf("supplier item %s requires a minimum order of %.2f",
-					line.GetSupplierItemId(), supplierItem.MinOrderQuantity))
+		if err = orderableItem(supplierItem, supplierID, quantity); err != nil {
+			return nil, "", 0, 0, err
 		}
 
-		// Quantities may be fractional (e.g. 12.5 kg); compute in nanos and
-		// round to the nearest nano so totals reconcile with supplier invoices.
-		unitNanos := supplierItem.PriceUnits*nanosPerUnit + int64(supplierItem.PriceNanos)
-		lineNanosTotal := int64(math.Round(float64(unitNanos) * line.GetOrderedQuantity()))
-		lineTotalUnits := lineNanosTotal / nanosPerUnit
-		lineTotalNanos := lineNanosTotal % nanosPerUnit
-
-		orderLine := &models.PurchaseOrderLine{
-			SupplierItemID:  supplierItem.GetID(),
-			InventoryItemID: supplierItem.InventoryItemID,
-			OrderedQuantity: line.GetOrderedQuantity(),
-			CurrencyCode:    supplierItem.CurrencyCode,
-			PriceUnits:      supplierItem.PriceUnits,
-			PriceNanos:      supplierItem.PriceNanos,
-			Unit:            supplierItem.Unit,
-			Status:          int32(procurementv1.PurchaseOrderLineStatus_PURCHASE_ORDER_LINE_STATUS_PENDING),
-		}
-		orderLines = append(orderLines, orderLine)
-
-		// Accumulate total; all lines must share a currency.
+		// All lines share a currency.
 		if totalCurrency == "" {
 			totalCurrency = supplierItem.CurrencyCode
 		} else if supplierItem.CurrencyCode != totalCurrency {
@@ -356,13 +398,49 @@ func (pob *purchaseOrderBusiness) buildPurchaseOrderLines(
 				fmt.Sprintf("supplier item %s is priced in %s but the order is in %s",
 					line.GetSupplierItemId(), supplierItem.CurrencyCode, totalCurrency))
 		}
-		totalUnits += lineTotalUnits
-		totalNanos += lineTotalNanos
-		totalUnits += totalNanos / nanosPerUnit
-		totalNanos %= nanosPerUnit
+		// Exact arithmetic: quantity × price in nanos, rounded half up once
+		// per line, summed without overflow and checked when converted.
+		total.Add(total, lineTotal(supplierItem.PriceUnits, supplierItem.PriceNanos, quantity))
+
+		orderLines = append(orderLines, &models.PurchaseOrderLine{
+			SupplierItemID:   supplierItem.GetID(),
+			InventoryItemID:  supplierItem.InventoryItemID,
+			SupplyKind:       supplierItem.SupplyKind,
+			ProductVariantID: supplierItem.ProductVariantID,
+			OrderedQuantity:  quantity,
+			CurrencyCode:     supplierItem.CurrencyCode,
+			PriceUnits:       supplierItem.PriceUnits,
+			PriceNanos:       supplierItem.PriceNanos,
+			Unit:             supplierItem.Unit,
+			Status:           int32(procurementv1.PurchaseOrderLineStatus_PURCHASE_ORDER_LINE_STATUS_PENDING),
+		})
 	}
 
-	return orderLines, totalCurrency, totalUnits, int32(totalNanos), nil
+	units, nanos, err := moneyFromNanos(total)
+	if err != nil {
+		return nil, "", 0, 0, err
+	}
+	return orderLines, totalCurrency, units, nanos, nil
+}
+
+// orderableItem checks a supplier item can be ordered in quantity from
+// supplierID.
+func orderableItem(item *models.SupplierItem, supplierID string, quantity models.Quantity) error {
+	switch {
+	case item.SupplierID != supplierID:
+		return connect.NewError(connect.CodeInvalidArgument,
+			fmt.Sprintf("supplier item %s does not belong to supplier %s", item.GetID(), supplierID))
+	case item.Status != int32(procurementv1.SupplierItemStatus_SUPPLIER_ITEM_STATUS_ACTIVE):
+		return connect.NewError(connect.CodeFailedPrecondition,
+			fmt.Sprintf("supplier item %s is not active", item.GetID()))
+	case item.MinOrderQuantity > 0 && quantity < item.MinOrderQuantity:
+		return connect.NewError(connect.CodeInvalidArgument,
+			fmt.Sprintf("supplier item %s requires a minimum order of %s", item.GetID(), item.MinOrderQuantity))
+	case item.SupplyKind == int32(procurementv1.SupplyKind_SUPPLY_KIND_PRODUCT_VARIANT) && !quantity.IsWhole():
+		return connect.NewError(connect.CodeInvalidArgument,
+			fmt.Sprintf("supplier item %s is a product variant, ordered in whole units", item.GetID()))
+	}
+	return nil
 }
 
 // generatePONumber returns a globally unique, non-guessable order number.

@@ -36,13 +36,13 @@ import (
 	"github.com/antinvestor/service-commerce/apps/default/service/handlers"
 	"github.com/antinvestor/service-commerce/apps/default/service/notifications"
 	"github.com/antinvestor/service-commerce/apps/default/service/repository"
-	"github.com/antinvestor/service-commerce/apps/default/service/workflows"
 	commercepb "github.com/antinvestor/service-commerce/gen/go/commerce/v1"
 	"github.com/antinvestor/service-commerce/gen/go/commerce/v1/commercev1connect"
 	"github.com/antinvestor/service-commerce/pkg/clients"
 	"github.com/antinvestor/service-commerce/pkg/dbmigrate"
 	"github.com/antinvestor/service-commerce/pkg/dbrole"
 	"github.com/antinvestor/service-commerce/pkg/messages"
+	"github.com/antinvestor/service-commerce/pkg/workflows"
 	workflowdefs "github.com/antinvestor/service-commerce/workflows"
 )
 

@@ -20,18 +20,37 @@ import (
 	"fmt"
 	"time"
 
-	procurementv1 "buf.build/gen/go/antinvestor/procurement/protocolbuffers/go/v1"
 	"connectrpc.com/connect/v2"
 	"github.com/pitabwire/frame/v3"
 	"github.com/pitabwire/frame/v3/data"
 	"github.com/pitabwire/frame/v3/security"
 	"github.com/pitabwire/util"
 
+	procurementv1 "github.com/antinvestor/service-commerce/gen/go/procurement/v1"
+
 	"github.com/antinvestor/service-commerce/apps/procurement/service/models"
 	"github.com/antinvestor/service-commerce/apps/procurement/service/repository"
 )
 
+const (
+	// maxReceiptLines bounds one goods receipt.
+	maxReceiptLines = 200
+	// Delivery sweep bounds.
+	defaultDeliverLimit = 100
+	maxDeliverLimit     = 500
+)
+
+// DeliverySummary counts what one delivery sweep did.
+type DeliverySummary struct {
+	Delivered int32
+	Pending   int32
+	Failed    int32
+}
+
 type GoodsReceiptBusiness interface {
+	// CreateGoodsReceipt records the receipt and, in the same transaction,
+	// where each line's stock goes; after commit it pushes resale stock to
+	// commerce. A push that fails stays pending for DeliverPending.
 	CreateGoodsReceipt(
 		ctx context.Context,
 		req *procurementv1.GoodsReceiptCreateRequest,
@@ -40,7 +59,10 @@ type GoodsReceiptBusiness interface {
 	SearchGoodsReceipts(
 		ctx context.Context,
 		req *procurementv1.GoodsReceiptSearchRequest,
-	) ([]*procurementv1.GoodsReceipt, error)
+	) ([]*procurementv1.GoodsReceipt, string, error)
+	// DeliverPending pushes up to limit lines still pending, least-tried
+	// first. Every line lands at most once however often it runs.
+	DeliverPending(ctx context.Context, limit int) (DeliverySummary, error)
 }
 
 func NewGoodsReceiptBusiness(
@@ -48,13 +70,13 @@ func NewGoodsReceiptBusiness(
 	grRepo repository.GoodsReceiptRepository,
 	grlRepo repository.GoodsReceiptLineRepository,
 	poRepo repository.PurchaseOrderRepository,
-	polRepo repository.PurchaseOrderLineRepository,
+	stock StockDestination,
 ) GoodsReceiptBusiness {
 	return &goodsReceiptBusiness{
 		grRepo:  grRepo,
 		grlRepo: grlRepo,
 		poRepo:  poRepo,
-		polRepo: polRepo,
+		stock:   stock,
 	}
 }
 
@@ -62,26 +84,27 @@ type goodsReceiptBusiness struct {
 	grRepo  repository.GoodsReceiptRepository
 	grlRepo repository.GoodsReceiptLineRepository
 	poRepo  repository.PurchaseOrderRepository
-	polRepo repository.PurchaseOrderLineRepository
+	stock   StockDestination
 }
 
 func (grb *goodsReceiptBusiness) CreateGoodsReceipt(
 	ctx context.Context,
 	req *procurementv1.GoodsReceiptCreateRequest,
 ) (*procurementv1.GoodsReceipt, error) {
-	// Idempotency check: a replay returns the receipt only for the purchase
-	// order (and so the property) the caller was authorised on.
+	requestPrint := fingerprint(req)
+	// A replay returns the receipt only for the same request on the same
+	// purchase order (and so the property the caller was authorised on).
 	if req.GetIdempotencyKey() != "" {
 		existing, err := grb.grRepo.GetByIdempotencyKey(ctx, req.GetIdempotencyKey())
 		if err == nil && existing != nil {
-			return replayedReceipt(existing, req)
+			return replayedReceipt(existing, req, requestPrint)
 		}
 		if err != nil && !frame.ErrorIsNotFound(err) {
 			return nil, data.ErrorConvertToAPI(err)
 		}
 	}
 
-	po, poLineMap, err := grb.validateGoodsReceipt(ctx, req)
+	po, lines, err := grb.validateGoodsReceipt(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -100,18 +123,21 @@ func (grb *goodsReceiptBusiness) CreateGoodsReceipt(
 		Status:          int32(procurementv1.GoodsReceiptStatus_GOODS_RECEIPT_STATUS_PENDING_INSPECTION),
 		Notes:           req.GetNotes(),
 		IdempotencyKey:  idempotencyKey,
+		RequestHash:     requestPrint,
+		StockLocationID: req.GetStockLocationId(),
 	}
-
-	lines := buildReceiptLines(req.GetLines(), poLineMap)
 
 	if createErr := grb.grRepo.CreateWithLines(ctx, gr, lines); createErr != nil {
 		switch {
 		case errors.Is(createErr, repository.ErrOverReceipt):
 			return nil, connect.NewError(connect.CodeFailedPrecondition, createErr.Error()).WithCause(createErr)
+		case errors.Is(createErr, repository.ErrNotReceivable):
+			return nil, connect.NewError(connect.CodeFailedPrecondition,
+				"purchase order is not open for receipts").WithCause(createErr)
 		case req.GetIdempotencyKey() != "" && data.ErrorIsDuplicateKey(createErr):
 			existing, getErr := grb.grRepo.GetByIdempotencyKey(ctx, req.GetIdempotencyKey())
 			if getErr == nil {
-				return replayedReceipt(existing, req)
+				return replayedReceipt(existing, req, requestPrint)
 			}
 			return nil, data.ErrorConvertToAPI(createErr)
 		default:
@@ -119,83 +145,143 @@ func (grb *goodsReceiptBusiness) CreateGoodsReceipt(
 		}
 	}
 
+	// The receipt is committed; pushing its stock is best effort here and
+	// retried by DeliverPending.
+	for _, line := range lines {
+		if line.DeliveryStatus == int32(procurementv1.StockDeliveryStatus_STOCK_DELIVERY_STATUS_PENDING) {
+			grb.deliverLine(ctx, line)
+		}
+	}
+
 	return grb.GetGoodsReceipt(ctx, gr.GetID())
 }
 
 // replayedReceipt answers a repeated idempotency key with the receipt it
-// created, provided that receipt is for the same purchase order.
+// created, provided the retry is the same request on the same order.
 func replayedReceipt(
 	existing *models.GoodsReceipt,
 	req *procurementv1.GoodsReceiptCreateRequest,
+	requestPrint string,
 ) (*procurementv1.GoodsReceipt, error) {
-	if existing.PurchaseOrderID != req.GetPurchaseOrderId() {
+	if existing.PurchaseOrderID != req.GetPurchaseOrderId() || !samePrint(existing.RequestHash, requestPrint) {
 		return nil, connect.NewError(connect.CodeAlreadyExists,
-			"idempotency_key was already used for another purchase order")
+			"idempotency_key was already used for another goods receipt")
 	}
 	return existing.ToAPI(), nil
 }
 
-// validateGoodsReceipt checks the PO state and validates all requested receipt lines.
+// receivable lists the order statuses goods may be received against; the
+// repository checks it again under the order's lock.
+func receivable(status int32) bool {
+	return status == int32(procurementv1.PurchaseOrderStatus_PURCHASE_ORDER_STATUS_SUBMITTED) ||
+		status == int32(procurementv1.PurchaseOrderStatus_PURCHASE_ORDER_STATUS_CONFIRMED) ||
+		status == int32(procurementv1.PurchaseOrderStatus_PURCHASE_ORDER_STATUS_PARTIALLY_RECEIVED)
+}
+
+// validateGoodsReceipt checks the order is open for receipts and builds the
+// receipt lines.
 func (grb *goodsReceiptBusiness) validateGoodsReceipt(
 	ctx context.Context,
 	req *procurementv1.GoodsReceiptCreateRequest,
-) (*models.PurchaseOrder, map[string]*models.PurchaseOrderLine, error) {
+) (*models.PurchaseOrder, []*models.GoodsReceiptLine, error) {
 	po, err := grb.poRepo.GetWithLines(ctx, req.GetPurchaseOrderId())
 	if err != nil {
 		return nil, nil, data.ErrorConvertToAPI(err)
 	}
-
-	if po.Status == int32(procurementv1.PurchaseOrderStatus_PURCHASE_ORDER_STATUS_CANCELLED) {
-		return nil, nil, connect.NewError(
-			connect.CodeFailedPrecondition,
-			"cannot receive goods for a cancelled purchase order")
+	if !receivable(po.Status) {
+		return nil, nil, connect.NewError(connect.CodeFailedPrecondition,
+			"goods are received only against a submitted, confirmed or partially received purchase order")
 	}
-	if po.Status == int32(procurementv1.PurchaseOrderStatus_PURCHASE_ORDER_STATUS_RECEIVED) {
-		return nil, nil, connect.NewError(
-			connect.CodeFailedPrecondition,
-			"purchase order is already fully received")
-	}
-	if len(req.GetLines()) == 0 {
-		return nil, nil, connect.NewError(
-			connect.CodeInvalidArgument,
-			"goods receipt must have at least one line")
+	if len(req.GetLines()) == 0 || len(req.GetLines()) > maxReceiptLines {
+		return nil, nil, connect.NewError(connect.CodeInvalidArgument,
+			fmt.Sprintf("a goods receipt has between 1 and %d lines", maxReceiptLines))
 	}
 
-	poLineMap := make(map[string]*models.PurchaseOrderLine, len(po.Lines))
+	poLines := make(map[string]*models.PurchaseOrderLine, len(po.Lines))
 	for _, pol := range po.Lines {
-		poLineMap[pol.GetID()] = pol
+		poLines[pol.GetID()] = pol
 	}
 
 	// Aggregate per PO line so a line listed twice is checked as a whole. The
 	// repository re-checks under the row update, so this is advisory.
-	requested := make(map[string]float64, len(req.GetLines()))
-	for _, grLine := range req.GetLines() {
-		if grLine.GetReceivedQuantity() <= 0 {
-			return nil, nil, connect.NewError(connect.CodeInvalidArgument,
-				fmt.Sprintf("received quantity must be positive for PO line %s", grLine.GetPurchaseOrderLineId()))
-		}
-		pol, ok := poLineMap[grLine.GetPurchaseOrderLineId()]
+	requested := make(map[string]models.Quantity, len(req.GetLines()))
+	lines := make([]*models.GoodsReceiptLine, 0, len(req.GetLines()))
+	for _, in := range req.GetLines() {
+		pol, ok := poLines[in.GetPurchaseOrderLineId()]
 		if !ok {
 			return nil, nil, connect.NewError(connect.CodeInvalidArgument,
-				fmt.Sprintf("purchase order line %s not found in purchase order", grLine.GetPurchaseOrderLineId()))
+				fmt.Sprintf("purchase order line %s not found in purchase order", in.GetPurchaseOrderLineId()))
 		}
-		if pol.Status == int32(procurementv1.PurchaseOrderLineStatus_PURCHASE_ORDER_LINE_STATUS_CANCELLED) {
-			return nil, nil, connect.NewError(connect.CodeFailedPrecondition,
-				fmt.Sprintf("purchase order line %s is cancelled", grLine.GetPurchaseOrderLineId()))
+		quantity, qErr := quantityArg("received_quantity", in.GetReceivedQuantity())
+		if qErr != nil {
+			return nil, nil, qErr
 		}
-		requested[grLine.GetPurchaseOrderLineId()] += grLine.GetReceivedQuantity()
+		if lineErr := receivableLine(pol, quantity); lineErr != nil {
+			return nil, nil, lineErr
+		}
+		requested[pol.GetID()] += quantity
+		lines = append(lines, receiptLine(in, pol, quantity))
 	}
 	for lineID, qty := range requested {
-		pol := poLineMap[lineID]
-		remaining := pol.OrderedQuantity - pol.ReceivedQuantity
-		if qty > remaining {
+		pol := poLines[lineID]
+		if remaining := pol.OrderedQuantity - pol.ReceivedQuantity; qty > remaining {
 			return nil, nil, connect.NewError(connect.CodeFailedPrecondition,
-				fmt.Sprintf("received quantity %.2f exceeds remaining quantity %.2f for PO line %s",
+				fmt.Sprintf("received quantity %s exceeds remaining quantity %s for PO line %s",
 					qty, remaining, lineID))
 		}
 	}
+	return po, lines, nil
+}
 
-	return po, poLineMap, nil
+// receivableLine checks one requested quantity against its order line.
+func receivableLine(pol *models.PurchaseOrderLine, quantity models.Quantity) error {
+	switch {
+	case quantity <= 0:
+		return connect.NewError(connect.CodeInvalidArgument,
+			fmt.Sprintf("received quantity must be positive for PO line %s", pol.GetID()))
+	case pol.Status == int32(procurementv1.PurchaseOrderLineStatus_PURCHASE_ORDER_LINE_STATUS_CANCELLED),
+		pol.Status == int32(procurementv1.PurchaseOrderLineStatus_PURCHASE_ORDER_LINE_STATUS_CLOSED):
+		return connect.NewError(connect.CodeFailedPrecondition,
+			fmt.Sprintf("purchase order line %s is no longer open", pol.GetID()))
+	case pol.SupplyKind == int32(procurementv1.SupplyKind_SUPPLY_KIND_PRODUCT_VARIANT) && !quantity.IsWhole():
+		return connect.NewError(connect.CodeInvalidArgument,
+			fmt.Sprintf("PO line %s is a product variant, received in whole units", pol.GetID()))
+	}
+	return nil
+}
+
+// receiptLine maps a request line onto a receipt line. Accepted equals
+// received until an inspection step records rejections. Resale stock waits
+// to be pushed to commerce; raw materials wait for a transfer into
+// manufacturing inventory, which takes no receipts from procurement yet.
+func receiptLine(
+	in *procurementv1.GoodsReceiptLineInput,
+	pol *models.PurchaseOrderLine,
+	quantity models.Quantity,
+) *models.GoodsReceiptLine {
+	var expiry *time.Time
+	if in.GetExpiryDate() != nil {
+		t := in.GetExpiryDate().AsTime()
+		expiry = &t
+	}
+	line := &models.GoodsReceiptLine{
+		PurchaseOrderLineID: pol.GetID(),
+		InventoryItemID:     pol.InventoryItemID,
+		SupplyKind:          pol.SupplyKind,
+		ProductVariantID:    pol.ProductVariantID,
+		ReceivedQuantity:    quantity,
+		AcceptedQuantity:    quantity,
+		LotNumber:           in.GetLotNumber(),
+		ExpiryDate:          expiry,
+		Unit:                pol.Unit,
+	}
+	if pol.SupplyKind == int32(procurementv1.SupplyKind_SUPPLY_KIND_PRODUCT_VARIANT) {
+		line.DeliveryStatus = int32(procurementv1.StockDeliveryStatus_STOCK_DELIVERY_STATUS_PENDING)
+	} else {
+		line.DeliveryStatus = int32(procurementv1.StockDeliveryStatus_STOCK_DELIVERY_STATUS_PENDING_TRANSFER)
+		line.DeliveryNote = "record this stock in manufacturing inventory; it does not accept procurement receipts yet"
+	}
+	return line
 }
 
 // resolveReceivedBy extracts the subject ID from the context claims.
@@ -211,36 +297,6 @@ func resolveReceivedBy(ctx context.Context) string {
 	return subjectID
 }
 
-// buildReceiptLines maps request lines onto receipt line models. Accepted
-// quantity equals received until an inspection step records rejections.
-func buildReceiptLines(
-	lines []*procurementv1.GoodsReceiptLineInput,
-	poLineMap map[string]*models.PurchaseOrderLine,
-) []*models.GoodsReceiptLine {
-	out := make([]*models.GoodsReceiptLine, 0, len(lines))
-	for _, grLine := range lines {
-		pol := poLineMap[grLine.GetPurchaseOrderLineId()]
-
-		var expiryDate *time.Time
-		if grLine.GetExpiryDate() != nil {
-			t := grLine.GetExpiryDate().AsTime()
-			expiryDate = &t
-		}
-
-		out = append(out, &models.GoodsReceiptLine{
-			PurchaseOrderLineID: grLine.GetPurchaseOrderLineId(),
-			InventoryItemID:     pol.InventoryItemID,
-			ReceivedQuantity:    grLine.GetReceivedQuantity(),
-			AcceptedQuantity:    grLine.GetReceivedQuantity(),
-			RejectedQuantity:    0,
-			LotNumber:           grLine.GetLotNumber(),
-			ExpiryDate:          expiryDate,
-			Unit:                pol.Unit,
-		})
-	}
-	return out
-}
-
 func (grb *goodsReceiptBusiness) GetGoodsReceipt(ctx context.Context, id string) (*procurementv1.GoodsReceipt, error) {
 	gr, err := grb.grRepo.GetWithLines(ctx, id)
 	if err != nil {
@@ -252,36 +308,26 @@ func (grb *goodsReceiptBusiness) GetGoodsReceipt(ctx context.Context, id string)
 func (grb *goodsReceiptBusiness) SearchGoodsReceipts(
 	ctx context.Context,
 	req *procurementv1.GoodsReceiptSearchRequest,
-) ([]*procurementv1.GoodsReceipt, error) {
-	limit := 50
-	offset := 0
-	if req.GetSearch() != nil && req.GetSearch().GetCursor() != nil {
-		if req.GetSearch().GetCursor().GetLimit() > 0 {
-			limit = int(req.GetSearch().GetCursor().GetLimit())
-		}
-	}
-
-	var receipts []*models.GoodsReceipt
-	var err error
-
-	switch {
-	case req.GetPurchaseOrderId() != "":
-		receipts, err = grb.grRepo.ListByPurchaseOrderID(ctx, req.GetPurchaseOrderId())
-	case req.GetPropertyId() != "":
-		receipts, err = grb.grRepo.ListByPropertyID(ctx, req.GetPropertyId(), limit, offset)
-	default:
-		return nil, connect.NewError(
-			connect.CodeInvalidArgument,
+) ([]*procurementv1.GoodsReceipt, string, error) {
+	if req.GetPurchaseOrderId() == "" && req.GetPropertyId() == "" {
+		return nil, "", connect.NewError(connect.CodeInvalidArgument,
 			"purchase_order_id or property_id is required")
 	}
-
+	page, err := pageFromSearch(req.GetSearch())
 	if err != nil {
-		return nil, data.ErrorConvertToAPI(err)
+		return nil, "", err
 	}
-
+	receipts, next, err := grb.grRepo.ListPage(ctx, repository.GoodsReceiptFilter{
+		PurchaseOrderID: req.GetPurchaseOrderId(),
+		PropertyID:      req.GetPropertyId(),
+		Status:          int32(req.GetStatus()),
+	}, page)
+	if err != nil {
+		return nil, "", data.ErrorConvertToAPI(err)
+	}
 	result := make([]*procurementv1.GoodsReceipt, 0, len(receipts))
 	for _, r := range receipts {
 		result = append(result, r.ToAPI())
 	}
-	return result, nil
+	return result, repository.EncodePageKey(next), nil
 }

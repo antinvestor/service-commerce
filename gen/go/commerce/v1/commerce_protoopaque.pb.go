@@ -4184,6 +4184,183 @@ func (b0 ListProductVariantsResponse_builder) Build() *ListProductVariantsRespon
 	return m0
 }
 
+type ReceiveStockRequest struct {
+	state                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_VariantId string                 `protobuf:"bytes,1,opt,name=variant_id,json=variantId,proto3"`
+	xxx_hidden_Quantity  int64                  `protobuf:"varint,2,opt,name=quantity,proto3"`
+	xxx_hidden_Reference string                 `protobuf:"bytes,3,opt,name=reference,proto3"`
+	xxx_hidden_TenantId  string                 `protobuf:"bytes,4,opt,name=tenant_id,json=tenantId,proto3"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
+}
+
+func (x *ReceiveStockRequest) Reset() {
+	*x = ReceiveStockRequest{}
+	mi := &file_v1_commerce_proto_msgTypes[27]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReceiveStockRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReceiveStockRequest) ProtoMessage() {}
+
+func (x *ReceiveStockRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_commerce_proto_msgTypes[27]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *ReceiveStockRequest) GetVariantId() string {
+	if x != nil {
+		return x.xxx_hidden_VariantId
+	}
+	return ""
+}
+
+func (x *ReceiveStockRequest) GetQuantity() int64 {
+	if x != nil {
+		return x.xxx_hidden_Quantity
+	}
+	return 0
+}
+
+func (x *ReceiveStockRequest) GetReference() string {
+	if x != nil {
+		return x.xxx_hidden_Reference
+	}
+	return ""
+}
+
+func (x *ReceiveStockRequest) GetTenantId() string {
+	if x != nil {
+		return x.xxx_hidden_TenantId
+	}
+	return ""
+}
+
+func (x *ReceiveStockRequest) SetVariantId(v string) {
+	x.xxx_hidden_VariantId = v
+}
+
+func (x *ReceiveStockRequest) SetQuantity(v int64) {
+	x.xxx_hidden_Quantity = v
+}
+
+func (x *ReceiveStockRequest) SetReference(v string) {
+	x.xxx_hidden_Reference = v
+}
+
+func (x *ReceiveStockRequest) SetTenantId(v string) {
+	x.xxx_hidden_TenantId = v
+}
+
+type ReceiveStockRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	VariantId string
+	// Whole units received; must be positive.
+	Quantity int64
+	// Unique per receipt line (e.g. "procurement:grl:<line id>"). A reference
+	// already received for the same variant and quantity adds nothing; for any
+	// other variant or quantity it is refused.
+	Reference string
+	// The tenant the receipt was recorded in; the variant must belong to it.
+	TenantId string
+}
+
+func (b0 ReceiveStockRequest_builder) Build() *ReceiveStockRequest {
+	m0 := &ReceiveStockRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_VariantId = b.VariantId
+	x.xxx_hidden_Quantity = b.Quantity
+	x.xxx_hidden_Reference = b.Reference
+	x.xxx_hidden_TenantId = b.TenantId
+	return m0
+}
+
+type ReceiveStockResponse struct {
+	state                    protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_StockQuantity int64                  `protobuf:"varint,1,opt,name=stock_quantity,json=stockQuantity,proto3"`
+	xxx_hidden_Replayed      bool                   `protobuf:"varint,2,opt,name=replayed,proto3"`
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
+}
+
+func (x *ReceiveStockResponse) Reset() {
+	*x = ReceiveStockResponse{}
+	mi := &file_v1_commerce_proto_msgTypes[28]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReceiveStockResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReceiveStockResponse) ProtoMessage() {}
+
+func (x *ReceiveStockResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_commerce_proto_msgTypes[28]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *ReceiveStockResponse) GetStockQuantity() int64 {
+	if x != nil {
+		return x.xxx_hidden_StockQuantity
+	}
+	return 0
+}
+
+func (x *ReceiveStockResponse) GetReplayed() bool {
+	if x != nil {
+		return x.xxx_hidden_Replayed
+	}
+	return false
+}
+
+func (x *ReceiveStockResponse) SetStockQuantity(v int64) {
+	x.xxx_hidden_StockQuantity = v
+}
+
+func (x *ReceiveStockResponse) SetReplayed(v bool) {
+	x.xxx_hidden_Replayed = v
+}
+
+type ReceiveStockResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// The variant's stock after the receipt.
+	StockQuantity int64
+	// True when the reference had already been received.
+	Replayed bool
+}
+
+func (b0 ReceiveStockResponse_builder) Build() *ReceiveStockResponse {
+	m0 := &ReceiveStockResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_StockQuantity = b.StockQuantity
+	x.xxx_hidden_Replayed = b.Replayed
+	return m0
+}
+
 type UpdateProductVariantResponse struct {
 	state                     protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_ProductVariant *ProductVariant        `protobuf:"bytes,1,opt,name=product_variant,json=productVariant,proto3"`
@@ -4193,7 +4370,7 @@ type UpdateProductVariantResponse struct {
 
 func (x *UpdateProductVariantResponse) Reset() {
 	*x = UpdateProductVariantResponse{}
-	mi := &file_v1_commerce_proto_msgTypes[27]
+	mi := &file_v1_commerce_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4205,7 +4382,7 @@ func (x *UpdateProductVariantResponse) String() string {
 func (*UpdateProductVariantResponse) ProtoMessage() {}
 
 func (x *UpdateProductVariantResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[27]
+	mi := &file_v1_commerce_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4269,7 +4446,7 @@ type Cart struct {
 
 func (x *Cart) Reset() {
 	*x = Cart{}
-	mi := &file_v1_commerce_proto_msgTypes[28]
+	mi := &file_v1_commerce_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4281,7 +4458,7 @@ func (x *Cart) String() string {
 func (*Cart) ProtoMessage() {}
 
 func (x *Cart) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[28]
+	mi := &file_v1_commerce_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4467,7 +4644,7 @@ type CartLine struct {
 
 func (x *CartLine) Reset() {
 	*x = CartLine{}
-	mi := &file_v1_commerce_proto_msgTypes[29]
+	mi := &file_v1_commerce_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4479,7 +4656,7 @@ func (x *CartLine) String() string {
 func (*CartLine) ProtoMessage() {}
 
 func (x *CartLine) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[29]
+	mi := &file_v1_commerce_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4552,7 +4729,7 @@ type CreateCartRequest struct {
 
 func (x *CreateCartRequest) Reset() {
 	*x = CreateCartRequest{}
-	mi := &file_v1_commerce_proto_msgTypes[30]
+	mi := &file_v1_commerce_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4564,7 +4741,7 @@ func (x *CreateCartRequest) String() string {
 func (*CreateCartRequest) ProtoMessage() {}
 
 func (x *CreateCartRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[30]
+	mi := &file_v1_commerce_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4636,7 +4813,7 @@ type CreateCartResponse struct {
 
 func (x *CreateCartResponse) Reset() {
 	*x = CreateCartResponse{}
-	mi := &file_v1_commerce_proto_msgTypes[31]
+	mi := &file_v1_commerce_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4648,7 +4825,7 @@ func (x *CreateCartResponse) String() string {
 func (*CreateCartResponse) ProtoMessage() {}
 
 func (x *CreateCartResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[31]
+	mi := &file_v1_commerce_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4704,7 +4881,7 @@ type GetCartRequest struct {
 
 func (x *GetCartRequest) Reset() {
 	*x = GetCartRequest{}
-	mi := &file_v1_commerce_proto_msgTypes[32]
+	mi := &file_v1_commerce_proto_msgTypes[34]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4716,7 +4893,7 @@ func (x *GetCartRequest) String() string {
 func (*GetCartRequest) ProtoMessage() {}
 
 func (x *GetCartRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[32]
+	mi := &file_v1_commerce_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4761,7 +4938,7 @@ type GetCartResponse struct {
 
 func (x *GetCartResponse) Reset() {
 	*x = GetCartResponse{}
-	mi := &file_v1_commerce_proto_msgTypes[33]
+	mi := &file_v1_commerce_proto_msgTypes[35]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4773,7 +4950,7 @@ func (x *GetCartResponse) String() string {
 func (*GetCartResponse) ProtoMessage() {}
 
 func (x *GetCartResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[33]
+	mi := &file_v1_commerce_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4831,7 +5008,7 @@ type AddCartLineRequest struct {
 
 func (x *AddCartLineRequest) Reset() {
 	*x = AddCartLineRequest{}
-	mi := &file_v1_commerce_proto_msgTypes[34]
+	mi := &file_v1_commerce_proto_msgTypes[36]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4843,7 +5020,7 @@ func (x *AddCartLineRequest) String() string {
 func (*AddCartLineRequest) ProtoMessage() {}
 
 func (x *AddCartLineRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[34]
+	mi := &file_v1_commerce_proto_msgTypes[36]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4914,7 +5091,7 @@ type AddCartLineResponse struct {
 
 func (x *AddCartLineResponse) Reset() {
 	*x = AddCartLineResponse{}
-	mi := &file_v1_commerce_proto_msgTypes[35]
+	mi := &file_v1_commerce_proto_msgTypes[37]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4926,7 +5103,7 @@ func (x *AddCartLineResponse) String() string {
 func (*AddCartLineResponse) ProtoMessage() {}
 
 func (x *AddCartLineResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[35]
+	mi := &file_v1_commerce_proto_msgTypes[37]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4983,7 +5160,7 @@ type RemoveCartLineRequest struct {
 
 func (x *RemoveCartLineRequest) Reset() {
 	*x = RemoveCartLineRequest{}
-	mi := &file_v1_commerce_proto_msgTypes[36]
+	mi := &file_v1_commerce_proto_msgTypes[38]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4995,7 +5172,7 @@ func (x *RemoveCartLineRequest) String() string {
 func (*RemoveCartLineRequest) ProtoMessage() {}
 
 func (x *RemoveCartLineRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[36]
+	mi := &file_v1_commerce_proto_msgTypes[38]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5053,7 +5230,7 @@ type RemoveCartLineResponse struct {
 
 func (x *RemoveCartLineResponse) Reset() {
 	*x = RemoveCartLineResponse{}
-	mi := &file_v1_commerce_proto_msgTypes[37]
+	mi := &file_v1_commerce_proto_msgTypes[39]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5065,7 +5242,7 @@ func (x *RemoveCartLineResponse) String() string {
 func (*RemoveCartLineResponse) ProtoMessage() {}
 
 func (x *RemoveCartLineResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[37]
+	mi := &file_v1_commerce_proto_msgTypes[39]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5124,7 +5301,7 @@ type CreateOrderFromCartRequest struct {
 
 func (x *CreateOrderFromCartRequest) Reset() {
 	*x = CreateOrderFromCartRequest{}
-	mi := &file_v1_commerce_proto_msgTypes[38]
+	mi := &file_v1_commerce_proto_msgTypes[40]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5136,7 +5313,7 @@ func (x *CreateOrderFromCartRequest) String() string {
 func (*CreateOrderFromCartRequest) ProtoMessage() {}
 
 func (x *CreateOrderFromCartRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[38]
+	mi := &file_v1_commerce_proto_msgTypes[40]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5220,7 +5397,7 @@ type CreateOrderFromCartResponse struct {
 
 func (x *CreateOrderFromCartResponse) Reset() {
 	*x = CreateOrderFromCartResponse{}
-	mi := &file_v1_commerce_proto_msgTypes[39]
+	mi := &file_v1_commerce_proto_msgTypes[41]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5232,7 +5409,7 @@ func (x *CreateOrderFromCartResponse) String() string {
 func (*CreateOrderFromCartResponse) ProtoMessage() {}
 
 func (x *CreateOrderFromCartResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[39]
+	mi := &file_v1_commerce_proto_msgTypes[41]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5315,7 +5492,7 @@ type Order struct {
 
 func (x *Order) Reset() {
 	*x = Order{}
-	mi := &file_v1_commerce_proto_msgTypes[40]
+	mi := &file_v1_commerce_proto_msgTypes[42]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5327,7 +5504,7 @@ func (x *Order) String() string {
 func (*Order) ProtoMessage() {}
 
 func (x *Order) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[40]
+	mi := &file_v1_commerce_proto_msgTypes[42]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5871,7 +6048,7 @@ type OrderPayment struct {
 
 func (x *OrderPayment) Reset() {
 	*x = OrderPayment{}
-	mi := &file_v1_commerce_proto_msgTypes[41]
+	mi := &file_v1_commerce_proto_msgTypes[43]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5883,7 +6060,7 @@ func (x *OrderPayment) String() string {
 func (*OrderPayment) ProtoMessage() {}
 
 func (x *OrderPayment) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[41]
+	mi := &file_v1_commerce_proto_msgTypes[43]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6051,7 +6228,7 @@ type OrderLine struct {
 
 func (x *OrderLine) Reset() {
 	*x = OrderLine{}
-	mi := &file_v1_commerce_proto_msgTypes[42]
+	mi := &file_v1_commerce_proto_msgTypes[44]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6063,7 +6240,7 @@ func (x *OrderLine) String() string {
 func (*OrderLine) ProtoMessage() {}
 
 func (x *OrderLine) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[42]
+	mi := &file_v1_commerce_proto_msgTypes[44]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6214,7 +6391,7 @@ type CreateOrderRequest struct {
 
 func (x *CreateOrderRequest) Reset() {
 	*x = CreateOrderRequest{}
-	mi := &file_v1_commerce_proto_msgTypes[43]
+	mi := &file_v1_commerce_proto_msgTypes[45]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6226,7 +6403,7 @@ func (x *CreateOrderRequest) String() string {
 func (*CreateOrderRequest) ProtoMessage() {}
 
 func (x *CreateOrderRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[43]
+	mi := &file_v1_commerce_proto_msgTypes[45]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6338,7 +6515,7 @@ type CreateOrderResponse struct {
 
 func (x *CreateOrderResponse) Reset() {
 	*x = CreateOrderResponse{}
-	mi := &file_v1_commerce_proto_msgTypes[44]
+	mi := &file_v1_commerce_proto_msgTypes[46]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6350,7 +6527,7 @@ func (x *CreateOrderResponse) String() string {
 func (*CreateOrderResponse) ProtoMessage() {}
 
 func (x *CreateOrderResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[44]
+	mi := &file_v1_commerce_proto_msgTypes[46]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6407,7 +6584,7 @@ type CreateOrderLine struct {
 
 func (x *CreateOrderLine) Reset() {
 	*x = CreateOrderLine{}
-	mi := &file_v1_commerce_proto_msgTypes[45]
+	mi := &file_v1_commerce_proto_msgTypes[47]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6419,7 +6596,7 @@ func (x *CreateOrderLine) String() string {
 func (*CreateOrderLine) ProtoMessage() {}
 
 func (x *CreateOrderLine) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[45]
+	mi := &file_v1_commerce_proto_msgTypes[47]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6477,7 +6654,7 @@ type GetOrderRequest struct {
 
 func (x *GetOrderRequest) Reset() {
 	*x = GetOrderRequest{}
-	mi := &file_v1_commerce_proto_msgTypes[46]
+	mi := &file_v1_commerce_proto_msgTypes[48]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6489,7 +6666,7 @@ func (x *GetOrderRequest) String() string {
 func (*GetOrderRequest) ProtoMessage() {}
 
 func (x *GetOrderRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[46]
+	mi := &file_v1_commerce_proto_msgTypes[48]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6534,7 +6711,7 @@ type GetOrderResponse struct {
 
 func (x *GetOrderResponse) Reset() {
 	*x = GetOrderResponse{}
-	mi := &file_v1_commerce_proto_msgTypes[47]
+	mi := &file_v1_commerce_proto_msgTypes[49]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6546,7 +6723,7 @@ func (x *GetOrderResponse) String() string {
 func (*GetOrderResponse) ProtoMessage() {}
 
 func (x *GetOrderResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[47]
+	mi := &file_v1_commerce_proto_msgTypes[49]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6603,7 +6780,7 @@ type ListOrdersRequest struct {
 
 func (x *ListOrdersRequest) Reset() {
 	*x = ListOrdersRequest{}
-	mi := &file_v1_commerce_proto_msgTypes[48]
+	mi := &file_v1_commerce_proto_msgTypes[50]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6615,7 +6792,7 @@ func (x *ListOrdersRequest) String() string {
 func (*ListOrdersRequest) ProtoMessage() {}
 
 func (x *ListOrdersRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[48]
+	mi := &file_v1_commerce_proto_msgTypes[50]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6687,7 +6864,7 @@ type ListOrdersResponse struct {
 
 func (x *ListOrdersResponse) Reset() {
 	*x = ListOrdersResponse{}
-	mi := &file_v1_commerce_proto_msgTypes[49]
+	mi := &file_v1_commerce_proto_msgTypes[51]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6699,7 +6876,7 @@ func (x *ListOrdersResponse) String() string {
 func (*ListOrdersResponse) ProtoMessage() {}
 
 func (x *ListOrdersResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[49]
+	mi := &file_v1_commerce_proto_msgTypes[51]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6775,7 +6952,7 @@ type CheckoutOrderRequest struct {
 
 func (x *CheckoutOrderRequest) Reset() {
 	*x = CheckoutOrderRequest{}
-	mi := &file_v1_commerce_proto_msgTypes[50]
+	mi := &file_v1_commerce_proto_msgTypes[52]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6787,7 +6964,7 @@ func (x *CheckoutOrderRequest) String() string {
 func (*CheckoutOrderRequest) ProtoMessage() {}
 
 func (x *CheckoutOrderRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[50]
+	mi := &file_v1_commerce_proto_msgTypes[52]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6890,7 +7067,7 @@ type CheckoutOrderResponse struct {
 
 func (x *CheckoutOrderResponse) Reset() {
 	*x = CheckoutOrderResponse{}
-	mi := &file_v1_commerce_proto_msgTypes[51]
+	mi := &file_v1_commerce_proto_msgTypes[53]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6902,7 +7079,7 @@ func (x *CheckoutOrderResponse) String() string {
 func (*CheckoutOrderResponse) ProtoMessage() {}
 
 func (x *CheckoutOrderResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[51]
+	mi := &file_v1_commerce_proto_msgTypes[53]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7009,7 +7186,7 @@ type ConfirmOrderPaymentRequest struct {
 
 func (x *ConfirmOrderPaymentRequest) Reset() {
 	*x = ConfirmOrderPaymentRequest{}
-	mi := &file_v1_commerce_proto_msgTypes[52]
+	mi := &file_v1_commerce_proto_msgTypes[54]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7021,7 +7198,7 @@ func (x *ConfirmOrderPaymentRequest) String() string {
 func (*ConfirmOrderPaymentRequest) ProtoMessage() {}
 
 func (x *ConfirmOrderPaymentRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[52]
+	mi := &file_v1_commerce_proto_msgTypes[54]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7066,7 +7243,7 @@ type ConfirmOrderPaymentResponse struct {
 
 func (x *ConfirmOrderPaymentResponse) Reset() {
 	*x = ConfirmOrderPaymentResponse{}
-	mi := &file_v1_commerce_proto_msgTypes[53]
+	mi := &file_v1_commerce_proto_msgTypes[55]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7078,7 +7255,7 @@ func (x *ConfirmOrderPaymentResponse) String() string {
 func (*ConfirmOrderPaymentResponse) ProtoMessage() {}
 
 func (x *ConfirmOrderPaymentResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[53]
+	mi := &file_v1_commerce_proto_msgTypes[55]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7135,7 +7312,7 @@ type CancelOrderRequest struct {
 
 func (x *CancelOrderRequest) Reset() {
 	*x = CancelOrderRequest{}
-	mi := &file_v1_commerce_proto_msgTypes[54]
+	mi := &file_v1_commerce_proto_msgTypes[56]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7147,7 +7324,7 @@ func (x *CancelOrderRequest) String() string {
 func (*CancelOrderRequest) ProtoMessage() {}
 
 func (x *CancelOrderRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[54]
+	mi := &file_v1_commerce_proto_msgTypes[56]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7205,7 +7382,7 @@ type CancelOrderResponse struct {
 
 func (x *CancelOrderResponse) Reset() {
 	*x = CancelOrderResponse{}
-	mi := &file_v1_commerce_proto_msgTypes[55]
+	mi := &file_v1_commerce_proto_msgTypes[57]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7217,7 +7394,7 @@ func (x *CancelOrderResponse) String() string {
 func (*CancelOrderResponse) ProtoMessage() {}
 
 func (x *CancelOrderResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[55]
+	mi := &file_v1_commerce_proto_msgTypes[57]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7276,7 +7453,7 @@ type RecordOrderPaymentRequest struct {
 
 func (x *RecordOrderPaymentRequest) Reset() {
 	*x = RecordOrderPaymentRequest{}
-	mi := &file_v1_commerce_proto_msgTypes[56]
+	mi := &file_v1_commerce_proto_msgTypes[58]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7288,7 +7465,7 @@ func (x *RecordOrderPaymentRequest) String() string {
 func (*RecordOrderPaymentRequest) ProtoMessage() {}
 
 func (x *RecordOrderPaymentRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[56]
+	mi := &file_v1_commerce_proto_msgTypes[58]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7384,7 +7561,7 @@ type RecordOrderPaymentResponse struct {
 
 func (x *RecordOrderPaymentResponse) Reset() {
 	*x = RecordOrderPaymentResponse{}
-	mi := &file_v1_commerce_proto_msgTypes[57]
+	mi := &file_v1_commerce_proto_msgTypes[59]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7396,7 +7573,7 @@ func (x *RecordOrderPaymentResponse) String() string {
 func (*RecordOrderPaymentResponse) ProtoMessage() {}
 
 func (x *RecordOrderPaymentResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[57]
+	mi := &file_v1_commerce_proto_msgTypes[59]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7465,7 +7642,7 @@ type OrderEvent struct {
 
 func (x *OrderEvent) Reset() {
 	*x = OrderEvent{}
-	mi := &file_v1_commerce_proto_msgTypes[58]
+	mi := &file_v1_commerce_proto_msgTypes[60]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7477,7 +7654,7 @@ func (x *OrderEvent) String() string {
 func (*OrderEvent) ProtoMessage() {}
 
 func (x *OrderEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[58]
+	mi := &file_v1_commerce_proto_msgTypes[60]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7715,7 +7892,7 @@ type ListOrderEventsRequest struct {
 
 func (x *ListOrderEventsRequest) Reset() {
 	*x = ListOrderEventsRequest{}
-	mi := &file_v1_commerce_proto_msgTypes[59]
+	mi := &file_v1_commerce_proto_msgTypes[61]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7727,7 +7904,7 @@ func (x *ListOrderEventsRequest) String() string {
 func (*ListOrderEventsRequest) ProtoMessage() {}
 
 func (x *ListOrderEventsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[59]
+	mi := &file_v1_commerce_proto_msgTypes[61]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7812,7 +7989,7 @@ type ListOrderEventsResponse struct {
 
 func (x *ListOrderEventsResponse) Reset() {
 	*x = ListOrderEventsResponse{}
-	mi := &file_v1_commerce_proto_msgTypes[60]
+	mi := &file_v1_commerce_proto_msgTypes[62]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7824,7 +8001,7 @@ func (x *ListOrderEventsResponse) String() string {
 func (*ListOrderEventsResponse) ProtoMessage() {}
 
 func (x *ListOrderEventsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[60]
+	mi := &file_v1_commerce_proto_msgTypes[62]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7885,7 +8062,7 @@ type ReconcilePaymentsRequest struct {
 
 func (x *ReconcilePaymentsRequest) Reset() {
 	*x = ReconcilePaymentsRequest{}
-	mi := &file_v1_commerce_proto_msgTypes[61]
+	mi := &file_v1_commerce_proto_msgTypes[63]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7897,7 +8074,7 @@ func (x *ReconcilePaymentsRequest) String() string {
 func (*ReconcilePaymentsRequest) ProtoMessage() {}
 
 func (x *ReconcilePaymentsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[61]
+	mi := &file_v1_commerce_proto_msgTypes[63]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7964,7 +8141,7 @@ type ReconcilePaymentsResponse struct {
 
 func (x *ReconcilePaymentsResponse) Reset() {
 	*x = ReconcilePaymentsResponse{}
-	mi := &file_v1_commerce_proto_msgTypes[62]
+	mi := &file_v1_commerce_proto_msgTypes[64]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7976,7 +8153,7 @@ func (x *ReconcilePaymentsResponse) String() string {
 func (*ReconcilePaymentsResponse) ProtoMessage() {}
 
 func (x *ReconcilePaymentsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[62]
+	mi := &file_v1_commerce_proto_msgTypes[64]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8117,7 +8294,7 @@ type RunEndOfDayLedgerRequest struct {
 
 func (x *RunEndOfDayLedgerRequest) Reset() {
 	*x = RunEndOfDayLedgerRequest{}
-	mi := &file_v1_commerce_proto_msgTypes[63]
+	mi := &file_v1_commerce_proto_msgTypes[65]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8129,7 +8306,7 @@ func (x *RunEndOfDayLedgerRequest) String() string {
 func (*RunEndOfDayLedgerRequest) ProtoMessage() {}
 
 func (x *RunEndOfDayLedgerRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[63]
+	mi := &file_v1_commerce_proto_msgTypes[65]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8197,7 +8374,7 @@ type LedgerPosting struct {
 
 func (x *LedgerPosting) Reset() {
 	*x = LedgerPosting{}
-	mi := &file_v1_commerce_proto_msgTypes[64]
+	mi := &file_v1_commerce_proto_msgTypes[66]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8209,7 +8386,7 @@ func (x *LedgerPosting) String() string {
 func (*LedgerPosting) ProtoMessage() {}
 
 func (x *LedgerPosting) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[64]
+	mi := &file_v1_commerce_proto_msgTypes[66]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8367,7 +8544,7 @@ type RunEndOfDayLedgerResponse struct {
 
 func (x *RunEndOfDayLedgerResponse) Reset() {
 	*x = RunEndOfDayLedgerResponse{}
-	mi := &file_v1_commerce_proto_msgTypes[65]
+	mi := &file_v1_commerce_proto_msgTypes[67]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8379,7 +8556,7 @@ func (x *RunEndOfDayLedgerResponse) String() string {
 func (*RunEndOfDayLedgerResponse) ProtoMessage() {}
 
 func (x *RunEndOfDayLedgerResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[65]
+	mi := &file_v1_commerce_proto_msgTypes[67]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8433,7 +8610,7 @@ type Fulfilment struct {
 
 func (x *Fulfilment) Reset() {
 	*x = Fulfilment{}
-	mi := &file_v1_commerce_proto_msgTypes[66]
+	mi := &file_v1_commerce_proto_msgTypes[68]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8445,7 +8622,7 @@ func (x *Fulfilment) String() string {
 func (*Fulfilment) ProtoMessage() {}
 
 func (x *Fulfilment) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[66]
+	mi := &file_v1_commerce_proto_msgTypes[68]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8606,7 +8783,7 @@ type FulfilmentLine struct {
 
 func (x *FulfilmentLine) Reset() {
 	*x = FulfilmentLine{}
-	mi := &file_v1_commerce_proto_msgTypes[67]
+	mi := &file_v1_commerce_proto_msgTypes[69]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8618,7 +8795,7 @@ func (x *FulfilmentLine) String() string {
 func (*FulfilmentLine) ProtoMessage() {}
 
 func (x *FulfilmentLine) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[67]
+	mi := &file_v1_commerce_proto_msgTypes[69]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8677,7 +8854,7 @@ type CreateFulfilmentRequest struct {
 
 func (x *CreateFulfilmentRequest) Reset() {
 	*x = CreateFulfilmentRequest{}
-	mi := &file_v1_commerce_proto_msgTypes[68]
+	mi := &file_v1_commerce_proto_msgTypes[70]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8689,7 +8866,7 @@ func (x *CreateFulfilmentRequest) String() string {
 func (*CreateFulfilmentRequest) ProtoMessage() {}
 
 func (x *CreateFulfilmentRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[68]
+	mi := &file_v1_commerce_proto_msgTypes[70]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8749,7 +8926,7 @@ type CreateFulfilmentResponse struct {
 
 func (x *CreateFulfilmentResponse) Reset() {
 	*x = CreateFulfilmentResponse{}
-	mi := &file_v1_commerce_proto_msgTypes[69]
+	mi := &file_v1_commerce_proto_msgTypes[71]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8761,7 +8938,7 @@ func (x *CreateFulfilmentResponse) String() string {
 func (*CreateFulfilmentResponse) ProtoMessage() {}
 
 func (x *CreateFulfilmentResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[69]
+	mi := &file_v1_commerce_proto_msgTypes[71]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8822,7 +8999,7 @@ type UpdateFulfilmentRequest struct {
 
 func (x *UpdateFulfilmentRequest) Reset() {
 	*x = UpdateFulfilmentRequest{}
-	mi := &file_v1_commerce_proto_msgTypes[70]
+	mi := &file_v1_commerce_proto_msgTypes[72]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8834,7 +9011,7 @@ func (x *UpdateFulfilmentRequest) String() string {
 func (*UpdateFulfilmentRequest) ProtoMessage() {}
 
 func (x *UpdateFulfilmentRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[70]
+	mi := &file_v1_commerce_proto_msgTypes[72]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8966,7 +9143,7 @@ type UpdateFulfilmentResponse struct {
 
 func (x *UpdateFulfilmentResponse) Reset() {
 	*x = UpdateFulfilmentResponse{}
-	mi := &file_v1_commerce_proto_msgTypes[71]
+	mi := &file_v1_commerce_proto_msgTypes[73]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8978,7 +9155,7 @@ func (x *UpdateFulfilmentResponse) String() string {
 func (*UpdateFulfilmentResponse) ProtoMessage() {}
 
 func (x *UpdateFulfilmentResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[71]
+	mi := &file_v1_commerce_proto_msgTypes[73]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9034,7 +9211,7 @@ type GetFulfilmentRequest struct {
 
 func (x *GetFulfilmentRequest) Reset() {
 	*x = GetFulfilmentRequest{}
-	mi := &file_v1_commerce_proto_msgTypes[72]
+	mi := &file_v1_commerce_proto_msgTypes[74]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9046,7 +9223,7 @@ func (x *GetFulfilmentRequest) String() string {
 func (*GetFulfilmentRequest) ProtoMessage() {}
 
 func (x *GetFulfilmentRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[72]
+	mi := &file_v1_commerce_proto_msgTypes[74]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9091,7 +9268,7 @@ type GetFulfilmentResponse struct {
 
 func (x *GetFulfilmentResponse) Reset() {
 	*x = GetFulfilmentResponse{}
-	mi := &file_v1_commerce_proto_msgTypes[73]
+	mi := &file_v1_commerce_proto_msgTypes[75]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9103,7 +9280,7 @@ func (x *GetFulfilmentResponse) String() string {
 func (*GetFulfilmentResponse) ProtoMessage() {}
 
 func (x *GetFulfilmentResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[73]
+	mi := &file_v1_commerce_proto_msgTypes[75]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9159,7 +9336,7 @@ type ListFulfilmentsRequest struct {
 
 func (x *ListFulfilmentsRequest) Reset() {
 	*x = ListFulfilmentsRequest{}
-	mi := &file_v1_commerce_proto_msgTypes[74]
+	mi := &file_v1_commerce_proto_msgTypes[76]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9171,7 +9348,7 @@ func (x *ListFulfilmentsRequest) String() string {
 func (*ListFulfilmentsRequest) ProtoMessage() {}
 
 func (x *ListFulfilmentsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[74]
+	mi := &file_v1_commerce_proto_msgTypes[76]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9216,7 +9393,7 @@ type ListFulfilmentsResponse struct {
 
 func (x *ListFulfilmentsResponse) Reset() {
 	*x = ListFulfilmentsResponse{}
-	mi := &file_v1_commerce_proto_msgTypes[75]
+	mi := &file_v1_commerce_proto_msgTypes[77]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9228,7 +9405,7 @@ func (x *ListFulfilmentsResponse) String() string {
 func (*ListFulfilmentsResponse) ProtoMessage() {}
 
 func (x *ListFulfilmentsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[75]
+	mi := &file_v1_commerce_proto_msgTypes[77]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9284,7 +9461,7 @@ type PriceList struct {
 
 func (x *PriceList) Reset() {
 	*x = PriceList{}
-	mi := &file_v1_commerce_proto_msgTypes[76]
+	mi := &file_v1_commerce_proto_msgTypes[78]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9296,7 +9473,7 @@ func (x *PriceList) String() string {
 func (*PriceList) ProtoMessage() {}
 
 func (x *PriceList) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[76]
+	mi := &file_v1_commerce_proto_msgTypes[78]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9484,7 +9661,7 @@ type PriceListEntry struct {
 
 func (x *PriceListEntry) Reset() {
 	*x = PriceListEntry{}
-	mi := &file_v1_commerce_proto_msgTypes[77]
+	mi := &file_v1_commerce_proto_msgTypes[79]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9496,7 +9673,7 @@ func (x *PriceListEntry) String() string {
 func (*PriceListEntry) ProtoMessage() {}
 
 func (x *PriceListEntry) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[77]
+	mi := &file_v1_commerce_proto_msgTypes[79]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9623,7 +9800,7 @@ type CustomerPriceListAssignment struct {
 
 func (x *CustomerPriceListAssignment) Reset() {
 	*x = CustomerPriceListAssignment{}
-	mi := &file_v1_commerce_proto_msgTypes[78]
+	mi := &file_v1_commerce_proto_msgTypes[80]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9635,7 +9812,7 @@ func (x *CustomerPriceListAssignment) String() string {
 func (*CustomerPriceListAssignment) ProtoMessage() {}
 
 func (x *CustomerPriceListAssignment) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[78]
+	mi := &file_v1_commerce_proto_msgTypes[80]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9765,7 +9942,7 @@ type CustomerPriceOverride struct {
 
 func (x *CustomerPriceOverride) Reset() {
 	*x = CustomerPriceOverride{}
-	mi := &file_v1_commerce_proto_msgTypes[79]
+	mi := &file_v1_commerce_proto_msgTypes[81]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9777,7 +9954,7 @@ func (x *CustomerPriceOverride) String() string {
 func (*CustomerPriceOverride) ProtoMessage() {}
 
 func (x *CustomerPriceOverride) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[79]
+	mi := &file_v1_commerce_proto_msgTypes[81]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9985,7 +10162,7 @@ type DiscountRule struct {
 
 func (x *DiscountRule) Reset() {
 	*x = DiscountRule{}
-	mi := &file_v1_commerce_proto_msgTypes[80]
+	mi := &file_v1_commerce_proto_msgTypes[82]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9997,7 +10174,7 @@ func (x *DiscountRule) String() string {
 func (*DiscountRule) ProtoMessage() {}
 
 func (x *DiscountRule) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[80]
+	mi := &file_v1_commerce_proto_msgTypes[82]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10288,7 +10465,7 @@ type ResolvedPrice struct {
 
 func (x *ResolvedPrice) Reset() {
 	*x = ResolvedPrice{}
-	mi := &file_v1_commerce_proto_msgTypes[81]
+	mi := &file_v1_commerce_proto_msgTypes[83]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -10300,7 +10477,7 @@ func (x *ResolvedPrice) String() string {
 func (*ResolvedPrice) ProtoMessage() {}
 
 func (x *ResolvedPrice) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[81]
+	mi := &file_v1_commerce_proto_msgTypes[83]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10476,7 +10653,7 @@ type PriceListSaveRequest struct {
 
 func (x *PriceListSaveRequest) Reset() {
 	*x = PriceListSaveRequest{}
-	mi := &file_v1_commerce_proto_msgTypes[82]
+	mi := &file_v1_commerce_proto_msgTypes[84]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -10488,7 +10665,7 @@ func (x *PriceListSaveRequest) String() string {
 func (*PriceListSaveRequest) ProtoMessage() {}
 
 func (x *PriceListSaveRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[82]
+	mi := &file_v1_commerce_proto_msgTypes[84]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10647,7 +10824,7 @@ type PriceListSaveResponse struct {
 
 func (x *PriceListSaveResponse) Reset() {
 	*x = PriceListSaveResponse{}
-	mi := &file_v1_commerce_proto_msgTypes[83]
+	mi := &file_v1_commerce_proto_msgTypes[85]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -10659,7 +10836,7 @@ func (x *PriceListSaveResponse) String() string {
 func (*PriceListSaveResponse) ProtoMessage() {}
 
 func (x *PriceListSaveResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[83]
+	mi := &file_v1_commerce_proto_msgTypes[85]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10715,7 +10892,7 @@ type PriceListGetRequest struct {
 
 func (x *PriceListGetRequest) Reset() {
 	*x = PriceListGetRequest{}
-	mi := &file_v1_commerce_proto_msgTypes[84]
+	mi := &file_v1_commerce_proto_msgTypes[86]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -10727,7 +10904,7 @@ func (x *PriceListGetRequest) String() string {
 func (*PriceListGetRequest) ProtoMessage() {}
 
 func (x *PriceListGetRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[84]
+	mi := &file_v1_commerce_proto_msgTypes[86]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10772,7 +10949,7 @@ type PriceListGetResponse struct {
 
 func (x *PriceListGetResponse) Reset() {
 	*x = PriceListGetResponse{}
-	mi := &file_v1_commerce_proto_msgTypes[85]
+	mi := &file_v1_commerce_proto_msgTypes[87]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -10784,7 +10961,7 @@ func (x *PriceListGetResponse) String() string {
 func (*PriceListGetResponse) ProtoMessage() {}
 
 func (x *PriceListGetResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[85]
+	mi := &file_v1_commerce_proto_msgTypes[87]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10841,7 +11018,7 @@ type PriceListSearchRequest struct {
 
 func (x *PriceListSearchRequest) Reset() {
 	*x = PriceListSearchRequest{}
-	mi := &file_v1_commerce_proto_msgTypes[86]
+	mi := &file_v1_commerce_proto_msgTypes[88]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -10853,7 +11030,7 @@ func (x *PriceListSearchRequest) String() string {
 func (*PriceListSearchRequest) ProtoMessage() {}
 
 func (x *PriceListSearchRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[86]
+	mi := &file_v1_commerce_proto_msgTypes[88]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10924,7 +11101,7 @@ type PriceListSearchResponse struct {
 
 func (x *PriceListSearchResponse) Reset() {
 	*x = PriceListSearchResponse{}
-	mi := &file_v1_commerce_proto_msgTypes[87]
+	mi := &file_v1_commerce_proto_msgTypes[89]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -10936,7 +11113,7 @@ func (x *PriceListSearchResponse) String() string {
 func (*PriceListSearchResponse) ProtoMessage() {}
 
 func (x *PriceListSearchResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[87]
+	mi := &file_v1_commerce_proto_msgTypes[89]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11010,7 +11187,7 @@ type PriceListEntryBatchSaveRequest struct {
 
 func (x *PriceListEntryBatchSaveRequest) Reset() {
 	*x = PriceListEntryBatchSaveRequest{}
-	mi := &file_v1_commerce_proto_msgTypes[88]
+	mi := &file_v1_commerce_proto_msgTypes[90]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11022,7 +11199,7 @@ func (x *PriceListEntryBatchSaveRequest) String() string {
 func (*PriceListEntryBatchSaveRequest) ProtoMessage() {}
 
 func (x *PriceListEntryBatchSaveRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[88]
+	mi := &file_v1_commerce_proto_msgTypes[90]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11084,7 +11261,7 @@ type PriceListEntryBatchSaveResponse struct {
 
 func (x *PriceListEntryBatchSaveResponse) Reset() {
 	*x = PriceListEntryBatchSaveResponse{}
-	mi := &file_v1_commerce_proto_msgTypes[89]
+	mi := &file_v1_commerce_proto_msgTypes[91]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11096,7 +11273,7 @@ func (x *PriceListEntryBatchSaveResponse) String() string {
 func (*PriceListEntryBatchSaveResponse) ProtoMessage() {}
 
 func (x *PriceListEntryBatchSaveResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[89]
+	mi := &file_v1_commerce_proto_msgTypes[91]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11147,7 +11324,7 @@ type CustomerPriceListAssignmentSaveRequest struct {
 
 func (x *CustomerPriceListAssignmentSaveRequest) Reset() {
 	*x = CustomerPriceListAssignmentSaveRequest{}
-	mi := &file_v1_commerce_proto_msgTypes[90]
+	mi := &file_v1_commerce_proto_msgTypes[92]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11159,7 +11336,7 @@ func (x *CustomerPriceListAssignmentSaveRequest) String() string {
 func (*CustomerPriceListAssignmentSaveRequest) ProtoMessage() {}
 
 func (x *CustomerPriceListAssignmentSaveRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[90]
+	mi := &file_v1_commerce_proto_msgTypes[92]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11257,7 +11434,7 @@ type CustomerPriceListAssignmentSaveResponse struct {
 
 func (x *CustomerPriceListAssignmentSaveResponse) Reset() {
 	*x = CustomerPriceListAssignmentSaveResponse{}
-	mi := &file_v1_commerce_proto_msgTypes[91]
+	mi := &file_v1_commerce_proto_msgTypes[93]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11269,7 +11446,7 @@ func (x *CustomerPriceListAssignmentSaveResponse) String() string {
 func (*CustomerPriceListAssignmentSaveResponse) ProtoMessage() {}
 
 func (x *CustomerPriceListAssignmentSaveResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[91]
+	mi := &file_v1_commerce_proto_msgTypes[93]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11327,7 +11504,7 @@ type CustomerPriceListAssignmentSearchRequest struct {
 
 func (x *CustomerPriceListAssignmentSearchRequest) Reset() {
 	*x = CustomerPriceListAssignmentSearchRequest{}
-	mi := &file_v1_commerce_proto_msgTypes[92]
+	mi := &file_v1_commerce_proto_msgTypes[94]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11339,7 +11516,7 @@ func (x *CustomerPriceListAssignmentSearchRequest) String() string {
 func (*CustomerPriceListAssignmentSearchRequest) ProtoMessage() {}
 
 func (x *CustomerPriceListAssignmentSearchRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[92]
+	mi := &file_v1_commerce_proto_msgTypes[94]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11423,7 +11600,7 @@ type CustomerPriceListAssignmentSearchResponse struct {
 
 func (x *CustomerPriceListAssignmentSearchResponse) Reset() {
 	*x = CustomerPriceListAssignmentSearchResponse{}
-	mi := &file_v1_commerce_proto_msgTypes[93]
+	mi := &file_v1_commerce_proto_msgTypes[95]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11435,7 +11612,7 @@ func (x *CustomerPriceListAssignmentSearchResponse) String() string {
 func (*CustomerPriceListAssignmentSearchResponse) ProtoMessage() {}
 
 func (x *CustomerPriceListAssignmentSearchResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[93]
+	mi := &file_v1_commerce_proto_msgTypes[95]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11515,7 +11692,7 @@ type CustomerPriceOverrideSaveRequest struct {
 
 func (x *CustomerPriceOverrideSaveRequest) Reset() {
 	*x = CustomerPriceOverrideSaveRequest{}
-	mi := &file_v1_commerce_proto_msgTypes[94]
+	mi := &file_v1_commerce_proto_msgTypes[96]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11527,7 +11704,7 @@ func (x *CustomerPriceOverrideSaveRequest) String() string {
 func (*CustomerPriceOverrideSaveRequest) ProtoMessage() {}
 
 func (x *CustomerPriceOverrideSaveRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[94]
+	mi := &file_v1_commerce_proto_msgTypes[96]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11697,7 +11874,7 @@ type CustomerPriceOverrideSaveResponse struct {
 
 func (x *CustomerPriceOverrideSaveResponse) Reset() {
 	*x = CustomerPriceOverrideSaveResponse{}
-	mi := &file_v1_commerce_proto_msgTypes[95]
+	mi := &file_v1_commerce_proto_msgTypes[97]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11709,7 +11886,7 @@ func (x *CustomerPriceOverrideSaveResponse) String() string {
 func (*CustomerPriceOverrideSaveResponse) ProtoMessage() {}
 
 func (x *CustomerPriceOverrideSaveResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[95]
+	mi := &file_v1_commerce_proto_msgTypes[97]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11767,7 +11944,7 @@ type CustomerPriceOverrideSearchRequest struct {
 
 func (x *CustomerPriceOverrideSearchRequest) Reset() {
 	*x = CustomerPriceOverrideSearchRequest{}
-	mi := &file_v1_commerce_proto_msgTypes[96]
+	mi := &file_v1_commerce_proto_msgTypes[98]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11779,7 +11956,7 @@ func (x *CustomerPriceOverrideSearchRequest) String() string {
 func (*CustomerPriceOverrideSearchRequest) ProtoMessage() {}
 
 func (x *CustomerPriceOverrideSearchRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[96]
+	mi := &file_v1_commerce_proto_msgTypes[98]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11863,7 +12040,7 @@ type CustomerPriceOverrideSearchResponse struct {
 
 func (x *CustomerPriceOverrideSearchResponse) Reset() {
 	*x = CustomerPriceOverrideSearchResponse{}
-	mi := &file_v1_commerce_proto_msgTypes[97]
+	mi := &file_v1_commerce_proto_msgTypes[99]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11875,7 +12052,7 @@ func (x *CustomerPriceOverrideSearchResponse) String() string {
 func (*CustomerPriceOverrideSearchResponse) ProtoMessage() {}
 
 func (x *CustomerPriceOverrideSearchResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[97]
+	mi := &file_v1_commerce_proto_msgTypes[99]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11960,7 +12137,7 @@ type DiscountRuleSaveRequest struct {
 
 func (x *DiscountRuleSaveRequest) Reset() {
 	*x = DiscountRuleSaveRequest{}
-	mi := &file_v1_commerce_proto_msgTypes[98]
+	mi := &file_v1_commerce_proto_msgTypes[100]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11972,7 +12149,7 @@ func (x *DiscountRuleSaveRequest) String() string {
 func (*DiscountRuleSaveRequest) ProtoMessage() {}
 
 func (x *DiscountRuleSaveRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[98]
+	mi := &file_v1_commerce_proto_msgTypes[100]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12221,7 +12398,7 @@ type DiscountRuleSaveResponse struct {
 
 func (x *DiscountRuleSaveResponse) Reset() {
 	*x = DiscountRuleSaveResponse{}
-	mi := &file_v1_commerce_proto_msgTypes[99]
+	mi := &file_v1_commerce_proto_msgTypes[101]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -12233,7 +12410,7 @@ func (x *DiscountRuleSaveResponse) String() string {
 func (*DiscountRuleSaveResponse) ProtoMessage() {}
 
 func (x *DiscountRuleSaveResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[99]
+	mi := &file_v1_commerce_proto_msgTypes[101]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12290,7 +12467,7 @@ type DiscountRuleSearchRequest struct {
 
 func (x *DiscountRuleSearchRequest) Reset() {
 	*x = DiscountRuleSearchRequest{}
-	mi := &file_v1_commerce_proto_msgTypes[100]
+	mi := &file_v1_commerce_proto_msgTypes[102]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -12302,7 +12479,7 @@ func (x *DiscountRuleSearchRequest) String() string {
 func (*DiscountRuleSearchRequest) ProtoMessage() {}
 
 func (x *DiscountRuleSearchRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[100]
+	mi := &file_v1_commerce_proto_msgTypes[102]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12373,7 +12550,7 @@ type DiscountRuleSearchResponse struct {
 
 func (x *DiscountRuleSearchResponse) Reset() {
 	*x = DiscountRuleSearchResponse{}
-	mi := &file_v1_commerce_proto_msgTypes[101]
+	mi := &file_v1_commerce_proto_msgTypes[103]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -12385,7 +12562,7 @@ func (x *DiscountRuleSearchResponse) String() string {
 func (*DiscountRuleSearchResponse) ProtoMessage() {}
 
 func (x *DiscountRuleSearchResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[101]
+	mi := &file_v1_commerce_proto_msgTypes[103]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12458,7 +12635,7 @@ type DiscountRuleApproveRequest struct {
 
 func (x *DiscountRuleApproveRequest) Reset() {
 	*x = DiscountRuleApproveRequest{}
-	mi := &file_v1_commerce_proto_msgTypes[102]
+	mi := &file_v1_commerce_proto_msgTypes[104]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -12470,7 +12647,7 @@ func (x *DiscountRuleApproveRequest) String() string {
 func (*DiscountRuleApproveRequest) ProtoMessage() {}
 
 func (x *DiscountRuleApproveRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[102]
+	mi := &file_v1_commerce_proto_msgTypes[104]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12515,7 +12692,7 @@ type DiscountRuleApproveResponse struct {
 
 func (x *DiscountRuleApproveResponse) Reset() {
 	*x = DiscountRuleApproveResponse{}
-	mi := &file_v1_commerce_proto_msgTypes[103]
+	mi := &file_v1_commerce_proto_msgTypes[105]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -12527,7 +12704,7 @@ func (x *DiscountRuleApproveResponse) String() string {
 func (*DiscountRuleApproveResponse) ProtoMessage() {}
 
 func (x *DiscountRuleApproveResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[103]
+	mi := &file_v1_commerce_proto_msgTypes[105]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12585,7 +12762,7 @@ type ResolvePriceRequest struct {
 
 func (x *ResolvePriceRequest) Reset() {
 	*x = ResolvePriceRequest{}
-	mi := &file_v1_commerce_proto_msgTypes[104]
+	mi := &file_v1_commerce_proto_msgTypes[106]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -12597,7 +12774,7 @@ func (x *ResolvePriceRequest) String() string {
 func (*ResolvePriceRequest) ProtoMessage() {}
 
 func (x *ResolvePriceRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[104]
+	mi := &file_v1_commerce_proto_msgTypes[106]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12668,7 +12845,7 @@ type ResolvePriceResponse struct {
 
 func (x *ResolvePriceResponse) Reset() {
 	*x = ResolvePriceResponse{}
-	mi := &file_v1_commerce_proto_msgTypes[105]
+	mi := &file_v1_commerce_proto_msgTypes[107]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -12680,7 +12857,7 @@ func (x *ResolvePriceResponse) String() string {
 func (*ResolvePriceResponse) ProtoMessage() {}
 
 func (x *ResolvePriceResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_commerce_proto_msgTypes[105]
+	mi := &file_v1_commerce_proto_msgTypes[107]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12932,7 +13109,16 @@ const file_v1_commerce_proto_rawDesc = "" +
 	"\n" +
 	"product_id\x18\x01 \x01(\tB\x1b\xbaH\x18r\x16\x10\x03\x18(2\x10[0-9a-z_-]{3,40}R\tproductId\"e\n" +
 	"\x1bListProductVariantsResponse\x12F\n" +
-	"\x10product_variants\x18\x01 \x03(\v2\x1b.commerce.v1.ProductVariantR\x0fproductVariants\"d\n" +
+	"\x10product_variants\x18\x01 \x03(\v2\x1b.commerce.v1.ProductVariantR\x0fproductVariants\"\x8b\x01\n" +
+	"\x13ReceiveStockRequest\x12\x1d\n" +
+	"\n" +
+	"variant_id\x18\x01 \x01(\tR\tvariantId\x12\x1a\n" +
+	"\bquantity\x18\x02 \x01(\x03R\bquantity\x12\x1c\n" +
+	"\treference\x18\x03 \x01(\tR\treference\x12\x1b\n" +
+	"\ttenant_id\x18\x04 \x01(\tR\btenantId\"Y\n" +
+	"\x14ReceiveStockResponse\x12%\n" +
+	"\x0estock_quantity\x18\x01 \x01(\x03R\rstockQuantity\x12\x1a\n" +
+	"\breplayed\x18\x02 \x01(\bR\breplayed\"d\n" +
 	"\x1cUpdateProductVariantResponse\x12D\n" +
 	"\x0fproduct_variant\x18\x01 \x01(\v2\x1b.commerce.v1.ProductVariantR\x0eproductVariant\"\xfc\x02\n" +
 	"\x04Cart\x12\x0e\n" +
@@ -13515,7 +13701,7 @@ const file_v1_commerce_proto_rawDesc = "" +
 	"!CustomerPriceListAssignmentStatus\x125\n" +
 	"1CUSTOMER_PRICE_LIST_ASSIGNMENT_STATUS_UNSPECIFIED\x10\x00\x120\n" +
 	",CUSTOMER_PRICE_LIST_ASSIGNMENT_STATUS_ACTIVE\x10\x01\x122\n" +
-	".CUSTOMER_PRICE_LIST_ASSIGNMENT_STATUS_INACTIVE\x10\x022\xa63\n" +
+	".CUSTOMER_PRICE_LIST_ASSIGNMENT_STATUS_INACTIVE\x10\x022\x9f4\n" +
 	"\x0fCommerceService\x12`\n" +
 	"\n" +
 	"CreateShop\x12\x1e.commerce.v1.CreateShopRequest\x1a\x1f.commerce.v1.CreateShopResponse\"\x11\x82\xb5\x18\r\n" +
@@ -13545,7 +13731,9 @@ const file_v1_commerce_proto_rawDesc = "" +
 	"\rUpdateProduct\x12!.commerce.v1.UpdateProductRequest\x1a\".commerce.v1.UpdateProductResponse\"\x14\x82\xb5\x18\x10\n" +
 	"\x0eproduct_manage\x12|\n" +
 	"\x13ListProductVariants\x12'.commerce.v1.ListProductVariantsRequest\x1a(.commerce.v1.ListProductVariantsResponse\"\x12\x82\xb5\x18\x0e\n" +
-	"\fproduct_view\x12`\n" +
+	"\fproduct_view\x12h\n" +
+	"\fReceiveStock\x12 .commerce.v1.ReceiveStockRequest\x1a!.commerce.v1.ReceiveStockResponse\"\x13\x82\xb5\x18\x0f\n" +
+	"\rstock_receive\x12`\n" +
 	"\n" +
 	"CreateCart\x12\x1e.commerce.v1.CreateCartRequest\x1a\x1f.commerce.v1.CreateCartResponse\"\x11\x82\xb5\x18\r\n" +
 	"\vcart_manage\x12U\n" +
@@ -13612,10 +13800,10 @@ const file_v1_commerce_proto_rawDesc = "" +
 	"\x13DiscountRuleApprove\x12'.commerce.v1.DiscountRuleApproveRequest\x1a(.commerce.v1.DiscountRuleApproveResponse\"\x16\x82\xb5\x18\x12\n" +
 	"\x10discount_approve\x12j\n" +
 	"\fResolvePrice\x12 .commerce.v1.ResolvePriceRequest\x1a!.commerce.v1.ResolvePriceResponse\"\x15\x82\xb5\x18\x11\n" +
-	"\x0fprice_list_view\x1a\xe1\v\x82\xb5\x18\xdc\v\n" +
+	"\x0fprice_list_view\x1a\xf0\v\x82\xb5\x18\xeb\v\n" +
 	"\x10service_commerce\x12\tshop_view\x12\vshop_create\x12\vshop_update\x12\fproduct_view\x12\x0eproduct_manage\x12\tcart_view\x12\vcart_manage\x12\n" +
 	"order_view\x12\forder_manage\x12\x0ffulfilment_view\x12\x11fulfilment_manage\x12\x0fprice_list_view\x12\x11price_list_manage\x12\x17customer_price_override\x12\x0fdiscount_manage\x12\x10discount_approve\x12\n" +
-	"shops_list\x12\vledger_post\x1a\x94\x02\b\x01\x12\tshop_view\x12\vshop_create\x12\vshop_update\x12\fproduct_view\x12\x0eproduct_manage\x12\tcart_view\x12\vcart_manage\x12\n" +
+	"shops_list\x12\vledger_post\x12\rstock_receive\x1a\x94\x02\b\x01\x12\tshop_view\x12\vshop_create\x12\vshop_update\x12\fproduct_view\x12\x0eproduct_manage\x12\tcart_view\x12\vcart_manage\x12\n" +
 	"order_view\x12\forder_manage\x12\x0ffulfilment_view\x12\x11fulfilment_manage\x12\x0fprice_list_view\x12\x11price_list_manage\x12\x17customer_price_override\x12\x0fdiscount_manage\x12\x10discount_approve\x12\n" +
 	"shops_list\x12\vledger_post\x1a\x94\x02\b\x02\x12\tshop_view\x12\vshop_create\x12\vshop_update\x12\fproduct_view\x12\x0eproduct_manage\x12\tcart_view\x12\vcart_manage\x12\n" +
 	"order_view\x12\forder_manage\x12\x0ffulfilment_view\x12\x11fulfilment_manage\x12\x0fprice_list_view\x12\x11price_list_manage\x12\x17customer_price_override\x12\x0fdiscount_manage\x12\x10discount_approve\x12\n" +
@@ -13639,7 +13827,7 @@ const file_v1_commerce_proto_rawDesc = "" +
 	"\x0fcom.commerce.v1B\rCommerceProtoP\x01ZEgithub.com/antinvestor/service-commerce/gen/go/commerce/v1;commercev1\xa2\x02\x03CXX\xaa\x02\vCommerce.V1\xca\x02\vCommerce\\V1\xe2\x02\x17Commerce\\V1\\GPBMetadata\xea\x02\fCommerce::V1b\x06proto3"
 
 var file_v1_commerce_proto_enumTypes = make([]protoimpl.EnumInfo, 19)
-var file_v1_commerce_proto_msgTypes = make([]protoimpl.MessageInfo, 112)
+var file_v1_commerce_proto_msgTypes = make([]protoimpl.MessageInfo, 114)
 var file_v1_commerce_proto_goTypes = []any{
 	(ShopStatus)(0),                                   // 0: commerce.v1.ShopStatus
 	(CurrencySource)(0),                               // 1: commerce.v1.CurrencySource
@@ -13687,138 +13875,140 @@ var file_v1_commerce_proto_goTypes = []any{
 	(*UpdateProductResponse)(nil),                     // 43: commerce.v1.UpdateProductResponse
 	(*ListProductVariantsRequest)(nil),                // 44: commerce.v1.ListProductVariantsRequest
 	(*ListProductVariantsResponse)(nil),               // 45: commerce.v1.ListProductVariantsResponse
-	(*UpdateProductVariantResponse)(nil),              // 46: commerce.v1.UpdateProductVariantResponse
-	(*Cart)(nil),                                      // 47: commerce.v1.Cart
-	(*CartLine)(nil),                                  // 48: commerce.v1.CartLine
-	(*CreateCartRequest)(nil),                         // 49: commerce.v1.CreateCartRequest
-	(*CreateCartResponse)(nil),                        // 50: commerce.v1.CreateCartResponse
-	(*GetCartRequest)(nil),                            // 51: commerce.v1.GetCartRequest
-	(*GetCartResponse)(nil),                           // 52: commerce.v1.GetCartResponse
-	(*AddCartLineRequest)(nil),                        // 53: commerce.v1.AddCartLineRequest
-	(*AddCartLineResponse)(nil),                       // 54: commerce.v1.AddCartLineResponse
-	(*RemoveCartLineRequest)(nil),                     // 55: commerce.v1.RemoveCartLineRequest
-	(*RemoveCartLineResponse)(nil),                    // 56: commerce.v1.RemoveCartLineResponse
-	(*CreateOrderFromCartRequest)(nil),                // 57: commerce.v1.CreateOrderFromCartRequest
-	(*CreateOrderFromCartResponse)(nil),               // 58: commerce.v1.CreateOrderFromCartResponse
-	(*Order)(nil),                                     // 59: commerce.v1.Order
-	(*OrderPayment)(nil),                              // 60: commerce.v1.OrderPayment
-	(*OrderLine)(nil),                                 // 61: commerce.v1.OrderLine
-	(*CreateOrderRequest)(nil),                        // 62: commerce.v1.CreateOrderRequest
-	(*CreateOrderResponse)(nil),                       // 63: commerce.v1.CreateOrderResponse
-	(*CreateOrderLine)(nil),                           // 64: commerce.v1.CreateOrderLine
-	(*GetOrderRequest)(nil),                           // 65: commerce.v1.GetOrderRequest
-	(*GetOrderResponse)(nil),                          // 66: commerce.v1.GetOrderResponse
-	(*ListOrdersRequest)(nil),                         // 67: commerce.v1.ListOrdersRequest
-	(*ListOrdersResponse)(nil),                        // 68: commerce.v1.ListOrdersResponse
-	(*CheckoutOrderRequest)(nil),                      // 69: commerce.v1.CheckoutOrderRequest
-	(*CheckoutOrderResponse)(nil),                     // 70: commerce.v1.CheckoutOrderResponse
-	(*ConfirmOrderPaymentRequest)(nil),                // 71: commerce.v1.ConfirmOrderPaymentRequest
-	(*ConfirmOrderPaymentResponse)(nil),               // 72: commerce.v1.ConfirmOrderPaymentResponse
-	(*CancelOrderRequest)(nil),                        // 73: commerce.v1.CancelOrderRequest
-	(*CancelOrderResponse)(nil),                       // 74: commerce.v1.CancelOrderResponse
-	(*RecordOrderPaymentRequest)(nil),                 // 75: commerce.v1.RecordOrderPaymentRequest
-	(*RecordOrderPaymentResponse)(nil),                // 76: commerce.v1.RecordOrderPaymentResponse
-	(*OrderEvent)(nil),                                // 77: commerce.v1.OrderEvent
-	(*ListOrderEventsRequest)(nil),                    // 78: commerce.v1.ListOrderEventsRequest
-	(*ListOrderEventsResponse)(nil),                   // 79: commerce.v1.ListOrderEventsResponse
-	(*ReconcilePaymentsRequest)(nil),                  // 80: commerce.v1.ReconcilePaymentsRequest
-	(*ReconcilePaymentsResponse)(nil),                 // 81: commerce.v1.ReconcilePaymentsResponse
-	(*RunEndOfDayLedgerRequest)(nil),                  // 82: commerce.v1.RunEndOfDayLedgerRequest
-	(*LedgerPosting)(nil),                             // 83: commerce.v1.LedgerPosting
-	(*RunEndOfDayLedgerResponse)(nil),                 // 84: commerce.v1.RunEndOfDayLedgerResponse
-	(*Fulfilment)(nil),                                // 85: commerce.v1.Fulfilment
-	(*FulfilmentLine)(nil),                            // 86: commerce.v1.FulfilmentLine
-	(*CreateFulfilmentRequest)(nil),                   // 87: commerce.v1.CreateFulfilmentRequest
-	(*CreateFulfilmentResponse)(nil),                  // 88: commerce.v1.CreateFulfilmentResponse
-	(*UpdateFulfilmentRequest)(nil),                   // 89: commerce.v1.UpdateFulfilmentRequest
-	(*UpdateFulfilmentResponse)(nil),                  // 90: commerce.v1.UpdateFulfilmentResponse
-	(*GetFulfilmentRequest)(nil),                      // 91: commerce.v1.GetFulfilmentRequest
-	(*GetFulfilmentResponse)(nil),                     // 92: commerce.v1.GetFulfilmentResponse
-	(*ListFulfilmentsRequest)(nil),                    // 93: commerce.v1.ListFulfilmentsRequest
-	(*ListFulfilmentsResponse)(nil),                   // 94: commerce.v1.ListFulfilmentsResponse
-	(*PriceList)(nil),                                 // 95: commerce.v1.PriceList
-	(*PriceListEntry)(nil),                            // 96: commerce.v1.PriceListEntry
-	(*CustomerPriceListAssignment)(nil),               // 97: commerce.v1.CustomerPriceListAssignment
-	(*CustomerPriceOverride)(nil),                     // 98: commerce.v1.CustomerPriceOverride
-	(*DiscountRule)(nil),                              // 99: commerce.v1.DiscountRule
-	(*ResolvedPrice)(nil),                             // 100: commerce.v1.ResolvedPrice
-	(*PriceListSaveRequest)(nil),                      // 101: commerce.v1.PriceListSaveRequest
-	(*PriceListSaveResponse)(nil),                     // 102: commerce.v1.PriceListSaveResponse
-	(*PriceListGetRequest)(nil),                       // 103: commerce.v1.PriceListGetRequest
-	(*PriceListGetResponse)(nil),                      // 104: commerce.v1.PriceListGetResponse
-	(*PriceListSearchRequest)(nil),                    // 105: commerce.v1.PriceListSearchRequest
-	(*PriceListSearchResponse)(nil),                   // 106: commerce.v1.PriceListSearchResponse
-	(*PriceListEntryBatchSaveRequest)(nil),            // 107: commerce.v1.PriceListEntryBatchSaveRequest
-	(*PriceListEntryBatchSaveResponse)(nil),           // 108: commerce.v1.PriceListEntryBatchSaveResponse
-	(*CustomerPriceListAssignmentSaveRequest)(nil),    // 109: commerce.v1.CustomerPriceListAssignmentSaveRequest
-	(*CustomerPriceListAssignmentSaveResponse)(nil),   // 110: commerce.v1.CustomerPriceListAssignmentSaveResponse
-	(*CustomerPriceListAssignmentSearchRequest)(nil),  // 111: commerce.v1.CustomerPriceListAssignmentSearchRequest
-	(*CustomerPriceListAssignmentSearchResponse)(nil), // 112: commerce.v1.CustomerPriceListAssignmentSearchResponse
-	(*CustomerPriceOverrideSaveRequest)(nil),          // 113: commerce.v1.CustomerPriceOverrideSaveRequest
-	(*CustomerPriceOverrideSaveResponse)(nil),         // 114: commerce.v1.CustomerPriceOverrideSaveResponse
-	(*CustomerPriceOverrideSearchRequest)(nil),        // 115: commerce.v1.CustomerPriceOverrideSearchRequest
-	(*CustomerPriceOverrideSearchResponse)(nil),       // 116: commerce.v1.CustomerPriceOverrideSearchResponse
-	(*DiscountRuleSaveRequest)(nil),                   // 117: commerce.v1.DiscountRuleSaveRequest
-	(*DiscountRuleSaveResponse)(nil),                  // 118: commerce.v1.DiscountRuleSaveResponse
-	(*DiscountRuleSearchRequest)(nil),                 // 119: commerce.v1.DiscountRuleSearchRequest
-	(*DiscountRuleSearchResponse)(nil),                // 120: commerce.v1.DiscountRuleSearchResponse
-	(*DiscountRuleApproveRequest)(nil),                // 121: commerce.v1.DiscountRuleApproveRequest
-	(*DiscountRuleApproveResponse)(nil),               // 122: commerce.v1.DiscountRuleApproveResponse
-	(*ResolvePriceRequest)(nil),                       // 123: commerce.v1.ResolvePriceRequest
-	(*ResolvePriceResponse)(nil),                      // 124: commerce.v1.ResolvePriceResponse
-	nil,                                               // 125: commerce.v1.Product.AttributesEntry
-	nil,                                               // 126: commerce.v1.ProductVariant.AttributesEntry
-	nil,                                               // 127: commerce.v1.CreateProductRequest.AttributesEntry
-	nil,                                               // 128: commerce.v1.CreateProductVariantRequest.AttributesEntry
-	nil,                                               // 129: commerce.v1.UpdateProductVariantRequest.AttributesEntry
-	nil,                                               // 130: commerce.v1.UpdateProductRequest.AttributesEntry
-	(*timestamppb.Timestamp)(nil),                     // 131: google.protobuf.Timestamp
-	(*structpb.Struct)(nil),                           // 132: google.protobuf.Struct
-	(*fieldmaskpb.FieldMask)(nil),                     // 133: google.protobuf.FieldMask
-	(*v1.SearchRequest)(nil),                          // 134: common.v1.SearchRequest
-	(*v1.Money)(nil),                                  // 135: common.v1.Money
+	(*ReceiveStockRequest)(nil),                       // 46: commerce.v1.ReceiveStockRequest
+	(*ReceiveStockResponse)(nil),                      // 47: commerce.v1.ReceiveStockResponse
+	(*UpdateProductVariantResponse)(nil),              // 48: commerce.v1.UpdateProductVariantResponse
+	(*Cart)(nil),                                      // 49: commerce.v1.Cart
+	(*CartLine)(nil),                                  // 50: commerce.v1.CartLine
+	(*CreateCartRequest)(nil),                         // 51: commerce.v1.CreateCartRequest
+	(*CreateCartResponse)(nil),                        // 52: commerce.v1.CreateCartResponse
+	(*GetCartRequest)(nil),                            // 53: commerce.v1.GetCartRequest
+	(*GetCartResponse)(nil),                           // 54: commerce.v1.GetCartResponse
+	(*AddCartLineRequest)(nil),                        // 55: commerce.v1.AddCartLineRequest
+	(*AddCartLineResponse)(nil),                       // 56: commerce.v1.AddCartLineResponse
+	(*RemoveCartLineRequest)(nil),                     // 57: commerce.v1.RemoveCartLineRequest
+	(*RemoveCartLineResponse)(nil),                    // 58: commerce.v1.RemoveCartLineResponse
+	(*CreateOrderFromCartRequest)(nil),                // 59: commerce.v1.CreateOrderFromCartRequest
+	(*CreateOrderFromCartResponse)(nil),               // 60: commerce.v1.CreateOrderFromCartResponse
+	(*Order)(nil),                                     // 61: commerce.v1.Order
+	(*OrderPayment)(nil),                              // 62: commerce.v1.OrderPayment
+	(*OrderLine)(nil),                                 // 63: commerce.v1.OrderLine
+	(*CreateOrderRequest)(nil),                        // 64: commerce.v1.CreateOrderRequest
+	(*CreateOrderResponse)(nil),                       // 65: commerce.v1.CreateOrderResponse
+	(*CreateOrderLine)(nil),                           // 66: commerce.v1.CreateOrderLine
+	(*GetOrderRequest)(nil),                           // 67: commerce.v1.GetOrderRequest
+	(*GetOrderResponse)(nil),                          // 68: commerce.v1.GetOrderResponse
+	(*ListOrdersRequest)(nil),                         // 69: commerce.v1.ListOrdersRequest
+	(*ListOrdersResponse)(nil),                        // 70: commerce.v1.ListOrdersResponse
+	(*CheckoutOrderRequest)(nil),                      // 71: commerce.v1.CheckoutOrderRequest
+	(*CheckoutOrderResponse)(nil),                     // 72: commerce.v1.CheckoutOrderResponse
+	(*ConfirmOrderPaymentRequest)(nil),                // 73: commerce.v1.ConfirmOrderPaymentRequest
+	(*ConfirmOrderPaymentResponse)(nil),               // 74: commerce.v1.ConfirmOrderPaymentResponse
+	(*CancelOrderRequest)(nil),                        // 75: commerce.v1.CancelOrderRequest
+	(*CancelOrderResponse)(nil),                       // 76: commerce.v1.CancelOrderResponse
+	(*RecordOrderPaymentRequest)(nil),                 // 77: commerce.v1.RecordOrderPaymentRequest
+	(*RecordOrderPaymentResponse)(nil),                // 78: commerce.v1.RecordOrderPaymentResponse
+	(*OrderEvent)(nil),                                // 79: commerce.v1.OrderEvent
+	(*ListOrderEventsRequest)(nil),                    // 80: commerce.v1.ListOrderEventsRequest
+	(*ListOrderEventsResponse)(nil),                   // 81: commerce.v1.ListOrderEventsResponse
+	(*ReconcilePaymentsRequest)(nil),                  // 82: commerce.v1.ReconcilePaymentsRequest
+	(*ReconcilePaymentsResponse)(nil),                 // 83: commerce.v1.ReconcilePaymentsResponse
+	(*RunEndOfDayLedgerRequest)(nil),                  // 84: commerce.v1.RunEndOfDayLedgerRequest
+	(*LedgerPosting)(nil),                             // 85: commerce.v1.LedgerPosting
+	(*RunEndOfDayLedgerResponse)(nil),                 // 86: commerce.v1.RunEndOfDayLedgerResponse
+	(*Fulfilment)(nil),                                // 87: commerce.v1.Fulfilment
+	(*FulfilmentLine)(nil),                            // 88: commerce.v1.FulfilmentLine
+	(*CreateFulfilmentRequest)(nil),                   // 89: commerce.v1.CreateFulfilmentRequest
+	(*CreateFulfilmentResponse)(nil),                  // 90: commerce.v1.CreateFulfilmentResponse
+	(*UpdateFulfilmentRequest)(nil),                   // 91: commerce.v1.UpdateFulfilmentRequest
+	(*UpdateFulfilmentResponse)(nil),                  // 92: commerce.v1.UpdateFulfilmentResponse
+	(*GetFulfilmentRequest)(nil),                      // 93: commerce.v1.GetFulfilmentRequest
+	(*GetFulfilmentResponse)(nil),                     // 94: commerce.v1.GetFulfilmentResponse
+	(*ListFulfilmentsRequest)(nil),                    // 95: commerce.v1.ListFulfilmentsRequest
+	(*ListFulfilmentsResponse)(nil),                   // 96: commerce.v1.ListFulfilmentsResponse
+	(*PriceList)(nil),                                 // 97: commerce.v1.PriceList
+	(*PriceListEntry)(nil),                            // 98: commerce.v1.PriceListEntry
+	(*CustomerPriceListAssignment)(nil),               // 99: commerce.v1.CustomerPriceListAssignment
+	(*CustomerPriceOverride)(nil),                     // 100: commerce.v1.CustomerPriceOverride
+	(*DiscountRule)(nil),                              // 101: commerce.v1.DiscountRule
+	(*ResolvedPrice)(nil),                             // 102: commerce.v1.ResolvedPrice
+	(*PriceListSaveRequest)(nil),                      // 103: commerce.v1.PriceListSaveRequest
+	(*PriceListSaveResponse)(nil),                     // 104: commerce.v1.PriceListSaveResponse
+	(*PriceListGetRequest)(nil),                       // 105: commerce.v1.PriceListGetRequest
+	(*PriceListGetResponse)(nil),                      // 106: commerce.v1.PriceListGetResponse
+	(*PriceListSearchRequest)(nil),                    // 107: commerce.v1.PriceListSearchRequest
+	(*PriceListSearchResponse)(nil),                   // 108: commerce.v1.PriceListSearchResponse
+	(*PriceListEntryBatchSaveRequest)(nil),            // 109: commerce.v1.PriceListEntryBatchSaveRequest
+	(*PriceListEntryBatchSaveResponse)(nil),           // 110: commerce.v1.PriceListEntryBatchSaveResponse
+	(*CustomerPriceListAssignmentSaveRequest)(nil),    // 111: commerce.v1.CustomerPriceListAssignmentSaveRequest
+	(*CustomerPriceListAssignmentSaveResponse)(nil),   // 112: commerce.v1.CustomerPriceListAssignmentSaveResponse
+	(*CustomerPriceListAssignmentSearchRequest)(nil),  // 113: commerce.v1.CustomerPriceListAssignmentSearchRequest
+	(*CustomerPriceListAssignmentSearchResponse)(nil), // 114: commerce.v1.CustomerPriceListAssignmentSearchResponse
+	(*CustomerPriceOverrideSaveRequest)(nil),          // 115: commerce.v1.CustomerPriceOverrideSaveRequest
+	(*CustomerPriceOverrideSaveResponse)(nil),         // 116: commerce.v1.CustomerPriceOverrideSaveResponse
+	(*CustomerPriceOverrideSearchRequest)(nil),        // 117: commerce.v1.CustomerPriceOverrideSearchRequest
+	(*CustomerPriceOverrideSearchResponse)(nil),       // 118: commerce.v1.CustomerPriceOverrideSearchResponse
+	(*DiscountRuleSaveRequest)(nil),                   // 119: commerce.v1.DiscountRuleSaveRequest
+	(*DiscountRuleSaveResponse)(nil),                  // 120: commerce.v1.DiscountRuleSaveResponse
+	(*DiscountRuleSearchRequest)(nil),                 // 121: commerce.v1.DiscountRuleSearchRequest
+	(*DiscountRuleSearchResponse)(nil),                // 122: commerce.v1.DiscountRuleSearchResponse
+	(*DiscountRuleApproveRequest)(nil),                // 123: commerce.v1.DiscountRuleApproveRequest
+	(*DiscountRuleApproveResponse)(nil),               // 124: commerce.v1.DiscountRuleApproveResponse
+	(*ResolvePriceRequest)(nil),                       // 125: commerce.v1.ResolvePriceRequest
+	(*ResolvePriceResponse)(nil),                      // 126: commerce.v1.ResolvePriceResponse
+	nil,                                               // 127: commerce.v1.Product.AttributesEntry
+	nil,                                               // 128: commerce.v1.ProductVariant.AttributesEntry
+	nil,                                               // 129: commerce.v1.CreateProductRequest.AttributesEntry
+	nil,                                               // 130: commerce.v1.CreateProductVariantRequest.AttributesEntry
+	nil,                                               // 131: commerce.v1.UpdateProductVariantRequest.AttributesEntry
+	nil,                                               // 132: commerce.v1.UpdateProductRequest.AttributesEntry
+	(*timestamppb.Timestamp)(nil),                     // 133: google.protobuf.Timestamp
+	(*structpb.Struct)(nil),                           // 134: google.protobuf.Struct
+	(*fieldmaskpb.FieldMask)(nil),                     // 135: google.protobuf.FieldMask
+	(*v1.SearchRequest)(nil),                          // 136: common.v1.SearchRequest
+	(*v1.Money)(nil),                                  // 137: common.v1.Money
 }
 var file_v1_commerce_proto_depIdxs = []int32{
 	0,   // 0: commerce.v1.Shop.status:type_name -> commerce.v1.ShopStatus
-	131, // 1: commerce.v1.Shop.created_at:type_name -> google.protobuf.Timestamp
-	132, // 2: commerce.v1.Shop.extra:type_name -> google.protobuf.Struct
+	133, // 1: commerce.v1.Shop.created_at:type_name -> google.protobuf.Timestamp
+	134, // 2: commerce.v1.Shop.extra:type_name -> google.protobuf.Struct
 	20,  // 3: commerce.v1.Shop.payment_policy:type_name -> commerce.v1.PaymentPolicy
 	20,  // 4: commerce.v1.CreateShopRequest.payment_policy:type_name -> commerce.v1.PaymentPolicy
 	19,  // 5: commerce.v1.CreateShopResponse.shop:type_name -> commerce.v1.Shop
-	133, // 6: commerce.v1.UpdateShopRequest.update_mask:type_name -> google.protobuf.FieldMask
+	135, // 6: commerce.v1.UpdateShopRequest.update_mask:type_name -> google.protobuf.FieldMask
 	0,   // 7: commerce.v1.UpdateShopRequest.status:type_name -> commerce.v1.ShopStatus
-	132, // 8: commerce.v1.UpdateShopRequest.extra:type_name -> google.protobuf.Struct
+	134, // 8: commerce.v1.UpdateShopRequest.extra:type_name -> google.protobuf.Struct
 	20,  // 9: commerce.v1.UpdateShopRequest.payment_policy:type_name -> commerce.v1.PaymentPolicy
 	19,  // 10: commerce.v1.UpdateShopResponse.shop:type_name -> commerce.v1.Shop
-	134, // 11: commerce.v1.ListShopsRequest.search:type_name -> common.v1.SearchRequest
+	136, // 11: commerce.v1.ListShopsRequest.search:type_name -> common.v1.SearchRequest
 	19,  // 12: commerce.v1.ListShopsResponse.shops:type_name -> commerce.v1.Shop
 	19,  // 13: commerce.v1.GetShopResponse.shop:type_name -> commerce.v1.Shop
 	1,   // 14: commerce.v1.ResolveDefaultCurrencyResponse.source:type_name -> commerce.v1.CurrencySource
-	125, // 15: commerce.v1.Product.attributes:type_name -> commerce.v1.Product.AttributesEntry
+	127, // 15: commerce.v1.Product.attributes:type_name -> commerce.v1.Product.AttributesEntry
 	3,   // 16: commerce.v1.Product.fulfilment_type:type_name -> commerce.v1.FulfilmentType
 	2,   // 17: commerce.v1.Product.status:type_name -> commerce.v1.ProductStatus
-	131, // 18: commerce.v1.Product.created_at:type_name -> google.protobuf.Timestamp
+	133, // 18: commerce.v1.Product.created_at:type_name -> google.protobuf.Timestamp
 	20,  // 19: commerce.v1.Product.payment_policy:type_name -> commerce.v1.PaymentPolicy
-	135, // 20: commerce.v1.ProductVariant.price:type_name -> common.v1.Money
-	126, // 21: commerce.v1.ProductVariant.attributes:type_name -> commerce.v1.ProductVariant.AttributesEntry
+	137, // 20: commerce.v1.ProductVariant.price:type_name -> common.v1.Money
+	128, // 21: commerce.v1.ProductVariant.attributes:type_name -> commerce.v1.ProductVariant.AttributesEntry
 	4,   // 22: commerce.v1.ProductVariant.status:type_name -> commerce.v1.ProductVariantStatus
-	131, // 23: commerce.v1.ProductVariant.created_at:type_name -> google.protobuf.Timestamp
-	127, // 24: commerce.v1.CreateProductRequest.attributes:type_name -> commerce.v1.CreateProductRequest.AttributesEntry
+	133, // 23: commerce.v1.ProductVariant.created_at:type_name -> google.protobuf.Timestamp
+	129, // 24: commerce.v1.CreateProductRequest.attributes:type_name -> commerce.v1.CreateProductRequest.AttributesEntry
 	3,   // 25: commerce.v1.CreateProductRequest.fulfilment_type:type_name -> commerce.v1.FulfilmentType
 	20,  // 26: commerce.v1.CreateProductRequest.payment_policy:type_name -> commerce.v1.PaymentPolicy
 	31,  // 27: commerce.v1.CreateProductResponse.product:type_name -> commerce.v1.Product
 	31,  // 28: commerce.v1.GetProductResponse.product:type_name -> commerce.v1.Product
-	134, // 29: commerce.v1.ListProductsRequest.search:type_name -> common.v1.SearchRequest
+	136, // 29: commerce.v1.ListProductsRequest.search:type_name -> common.v1.SearchRequest
 	31,  // 30: commerce.v1.ListProductsResponse.products:type_name -> commerce.v1.Product
-	135, // 31: commerce.v1.CreateProductVariantRequest.price:type_name -> common.v1.Money
-	128, // 32: commerce.v1.CreateProductVariantRequest.attributes:type_name -> commerce.v1.CreateProductVariantRequest.AttributesEntry
+	137, // 31: commerce.v1.CreateProductVariantRequest.price:type_name -> common.v1.Money
+	130, // 32: commerce.v1.CreateProductVariantRequest.attributes:type_name -> commerce.v1.CreateProductVariantRequest.AttributesEntry
 	32,  // 33: commerce.v1.CreateProductVariantResponse.product_variant:type_name -> commerce.v1.ProductVariant
-	133, // 34: commerce.v1.UpdateProductVariantRequest.update_mask:type_name -> google.protobuf.FieldMask
-	135, // 35: commerce.v1.UpdateProductVariantRequest.price:type_name -> common.v1.Money
+	135, // 34: commerce.v1.UpdateProductVariantRequest.update_mask:type_name -> google.protobuf.FieldMask
+	137, // 35: commerce.v1.UpdateProductVariantRequest.price:type_name -> common.v1.Money
 	4,   // 36: commerce.v1.UpdateProductVariantRequest.status:type_name -> commerce.v1.ProductVariantStatus
-	129, // 37: commerce.v1.UpdateProductVariantRequest.attributes:type_name -> commerce.v1.UpdateProductVariantRequest.AttributesEntry
-	133, // 38: commerce.v1.UpdateProductRequest.update_mask:type_name -> google.protobuf.FieldMask
-	130, // 39: commerce.v1.UpdateProductRequest.attributes:type_name -> commerce.v1.UpdateProductRequest.AttributesEntry
+	131, // 37: commerce.v1.UpdateProductVariantRequest.attributes:type_name -> commerce.v1.UpdateProductVariantRequest.AttributesEntry
+	135, // 38: commerce.v1.UpdateProductRequest.update_mask:type_name -> google.protobuf.FieldMask
+	132, // 39: commerce.v1.UpdateProductRequest.attributes:type_name -> commerce.v1.UpdateProductRequest.AttributesEntry
 	3,   // 40: commerce.v1.UpdateProductRequest.fulfilment_type:type_name -> commerce.v1.FulfilmentType
 	2,   // 41: commerce.v1.UpdateProductRequest.status:type_name -> commerce.v1.ProductStatus
 	20,  // 42: commerce.v1.UpdateProductRequest.payment_policy:type_name -> commerce.v1.PaymentPolicy
@@ -13826,127 +14016,127 @@ var file_v1_commerce_proto_depIdxs = []int32{
 	32,  // 44: commerce.v1.ListProductVariantsResponse.product_variants:type_name -> commerce.v1.ProductVariant
 	32,  // 45: commerce.v1.UpdateProductVariantResponse.product_variant:type_name -> commerce.v1.ProductVariant
 	5,   // 46: commerce.v1.Cart.status:type_name -> commerce.v1.CartStatus
-	48,  // 47: commerce.v1.Cart.lines:type_name -> commerce.v1.CartLine
-	131, // 48: commerce.v1.Cart.expires_at:type_name -> google.protobuf.Timestamp
-	131, // 49: commerce.v1.Cart.created_at:type_name -> google.protobuf.Timestamp
-	131, // 50: commerce.v1.Cart.updated_at:type_name -> google.protobuf.Timestamp
-	47,  // 51: commerce.v1.CreateCartResponse.cart:type_name -> commerce.v1.Cart
-	47,  // 52: commerce.v1.GetCartResponse.cart:type_name -> commerce.v1.Cart
-	47,  // 53: commerce.v1.AddCartLineResponse.cart:type_name -> commerce.v1.Cart
-	47,  // 54: commerce.v1.RemoveCartLineResponse.cart:type_name -> commerce.v1.Cart
-	59,  // 55: commerce.v1.CreateOrderFromCartResponse.order:type_name -> commerce.v1.Order
+	50,  // 47: commerce.v1.Cart.lines:type_name -> commerce.v1.CartLine
+	133, // 48: commerce.v1.Cart.expires_at:type_name -> google.protobuf.Timestamp
+	133, // 49: commerce.v1.Cart.created_at:type_name -> google.protobuf.Timestamp
+	133, // 50: commerce.v1.Cart.updated_at:type_name -> google.protobuf.Timestamp
+	49,  // 51: commerce.v1.CreateCartResponse.cart:type_name -> commerce.v1.Cart
+	49,  // 52: commerce.v1.GetCartResponse.cart:type_name -> commerce.v1.Cart
+	49,  // 53: commerce.v1.AddCartLineResponse.cart:type_name -> commerce.v1.Cart
+	49,  // 54: commerce.v1.RemoveCartLineResponse.cart:type_name -> commerce.v1.Cart
+	61,  // 55: commerce.v1.CreateOrderFromCartResponse.order:type_name -> commerce.v1.Order
 	7,   // 56: commerce.v1.Order.status:type_name -> commerce.v1.OrderStatus
 	8,   // 57: commerce.v1.Order.payment_status:type_name -> commerce.v1.PaymentStatus
 	11,  // 58: commerce.v1.Order.fulfilment_status:type_name -> commerce.v1.FulfilmentStatus
-	135, // 59: commerce.v1.Order.subtotal:type_name -> common.v1.Money
-	135, // 60: commerce.v1.Order.total:type_name -> common.v1.Money
-	61,  // 61: commerce.v1.Order.lines:type_name -> commerce.v1.OrderLine
-	131, // 62: commerce.v1.Order.created_at:type_name -> google.protobuf.Timestamp
-	131, // 63: commerce.v1.Order.paid_at:type_name -> google.protobuf.Timestamp
-	131, // 64: commerce.v1.Order.cancelled_at:type_name -> google.protobuf.Timestamp
-	135, // 65: commerce.v1.Order.amount_paid:type_name -> common.v1.Money
-	135, // 66: commerce.v1.Order.balance:type_name -> common.v1.Money
-	131, // 67: commerce.v1.Order.balance_due_at:type_name -> google.protobuf.Timestamp
+	137, // 59: commerce.v1.Order.subtotal:type_name -> common.v1.Money
+	137, // 60: commerce.v1.Order.total:type_name -> common.v1.Money
+	63,  // 61: commerce.v1.Order.lines:type_name -> commerce.v1.OrderLine
+	133, // 62: commerce.v1.Order.created_at:type_name -> google.protobuf.Timestamp
+	133, // 63: commerce.v1.Order.paid_at:type_name -> google.protobuf.Timestamp
+	133, // 64: commerce.v1.Order.cancelled_at:type_name -> google.protobuf.Timestamp
+	137, // 65: commerce.v1.Order.amount_paid:type_name -> common.v1.Money
+	137, // 66: commerce.v1.Order.balance:type_name -> common.v1.Money
+	133, // 67: commerce.v1.Order.balance_due_at:type_name -> google.protobuf.Timestamp
 	20,  // 68: commerce.v1.Order.payment_policy:type_name -> commerce.v1.PaymentPolicy
-	60,  // 69: commerce.v1.Order.payments:type_name -> commerce.v1.OrderPayment
-	131, // 70: commerce.v1.Order.payment_due_at:type_name -> google.protobuf.Timestamp
-	135, // 71: commerce.v1.Order.amount_refunded:type_name -> common.v1.Money
-	135, // 72: commerce.v1.OrderPayment.amount:type_name -> common.v1.Money
+	62,  // 69: commerce.v1.Order.payments:type_name -> commerce.v1.OrderPayment
+	133, // 70: commerce.v1.Order.payment_due_at:type_name -> google.protobuf.Timestamp
+	137, // 71: commerce.v1.Order.amount_refunded:type_name -> common.v1.Money
+	137, // 72: commerce.v1.OrderPayment.amount:type_name -> common.v1.Money
 	6,   // 73: commerce.v1.OrderPayment.source:type_name -> commerce.v1.OrderPaymentSource
-	131, // 74: commerce.v1.OrderPayment.paid_at:type_name -> google.protobuf.Timestamp
-	135, // 75: commerce.v1.OrderLine.unit_price:type_name -> common.v1.Money
-	135, // 76: commerce.v1.OrderLine.total_price:type_name -> common.v1.Money
-	64,  // 77: commerce.v1.CreateOrderRequest.lines:type_name -> commerce.v1.CreateOrderLine
-	59,  // 78: commerce.v1.CreateOrderResponse.order:type_name -> commerce.v1.Order
-	59,  // 79: commerce.v1.GetOrderResponse.order:type_name -> commerce.v1.Order
-	134, // 80: commerce.v1.ListOrdersRequest.search:type_name -> common.v1.SearchRequest
-	59,  // 81: commerce.v1.ListOrdersResponse.orders:type_name -> commerce.v1.Order
-	135, // 82: commerce.v1.CheckoutOrderRequest.amount:type_name -> common.v1.Money
-	59,  // 83: commerce.v1.CheckoutOrderResponse.order:type_name -> commerce.v1.Order
-	135, // 84: commerce.v1.CheckoutOrderResponse.amount:type_name -> common.v1.Money
-	59,  // 85: commerce.v1.ConfirmOrderPaymentResponse.order:type_name -> commerce.v1.Order
-	59,  // 86: commerce.v1.CancelOrderResponse.order:type_name -> commerce.v1.Order
-	135, // 87: commerce.v1.RecordOrderPaymentRequest.amount:type_name -> common.v1.Money
-	59,  // 88: commerce.v1.RecordOrderPaymentResponse.order:type_name -> commerce.v1.Order
+	133, // 74: commerce.v1.OrderPayment.paid_at:type_name -> google.protobuf.Timestamp
+	137, // 75: commerce.v1.OrderLine.unit_price:type_name -> common.v1.Money
+	137, // 76: commerce.v1.OrderLine.total_price:type_name -> common.v1.Money
+	66,  // 77: commerce.v1.CreateOrderRequest.lines:type_name -> commerce.v1.CreateOrderLine
+	61,  // 78: commerce.v1.CreateOrderResponse.order:type_name -> commerce.v1.Order
+	61,  // 79: commerce.v1.GetOrderResponse.order:type_name -> commerce.v1.Order
+	136, // 80: commerce.v1.ListOrdersRequest.search:type_name -> common.v1.SearchRequest
+	61,  // 81: commerce.v1.ListOrdersResponse.orders:type_name -> commerce.v1.Order
+	137, // 82: commerce.v1.CheckoutOrderRequest.amount:type_name -> common.v1.Money
+	61,  // 83: commerce.v1.CheckoutOrderResponse.order:type_name -> commerce.v1.Order
+	137, // 84: commerce.v1.CheckoutOrderResponse.amount:type_name -> common.v1.Money
+	61,  // 85: commerce.v1.ConfirmOrderPaymentResponse.order:type_name -> commerce.v1.Order
+	61,  // 86: commerce.v1.CancelOrderResponse.order:type_name -> commerce.v1.Order
+	137, // 87: commerce.v1.RecordOrderPaymentRequest.amount:type_name -> common.v1.Money
+	61,  // 88: commerce.v1.RecordOrderPaymentResponse.order:type_name -> commerce.v1.Order
 	9,   // 89: commerce.v1.OrderEvent.type:type_name -> commerce.v1.OrderEventType
-	135, // 90: commerce.v1.OrderEvent.amount_paid:type_name -> common.v1.Money
-	135, // 91: commerce.v1.OrderEvent.balance:type_name -> common.v1.Money
-	135, // 92: commerce.v1.OrderEvent.payment_amount:type_name -> common.v1.Money
-	131, // 93: commerce.v1.OrderEvent.created_at:type_name -> google.protobuf.Timestamp
+	137, // 90: commerce.v1.OrderEvent.amount_paid:type_name -> common.v1.Money
+	137, // 91: commerce.v1.OrderEvent.balance:type_name -> common.v1.Money
+	137, // 92: commerce.v1.OrderEvent.payment_amount:type_name -> common.v1.Money
+	133, // 93: commerce.v1.OrderEvent.created_at:type_name -> google.protobuf.Timestamp
 	10,  // 94: commerce.v1.OrderEvent.delivery:type_name -> commerce.v1.OrderEventDelivery
-	134, // 95: commerce.v1.ListOrderEventsRequest.search:type_name -> common.v1.SearchRequest
-	77,  // 96: commerce.v1.ListOrderEventsResponse.events:type_name -> commerce.v1.OrderEvent
-	135, // 97: commerce.v1.LedgerPosting.sales:type_name -> common.v1.Money
-	135, // 98: commerce.v1.LedgerPosting.refunds:type_name -> common.v1.Money
-	83,  // 99: commerce.v1.RunEndOfDayLedgerResponse.postings:type_name -> commerce.v1.LedgerPosting
+	136, // 95: commerce.v1.ListOrderEventsRequest.search:type_name -> common.v1.SearchRequest
+	79,  // 96: commerce.v1.ListOrderEventsResponse.events:type_name -> commerce.v1.OrderEvent
+	137, // 97: commerce.v1.LedgerPosting.sales:type_name -> common.v1.Money
+	137, // 98: commerce.v1.LedgerPosting.refunds:type_name -> common.v1.Money
+	85,  // 99: commerce.v1.RunEndOfDayLedgerResponse.postings:type_name -> commerce.v1.LedgerPosting
 	11,  // 100: commerce.v1.Fulfilment.status:type_name -> commerce.v1.FulfilmentStatus
-	86,  // 101: commerce.v1.Fulfilment.lines:type_name -> commerce.v1.FulfilmentLine
-	131, // 102: commerce.v1.Fulfilment.created_at:type_name -> google.protobuf.Timestamp
-	131, // 103: commerce.v1.Fulfilment.shipped_at:type_name -> google.protobuf.Timestamp
-	86,  // 104: commerce.v1.CreateFulfilmentRequest.lines:type_name -> commerce.v1.FulfilmentLine
-	85,  // 105: commerce.v1.CreateFulfilmentResponse.fulfilment:type_name -> commerce.v1.Fulfilment
-	133, // 106: commerce.v1.UpdateFulfilmentRequest.update_mask:type_name -> google.protobuf.FieldMask
+	88,  // 101: commerce.v1.Fulfilment.lines:type_name -> commerce.v1.FulfilmentLine
+	133, // 102: commerce.v1.Fulfilment.created_at:type_name -> google.protobuf.Timestamp
+	133, // 103: commerce.v1.Fulfilment.shipped_at:type_name -> google.protobuf.Timestamp
+	88,  // 104: commerce.v1.CreateFulfilmentRequest.lines:type_name -> commerce.v1.FulfilmentLine
+	87,  // 105: commerce.v1.CreateFulfilmentResponse.fulfilment:type_name -> commerce.v1.Fulfilment
+	135, // 106: commerce.v1.UpdateFulfilmentRequest.update_mask:type_name -> google.protobuf.FieldMask
 	11,  // 107: commerce.v1.UpdateFulfilmentRequest.status:type_name -> commerce.v1.FulfilmentStatus
-	131, // 108: commerce.v1.UpdateFulfilmentRequest.shipped_at:type_name -> google.protobuf.Timestamp
-	85,  // 109: commerce.v1.UpdateFulfilmentResponse.fulfilment:type_name -> commerce.v1.Fulfilment
-	85,  // 110: commerce.v1.GetFulfilmentResponse.fulfilment:type_name -> commerce.v1.Fulfilment
-	85,  // 111: commerce.v1.ListFulfilmentsResponse.fulfilments:type_name -> commerce.v1.Fulfilment
-	131, // 112: commerce.v1.PriceList.valid_from:type_name -> google.protobuf.Timestamp
-	131, // 113: commerce.v1.PriceList.valid_until:type_name -> google.protobuf.Timestamp
+	133, // 108: commerce.v1.UpdateFulfilmentRequest.shipped_at:type_name -> google.protobuf.Timestamp
+	87,  // 109: commerce.v1.UpdateFulfilmentResponse.fulfilment:type_name -> commerce.v1.Fulfilment
+	87,  // 110: commerce.v1.GetFulfilmentResponse.fulfilment:type_name -> commerce.v1.Fulfilment
+	87,  // 111: commerce.v1.ListFulfilmentsResponse.fulfilments:type_name -> commerce.v1.Fulfilment
+	133, // 112: commerce.v1.PriceList.valid_from:type_name -> google.protobuf.Timestamp
+	133, // 113: commerce.v1.PriceList.valid_until:type_name -> google.protobuf.Timestamp
 	12,  // 114: commerce.v1.PriceList.status:type_name -> commerce.v1.PriceListStatus
-	131, // 115: commerce.v1.PriceList.created_at:type_name -> google.protobuf.Timestamp
-	135, // 116: commerce.v1.PriceListEntry.unit_price:type_name -> common.v1.Money
+	133, // 115: commerce.v1.PriceList.created_at:type_name -> google.protobuf.Timestamp
+	137, // 116: commerce.v1.PriceListEntry.unit_price:type_name -> common.v1.Money
 	18,  // 117: commerce.v1.CustomerPriceListAssignment.status:type_name -> commerce.v1.CustomerPriceListAssignmentStatus
-	131, // 118: commerce.v1.CustomerPriceListAssignment.created_at:type_name -> google.protobuf.Timestamp
-	135, // 119: commerce.v1.CustomerPriceOverride.unit_price:type_name -> common.v1.Money
-	131, // 120: commerce.v1.CustomerPriceOverride.valid_from:type_name -> google.protobuf.Timestamp
-	131, // 121: commerce.v1.CustomerPriceOverride.valid_until:type_name -> google.protobuf.Timestamp
+	133, // 118: commerce.v1.CustomerPriceListAssignment.created_at:type_name -> google.protobuf.Timestamp
+	137, // 119: commerce.v1.CustomerPriceOverride.unit_price:type_name -> common.v1.Money
+	133, // 120: commerce.v1.CustomerPriceOverride.valid_from:type_name -> google.protobuf.Timestamp
+	133, // 121: commerce.v1.CustomerPriceOverride.valid_until:type_name -> google.protobuf.Timestamp
 	17,  // 122: commerce.v1.CustomerPriceOverride.status:type_name -> commerce.v1.CustomerPriceOverrideStatus
-	131, // 123: commerce.v1.CustomerPriceOverride.created_at:type_name -> google.protobuf.Timestamp
+	133, // 123: commerce.v1.CustomerPriceOverride.created_at:type_name -> google.protobuf.Timestamp
 	14,  // 124: commerce.v1.DiscountRule.discount_type:type_name -> commerce.v1.DiscountType
 	15,  // 125: commerce.v1.DiscountRule.applies_to:type_name -> commerce.v1.DiscountAppliesTo
-	132, // 126: commerce.v1.DiscountRule.conditions:type_name -> google.protobuf.Struct
-	131, // 127: commerce.v1.DiscountRule.valid_from:type_name -> google.protobuf.Timestamp
-	131, // 128: commerce.v1.DiscountRule.valid_until:type_name -> google.protobuf.Timestamp
+	134, // 126: commerce.v1.DiscountRule.conditions:type_name -> google.protobuf.Struct
+	133, // 127: commerce.v1.DiscountRule.valid_from:type_name -> google.protobuf.Timestamp
+	133, // 128: commerce.v1.DiscountRule.valid_until:type_name -> google.protobuf.Timestamp
 	16,  // 129: commerce.v1.DiscountRule.status:type_name -> commerce.v1.DiscountRuleStatus
-	131, // 130: commerce.v1.DiscountRule.created_at:type_name -> google.protobuf.Timestamp
-	131, // 131: commerce.v1.DiscountRule.approved_at:type_name -> google.protobuf.Timestamp
-	135, // 132: commerce.v1.ResolvedPrice.unit_price:type_name -> common.v1.Money
+	133, // 130: commerce.v1.DiscountRule.created_at:type_name -> google.protobuf.Timestamp
+	133, // 131: commerce.v1.DiscountRule.approved_at:type_name -> google.protobuf.Timestamp
+	137, // 132: commerce.v1.ResolvedPrice.unit_price:type_name -> common.v1.Money
 	13,  // 133: commerce.v1.ResolvedPrice.price_source:type_name -> commerce.v1.PriceSource
-	135, // 134: commerce.v1.ResolvedPrice.discount_amount:type_name -> common.v1.Money
-	135, // 135: commerce.v1.ResolvedPrice.pre_discount_price:type_name -> common.v1.Money
-	131, // 136: commerce.v1.PriceListSaveRequest.valid_from:type_name -> google.protobuf.Timestamp
-	131, // 137: commerce.v1.PriceListSaveRequest.valid_until:type_name -> google.protobuf.Timestamp
+	137, // 134: commerce.v1.ResolvedPrice.discount_amount:type_name -> common.v1.Money
+	137, // 135: commerce.v1.ResolvedPrice.pre_discount_price:type_name -> common.v1.Money
+	133, // 136: commerce.v1.PriceListSaveRequest.valid_from:type_name -> google.protobuf.Timestamp
+	133, // 137: commerce.v1.PriceListSaveRequest.valid_until:type_name -> google.protobuf.Timestamp
 	12,  // 138: commerce.v1.PriceListSaveRequest.status:type_name -> commerce.v1.PriceListStatus
-	95,  // 139: commerce.v1.PriceListSaveResponse.price_list:type_name -> commerce.v1.PriceList
-	95,  // 140: commerce.v1.PriceListGetResponse.price_list:type_name -> commerce.v1.PriceList
-	134, // 141: commerce.v1.PriceListSearchRequest.search:type_name -> common.v1.SearchRequest
-	95,  // 142: commerce.v1.PriceListSearchResponse.price_lists:type_name -> commerce.v1.PriceList
-	96,  // 143: commerce.v1.PriceListEntryBatchSaveRequest.entries:type_name -> commerce.v1.PriceListEntry
-	96,  // 144: commerce.v1.PriceListEntryBatchSaveResponse.entries:type_name -> commerce.v1.PriceListEntry
+	97,  // 139: commerce.v1.PriceListSaveResponse.price_list:type_name -> commerce.v1.PriceList
+	97,  // 140: commerce.v1.PriceListGetResponse.price_list:type_name -> commerce.v1.PriceList
+	136, // 141: commerce.v1.PriceListSearchRequest.search:type_name -> common.v1.SearchRequest
+	97,  // 142: commerce.v1.PriceListSearchResponse.price_lists:type_name -> commerce.v1.PriceList
+	98,  // 143: commerce.v1.PriceListEntryBatchSaveRequest.entries:type_name -> commerce.v1.PriceListEntry
+	98,  // 144: commerce.v1.PriceListEntryBatchSaveResponse.entries:type_name -> commerce.v1.PriceListEntry
 	18,  // 145: commerce.v1.CustomerPriceListAssignmentSaveRequest.status:type_name -> commerce.v1.CustomerPriceListAssignmentStatus
-	97,  // 146: commerce.v1.CustomerPriceListAssignmentSaveResponse.assignment:type_name -> commerce.v1.CustomerPriceListAssignment
-	134, // 147: commerce.v1.CustomerPriceListAssignmentSearchRequest.search:type_name -> common.v1.SearchRequest
-	97,  // 148: commerce.v1.CustomerPriceListAssignmentSearchResponse.assignments:type_name -> commerce.v1.CustomerPriceListAssignment
-	135, // 149: commerce.v1.CustomerPriceOverrideSaveRequest.unit_price:type_name -> common.v1.Money
-	131, // 150: commerce.v1.CustomerPriceOverrideSaveRequest.valid_from:type_name -> google.protobuf.Timestamp
-	131, // 151: commerce.v1.CustomerPriceOverrideSaveRequest.valid_until:type_name -> google.protobuf.Timestamp
+	99,  // 146: commerce.v1.CustomerPriceListAssignmentSaveResponse.assignment:type_name -> commerce.v1.CustomerPriceListAssignment
+	136, // 147: commerce.v1.CustomerPriceListAssignmentSearchRequest.search:type_name -> common.v1.SearchRequest
+	99,  // 148: commerce.v1.CustomerPriceListAssignmentSearchResponse.assignments:type_name -> commerce.v1.CustomerPriceListAssignment
+	137, // 149: commerce.v1.CustomerPriceOverrideSaveRequest.unit_price:type_name -> common.v1.Money
+	133, // 150: commerce.v1.CustomerPriceOverrideSaveRequest.valid_from:type_name -> google.protobuf.Timestamp
+	133, // 151: commerce.v1.CustomerPriceOverrideSaveRequest.valid_until:type_name -> google.protobuf.Timestamp
 	17,  // 152: commerce.v1.CustomerPriceOverrideSaveRequest.status:type_name -> commerce.v1.CustomerPriceOverrideStatus
-	98,  // 153: commerce.v1.CustomerPriceOverrideSaveResponse.override:type_name -> commerce.v1.CustomerPriceOverride
-	134, // 154: commerce.v1.CustomerPriceOverrideSearchRequest.search:type_name -> common.v1.SearchRequest
-	98,  // 155: commerce.v1.CustomerPriceOverrideSearchResponse.overrides:type_name -> commerce.v1.CustomerPriceOverride
+	100, // 153: commerce.v1.CustomerPriceOverrideSaveResponse.override:type_name -> commerce.v1.CustomerPriceOverride
+	136, // 154: commerce.v1.CustomerPriceOverrideSearchRequest.search:type_name -> common.v1.SearchRequest
+	100, // 155: commerce.v1.CustomerPriceOverrideSearchResponse.overrides:type_name -> commerce.v1.CustomerPriceOverride
 	14,  // 156: commerce.v1.DiscountRuleSaveRequest.discount_type:type_name -> commerce.v1.DiscountType
 	15,  // 157: commerce.v1.DiscountRuleSaveRequest.applies_to:type_name -> commerce.v1.DiscountAppliesTo
-	132, // 158: commerce.v1.DiscountRuleSaveRequest.conditions:type_name -> google.protobuf.Struct
-	131, // 159: commerce.v1.DiscountRuleSaveRequest.valid_from:type_name -> google.protobuf.Timestamp
-	131, // 160: commerce.v1.DiscountRuleSaveRequest.valid_until:type_name -> google.protobuf.Timestamp
+	134, // 158: commerce.v1.DiscountRuleSaveRequest.conditions:type_name -> google.protobuf.Struct
+	133, // 159: commerce.v1.DiscountRuleSaveRequest.valid_from:type_name -> google.protobuf.Timestamp
+	133, // 160: commerce.v1.DiscountRuleSaveRequest.valid_until:type_name -> google.protobuf.Timestamp
 	16,  // 161: commerce.v1.DiscountRuleSaveRequest.status:type_name -> commerce.v1.DiscountRuleStatus
-	133, // 162: commerce.v1.DiscountRuleSaveRequest.update_mask:type_name -> google.protobuf.FieldMask
-	99,  // 163: commerce.v1.DiscountRuleSaveResponse.discount_rule:type_name -> commerce.v1.DiscountRule
-	134, // 164: commerce.v1.DiscountRuleSearchRequest.search:type_name -> common.v1.SearchRequest
-	99,  // 165: commerce.v1.DiscountRuleSearchResponse.discount_rules:type_name -> commerce.v1.DiscountRule
-	99,  // 166: commerce.v1.DiscountRuleApproveResponse.discount_rule:type_name -> commerce.v1.DiscountRule
-	100, // 167: commerce.v1.ResolvePriceResponse.resolved_price:type_name -> commerce.v1.ResolvedPrice
+	135, // 162: commerce.v1.DiscountRuleSaveRequest.update_mask:type_name -> google.protobuf.FieldMask
+	101, // 163: commerce.v1.DiscountRuleSaveResponse.discount_rule:type_name -> commerce.v1.DiscountRule
+	136, // 164: commerce.v1.DiscountRuleSearchRequest.search:type_name -> common.v1.SearchRequest
+	101, // 165: commerce.v1.DiscountRuleSearchResponse.discount_rules:type_name -> commerce.v1.DiscountRule
+	101, // 166: commerce.v1.DiscountRuleApproveResponse.discount_rule:type_name -> commerce.v1.DiscountRule
+	102, // 167: commerce.v1.ResolvePriceResponse.resolved_price:type_name -> commerce.v1.ResolvedPrice
 	21,  // 168: commerce.v1.CommerceService.CreateShop:input_type -> commerce.v1.CreateShopRequest
 	25,  // 169: commerce.v1.CommerceService.GetShop:input_type -> commerce.v1.GetShopRequest
 	23,  // 170: commerce.v1.CommerceService.UpdateShop:input_type -> commerce.v1.UpdateShopRequest
@@ -13959,82 +14149,84 @@ var file_v1_commerce_proto_depIdxs = []int32{
 	41,  // 177: commerce.v1.CommerceService.UpdateProductVariant:input_type -> commerce.v1.UpdateProductVariantRequest
 	42,  // 178: commerce.v1.CommerceService.UpdateProduct:input_type -> commerce.v1.UpdateProductRequest
 	44,  // 179: commerce.v1.CommerceService.ListProductVariants:input_type -> commerce.v1.ListProductVariantsRequest
-	49,  // 180: commerce.v1.CommerceService.CreateCart:input_type -> commerce.v1.CreateCartRequest
-	51,  // 181: commerce.v1.CommerceService.GetCart:input_type -> commerce.v1.GetCartRequest
-	53,  // 182: commerce.v1.CommerceService.AddCartLine:input_type -> commerce.v1.AddCartLineRequest
-	55,  // 183: commerce.v1.CommerceService.RemoveCartLine:input_type -> commerce.v1.RemoveCartLineRequest
-	57,  // 184: commerce.v1.CommerceService.CreateOrderFromCart:input_type -> commerce.v1.CreateOrderFromCartRequest
-	62,  // 185: commerce.v1.CommerceService.CreateOrder:input_type -> commerce.v1.CreateOrderRequest
-	65,  // 186: commerce.v1.CommerceService.GetOrder:input_type -> commerce.v1.GetOrderRequest
-	67,  // 187: commerce.v1.CommerceService.ListOrders:input_type -> commerce.v1.ListOrdersRequest
-	69,  // 188: commerce.v1.CommerceService.CheckoutOrder:input_type -> commerce.v1.CheckoutOrderRequest
-	71,  // 189: commerce.v1.CommerceService.ConfirmOrderPayment:input_type -> commerce.v1.ConfirmOrderPaymentRequest
-	73,  // 190: commerce.v1.CommerceService.CancelOrder:input_type -> commerce.v1.CancelOrderRequest
-	75,  // 191: commerce.v1.CommerceService.RecordOrderPayment:input_type -> commerce.v1.RecordOrderPaymentRequest
-	78,  // 192: commerce.v1.CommerceService.ListOrderEvents:input_type -> commerce.v1.ListOrderEventsRequest
-	80,  // 193: commerce.v1.CommerceService.ReconcilePayments:input_type -> commerce.v1.ReconcilePaymentsRequest
-	82,  // 194: commerce.v1.CommerceService.RunEndOfDayLedger:input_type -> commerce.v1.RunEndOfDayLedgerRequest
-	87,  // 195: commerce.v1.CommerceService.CreateFulfilment:input_type -> commerce.v1.CreateFulfilmentRequest
-	89,  // 196: commerce.v1.CommerceService.UpdateFulfilment:input_type -> commerce.v1.UpdateFulfilmentRequest
-	91,  // 197: commerce.v1.CommerceService.GetFulfilment:input_type -> commerce.v1.GetFulfilmentRequest
-	93,  // 198: commerce.v1.CommerceService.ListFulfilments:input_type -> commerce.v1.ListFulfilmentsRequest
-	101, // 199: commerce.v1.CommerceService.PriceListSave:input_type -> commerce.v1.PriceListSaveRequest
-	103, // 200: commerce.v1.CommerceService.PriceListGet:input_type -> commerce.v1.PriceListGetRequest
-	105, // 201: commerce.v1.CommerceService.PriceListSearch:input_type -> commerce.v1.PriceListSearchRequest
-	107, // 202: commerce.v1.CommerceService.PriceListEntryBatchSave:input_type -> commerce.v1.PriceListEntryBatchSaveRequest
-	109, // 203: commerce.v1.CommerceService.CustomerPriceListAssignmentSave:input_type -> commerce.v1.CustomerPriceListAssignmentSaveRequest
-	111, // 204: commerce.v1.CommerceService.CustomerPriceListAssignmentSearch:input_type -> commerce.v1.CustomerPriceListAssignmentSearchRequest
-	113, // 205: commerce.v1.CommerceService.CustomerPriceOverrideSave:input_type -> commerce.v1.CustomerPriceOverrideSaveRequest
-	115, // 206: commerce.v1.CommerceService.CustomerPriceOverrideSearch:input_type -> commerce.v1.CustomerPriceOverrideSearchRequest
-	117, // 207: commerce.v1.CommerceService.DiscountRuleSave:input_type -> commerce.v1.DiscountRuleSaveRequest
-	119, // 208: commerce.v1.CommerceService.DiscountRuleSearch:input_type -> commerce.v1.DiscountRuleSearchRequest
-	121, // 209: commerce.v1.CommerceService.DiscountRuleApprove:input_type -> commerce.v1.DiscountRuleApproveRequest
-	123, // 210: commerce.v1.CommerceService.ResolvePrice:input_type -> commerce.v1.ResolvePriceRequest
-	22,  // 211: commerce.v1.CommerceService.CreateShop:output_type -> commerce.v1.CreateShopResponse
-	28,  // 212: commerce.v1.CommerceService.GetShop:output_type -> commerce.v1.GetShopResponse
-	24,  // 213: commerce.v1.CommerceService.UpdateShop:output_type -> commerce.v1.UpdateShopResponse
-	27,  // 214: commerce.v1.CommerceService.ListShops:output_type -> commerce.v1.ListShopsResponse
-	30,  // 215: commerce.v1.CommerceService.ResolveDefaultCurrency:output_type -> commerce.v1.ResolveDefaultCurrencyResponse
-	34,  // 216: commerce.v1.CommerceService.CreateProduct:output_type -> commerce.v1.CreateProductResponse
-	36,  // 217: commerce.v1.CommerceService.GetProduct:output_type -> commerce.v1.GetProductResponse
-	38,  // 218: commerce.v1.CommerceService.ListProducts:output_type -> commerce.v1.ListProductsResponse
-	40,  // 219: commerce.v1.CommerceService.CreateProductVariant:output_type -> commerce.v1.CreateProductVariantResponse
-	46,  // 220: commerce.v1.CommerceService.UpdateProductVariant:output_type -> commerce.v1.UpdateProductVariantResponse
-	43,  // 221: commerce.v1.CommerceService.UpdateProduct:output_type -> commerce.v1.UpdateProductResponse
-	45,  // 222: commerce.v1.CommerceService.ListProductVariants:output_type -> commerce.v1.ListProductVariantsResponse
-	50,  // 223: commerce.v1.CommerceService.CreateCart:output_type -> commerce.v1.CreateCartResponse
-	52,  // 224: commerce.v1.CommerceService.GetCart:output_type -> commerce.v1.GetCartResponse
-	54,  // 225: commerce.v1.CommerceService.AddCartLine:output_type -> commerce.v1.AddCartLineResponse
-	56,  // 226: commerce.v1.CommerceService.RemoveCartLine:output_type -> commerce.v1.RemoveCartLineResponse
-	58,  // 227: commerce.v1.CommerceService.CreateOrderFromCart:output_type -> commerce.v1.CreateOrderFromCartResponse
-	63,  // 228: commerce.v1.CommerceService.CreateOrder:output_type -> commerce.v1.CreateOrderResponse
-	66,  // 229: commerce.v1.CommerceService.GetOrder:output_type -> commerce.v1.GetOrderResponse
-	68,  // 230: commerce.v1.CommerceService.ListOrders:output_type -> commerce.v1.ListOrdersResponse
-	70,  // 231: commerce.v1.CommerceService.CheckoutOrder:output_type -> commerce.v1.CheckoutOrderResponse
-	72,  // 232: commerce.v1.CommerceService.ConfirmOrderPayment:output_type -> commerce.v1.ConfirmOrderPaymentResponse
-	74,  // 233: commerce.v1.CommerceService.CancelOrder:output_type -> commerce.v1.CancelOrderResponse
-	76,  // 234: commerce.v1.CommerceService.RecordOrderPayment:output_type -> commerce.v1.RecordOrderPaymentResponse
-	79,  // 235: commerce.v1.CommerceService.ListOrderEvents:output_type -> commerce.v1.ListOrderEventsResponse
-	81,  // 236: commerce.v1.CommerceService.ReconcilePayments:output_type -> commerce.v1.ReconcilePaymentsResponse
-	84,  // 237: commerce.v1.CommerceService.RunEndOfDayLedger:output_type -> commerce.v1.RunEndOfDayLedgerResponse
-	88,  // 238: commerce.v1.CommerceService.CreateFulfilment:output_type -> commerce.v1.CreateFulfilmentResponse
-	90,  // 239: commerce.v1.CommerceService.UpdateFulfilment:output_type -> commerce.v1.UpdateFulfilmentResponse
-	92,  // 240: commerce.v1.CommerceService.GetFulfilment:output_type -> commerce.v1.GetFulfilmentResponse
-	94,  // 241: commerce.v1.CommerceService.ListFulfilments:output_type -> commerce.v1.ListFulfilmentsResponse
-	102, // 242: commerce.v1.CommerceService.PriceListSave:output_type -> commerce.v1.PriceListSaveResponse
-	104, // 243: commerce.v1.CommerceService.PriceListGet:output_type -> commerce.v1.PriceListGetResponse
-	106, // 244: commerce.v1.CommerceService.PriceListSearch:output_type -> commerce.v1.PriceListSearchResponse
-	108, // 245: commerce.v1.CommerceService.PriceListEntryBatchSave:output_type -> commerce.v1.PriceListEntryBatchSaveResponse
-	110, // 246: commerce.v1.CommerceService.CustomerPriceListAssignmentSave:output_type -> commerce.v1.CustomerPriceListAssignmentSaveResponse
-	112, // 247: commerce.v1.CommerceService.CustomerPriceListAssignmentSearch:output_type -> commerce.v1.CustomerPriceListAssignmentSearchResponse
-	114, // 248: commerce.v1.CommerceService.CustomerPriceOverrideSave:output_type -> commerce.v1.CustomerPriceOverrideSaveResponse
-	116, // 249: commerce.v1.CommerceService.CustomerPriceOverrideSearch:output_type -> commerce.v1.CustomerPriceOverrideSearchResponse
-	118, // 250: commerce.v1.CommerceService.DiscountRuleSave:output_type -> commerce.v1.DiscountRuleSaveResponse
-	120, // 251: commerce.v1.CommerceService.DiscountRuleSearch:output_type -> commerce.v1.DiscountRuleSearchResponse
-	122, // 252: commerce.v1.CommerceService.DiscountRuleApprove:output_type -> commerce.v1.DiscountRuleApproveResponse
-	124, // 253: commerce.v1.CommerceService.ResolvePrice:output_type -> commerce.v1.ResolvePriceResponse
-	211, // [211:254] is the sub-list for method output_type
-	168, // [168:211] is the sub-list for method input_type
+	46,  // 180: commerce.v1.CommerceService.ReceiveStock:input_type -> commerce.v1.ReceiveStockRequest
+	51,  // 181: commerce.v1.CommerceService.CreateCart:input_type -> commerce.v1.CreateCartRequest
+	53,  // 182: commerce.v1.CommerceService.GetCart:input_type -> commerce.v1.GetCartRequest
+	55,  // 183: commerce.v1.CommerceService.AddCartLine:input_type -> commerce.v1.AddCartLineRequest
+	57,  // 184: commerce.v1.CommerceService.RemoveCartLine:input_type -> commerce.v1.RemoveCartLineRequest
+	59,  // 185: commerce.v1.CommerceService.CreateOrderFromCart:input_type -> commerce.v1.CreateOrderFromCartRequest
+	64,  // 186: commerce.v1.CommerceService.CreateOrder:input_type -> commerce.v1.CreateOrderRequest
+	67,  // 187: commerce.v1.CommerceService.GetOrder:input_type -> commerce.v1.GetOrderRequest
+	69,  // 188: commerce.v1.CommerceService.ListOrders:input_type -> commerce.v1.ListOrdersRequest
+	71,  // 189: commerce.v1.CommerceService.CheckoutOrder:input_type -> commerce.v1.CheckoutOrderRequest
+	73,  // 190: commerce.v1.CommerceService.ConfirmOrderPayment:input_type -> commerce.v1.ConfirmOrderPaymentRequest
+	75,  // 191: commerce.v1.CommerceService.CancelOrder:input_type -> commerce.v1.CancelOrderRequest
+	77,  // 192: commerce.v1.CommerceService.RecordOrderPayment:input_type -> commerce.v1.RecordOrderPaymentRequest
+	80,  // 193: commerce.v1.CommerceService.ListOrderEvents:input_type -> commerce.v1.ListOrderEventsRequest
+	82,  // 194: commerce.v1.CommerceService.ReconcilePayments:input_type -> commerce.v1.ReconcilePaymentsRequest
+	84,  // 195: commerce.v1.CommerceService.RunEndOfDayLedger:input_type -> commerce.v1.RunEndOfDayLedgerRequest
+	89,  // 196: commerce.v1.CommerceService.CreateFulfilment:input_type -> commerce.v1.CreateFulfilmentRequest
+	91,  // 197: commerce.v1.CommerceService.UpdateFulfilment:input_type -> commerce.v1.UpdateFulfilmentRequest
+	93,  // 198: commerce.v1.CommerceService.GetFulfilment:input_type -> commerce.v1.GetFulfilmentRequest
+	95,  // 199: commerce.v1.CommerceService.ListFulfilments:input_type -> commerce.v1.ListFulfilmentsRequest
+	103, // 200: commerce.v1.CommerceService.PriceListSave:input_type -> commerce.v1.PriceListSaveRequest
+	105, // 201: commerce.v1.CommerceService.PriceListGet:input_type -> commerce.v1.PriceListGetRequest
+	107, // 202: commerce.v1.CommerceService.PriceListSearch:input_type -> commerce.v1.PriceListSearchRequest
+	109, // 203: commerce.v1.CommerceService.PriceListEntryBatchSave:input_type -> commerce.v1.PriceListEntryBatchSaveRequest
+	111, // 204: commerce.v1.CommerceService.CustomerPriceListAssignmentSave:input_type -> commerce.v1.CustomerPriceListAssignmentSaveRequest
+	113, // 205: commerce.v1.CommerceService.CustomerPriceListAssignmentSearch:input_type -> commerce.v1.CustomerPriceListAssignmentSearchRequest
+	115, // 206: commerce.v1.CommerceService.CustomerPriceOverrideSave:input_type -> commerce.v1.CustomerPriceOverrideSaveRequest
+	117, // 207: commerce.v1.CommerceService.CustomerPriceOverrideSearch:input_type -> commerce.v1.CustomerPriceOverrideSearchRequest
+	119, // 208: commerce.v1.CommerceService.DiscountRuleSave:input_type -> commerce.v1.DiscountRuleSaveRequest
+	121, // 209: commerce.v1.CommerceService.DiscountRuleSearch:input_type -> commerce.v1.DiscountRuleSearchRequest
+	123, // 210: commerce.v1.CommerceService.DiscountRuleApprove:input_type -> commerce.v1.DiscountRuleApproveRequest
+	125, // 211: commerce.v1.CommerceService.ResolvePrice:input_type -> commerce.v1.ResolvePriceRequest
+	22,  // 212: commerce.v1.CommerceService.CreateShop:output_type -> commerce.v1.CreateShopResponse
+	28,  // 213: commerce.v1.CommerceService.GetShop:output_type -> commerce.v1.GetShopResponse
+	24,  // 214: commerce.v1.CommerceService.UpdateShop:output_type -> commerce.v1.UpdateShopResponse
+	27,  // 215: commerce.v1.CommerceService.ListShops:output_type -> commerce.v1.ListShopsResponse
+	30,  // 216: commerce.v1.CommerceService.ResolveDefaultCurrency:output_type -> commerce.v1.ResolveDefaultCurrencyResponse
+	34,  // 217: commerce.v1.CommerceService.CreateProduct:output_type -> commerce.v1.CreateProductResponse
+	36,  // 218: commerce.v1.CommerceService.GetProduct:output_type -> commerce.v1.GetProductResponse
+	38,  // 219: commerce.v1.CommerceService.ListProducts:output_type -> commerce.v1.ListProductsResponse
+	40,  // 220: commerce.v1.CommerceService.CreateProductVariant:output_type -> commerce.v1.CreateProductVariantResponse
+	48,  // 221: commerce.v1.CommerceService.UpdateProductVariant:output_type -> commerce.v1.UpdateProductVariantResponse
+	43,  // 222: commerce.v1.CommerceService.UpdateProduct:output_type -> commerce.v1.UpdateProductResponse
+	45,  // 223: commerce.v1.CommerceService.ListProductVariants:output_type -> commerce.v1.ListProductVariantsResponse
+	47,  // 224: commerce.v1.CommerceService.ReceiveStock:output_type -> commerce.v1.ReceiveStockResponse
+	52,  // 225: commerce.v1.CommerceService.CreateCart:output_type -> commerce.v1.CreateCartResponse
+	54,  // 226: commerce.v1.CommerceService.GetCart:output_type -> commerce.v1.GetCartResponse
+	56,  // 227: commerce.v1.CommerceService.AddCartLine:output_type -> commerce.v1.AddCartLineResponse
+	58,  // 228: commerce.v1.CommerceService.RemoveCartLine:output_type -> commerce.v1.RemoveCartLineResponse
+	60,  // 229: commerce.v1.CommerceService.CreateOrderFromCart:output_type -> commerce.v1.CreateOrderFromCartResponse
+	65,  // 230: commerce.v1.CommerceService.CreateOrder:output_type -> commerce.v1.CreateOrderResponse
+	68,  // 231: commerce.v1.CommerceService.GetOrder:output_type -> commerce.v1.GetOrderResponse
+	70,  // 232: commerce.v1.CommerceService.ListOrders:output_type -> commerce.v1.ListOrdersResponse
+	72,  // 233: commerce.v1.CommerceService.CheckoutOrder:output_type -> commerce.v1.CheckoutOrderResponse
+	74,  // 234: commerce.v1.CommerceService.ConfirmOrderPayment:output_type -> commerce.v1.ConfirmOrderPaymentResponse
+	76,  // 235: commerce.v1.CommerceService.CancelOrder:output_type -> commerce.v1.CancelOrderResponse
+	78,  // 236: commerce.v1.CommerceService.RecordOrderPayment:output_type -> commerce.v1.RecordOrderPaymentResponse
+	81,  // 237: commerce.v1.CommerceService.ListOrderEvents:output_type -> commerce.v1.ListOrderEventsResponse
+	83,  // 238: commerce.v1.CommerceService.ReconcilePayments:output_type -> commerce.v1.ReconcilePaymentsResponse
+	86,  // 239: commerce.v1.CommerceService.RunEndOfDayLedger:output_type -> commerce.v1.RunEndOfDayLedgerResponse
+	90,  // 240: commerce.v1.CommerceService.CreateFulfilment:output_type -> commerce.v1.CreateFulfilmentResponse
+	92,  // 241: commerce.v1.CommerceService.UpdateFulfilment:output_type -> commerce.v1.UpdateFulfilmentResponse
+	94,  // 242: commerce.v1.CommerceService.GetFulfilment:output_type -> commerce.v1.GetFulfilmentResponse
+	96,  // 243: commerce.v1.CommerceService.ListFulfilments:output_type -> commerce.v1.ListFulfilmentsResponse
+	104, // 244: commerce.v1.CommerceService.PriceListSave:output_type -> commerce.v1.PriceListSaveResponse
+	106, // 245: commerce.v1.CommerceService.PriceListGet:output_type -> commerce.v1.PriceListGetResponse
+	108, // 246: commerce.v1.CommerceService.PriceListSearch:output_type -> commerce.v1.PriceListSearchResponse
+	110, // 247: commerce.v1.CommerceService.PriceListEntryBatchSave:output_type -> commerce.v1.PriceListEntryBatchSaveResponse
+	112, // 248: commerce.v1.CommerceService.CustomerPriceListAssignmentSave:output_type -> commerce.v1.CustomerPriceListAssignmentSaveResponse
+	114, // 249: commerce.v1.CommerceService.CustomerPriceListAssignmentSearch:output_type -> commerce.v1.CustomerPriceListAssignmentSearchResponse
+	116, // 250: commerce.v1.CommerceService.CustomerPriceOverrideSave:output_type -> commerce.v1.CustomerPriceOverrideSaveResponse
+	118, // 251: commerce.v1.CommerceService.CustomerPriceOverrideSearch:output_type -> commerce.v1.CustomerPriceOverrideSearchResponse
+	120, // 252: commerce.v1.CommerceService.DiscountRuleSave:output_type -> commerce.v1.DiscountRuleSaveResponse
+	122, // 253: commerce.v1.CommerceService.DiscountRuleSearch:output_type -> commerce.v1.DiscountRuleSearchResponse
+	124, // 254: commerce.v1.CommerceService.DiscountRuleApprove:output_type -> commerce.v1.DiscountRuleApproveResponse
+	126, // 255: commerce.v1.CommerceService.ResolvePrice:output_type -> commerce.v1.ResolvePriceResponse
+	212, // [212:256] is the sub-list for method output_type
+	168, // [168:212] is the sub-list for method input_type
 	168, // [168:168] is the sub-list for extension type_name
 	168, // [168:168] is the sub-list for extension extendee
 	0,   // [0:168] is the sub-list for field type_name
@@ -14051,7 +14243,7 @@ func file_v1_commerce_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_v1_commerce_proto_rawDesc), len(file_v1_commerce_proto_rawDesc)),
 			NumEnums:      19,
-			NumMessages:   112,
+			NumMessages:   114,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

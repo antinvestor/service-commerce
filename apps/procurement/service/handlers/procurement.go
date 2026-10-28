@@ -17,16 +17,19 @@ package handlers
 import (
 	"context"
 
-	"buf.build/gen/go/antinvestor/procurement/connectrpc/go/v2/v1/procurementv1connect"
-	procurementv1 "buf.build/gen/go/antinvestor/procurement/protocolbuffers/go/v1"
 	"connectrpc.com/connect/v2"
 	"github.com/pitabwire/frame/v3"
 	"github.com/pitabwire/frame/v3/datastore"
+	"github.com/pitabwire/frame/v3/security"
 	"github.com/pitabwire/frame/v3/security/authorizer"
+
+	procurementv1 "github.com/antinvestor/service-commerce/gen/go/procurement/v1"
+	"github.com/antinvestor/service-commerce/gen/go/procurement/v1/procurementv1connect"
 
 	"github.com/antinvestor/service-commerce/apps/procurement/service/authz"
 	"github.com/antinvestor/service-commerce/apps/procurement/service/business"
 	"github.com/antinvestor/service-commerce/apps/procurement/service/repository"
+	"github.com/antinvestor/service-commerce/pkg/dbrole"
 	"github.com/antinvestor/service-commerce/pkg/errorutil"
 )
 
@@ -47,6 +50,7 @@ func NewProcurementServer(
 	svc *frame.Service,
 	authzMiddleware authz.Middleware,
 	materials business.MaterialSource,
+	stock business.StockDestination,
 ) *ProcurementServer {
 	workMan := svc.WorkManager()
 	dbPool := svc.DatastoreManager().GetPool(ctx, datastore.DefaultPoolName)
@@ -59,11 +63,13 @@ func NewProcurementServer(
 	grlRepo := repository.NewGoodsReceiptLineRepository(ctx, dbPool, workMan)
 
 	return &ProcurementServer{
-		authz:                 authzMiddleware,
-		supplierBusiness:      business.NewSupplierBusiness(ctx, supplierRepo, supplierItemRepo),
-		purchaseOrderBusiness: business.NewPurchaseOrderBusiness(ctx, poRepo, polRepo, supplierItemRepo),
-		goodsReceiptBusiness:  business.NewGoodsReceiptBusiness(ctx, grRepo, grlRepo, poRepo, polRepo),
-		suggestionBusiness:    business.NewSuggestionBusiness(materials, supplierItemRepo),
+		authz:            authzMiddleware,
+		supplierBusiness: business.NewSupplierBusiness(ctx, supplierRepo, supplierItemRepo),
+		purchaseOrderBusiness: business.NewPurchaseOrderBusiness(
+			ctx, poRepo, polRepo, supplierRepo, supplierItemRepo,
+		),
+		goodsReceiptBusiness: business.NewGoodsReceiptBusiness(ctx, grRepo, grlRepo, poRepo, stock),
+		suggestionBusiness:   business.NewSuggestionBusiness(materials, supplierItemRepo),
 	}
 }
 
@@ -101,11 +107,11 @@ func (ps *ProcurementServer) SupplierSearch(
 	ctx context.Context,
 	req *procurementv1.SupplierSearchRequest,
 ) (*procurementv1.SupplierSearchResponse, error) {
-	suppliers, err := ps.supplierBusiness.SearchSuppliers(ctx, req)
+	suppliers, next, err := ps.supplierBusiness.SearchSuppliers(ctx, req)
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
-	return &procurementv1.SupplierSearchResponse{Suppliers: suppliers}, nil
+	return &procurementv1.SupplierSearchResponse{Suppliers: suppliers, NextPage: next}, nil
 }
 
 func (ps *ProcurementServer) SupplierItemSave(
@@ -123,11 +129,11 @@ func (ps *ProcurementServer) SupplierItemSearch(
 	ctx context.Context,
 	req *procurementv1.SupplierItemSearchRequest,
 ) (*procurementv1.SupplierItemSearchResponse, error) {
-	items, err := ps.supplierBusiness.SearchSupplierItems(ctx, req)
+	items, next, err := ps.supplierBusiness.SearchSupplierItems(ctx, req)
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
-	return &procurementv1.SupplierItemSearchResponse{SupplierItems: items}, nil
+	return &procurementv1.SupplierItemSearchResponse{SupplierItems: items, NextPage: next}, nil
 }
 
 // ----------------------
@@ -179,11 +185,11 @@ func (ps *ProcurementServer) PurchaseOrderSearch(
 		return nil, authorizer.ToConnectError(err)
 	}
 
-	orders, err := ps.purchaseOrderBusiness.SearchPurchaseOrders(ctx, req)
+	orders, next, err := ps.purchaseOrderBusiness.SearchPurchaseOrders(ctx, req)
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
-	return &procurementv1.PurchaseOrderSearchResponse{PurchaseOrders: orders}, nil
+	return &procurementv1.PurchaseOrderSearchResponse{PurchaseOrders: orders, NextPage: next}, nil
 }
 
 func (ps *ProcurementServer) PurchaseOrderSubmit(
@@ -222,6 +228,25 @@ func (ps *ProcurementServer) PurchaseOrderCancel(
 		return nil, errorutil.CleanErr(err)
 	}
 	return &procurementv1.PurchaseOrderCancelResponse{PurchaseOrder: po}, nil
+}
+
+func (ps *ProcurementServer) PurchaseOrderClose(
+	ctx context.Context,
+	req *procurementv1.PurchaseOrderCloseRequest,
+) (*procurementv1.PurchaseOrderCloseResponse, error) {
+	existing, err := ps.purchaseOrderBusiness.GetPurchaseOrder(ctx, req.GetId())
+	if err != nil {
+		return nil, errorutil.CleanErr(err)
+	}
+	if err = ps.authz.CanPurchaseOrderManage(ctx, existing.GetPropertyId()); err != nil {
+		return nil, notVisible(authorizer.ToConnectError(err))
+	}
+
+	po, err := ps.purchaseOrderBusiness.ClosePurchaseOrder(ctx, req)
+	if err != nil {
+		return nil, errorutil.CleanErr(err)
+	}
+	return &procurementv1.PurchaseOrderCloseResponse{PurchaseOrder: po}, nil
 }
 
 func (ps *ProcurementServer) SuggestPurchaseOrders(
@@ -304,11 +329,32 @@ func (ps *ProcurementServer) GoodsReceiptSearch(
 			"property_id or purchase_order_id is required")
 	}
 
-	receipts, err := ps.goodsReceiptBusiness.SearchGoodsReceipts(ctx, req)
+	receipts, next, err := ps.goodsReceiptBusiness.SearchGoodsReceipts(ctx, req)
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
-	return &procurementv1.GoodsReceiptSearchResponse{GoodsReceipts: receipts}, nil
+	return &procurementv1.GoodsReceiptSearchResponse{GoodsReceipts: receipts, NextPage: next}, nil
+}
+
+// GoodsReceiptDeliver retries stock that has not reached commerce. The
+// scheduler's internal service account sweeps every tenant; anyone else
+// granted goods_receipt_deliver sweeps only their own.
+func (ps *ProcurementServer) GoodsReceiptDeliver(
+	ctx context.Context,
+	req *procurementv1.GoodsReceiptDeliverRequest,
+) (*procurementv1.GoodsReceiptDeliverResponse, error) {
+	if claims := security.ClaimsFromContext(ctx); claims != nil && claims.IsInternalSystem() {
+		ctx = dbrole.AcrossTenants(ctx, "deliver received stock")
+	}
+	summary, err := ps.goodsReceiptBusiness.DeliverPending(ctx, int(req.GetLimit()))
+	if err != nil {
+		return nil, errorutil.CleanErr(err)
+	}
+	return &procurementv1.GoodsReceiptDeliverResponse{
+		Delivered: summary.Delivered,
+		Pending:   summary.Pending,
+		Failed:    summary.Failed,
+	}, nil
 }
 
 // notVisible answers a read of a record the caller may not see exactly as a

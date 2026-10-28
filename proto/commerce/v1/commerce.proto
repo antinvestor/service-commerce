@@ -102,7 +102,9 @@ service CommerceService {
       "discount_manage",
       "discount_approve",
       "shops_list",
-      "ledger_post"
+      "ledger_post",
+      // Bound to no role: granted to the procurement service account only.
+      "stock_receive"
     ]
     role_bindings: [
       {
@@ -305,6 +307,14 @@ service CommerceService {
   rpc ListProductVariants(ListProductVariantsRequest) returns (ListProductVariantsResponse) {
     option (common.v1.method_permissions) = {
       permissions: ["product_view"]
+    };
+  }
+  // Adds goods received from a supplier to a variant's stock. Internal: the
+  // procurement service calls it once per goods receipt line, and a repeated
+  // reference adds nothing (it answers with the stock as it stands).
+  rpc ReceiveStock(ReceiveStockRequest) returns (ReceiveStockResponse) {
+    option (common.v1.method_permissions) = {
+      permissions: ["stock_receive"]
     };
   }
 
@@ -936,6 +946,25 @@ message ListProductVariantsRequest {
 
 message ListProductVariantsResponse {
   repeated ProductVariant product_variants = 1;
+}
+
+message ReceiveStockRequest {
+  string variant_id = 1;
+  // Whole units received; must be positive.
+  int64 quantity = 2;
+  // Unique per receipt line (e.g. "procurement:grl:<line id>"). A reference
+  // already received for the same variant and quantity adds nothing; for any
+  // other variant or quantity it is refused.
+  string reference = 3;
+  // The tenant the receipt was recorded in; the variant must belong to it.
+  string tenant_id = 4;
+}
+
+message ReceiveStockResponse {
+  // The variant's stock after the receipt.
+  int64 stock_quantity = 1;
+  // True when the reference had already been received.
+  bool replayed = 2;
 }
 
 message UpdateProductVariantResponse {

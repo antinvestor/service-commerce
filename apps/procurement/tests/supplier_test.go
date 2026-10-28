@@ -19,13 +19,14 @@ import (
 	"testing"
 
 	commonv1 "buf.build/gen/go/antinvestor/common/protocolbuffers/go/common/v1"
-	procurementv1 "buf.build/gen/go/antinvestor/procurement/protocolbuffers/go/v1"
 	"github.com/pitabwire/frame/v3"
 	"github.com/pitabwire/frame/v3/datastore"
 	"github.com/pitabwire/frame/v3/frametests/definition"
 	"github.com/pitabwire/util"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+
+	procurementv1 "github.com/antinvestor/service-commerce/gen/go/procurement/v1"
 
 	"github.com/antinvestor/service-commerce/apps/procurement/service/business"
 	"github.com/antinvestor/service-commerce/apps/procurement/service/repository"
@@ -172,7 +173,7 @@ func (sts *SupplierTestSuite) TestSearchSupplierItems() {
 			require.NoError(t, err)
 		}
 
-		items, err := biz.SearchSupplierItems(ctx, &procurementv1.SupplierItemSearchRequest{
+		items, _, err := biz.SearchSupplierItems(ctx, &procurementv1.SupplierItemSearchRequest{
 			SupplierId: supplier.GetId(),
 		})
 		require.NoError(t, err)

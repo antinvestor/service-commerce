@@ -24,8 +24,9 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/encoding/protojson"
 
-	"github.com/antinvestor/service-commerce/apps/default/service/workflows"
+	"github.com/antinvestor/service-commerce/pkg/workflows"
 	workflowdefs "github.com/antinvestor/service-commerce/workflows"
+	procurementdefs "github.com/antinvestor/service-commerce/workflows/procurement"
 )
 
 // fakeWorkflowClient stands in for the trustage orchestrator. CreateWorkflow
@@ -183,4 +184,33 @@ func TestSync_ReportsTrustageFailure(t *testing.T) {
 	err := workflows.Sync(context.Background(), cli, docs(map[string]string{"test.json": testDoc}),
 		workflows.Env{CommerceURI: "http://c"})
 	require.ErrorContains(t, err, "unavailable")
+}
+
+// Procurement's documents are synced under its own prefix and address: they
+// call back into procurement, and only procurement workflows are archived.
+func TestSync_ProcurementOwner(t *testing.T) {
+	cli := &fakeWorkflowClient{active: []*workflowv1.WorkflowDefinition{
+		workflowv1.WorkflowDefinition_builder{Id: "c1", Name: "commerce.reconcile_payments"}.Build(),
+		workflowv1.WorkflowDefinition_builder{Id: "p1", Name: "procurement.retired"}.Build(),
+	}}
+	owner := &workflows.Owner{
+		Prefix: "procurement.", Placeholder: "${PROCUREMENT_URI}",
+		URI: "https://procurement.test/", URIVariable: "PROCUREMENT_SERVICE_URI",
+	}
+	require.NoError(t, workflows.Sync(context.Background(), cli, procurementdefs.Definitions(),
+		workflows.Env{Owner: owner}))
+
+	require.Len(t, cli.created, 1)
+	raw, err := protojson.Marshal(cli.created[0].GetDsl())
+	require.NoError(t, err)
+	require.Contains(t, string(raw),
+		"https://procurement.test/procurement.v1.ProcurementService/GoodsReceiptDeliver")
+	require.Equal(t, []string{"p1"}, cli.archived)
+
+	_, err = workflows.Load(procurementdefs.Definitions(), workflows.Env{Owner: &workflows.Owner{
+		Prefix: "procurement.", Placeholder: "${PROCUREMENT_URI}", URIVariable: "PROCUREMENT_SERVICE_URI",
+	}})
+	require.ErrorContains(t, err, "PROCUREMENT_SERVICE_URI")
+	_, err = workflows.Load(procurementdefs.Definitions(), workflows.Env{CommerceURI: "http://c"})
+	require.ErrorContains(t, err, "must start with")
 }

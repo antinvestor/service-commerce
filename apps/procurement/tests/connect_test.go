@@ -21,8 +21,6 @@ import (
 	"testing"
 
 	commonv1 "buf.build/gen/go/antinvestor/common/protocolbuffers/go/common/v1"
-	"buf.build/gen/go/antinvestor/procurement/connectrpc/go/v2/v1/procurementv1connect"
-	procurementv1 "buf.build/gen/go/antinvestor/procurement/protocolbuffers/go/v1"
 	"connectrpc.com/connect/v2"
 	"connectrpc.com/connect/v2/connecthttp"
 	"github.com/pitabwire/frame/v3/frametests/definition"
@@ -31,6 +29,9 @@ import (
 	"github.com/pitabwire/util"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+
+	procurementv1 "github.com/antinvestor/service-commerce/gen/go/procurement/v1"
+	"github.com/antinvestor/service-commerce/gen/go/procurement/v1/procurementv1connect"
 
 	"github.com/antinvestor/service-commerce/apps/procurement/service/authz"
 	"github.com/antinvestor/service-commerce/apps/procurement/service/handlers"
@@ -99,7 +100,7 @@ func (cs *ConnectTestSuite) TestRPCsServedAndReceiptAuthorisedOnPOProperty() {
 		acl := propertyACL{"buyer-a": {"property-a"}, "buyer-b": {"property-b"}}
 		server := connect.NewServer()
 		procurementv1connect.RegisterProcurementServiceHandler(server,
-			handlers.NewProcurementServer(ctx, svc, acl, nil))
+			handlers.NewProcurementServer(ctx, svc, acl, nil, nil))
 		mux := http.NewServeMux()
 		connecthttp.Mount(mux, server)
 		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -211,6 +212,20 @@ func (cs *ConnectTestSuite) TestRPCsServedAndReceiptAuthorisedOnPOProperty() {
 
 		_, err = client.PurchaseOrderCancel(a, &procurementv1.PurchaseOrderCancelRequest{Id: other.GetId()})
 		require.NoError(t, err)
+		// Closing short needs a partially received order; a cancelled one is
+		// refused, and another property's order looks missing.
+		_, err = client.PurchaseOrderClose(a, &procurementv1.PurchaseOrderCloseRequest{Id: other.GetId()})
+		require.Equal(t, connect.CodeFailedPrecondition, connect.CodeOf(err))
+		_, err = client.PurchaseOrderClose(b, &procurementv1.PurchaseOrderCloseRequest{Id: po.GetId()})
+		require.Equal(t, connect.CodeNotFound, connect.CodeOf(err))
+		closed, err := client.PurchaseOrderClose(a, &procurementv1.PurchaseOrderCloseRequest{Id: po.GetId()})
+		require.NoError(t, err)
+		require.Equal(t, procurementv1.PurchaseOrderStatus_PURCHASE_ORDER_STATUS_CLOSED,
+			closed.GetPurchaseOrder().GetStatus())
+
+		delivered, err := client.GoodsReceiptDeliver(a, &procurementv1.GoodsReceiptDeliverRequest{Limit: 10})
+		require.NoError(t, err)
+		require.Zero(t, delivered.GetDelivered(), "raw materials are not pushed to commerce")
 
 		// Without a material source suggestions are unavailable, but the RPC
 		// is served rather than Unimplemented.

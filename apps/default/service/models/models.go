@@ -399,6 +399,18 @@ type OrderPaymentSession struct {
 	AmountNanos int64
 }
 
+// StockReceipt records goods received into a variant's stock from outside
+// commerce (a procurement goods receipt line), once per reference, so a
+// repeated delivery adds nothing. Unique per tenancy and reference:
+// migrations/0001/20261030_stock_receipts.sql.
+type StockReceipt struct {
+	data.BaseModel
+	VariantID string `gorm:"type:varchar(50);index:idx_stock_receipt_variant_id"`
+	Quantity  int64
+	Reference string `gorm:"type:varchar(255)"`
+	ActorID   string `gorm:"type:varchar(50)"`
+}
+
 // LedgerPosting records one end-of-day merge for a shop and trading day, so
 // a re-run is idempotent and the ledger transaction can be traced back.
 type LedgerPosting struct {

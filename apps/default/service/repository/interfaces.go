@@ -279,3 +279,15 @@ type DiscountRuleRepository interface {
 	) ([]*models.DiscountRule, *PageKey, error)
 	ListActive(ctx context.Context, shopID string) ([]*models.DiscountRule, error)
 }
+
+// StockReceiptRepository adds received goods to variant stock once per
+// reference.
+type StockReceiptRepository interface {
+	// Receive inserts receipt and raises its variant's stock by its quantity
+	// in one transaction, the variant's tenancy copied onto the receipt. When
+	// the reference was already received it changes nothing and returns that
+	// earlier receipt with replayed true. It returns the stock after the
+	// receipt either way.
+	Receive(ctx context.Context, variant *models.ProductVariant, receipt *models.StockReceipt) (
+		stock int64, existing *models.StockReceipt, replayed bool, err error)
+}

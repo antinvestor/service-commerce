@@ -11,6 +11,13 @@ calls back into commerce over Connect JSON.
 |---|---|---|
 | `commerce.reconcile_payments` | every 30 minutes | `ReconcilePayments`: applies completed checkout sessions (whole orders and instalments), expires unpaid reservations, flags or cancels part-paid orders past their balance deadline, retries order-event webhooks |
 | `commerce.end_of_day_ledger` | 00:15 shop time | `RunEndOfDayLedger`: one balanced ledger transaction per shop per trading day, booking every instalment on the day it was received |
+| `procurement.deliver_received_stock` (`procurement/`) | hourly | procurement's `GoodsReceiptDeliver`: pushes goods receipt lines whose stock has not reached commerce yet; each line lands once |
+
+Procurement's documents live in `procurement/`, are embedded into the
+procurement binary and synced by its setup job with the same code
+(`pkg/workflows`), named `procurement.*` and calling back into
+`${PROCUREMENT_URI}` (`PROCUREMENT_SERVICE_URI`). Trustage needs the
+`/procurement` audience and `goods_receipt_deliver` in `service_procurement`.
 
 ## What the sync does
 

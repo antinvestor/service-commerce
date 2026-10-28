@@ -14,9 +14,13 @@ ARG BUILDTIME
 COPY go.mod go.sum ./
 RUN go mod download
 
-# Copy project files
+# Copy project files. gen/ holds the locally generated procurement and
+# commerce API code.
 COPY ./apps/procurement ./apps/procurement
 COPY ./pkg ./pkg
+COPY ./gen ./gen
+# Trustage workflow definitions are embedded into the binary.
+COPY ./workflows ./workflows
 
 # Build static binary for target platform
 RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \

@@ -17,11 +17,17 @@ package repository
 import (
 	"context"
 
+	"github.com/pitabwire/frame/v3/data"
 	"github.com/pitabwire/frame/v3/datastore"
 	"github.com/pitabwire/frame/v3/datastore/pool"
 	"github.com/pitabwire/frame/v3/workerpool"
 
 	"github.com/antinvestor/service-commerce/apps/procurement/service/models"
+)
+
+const (
+	supplierStatusActive     = 1
+	supplierItemStatusActive = 1
 )
 
 type supplierRepository struct {
@@ -36,42 +42,24 @@ func NewSupplierRepository(ctx context.Context, dbPool pool.Pool, workMan worker
 	}
 }
 
-func (r *supplierRepository) ListByStatus(
+func (r *supplierRepository) ListPage(
 	ctx context.Context,
-	status int32,
-	limit, offset int,
-) ([]*models.Supplier, error) {
+	filter SupplierFilter,
+	page Page,
+) ([]*models.Supplier, *PageKey, error) {
+	query := r.Pool().DB(ctx, true).Model(&models.Supplier{})
+	if filter.Status != 0 {
+		query = query.Where("status = ?", filter.Status)
+	}
+	if filter.SupplierType != 0 {
+		query = query.Where("supplier_type = ?", filter.SupplierType)
+	}
 	var suppliers []*models.Supplier
-	query := r.Pool().DB(ctx, true).
-		Where("status = ?", status).
-		Order("created_at DESC")
-	if limit > 0 {
-		query = query.Limit(limit)
+	if err := applyKeyset(query, page).Find(&suppliers).Error; err != nil {
+		return nil, nil, err
 	}
-	if offset > 0 {
-		query = query.Offset(offset)
-	}
-	err := query.Find(&suppliers).Error
-	return suppliers, err
-}
-
-func (r *supplierRepository) ListByType(
-	ctx context.Context,
-	supplierType int32,
-	limit, offset int,
-) ([]*models.Supplier, error) {
-	var suppliers []*models.Supplier
-	query := r.Pool().DB(ctx, true).
-		Where("supplier_type = ?", supplierType).
-		Order("created_at DESC")
-	if limit > 0 {
-		query = query.Limit(limit)
-	}
-	if offset > 0 {
-		query = query.Offset(offset)
-	}
-	err := query.Find(&suppliers).Error
-	return suppliers, err
+	items, next := trimPage(suppliers, page, func(s *models.Supplier) *data.BaseModel { return &s.BaseModel })
+	return items, next, nil
 }
 
 type supplierItemRepository struct {
@@ -90,43 +78,39 @@ func NewSupplierItemRepository(
 	}
 }
 
-func (r *supplierItemRepository) ListBySupplierID(
+func (r *supplierItemRepository) ListPage(
 	ctx context.Context,
-	supplierID string,
-	limit, offset int,
-) ([]*models.SupplierItem, error) {
+	filter SupplierItemFilter,
+	page Page,
+) ([]*models.SupplierItem, *PageKey, error) {
+	query := r.Pool().DB(ctx, true).Model(&models.SupplierItem{})
+	if filter.SupplierID != "" {
+		query = query.Where("supplier_id = ?", filter.SupplierID)
+	}
+	if filter.InventoryItemID != "" {
+		query = query.Where("inventory_item_id = ?", filter.InventoryItemID)
+	}
 	var items []*models.SupplierItem
-	query := r.Pool().DB(ctx, true).
-		Where("supplier_id = ?", supplierID).
-		Order("created_at DESC")
-	if limit > 0 {
-		query = query.Limit(limit)
+	if err := applyKeyset(query, page).Find(&items).Error; err != nil {
+		return nil, nil, err
 	}
-	if offset > 0 {
-		query = query.Offset(offset)
-	}
-	err := query.Find(&items).Error
-	return items, err
+	out, next := trimPage(items, page, func(i *models.SupplierItem) *data.BaseModel { return &i.BaseModel })
+	return out, next, nil
 }
 
-func (r *supplierItemRepository) ListByInventoryItemID(
+func (r *supplierItemRepository) ListActiveForInventoryItems(
 	ctx context.Context,
-	inventoryItemID string,
+	inventoryItemIDs []string,
 ) ([]*models.SupplierItem, error) {
 	var items []*models.SupplierItem
+	if len(inventoryItemIDs) == 0 {
+		return items, nil
+	}
 	err := r.Pool().DB(ctx, true).
-		Preload("Supplier").
-		Where("inventory_item_id = ?", inventoryItemID).
+		Joins("Supplier").
+		Where("supplier_items.inventory_item_id IN ?", inventoryItemIDs).
+		Where("supplier_items.status = ? AND \"Supplier\".status = ?", supplierItemStatusActive, supplierStatusActive).
+		Order("supplier_items.id").
 		Find(&items).Error
 	return items, err
-}
-
-func (r *supplierItemRepository) GetBySupplierAndItem(
-	ctx context.Context,
-	supplierID, inventoryItemID string,
-) (*models.SupplierItem, error) {
-	item := &models.SupplierItem{}
-	err := r.Pool().DB(ctx, true).
-		First(item, "supplier_id = ? AND inventory_item_id = ?", supplierID, inventoryItemID).Error
-	return item, err
 }

@@ -20,8 +20,7 @@ import (
 	"net/http"
 
 	"buf.build/gen/go/antinvestor/manufacturing/connectrpc/go/v2/v1/manufacturingv1connect"
-	"buf.build/gen/go/antinvestor/procurement/connectrpc/go/v2/v1/procurementv1connect"
-	procurementpb "buf.build/gen/go/antinvestor/procurement/protocolbuffers/go/v1"
+	"buf.build/gen/go/antinvestor/workflow/connectrpc/go/v2/v1/workflowv1connect"
 	"connectrpc.com/connect/v2"
 	"connectrpc.com/connect/v2/connecthttp"
 	"github.com/antinvestor/common/v3"
@@ -35,6 +34,10 @@ import (
 	"github.com/pitabwire/frame/v3/setup"
 	"github.com/pitabwire/util"
 
+	"github.com/antinvestor/service-commerce/gen/go/commerce/v1/commercev1connect"
+	procurementpb "github.com/antinvestor/service-commerce/gen/go/procurement/v1"
+	"github.com/antinvestor/service-commerce/gen/go/procurement/v1/procurementv1connect"
+
 	aconfig "github.com/antinvestor/service-commerce/apps/procurement/config"
 	"github.com/antinvestor/service-commerce/apps/procurement/service/authz"
 	"github.com/antinvestor/service-commerce/apps/procurement/service/business"
@@ -42,6 +45,8 @@ import (
 	"github.com/antinvestor/service-commerce/apps/procurement/service/repository"
 	"github.com/antinvestor/service-commerce/pkg/dbmigrate"
 	"github.com/antinvestor/service-commerce/pkg/dbrole"
+	"github.com/antinvestor/service-commerce/pkg/workflows"
+	procurementworkflows "github.com/antinvestor/service-commerce/workflows/procurement"
 )
 
 func main() {
@@ -78,9 +83,22 @@ func main() {
 		log.WithError(dbErr).Fatal("database is unavailable; check DATABASE_URL and the database provider's status")
 	}
 
-	// Setup Job: migrate + publish permission manifest only (no HTTP/runtime wiring).
+	// Setup Job: migrate, publish the permission manifest and register the
+	// scheduled workflows (no HTTP/runtime wiring).
 	procurementSD := procurementpb.File_v1_procurement_proto.Services().ByName("ProcurementService")
 	if frame.ShouldRunSetup(&cfg) {
+		trustage, trustageErr := newWorkflowClient(ctx, &cfg)
+		if trustageErr != nil {
+			log.WithError(trustageErr).Fatal("could not build the trustage client for setup")
+		}
+		workflows.RegisterSync(svc, trustage, procurementworkflows.Definitions(), workflows.Env{
+			Owner: &workflows.Owner{
+				Prefix:      "procurement.",
+				Placeholder: "${PROCUREMENT_URI}",
+				URI:         cfg.ProcurementServiceURI,
+				URIVariable: "PROCUREMENT_SERVICE_URI",
+			},
+		})
 		svc.Init(ctx, frame.WithPermissionRegistration(procurementSD))
 		if setupErr := svc.RunSetupForProcess(ctx, &cfg); setupErr != nil {
 			util.Log(ctx).WithError(setupErr).Fatal("setup plan failed")
@@ -100,7 +118,13 @@ func main() {
 	if err != nil {
 		log.WithError(err).Fatal("could not build the manufacturing client")
 	}
-	connectHandler := setupConnectServer(ctx, svc, business.NewManufacturingMaterialSource(manufacturing))
+	commerce, err := newCommerceClient(ctx, &cfg)
+	if err != nil {
+		log.WithError(err).Fatal("could not build the commerce client")
+	}
+	connectHandler := setupConnectServer(ctx, svc,
+		business.NewManufacturingMaterialSource(manufacturing),
+		business.NewCommerceStockDestination(commerce))
 	svc.Init(ctx, frame.WithHTTPHandler(connectHandler))
 
 	err = svc.Run(ctx, "")
@@ -110,7 +134,12 @@ func main() {
 }
 
 // setupConnectServer initializes and configures the gRPC server.
-func setupConnectServer(ctx context.Context, svc *frame.Service, materials business.MaterialSource) http.Handler {
+func setupConnectServer(
+	ctx context.Context,
+	svc *frame.Service,
+	materials business.MaterialSource,
+	stock business.StockDestination,
+) http.Handler {
 	securityMan := svc.SecurityManager()
 
 	auth := securityMan.GetAuthorizer(ctx)
@@ -135,7 +164,7 @@ func setupConnectServer(ctx context.Context, svc *frame.Service, materials busin
 
 	// Property-level permissions middleware.
 	authzMiddleware := authz.NewMiddleware(securityMan.GetAuthorizer(ctx))
-	implementation := handlers.NewProcurementServer(ctx, svc, authzMiddleware, materials)
+	implementation := handlers.NewProcurementServer(ctx, svc, authzMiddleware, materials, stock)
 
 	server := connect.NewServer(defaultInterceptorList...)
 	procurementv1connect.RegisterProcurementServiceHandler(server, implementation)
@@ -164,6 +193,48 @@ func newManufacturingClient(
 	}, manufacturingv1connect.NewManufacturingServiceClient)
 	if err != nil {
 		return nil, fmt.Errorf("manufacturing client: %w", err)
+	}
+	return cli, nil
+}
+
+// newCommerceClient builds the client received resale stock is pushed
+// through, authenticated as the procurement service itself. It returns nil
+// when commerce is not configured, which leaves those lines pending.
+func newCommerceClient(
+	ctx context.Context,
+	cfg *aconfig.ProcurementConfig,
+) (business.CommerceStockClient, error) {
+	if cfg.CommerceServiceURI == "" {
+		util.Log(ctx).Warn("commerce service not configured; received resale stock stays pending")
+		return nil, nil //nolint:nilnil // not configured is a valid state
+	}
+	cli, err := connection.NewServiceClient(ctx, cfg, common.ServiceTarget{
+		ServiceID:             servicecatalog.ServiceCommerce,
+		Endpoint:              cfg.CommerceServiceURI,
+		WorkloadAPITargetPath: cfg.CommerceServiceWorkloadAPITargetPath,
+	}, commercev1connect.NewCommerceServiceClient)
+	if err != nil {
+		return nil, fmt.Errorf("commerce client: %w", err)
+	}
+	return cli, nil
+}
+
+// newWorkflowClient builds the trustage client the setup job registers
+// workflows with; nil when trustage is not configured.
+func newWorkflowClient(
+	ctx context.Context,
+	cfg *aconfig.ProcurementConfig,
+) (workflows.Client, error) {
+	if cfg.TrustageServiceURI == "" {
+		return nil, nil //nolint:nilnil // not configured is a valid state
+	}
+	cli, err := connection.NewServiceClient(ctx, cfg, common.ServiceTarget{
+		ServiceID:             servicecatalog.ServiceTrustage,
+		Endpoint:              cfg.TrustageServiceURI,
+		WorkloadAPITargetPath: cfg.TrustageServiceWorkloadAPITargetPath,
+	}, workflowv1connect.NewWorkflowServiceClient)
+	if err != nil {
+		return nil, fmt.Errorf("workflow client: %w", err)
 	}
 	return cli, nil
 }

@@ -12,8 +12,7 @@ dependencies:
   cupertino_icons: ^1.0.9
 
   # Core infrastructure
-  antinvestor_ui_core:
-    path: ../../../common/ui_core
+  antinvestor_ui_core: ^0.6.0
   antinvestor_auth_runtime: ^0.4.0
 
   # Commerce UI packages (this repo)
@@ -69,8 +68,7 @@ dependencies:
     path: ../../../service-notification/ui
   antinvestor_ui_payment:
     path: ../../../service-payment/ui/payment
-  antinvestor_ui_profile:
-    path: ../../../service-profile/ui/profile
+  antinvestor_ui_profile: ^0.3.0
 
   # State management & navigation
   flutter_riverpod: ^3.3.1
@@ -78,7 +76,7 @@ dependencies:
 
   # Connect RPC — used directly by console-owned features (shop settings)
   # that call commerce RPCs and inspect Connect error codes.
-  connectrpc: ^1.0.0
+  connectrpc: ^2.0.0
 
   # Web URL strategy + design system (matches the thesa shell).
   flutter_web_plugins:
@@ -99,10 +97,6 @@ dev_dependencies:
 # its path version so the console builds against the local source tree
 # (and not a hosted release that may not exist yet on pub.dev).
 dependency_overrides:
-  antinvestor_ui_core:
-    path: ../../../common/ui_core
-  antinvestor_ui_profile:
-    path: ../../../service-profile/ui/profile
   antinvestor_ui_auth:
     path: ../../../service-authentication/ui/auth
   antinvestor_ui_notification:
@@ -111,14 +105,10 @@ dependency_overrides:
     path: ../../../service-payment/ui/payment
   antinvestor_ui_identity:
     path: ../../../service-fintech/ui/identity
-  antinvestor_api_common:
-    path: ../../../common/sdk/dart/common
   antinvestor_api_commerce:
     path: ../../sdk/dart/commerce
   antinvestor_api_manufacturing:
     path: ../../../service-manufacturing/sdk/dart/manufacturing
-  antinvestor_api_profile:
-    path: ../../../service-profile/sdk/dart/profile
   antinvestor_api_payment:
     path: ../../../service-payment/sdk/dart/payment
   antinvestor_api_ledger:
@@ -133,8 +123,6 @@ dependency_overrides:
     path: ../../../service-authentication/sdk/dart/audit
   antinvestor_api_tenancy:
     path: ../../../service-authentication/sdk/dart/tenancy
-  antinvestor_api_files:
-    path: ../../../service-files/sdk/dart/files
 
 flutter:
   uses-material-design: true

@@ -80,7 +80,9 @@ final dashboardOrdersProvider = FutureProvider<RecentOrders?>((ref) async {
 /// A KPI value and an optional note on how it was worked out.
 typedef Kpi = ({String value, String? note});
 
-/// Money received today, in the active shop's currency.
+/// Money received today, in the active shop's currency, before refunds:
+/// an order says how much was refunded (amount_refunded) but not when, so
+/// today's refunds cannot be taken off and the card is labelled gross.
 final todaysSalesProvider = FutureProvider<Kpi>((ref) async {
   final currency = ref.watch(activeShopProvider.select((s) => s?.currency));
   try {
@@ -96,8 +98,9 @@ final todaysSalesProvider = FutureProvider<Kpi>((ref) async {
     return (
       value: formatMinorMoney(minor, code),
       note: recent.truncated
-          ? 'Payments today on the latest ${recent.orders.length} orders'
-          : 'Payments received today',
+          ? 'Payments today on the latest ${recent.orders.length} orders, '
+                'before refunds'
+          : 'Payments received today, before refunds',
     );
   } catch (_) {
     return (value: '—', note: null);

@@ -84,7 +84,7 @@ void main() {
       shopId: 'shop-1',
       name: 'Tea',
       description: 'Loose leaf',
-      attributes: {'origin': 'Kericho'},
+      attributes: {'origin': 'Kericho'}.entries,
       fulfilmentType: FulfilmentType.FULFILMENT_TYPE_PHYSICAL,
       status: ProductStatus.PRODUCT_STATUS_ACTIVE,
       paymentPolicy: PaymentPolicy(allowInstalments: true),

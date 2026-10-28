@@ -110,6 +110,7 @@ const Set<String> _procurementAdmin = {
   'goods_receipt_view',
   'goods_receipt_create',
   'goods_receipt_deliver',
+  'goods_receipt_resolve',
 };
 
 /// The console permissions [roles] grant: the union of each role's

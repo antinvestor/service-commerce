@@ -11,14 +11,30 @@ include .tmp/Makefile.common
 
 # Dart proto modules — each gets its own buf.gen.dart.<module>.yaml.
 DART_MODULES := commerce procurement property
+# Well-known types protoc_plugin 25 imports from package:protobuf.
+DART_RUNTIME_WKTS := any api duration empty field_mask source_context struct timestamp type wrappers
 
 .PHONY: proto-generate-dart
 proto-generate-dart: $(BIN)/buf ## Regenerate the per-module dart SDKs
 	@if [ ! -d "$(PROTO_DIR)" ]; then exit 0; fi
-	@for m in $(DART_MODULES); do rm -rf sdk/dart/$$m/lib/src/v1; done
+	@# Generated files are recreated from scratch so files the plugin no longer
+	@# emits (e.g. empty .pbserver.dart) do not linger; barrels and hand-written
+	@# files outside lib/src are untouched.
+	@for m in $(DART_MODULES); do \
+		find sdk/dart/$$m/lib/src -name '*.pb*.dart' -o -name '*.connect.*.dart' | xargs -r rm -f; \
+	done
 	@for m in $(DART_MODULES); do \
 		echo "==> dart $$m"; \
 		(cd $(PROTO_DIR) && buf generate --template buf.gen.dart.$$m.yaml $$m); \
+	done
+	@# The well-known types come from package:protobuf, so the copies
+	@# include_wkt emits are unreferenced. descriptor.proto is not shipped by
+	@# the runtime and stays (buf/validate and gnostic import it).
+	@for m in $(DART_MODULES); do \
+		for wkt in $(DART_RUNTIME_WKTS); do \
+			rm -f sdk/dart/$$m/lib/src/google/protobuf/$$wkt.pb*.dart; \
+		done; \
+		find sdk/dart/$$m/lib/src -type d -empty -delete; \
 	done
 
 proto-generate: proto-generate-dart

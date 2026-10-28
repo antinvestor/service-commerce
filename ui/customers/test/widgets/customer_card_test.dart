@@ -13,7 +13,9 @@ void main() {
         id: 'cust-123',
         type: ProfileType.PERSON,
         state: STATE.ACTIVE,
-        properties: Struct(fields: {'name': Value(stringValue: 'Jane Doe')}),
+        properties: Struct(
+          fields: {'name': Value(stringValue: 'Jane Doe')}.entries,
+        ),
       );
     });
 

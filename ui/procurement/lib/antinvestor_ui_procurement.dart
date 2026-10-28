@@ -31,6 +31,7 @@ export 'src/widgets/po_line_tile.dart';
 export 'src/widgets/goods_receipt_card.dart';
 export 'src/widgets/goods_receipt_status_badge.dart';
 export 'src/widgets/receipt_line_tile.dart';
+export 'src/widgets/receipt_line_actions.dart';
 export 'src/widgets/stock_delivery_badge.dart';
 export 'src/widgets/load_more_footer.dart';
 

@@ -1,8 +1,6 @@
 import 'package:antinvestor_api_commerce/antinvestor_api_commerce.dart';
 // FieldMask is not re-exported by the commerce barrel.
 // ignore: implementation_imports
-import 'package:antinvestor_api_commerce/src/google/protobuf/field_mask.pb.dart'
-    show FieldMask;
 import 'package:antinvestor_ui_core/widgets/money_helpers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

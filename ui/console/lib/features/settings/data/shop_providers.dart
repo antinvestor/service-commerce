@@ -11,8 +11,6 @@ import 'package:antinvestor_api_commerce/antinvestor_api_commerce.dart'
 // FieldMask is not re-exported by the commerce barrel, so it is imported
 // from its generated source to build a precise UpdateShop update mask.
 // ignore: implementation_imports
-import 'package:antinvestor_api_commerce/src/google/protobuf/field_mask.pb.dart'
-    show FieldMask;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/auth/active_shop_provider.dart';

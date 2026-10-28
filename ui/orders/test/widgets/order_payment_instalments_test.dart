@@ -11,7 +11,6 @@ import 'package:fixnum/fixnum.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:protobuf/protobuf.dart';
 
 Money _kes(int units) => Money(currencyCode: 'KES', units: Int64(units));
 

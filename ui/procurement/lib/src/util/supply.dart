@@ -32,3 +32,9 @@ bool deliveryNeedsAction(GoodsReceiptLine line) =>
     line.deliveryStatus == StockDeliveryStatus.STOCK_DELIVERY_STATUS_FAILED ||
     line.deliveryStatus ==
         StockDeliveryStatus.STOCK_DELIVERY_STATUS_PENDING_TRANSFER;
+
+/// Whether staff can retry a receipt line's delivery: a product variant the
+/// shop refused. Raw materials are only ever booked by hand.
+bool deliveryRetryable(GoodsReceiptLine line) =>
+    line.deliveryStatus == StockDeliveryStatus.STOCK_DELIVERY_STATUS_FAILED &&
+    isResale(line.supplyKind);

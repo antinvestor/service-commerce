@@ -10,10 +10,18 @@ String _formatDate(DateTime dt) =>
 /// A tile showing a single [GoodsReceiptLine]: quantities, lot, and where
 /// its stock is, with what staff need to do about it.
 class ReceiptLineTile extends StatelessWidget {
-  const ReceiptLineTile({super.key, required this.line, this.itemName = ''});
+  const ReceiptLineTile({
+    super.key,
+    required this.line,
+    this.itemName = '',
+    this.action,
+  });
 
   final GoodsReceiptLine line;
   final String itemName;
+
+  /// Shown under a line that needs a person, e.g. a resolve button.
+  final Widget? action;
 
   @override
   Widget build(BuildContext context) {
@@ -99,6 +107,18 @@ class ReceiptLineTile extends StatelessWidget {
                     line.deliveryNote,
                     style: muted?.copyWith(fontStyle: FontStyle.italic),
                   ),
+                if (line.deliveryStatus ==
+                    StockDeliveryStatus.STOCK_DELIVERY_STATUS_RESOLVED)
+                  Text(
+                    _resolution(line),
+                    key: Key('receipt_line_resolution_${line.id}'),
+                    style: muted,
+                  ),
+                if (action != null && needsAction)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: action,
+                  ),
               ],
             ),
           ),
@@ -106,4 +126,14 @@ class ReceiptLineTile extends StatelessWidget {
       ),
     );
   }
+}
+
+/// "Booked by hand by `who` on `date`: `note`", leaving out what is unknown.
+String _resolution(GoodsReceiptLine line) {
+  final by = line.resolvedBy.isNotEmpty ? ' by ${line.resolvedBy}' : '';
+  final on = line.hasResolvedAt()
+      ? ' on ${_formatDate(line.resolvedAt.toDateTime())}'
+      : '';
+  final note = line.resolutionNote.isNotEmpty ? ': ${line.resolutionNote}' : '';
+  return 'Booked by hand$by$on$note';
 }

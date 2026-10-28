@@ -179,6 +179,11 @@ class ProcurementRouteModule extends RouteModule {
         label: 'Receive Goods',
         scope: PermissionScope.action,
       ),
+      PermissionEntry(
+        key: 'goods_receipt_resolve',
+        label: 'Resolve Goods Receipt Lines',
+        scope: PermissionScope.action,
+      ),
     ],
   );
 }

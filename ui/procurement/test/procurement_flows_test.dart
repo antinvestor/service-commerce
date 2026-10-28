@@ -56,6 +56,26 @@ class RecordingNotifier extends ProcurementNotifier {
     log.add(request);
     return GoodsReceipt()..id = 'gr-new';
   }
+
+  @override
+  Future<GoodsReceipt> resolveGoodsReceiptLine(
+    GoodsReceiptLineResolveRequest request,
+  ) async {
+    log.add(request);
+    final booked =
+        request.resolution ==
+        GoodsReceiptLineResolution
+            .GOODS_RECEIPT_LINE_RESOLUTION_BOOKED_MANUALLY;
+    return GoodsReceipt()
+      ..id = request.goodsReceiptId
+      ..lines.add(
+        GoodsReceiptLine()
+          ..id = request.lineId
+          ..deliveryStatus = booked
+              ? StockDeliveryStatus.STOCK_DELIVERY_STATUS_RESOLVED
+              : StockDeliveryStatus.STOCK_DELIVERY_STATUS_DELIVERED,
+      );
+  }
 }
 
 final _supplier = Supplier()
@@ -144,6 +164,7 @@ const _allPermissions = {
   'purchase_order_cancel',
   'goods_receipt_view',
   'goods_receipt_create',
+  'goods_receipt_resolve',
 };
 
 /// Answers the paged searches from the harness's fixtures, recording the
@@ -725,6 +746,137 @@ void main() {
         ),
         findsOneWidget,
       );
+    });
+
+    testWidgets('only lines that need a person offer Resolve', (tester) async {
+      await _pump(tester, ProcurementPaths.receipt('gr-1'), receipt: mixed);
+      expect(find.byKey(const Key('resolve_line_a')), findsNothing);
+      expect(find.byKey(const Key('resolve_line_b')), findsNothing);
+      expect(find.byKey(const Key('resolve_line_c')), findsOneWidget);
+      expect(find.byKey(const Key('resolve_line_d')), findsOneWidget);
+    });
+
+    testWidgets('a raw material is marked booked by hand with a note', (
+      tester,
+    ) async {
+      final h = await _pump(
+        tester,
+        ProcurementPaths.receipt('gr-1'),
+        receipt: mixed,
+      );
+      await tester.tap(find.byKey(const Key('resolve_line_c')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Resolve receipt line'), findsOneWidget);
+      // Raw materials are never pushed, so there is nothing to retry.
+      expect(find.byKey(const Key('resolve_line_retry')), findsNothing);
+      await tester.enterText(
+        find.byKey(const Key('resolve_line_note')),
+        '  booked into the main store  ',
+      );
+      await tester.tap(find.byKey(const Key('resolve_line_booked')));
+      await tester.pumpAndSettle();
+
+      final request = h.log.single as GoodsReceiptLineResolveRequest;
+      expect(request.goodsReceiptId, 'gr-1');
+      expect(request.lineId, 'c');
+      expect(
+        request.resolution,
+        GoodsReceiptLineResolution
+            .GOODS_RECEIPT_LINE_RESOLUTION_BOOKED_MANUALLY,
+      );
+      expect(request.note, 'booked into the main store');
+      expect(find.text('Line marked booked by hand'), findsOneWidget);
+    });
+
+    testWidgets('a refused variant is retried', (tester) async {
+      final h = await _pump(
+        tester,
+        ProcurementPaths.receipt('gr-1'),
+        receipt: mixed,
+      );
+      await tester.tap(find.byKey(const Key('resolve_line_d')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('resolve_line_retry')));
+      await tester.pumpAndSettle();
+
+      final request = h.log.single as GoodsReceiptLineResolveRequest;
+      expect(request.lineId, 'd');
+      expect(
+        request.resolution,
+        GoodsReceiptLineResolution.GOODS_RECEIPT_LINE_RESOLUTION_RETRY,
+      );
+      expect(find.text('Delivered to the shop'), findsOneWidget);
+    });
+
+    testWidgets('dismissing the dialog records nothing', (tester) async {
+      final h = await _pump(
+        tester,
+        ProcurementPaths.receipt('gr-1'),
+        receipt: mixed,
+      );
+      await tester.tap(find.byKey(const Key('resolve_line_c')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Not now'));
+      await tester.pumpAndSettle();
+      expect(h.log, isEmpty);
+    });
+
+    testWidgets('without goods_receipt_resolve lines cannot be resolved', (
+      tester,
+    ) async {
+      await _pump(
+        tester,
+        ProcurementPaths.receipt('gr-1'),
+        receipt: mixed,
+        permissions: _allPermissions.difference({'goods_receipt_resolve'}),
+      );
+      expect(find.text('Failed'), findsOneWidget);
+      expect(find.byKey(const Key('resolve_line_c')), findsNothing);
+      expect(find.byKey(const Key('resolve_line_d')), findsNothing);
+    });
+
+    testWidgets('a resolved line says who booked it and needs nothing', (
+      tester,
+    ) async {
+      await _pump(
+        tester,
+        ProcurementPaths.receipt('gr-1'),
+        receipt: GoodsReceipt()
+          ..id = 'gr-1'
+          ..lines.add(
+            line(
+                'e',
+                SupplyKind.SUPPLY_KIND_MATERIAL,
+                StockDeliveryStatus.STOCK_DELIVERY_STATUS_RESOLVED,
+              )
+              ..resolvedBy = 'profile-store'
+              ..resolutionNote = 'GRN 42',
+          ),
+      );
+      expect(find.text('Booked by hand'), findsOneWidget);
+      expect(
+        find.text('Booked by hand by profile-store: GRN 42'),
+        findsOneWidget,
+      );
+      expect(find.byKey(const Key('resolve_line_e')), findsNothing);
+      expect(find.byKey(const Key('receipt_delivery_summary')), findsNothing);
+    });
+
+    testWidgets('the resolve dialog fits a phone', (tester) async {
+      await _pump(
+        tester,
+        ProcurementPaths.receipt('gr-1'),
+        receipt: mixed,
+        size: const Size(390, 844),
+      );
+      await tester.ensureVisible(find.byKey(const Key('resolve_line_d')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('resolve_line_d')));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(find.byKey(const Key('resolve_line_retry')), findsOneWidget);
+      expect(find.byKey(const Key('resolve_line_booked')), findsOneWidget);
     });
 
     testWidgets('the order flags receipts that need action', (tester) async {

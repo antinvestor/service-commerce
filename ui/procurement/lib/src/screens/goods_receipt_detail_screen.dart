@@ -1,4 +1,5 @@
 import 'package:antinvestor_api_procurement/antinvestor_api_procurement.dart';
+import 'package:antinvestor_ui_core/permissions/permission_guard.dart';
 import 'package:antinvestor_ui_core/widgets/error_helpers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import '../providers/procurement_providers.dart';
 import '../routing/procurement_paths.dart';
 import '../widgets/goods_receipt_status_badge.dart';
+import '../widgets/receipt_line_actions.dart';
 import '../widgets/receipt_line_tile.dart';
 
 String _formatDate(DateTime dt) =>
@@ -22,6 +24,7 @@ class GoodsReceiptDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final asyncReceipt = ref.watch(goodsReceiptByIdProvider(receiptId));
+    final busy = ref.watch(procurementNotifierProvider).isLoading;
 
     return Scaffold(
       body: asyncReceipt.when(
@@ -138,7 +141,21 @@ class GoodsReceiptDetailScreen extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 8),
-              for (final line in receipt.lines) ReceiptLineTile(line: line),
+              for (final line in receipt.lines)
+                ReceiptLineTile(
+                  line: line,
+                  action: PermissionGuard(
+                    permissions: const {'goods_receipt_resolve'},
+                    child: OutlinedButton(
+                      key: Key('resolve_line_${line.id}'),
+                      onPressed: busy
+                          ? null
+                          : () =>
+                                resolveReceiptLine(context, ref, receipt, line),
+                      child: const Text('Resolve'),
+                    ),
+                  ),
+                ),
             ],
           ),
         ),
@@ -167,10 +184,11 @@ class _DeliverySummary extends StatelessWidget {
     final messages = [
       if (failed > 0)
         '$failed ${_lines(failed)} refused by the shop: check the product '
-            'variant, then record the stock there.',
+            'variant and retry, or record the stock there and mark it '
+            'booked.',
       if (transfer > 0)
         '$transfer ${_lines(transfer)} of raw material to book into '
-            'manufacturing inventory by hand.',
+            'manufacturing inventory by hand, then mark booked.',
       if (pending > 0)
         '$pending ${_lines(pending)} on the way to the shop\'s stock; '
             'retried automatically.',

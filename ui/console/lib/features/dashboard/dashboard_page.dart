@@ -180,7 +180,7 @@ class _KpiStrip extends ConsumerWidget {
     final cards = <Widget>[
       KpiCard(
         key: const ValueKey('kpi-todays-sales'),
-        label: "Today's sales",
+        label: 'Gross sales today',
         value: sales?.value ?? '—',
         note: sales?.note,
         icon: Icons.attach_money,

@@ -2,8 +2,6 @@ import 'package:antinvestor_api_commerce/antinvestor_api_commerce.dart';
 // FieldMask is not re-exported by the commerce barrel, so it is imported
 // from its generated source to build a precise update mask.
 // ignore: implementation_imports
-import 'package:antinvestor_api_commerce/src/google/protobuf/field_mask.pb.dart'
-    show FieldMask;
 import 'package:antinvestor_ui_core/widgets/error_helpers.dart';
 import 'package:fixnum/fixnum.dart';
 import 'package:flutter/material.dart';

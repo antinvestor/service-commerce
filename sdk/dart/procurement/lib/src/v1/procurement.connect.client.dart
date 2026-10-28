@@ -273,6 +273,27 @@ extension type ProcurementServiceClient (connect.Transport _transport) {
     );
   }
 
+  /// Settles a receipt line that needs a person: stock booked by hand
+  /// (BOOKED_MANUALLY) is marked resolved with who, when and why; a FAILED
+  /// product variant line is put back to PENDING and pushed once (RETRY).
+  /// Authorised on the receipt's property (goods_receipt_manage).
+  Future<v1procurement.GoodsReceiptLineResolveResponse> goodsReceiptLineResolve(
+    v1procurement.GoodsReceiptLineResolveRequest input, {
+    connect.Headers? headers,
+    connect.AbortSignal? signal,
+    Function(connect.Headers)? onHeader,
+    Function(connect.Headers)? onTrailer,
+  }) {
+    return connect.Client(_transport).unary(
+      specs.ProcurementService.goodsReceiptLineResolve,
+      input,
+      signal: signal,
+      headers: headers,
+      onHeader: onHeader,
+      onTrailer: onTrailer,
+    );
+  }
+
   /// ---- Suggestions ----
   Future<v1procurement.SuggestPurchaseOrdersResponse> suggestPurchaseOrders(
     v1procurement.SuggestPurchaseOrdersRequest input, {

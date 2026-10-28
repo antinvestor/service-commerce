@@ -25,7 +25,6 @@ class OrderListScreen extends ConsumerStatefulWidget {
 }
 
 class _OrderListScreenState extends ConsumerState<OrderListScreen> {
-  OrderStatus? _selectedStatus;
   final _search = TextEditingController();
 
   @override
@@ -34,9 +33,10 @@ class _OrderListScreenState extends ConsumerState<OrderListScreen> {
     super.dispose();
   }
 
-  void _runSearch(String query) => ref
-      .read(orderListControllerProvider(widget.shopId).notifier)
-      .search(query);
+  OrderListController get _controller =>
+      ref.read(orderListControllerProvider(widget.shopId).notifier);
+
+  void _runSearch(String query) => _controller.search(query);
 
   @override
   Widget build(BuildContext context) {
@@ -82,12 +82,7 @@ class _OrderListScreenState extends ConsumerState<OrderListScreen> {
             ],
           ),
         ),
-        data: (state) {
-          final filtered = _selectedStatus != null
-              ? state.orders.where((o) => o.status == _selectedStatus).toList()
-              : state.orders;
-          return _buildContent(context, theme, filtered, state);
-        },
+        data: (state) => _buildContent(context, theme, state.orders, state),
       ),
     );
   }
@@ -190,45 +185,18 @@ class _OrderListScreenState extends ConsumerState<OrderListScreen> {
             ),
           const SizedBox(height: 12),
 
-          // Status filter chips
+          // Status filter chips, applied by the server.
           Wrap(
             spacing: 8,
+            runSpacing: 8,
             children: [
-              FilterChip(
-                label: const Text('All'),
-                selected: _selectedStatus == null,
-                onSelected: (_) => setState(() => _selectedStatus = null),
-              ),
-              FilterChip(
-                label: const Text('Awaiting payment'),
-                selected:
-                    _selectedStatus == OrderStatus.ORDER_STATUS_PENDING_PAYMENT,
-                onSelected: (_) => setState(
-                  () => _selectedStatus =
-                      OrderStatus.ORDER_STATUS_PENDING_PAYMENT,
+              for (final (label, status) in _statusFilters)
+                FilterChip(
+                  key: ValueKey('order-status-${status?.value ?? 'all'}'),
+                  label: Text(label),
+                  selected: state.status == status,
+                  onSelected: (_) => _controller.filterStatus(status),
                 ),
-              ),
-              FilterChip(
-                label: const Text('Confirmed'),
-                selected: _selectedStatus == OrderStatus.ORDER_STATUS_CONFIRMED,
-                onSelected: (_) => setState(
-                  () => _selectedStatus = OrderStatus.ORDER_STATUS_CONFIRMED,
-                ),
-              ),
-              FilterChip(
-                label: const Text('Fulfilled'),
-                selected: _selectedStatus == OrderStatus.ORDER_STATUS_FULFILLED,
-                onSelected: (_) => setState(
-                  () => _selectedStatus = OrderStatus.ORDER_STATUS_FULFILLED,
-                ),
-              ),
-              FilterChip(
-                label: const Text('Cancelled'),
-                selected: _selectedStatus == OrderStatus.ORDER_STATUS_CANCELLED,
-                onSelected: (_) => setState(
-                  () => _selectedStatus = OrderStatus.ORDER_STATUS_CANCELLED,
-                ),
-              ),
             ],
           ),
           const SizedBox(height: 16),
@@ -258,9 +226,11 @@ class _OrderListScreenState extends ConsumerState<OrderListScreen> {
               padding: const EdgeInsets.all(16),
               child: Center(
                 child: Text(
-                  state.query.isEmpty
-                      ? 'No orders yet'
-                      : 'No orders match "${state.query}"',
+                  state.query.isNotEmpty
+                      ? 'No orders match "${state.query}"'
+                      : state.status != null
+                      ? 'No orders with this status'
+                      : 'No orders yet',
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
@@ -293,6 +263,16 @@ class _OrderListScreenState extends ConsumerState<OrderListScreen> {
     );
   }
 }
+
+/// The status chips: label and the status the server filters by (null:
+/// every status).
+const List<(String, OrderStatus?)> _statusFilters = [
+  ('All', null),
+  ('Awaiting payment', OrderStatus.ORDER_STATUS_PENDING_PAYMENT),
+  ('Confirmed', OrderStatus.ORDER_STATUS_CONFIRMED),
+  ('Fulfilled', OrderStatus.ORDER_STATUS_FULFILLED),
+  ('Cancelled', OrderStatus.ORDER_STATUS_CANCELLED),
+];
 
 class _OrderTable extends StatelessWidget {
   const _OrderTable({required this.orders});

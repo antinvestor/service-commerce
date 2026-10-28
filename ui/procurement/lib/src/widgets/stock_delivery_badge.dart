@@ -25,6 +25,11 @@ import 'package:flutter/material.dart';
         Colors.red,
         'The shop refused this stock; check the product variant.',
       ),
+      StockDeliveryStatus.STOCK_DELIVERY_STATUS_RESOLVED => (
+        'Booked by hand',
+        Colors.teal,
+        'Booked at its destination by hand.',
+      ),
       _ => ('Unknown', Colors.grey, ''),
     };
 

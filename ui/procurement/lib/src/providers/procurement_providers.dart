@@ -318,6 +318,22 @@ class ProcurementNotifier extends Notifier<AsyncValue<void>> {
       rethrow;
     }
   }
+
+  /// Settles a receipt line that needs a person (booked by hand, or a
+  /// refused product variant retried). Returns the receipt as it stands.
+  Future<GoodsReceipt> resolveGoodsReceiptLine(
+    GoodsReceiptLineResolveRequest request,
+  ) async {
+    state = const AsyncValue.loading();
+    try {
+      final response = await _client.goodsReceiptLineResolve(request);
+      state = const AsyncValue.data(null);
+      return response.goodsReceipt;
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+      rethrow;
+    }
+  }
 }
 
 final procurementNotifierProvider =

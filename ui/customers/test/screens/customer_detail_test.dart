@@ -18,7 +18,7 @@ Money _kes(int units) => Money(currencyCode: 'KES', units: Int64(units));
 final _profile = ProfileObject(
   id: 'cust-1',
   type: ProfileType.PERSON,
-  properties: Struct(fields: {'name': Value(stringValue: 'Jane Doe')}),
+  properties: Struct(fields: {'name': Value(stringValue: 'Jane Doe')}.entries),
 );
 
 class _Harness {

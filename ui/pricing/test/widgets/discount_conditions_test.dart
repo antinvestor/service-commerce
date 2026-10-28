@@ -70,7 +70,7 @@ void main() {
       fields: {
         'min_quantity': Value(numberValue: 3),
         'region': Value(stringValue: 'nairobi'),
-      },
+      }.entries,
     );
 
     test('keeps unsupported keys by default', () {

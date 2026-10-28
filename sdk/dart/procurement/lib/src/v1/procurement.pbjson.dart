@@ -1,22 +1,27 @@
+// This is a generated file - do not edit.
 //
-//  Generated code. Do not modify.
-//  source: v1/procurement.proto
-//
-// @dart = 2.12
+// Generated from v1/procurement.proto.
+
+// @dart = 3.3
 
 // ignore_for_file: annotate_overrides, camel_case_types, comment_references
-// ignore_for_file: constant_identifier_names, library_prefixes
-// ignore_for_file: non_constant_identifier_names, prefer_final_fields
-// ignore_for_file: unnecessary_import, unnecessary_this, unused_import
+// ignore_for_file: constant_identifier_names
+// ignore_for_file: curly_braces_in_flow_control_structures
+// ignore_for_file: deprecated_member_use_from_same_package, library_prefixes
+// ignore_for_file: non_constant_identifier_names, prefer_relative_imports
+// ignore_for_file: unused_import
 
 import 'dart:convert' as $convert;
 import 'dart:core' as $core;
 import 'dart:typed_data' as $typed_data;
 
-import '../common/v1/common.pbjson.dart' as $8;
-import '../common/v1/money.pbjson.dart' as $7;
-import '../google/protobuf/struct.pbjson.dart' as $6;
-import '../google/protobuf/timestamp.pbjson.dart' as $2;
+import 'package:protobuf/well_known_types/google/protobuf/struct.pbjson.dart'
+    as $3;
+import 'package:protobuf/well_known_types/google/protobuf/timestamp.pbjson.dart'
+    as $0;
+
+import '../common/v1/common.pbjson.dart' as $2;
+import '../common/v1/money.pbjson.dart' as $1;
 
 @$core.Deprecated('Use supplierTypeDescriptor instead')
 const SupplierType$json = {
@@ -177,6 +182,7 @@ const StockDeliveryStatus$json = {
     {'1': 'STOCK_DELIVERY_STATUS_DELIVERED', '2': 2},
     {'1': 'STOCK_DELIVERY_STATUS_PENDING_TRANSFER', '2': 3},
     {'1': 'STOCK_DELIVERY_STATUS_FAILED', '2': 4},
+    {'1': 'STOCK_DELIVERY_STATUS_RESOLVED', '2': 5},
   ],
 };
 
@@ -185,7 +191,25 @@ final $typed_data.Uint8List stockDeliveryStatusDescriptor = $convert.base64Decod
     'ChNTdG9ja0RlbGl2ZXJ5U3RhdHVzEiUKIVNUT0NLX0RFTElWRVJZX1NUQVRVU19VTlNQRUNJRk'
     'lFRBAAEiEKHVNUT0NLX0RFTElWRVJZX1NUQVRVU19QRU5ESU5HEAESIwofU1RPQ0tfREVMSVZF'
     'UllfU1RBVFVTX0RFTElWRVJFRBACEioKJlNUT0NLX0RFTElWRVJZX1NUQVRVU19QRU5ESU5HX1'
-    'RSQU5TRkVSEAMSIAocU1RPQ0tfREVMSVZFUllfU1RBVFVTX0ZBSUxFRBAE');
+    'RSQU5TRkVSEAMSIAocU1RPQ0tfREVMSVZFUllfU1RBVFVTX0ZBSUxFRBAEEiIKHlNUT0NLX0RF'
+    'TElWRVJZX1NUQVRVU19SRVNPTFZFRBAF');
+
+@$core.Deprecated('Use goodsReceiptLineResolutionDescriptor instead')
+const GoodsReceiptLineResolution$json = {
+  '1': 'GoodsReceiptLineResolution',
+  '2': [
+    {'1': 'GOODS_RECEIPT_LINE_RESOLUTION_UNSPECIFIED', '2': 0},
+    {'1': 'GOODS_RECEIPT_LINE_RESOLUTION_BOOKED_MANUALLY', '2': 1},
+    {'1': 'GOODS_RECEIPT_LINE_RESOLUTION_RETRY', '2': 2},
+  ],
+};
+
+/// Descriptor for `GoodsReceiptLineResolution`. Decode as a `google.protobuf.EnumDescriptorProto`.
+final $typed_data.Uint8List goodsReceiptLineResolutionDescriptor = $convert.base64Decode(
+    'ChpHb29kc1JlY2VpcHRMaW5lUmVzb2x1dGlvbhItCilHT09EU19SRUNFSVBUX0xJTkVfUkVTT0'
+    'xVVElPTl9VTlNQRUNJRklFRBAAEjEKLUdPT0RTX1JFQ0VJUFRfTElORV9SRVNPTFVUSU9OX0JP'
+    'T0tFRF9NQU5VQUxMWRABEicKI0dPT0RTX1JFQ0VJUFRfTElORV9SRVNPTFVUSU9OX1JFVFJZEA'
+    'I=');
 
 @$core.Deprecated('Use supplierDescriptor instead')
 const Supplier$json = {
@@ -194,14 +218,48 @@ const Supplier$json = {
     {'1': 'id', '3': 1, '4': 1, '5': 9, '10': 'id'},
     {'1': 'profile_id', '3': 2, '4': 1, '5': 9, '10': 'profileId'},
     {'1': 'name', '3': 3, '4': 1, '5': 9, '10': 'name'},
-    {'1': 'supplier_type', '3': 4, '4': 1, '5': 14, '6': '.procurement.v1.SupplierType', '10': 'supplierType'},
-    {'1': 'status', '3': 5, '4': 1, '5': 14, '6': '.procurement.v1.SupplierStatus', '10': 'status'},
-    {'1': 'payment_terms_days', '3': 6, '4': 1, '5': 5, '10': 'paymentTermsDays'},
+    {
+      '1': 'supplier_type',
+      '3': 4,
+      '4': 1,
+      '5': 14,
+      '6': '.procurement.v1.SupplierType',
+      '10': 'supplierType'
+    },
+    {
+      '1': 'status',
+      '3': 5,
+      '4': 1,
+      '5': 14,
+      '6': '.procurement.v1.SupplierStatus',
+      '10': 'status'
+    },
+    {
+      '1': 'payment_terms_days',
+      '3': 6,
+      '4': 1,
+      '5': 5,
+      '10': 'paymentTermsDays'
+    },
     {'1': 'currency', '3': 7, '4': 1, '5': 9, '10': 'currency'},
     {'1': 'lead_time_days', '3': 8, '4': 1, '5': 5, '10': 'leadTimeDays'},
-    {'1': 'rating', '3': 9, '4': 1, '5': 14, '6': '.procurement.v1.SupplierRating', '10': 'rating'},
+    {
+      '1': 'rating',
+      '3': 9,
+      '4': 1,
+      '5': 14,
+      '6': '.procurement.v1.SupplierRating',
+      '10': 'rating'
+    },
     {'1': 'notes', '3': 10, '4': 1, '5': 9, '10': 'notes'},
-    {'1': 'created_at', '3': 15, '4': 1, '5': 11, '6': '.google.protobuf.Timestamp', '10': 'createdAt'},
+    {
+      '1': 'created_at',
+      '3': 15,
+      '4': 1,
+      '5': 11,
+      '6': '.google.protobuf.Timestamp',
+      '10': 'createdAt'
+    },
   ],
 };
 
@@ -225,14 +283,54 @@ const SupplierItem$json = {
     {'1': 'supplier_id', '3': 2, '4': 1, '5': 9, '10': 'supplierId'},
     {'1': 'inventory_item_id', '3': 3, '4': 1, '5': 9, '10': 'inventoryItemId'},
     {'1': 'supplier_sku', '3': 4, '4': 1, '5': 9, '10': 'supplierSku'},
-    {'1': 'unit_price', '3': 5, '4': 1, '5': 11, '6': '.common.v1.Money', '10': 'unitPrice'},
-    {'1': 'min_order_quantity', '3': 6, '4': 1, '5': 1, '10': 'minOrderQuantity'},
+    {
+      '1': 'unit_price',
+      '3': 5,
+      '4': 1,
+      '5': 11,
+      '6': '.common.v1.Money',
+      '10': 'unitPrice'
+    },
+    {
+      '1': 'min_order_quantity',
+      '3': 6,
+      '4': 1,
+      '5': 1,
+      '10': 'minOrderQuantity'
+    },
     {'1': 'unit', '3': 7, '4': 1, '5': 9, '10': 'unit'},
     {'1': 'lead_time_days', '3': 8, '4': 1, '5': 5, '10': 'leadTimeDays'},
-    {'1': 'status', '3': 9, '4': 1, '5': 14, '6': '.procurement.v1.SupplierItemStatus', '10': 'status'},
-    {'1': 'supply_kind', '3': 10, '4': 1, '5': 14, '6': '.procurement.v1.SupplyKind', '10': 'supplyKind'},
-    {'1': 'product_variant_id', '3': 11, '4': 1, '5': 9, '10': 'productVariantId'},
-    {'1': 'created_at', '3': 15, '4': 1, '5': 11, '6': '.google.protobuf.Timestamp', '10': 'createdAt'},
+    {
+      '1': 'status',
+      '3': 9,
+      '4': 1,
+      '5': 14,
+      '6': '.procurement.v1.SupplierItemStatus',
+      '10': 'status'
+    },
+    {
+      '1': 'supply_kind',
+      '3': 10,
+      '4': 1,
+      '5': 14,
+      '6': '.procurement.v1.SupplyKind',
+      '10': 'supplyKind'
+    },
+    {
+      '1': 'product_variant_id',
+      '3': 11,
+      '4': 1,
+      '5': 9,
+      '10': 'productVariantId'
+    },
+    {
+      '1': 'created_at',
+      '3': 15,
+      '4': 1,
+      '5': 11,
+      '6': '.google.protobuf.Timestamp',
+      '10': 'createdAt'
+    },
   ],
 };
 
@@ -257,15 +355,57 @@ const PurchaseOrder$json = {
     {'1': 'property_id', '3': 2, '4': 1, '5': 9, '10': 'propertyId'},
     {'1': 'supplier_id', '3': 3, '4': 1, '5': 9, '10': 'supplierId'},
     {'1': 'order_number', '3': 4, '4': 1, '5': 9, '10': 'orderNumber'},
-    {'1': 'status', '3': 5, '4': 1, '5': 14, '6': '.procurement.v1.PurchaseOrderStatus', '10': 'status'},
-    {'1': 'expected_delivery_date', '3': 6, '4': 1, '5': 11, '6': '.google.protobuf.Timestamp', '10': 'expectedDeliveryDate'},
-    {'1': 'submitted_at', '3': 7, '4': 1, '5': 11, '6': '.google.protobuf.Timestamp', '10': 'submittedAt'},
+    {
+      '1': 'status',
+      '3': 5,
+      '4': 1,
+      '5': 14,
+      '6': '.procurement.v1.PurchaseOrderStatus',
+      '10': 'status'
+    },
+    {
+      '1': 'expected_delivery_date',
+      '3': 6,
+      '4': 1,
+      '5': 11,
+      '6': '.google.protobuf.Timestamp',
+      '10': 'expectedDeliveryDate'
+    },
+    {
+      '1': 'submitted_at',
+      '3': 7,
+      '4': 1,
+      '5': 11,
+      '6': '.google.protobuf.Timestamp',
+      '10': 'submittedAt'
+    },
     {'1': 'submitted_by', '3': 8, '4': 1, '5': 9, '10': 'submittedBy'},
-    {'1': 'total_amount', '3': 9, '4': 1, '5': 11, '6': '.common.v1.Money', '10': 'totalAmount'},
+    {
+      '1': 'total_amount',
+      '3': 9,
+      '4': 1,
+      '5': 11,
+      '6': '.common.v1.Money',
+      '10': 'totalAmount'
+    },
     {'1': 'notes', '3': 10, '4': 1, '5': 9, '10': 'notes'},
     {'1': 'plan_id', '3': 11, '4': 1, '5': 9, '10': 'planId'},
-    {'1': 'lines', '3': 12, '4': 3, '5': 11, '6': '.procurement.v1.PurchaseOrderLine', '10': 'lines'},
-    {'1': 'created_at', '3': 15, '4': 1, '5': 11, '6': '.google.protobuf.Timestamp', '10': 'createdAt'},
+    {
+      '1': 'lines',
+      '3': 12,
+      '4': 3,
+      '5': 11,
+      '6': '.procurement.v1.PurchaseOrderLine',
+      '10': 'lines'
+    },
+    {
+      '1': 'created_at',
+      '3': 15,
+      '4': 1,
+      '5': 11,
+      '6': '.google.protobuf.Timestamp',
+      '10': 'createdAt'
+    },
   ],
 };
 
@@ -292,12 +432,45 @@ const PurchaseOrderLine$json = {
     {'1': 'supplier_item_id', '3': 3, '4': 1, '5': 9, '10': 'supplierItemId'},
     {'1': 'inventory_item_id', '3': 4, '4': 1, '5': 9, '10': 'inventoryItemId'},
     {'1': 'ordered_quantity', '3': 5, '4': 1, '5': 1, '10': 'orderedQuantity'},
-    {'1': 'received_quantity', '3': 6, '4': 1, '5': 1, '10': 'receivedQuantity'},
-    {'1': 'unit_price', '3': 7, '4': 1, '5': 11, '6': '.common.v1.Money', '10': 'unitPrice'},
+    {
+      '1': 'received_quantity',
+      '3': 6,
+      '4': 1,
+      '5': 1,
+      '10': 'receivedQuantity'
+    },
+    {
+      '1': 'unit_price',
+      '3': 7,
+      '4': 1,
+      '5': 11,
+      '6': '.common.v1.Money',
+      '10': 'unitPrice'
+    },
     {'1': 'unit', '3': 8, '4': 1, '5': 9, '10': 'unit'},
-    {'1': 'status', '3': 9, '4': 1, '5': 14, '6': '.procurement.v1.PurchaseOrderLineStatus', '10': 'status'},
-    {'1': 'supply_kind', '3': 10, '4': 1, '5': 14, '6': '.procurement.v1.SupplyKind', '10': 'supplyKind'},
-    {'1': 'product_variant_id', '3': 11, '4': 1, '5': 9, '10': 'productVariantId'},
+    {
+      '1': 'status',
+      '3': 9,
+      '4': 1,
+      '5': 14,
+      '6': '.procurement.v1.PurchaseOrderLineStatus',
+      '10': 'status'
+    },
+    {
+      '1': 'supply_kind',
+      '3': 10,
+      '4': 1,
+      '5': 14,
+      '6': '.procurement.v1.SupplyKind',
+      '10': 'supplyKind'
+    },
+    {
+      '1': 'product_variant_id',
+      '3': 11,
+      '4': 1,
+      '5': 9,
+      '10': 'productVariantId'
+    },
   ],
 };
 
@@ -321,12 +494,40 @@ const GoodsReceipt$json = {
     {'1': 'purchase_order_id', '3': 2, '4': 1, '5': 9, '10': 'purchaseOrderId'},
     {'1': 'property_id', '3': 3, '4': 1, '5': 9, '10': 'propertyId'},
     {'1': 'received_by', '3': 4, '4': 1, '5': 9, '10': 'receivedBy'},
-    {'1': 'received_at', '3': 5, '4': 1, '5': 11, '6': '.google.protobuf.Timestamp', '10': 'receivedAt'},
-    {'1': 'status', '3': 6, '4': 1, '5': 14, '6': '.procurement.v1.GoodsReceiptStatus', '10': 'status'},
+    {
+      '1': 'received_at',
+      '3': 5,
+      '4': 1,
+      '5': 11,
+      '6': '.google.protobuf.Timestamp',
+      '10': 'receivedAt'
+    },
+    {
+      '1': 'status',
+      '3': 6,
+      '4': 1,
+      '5': 14,
+      '6': '.procurement.v1.GoodsReceiptStatus',
+      '10': 'status'
+    },
     {'1': 'notes', '3': 7, '4': 1, '5': 9, '10': 'notes'},
-    {'1': 'lines', '3': 8, '4': 3, '5': 11, '6': '.procurement.v1.GoodsReceiptLine', '10': 'lines'},
+    {
+      '1': 'lines',
+      '3': 8,
+      '4': 3,
+      '5': 11,
+      '6': '.procurement.v1.GoodsReceiptLine',
+      '10': 'lines'
+    },
     {'1': 'stock_location_id', '3': 9, '4': 1, '5': 9, '10': 'stockLocationId'},
-    {'1': 'created_at', '3': 15, '4': 1, '5': 11, '6': '.google.protobuf.Timestamp', '10': 'createdAt'},
+    {
+      '1': 'created_at',
+      '3': 15,
+      '4': 1,
+      '5': 11,
+      '6': '.google.protobuf.Timestamp',
+      '10': 'createdAt'
+    },
   ],
 };
 
@@ -347,19 +548,80 @@ const GoodsReceiptLine$json = {
   '2': [
     {'1': 'id', '3': 1, '4': 1, '5': 9, '10': 'id'},
     {'1': 'goods_receipt_id', '3': 2, '4': 1, '5': 9, '10': 'goodsReceiptId'},
-    {'1': 'purchase_order_line_id', '3': 3, '4': 1, '5': 9, '10': 'purchaseOrderLineId'},
+    {
+      '1': 'purchase_order_line_id',
+      '3': 3,
+      '4': 1,
+      '5': 9,
+      '10': 'purchaseOrderLineId'
+    },
     {'1': 'inventory_item_id', '3': 4, '4': 1, '5': 9, '10': 'inventoryItemId'},
-    {'1': 'received_quantity', '3': 5, '4': 1, '5': 1, '10': 'receivedQuantity'},
-    {'1': 'accepted_quantity', '3': 6, '4': 1, '5': 1, '10': 'acceptedQuantity'},
-    {'1': 'rejected_quantity', '3': 7, '4': 1, '5': 1, '10': 'rejectedQuantity'},
+    {
+      '1': 'received_quantity',
+      '3': 5,
+      '4': 1,
+      '5': 1,
+      '10': 'receivedQuantity'
+    },
+    {
+      '1': 'accepted_quantity',
+      '3': 6,
+      '4': 1,
+      '5': 1,
+      '10': 'acceptedQuantity'
+    },
+    {
+      '1': 'rejected_quantity',
+      '3': 7,
+      '4': 1,
+      '5': 1,
+      '10': 'rejectedQuantity'
+    },
     {'1': 'rejection_reason', '3': 8, '4': 1, '5': 9, '10': 'rejectionReason'},
     {'1': 'lot_number', '3': 9, '4': 1, '5': 9, '10': 'lotNumber'},
-    {'1': 'expiry_date', '3': 10, '4': 1, '5': 11, '6': '.google.protobuf.Timestamp', '10': 'expiryDate'},
+    {
+      '1': 'expiry_date',
+      '3': 10,
+      '4': 1,
+      '5': 11,
+      '6': '.google.protobuf.Timestamp',
+      '10': 'expiryDate'
+    },
     {'1': 'unit', '3': 11, '4': 1, '5': 9, '10': 'unit'},
-    {'1': 'supply_kind', '3': 12, '4': 1, '5': 14, '6': '.procurement.v1.SupplyKind', '10': 'supplyKind'},
-    {'1': 'product_variant_id', '3': 13, '4': 1, '5': 9, '10': 'productVariantId'},
-    {'1': 'delivery_status', '3': 14, '4': 1, '5': 14, '6': '.procurement.v1.StockDeliveryStatus', '10': 'deliveryStatus'},
+    {
+      '1': 'supply_kind',
+      '3': 12,
+      '4': 1,
+      '5': 14,
+      '6': '.procurement.v1.SupplyKind',
+      '10': 'supplyKind'
+    },
+    {
+      '1': 'product_variant_id',
+      '3': 13,
+      '4': 1,
+      '5': 9,
+      '10': 'productVariantId'
+    },
+    {
+      '1': 'delivery_status',
+      '3': 14,
+      '4': 1,
+      '5': 14,
+      '6': '.procurement.v1.StockDeliveryStatus',
+      '10': 'deliveryStatus'
+    },
     {'1': 'delivery_note', '3': 15, '4': 1, '5': 9, '10': 'deliveryNote'},
+    {'1': 'resolved_by', '3': 16, '4': 1, '5': 9, '10': 'resolvedBy'},
+    {
+      '1': 'resolved_at',
+      '3': 17,
+      '4': 1,
+      '5': 11,
+      '6': '.google.protobuf.Timestamp',
+      '10': 'resolvedAt'
+    },
+    {'1': 'resolution_note', '3': 18, '4': 1, '5': 9, '10': 'resolutionNote'},
   ],
 };
 
@@ -377,7 +639,9 @@ final $typed_data.Uint8List goodsReceiptLineDescriptor = $convert.base64Decode(
     'YxLlN1cHBseUtpbmRSCnN1cHBseUtpbmQSLAoScHJvZHVjdF92YXJpYW50X2lkGA0gASgJUhBw'
     'cm9kdWN0VmFyaWFudElkEkwKD2RlbGl2ZXJ5X3N0YXR1cxgOIAEoDjIjLnByb2N1cmVtZW50Ln'
     'YxLlN0b2NrRGVsaXZlcnlTdGF0dXNSDmRlbGl2ZXJ5U3RhdHVzEiMKDWRlbGl2ZXJ5X25vdGUY'
-    'DyABKAlSDGRlbGl2ZXJ5Tm90ZQ==');
+    'DyABKAlSDGRlbGl2ZXJ5Tm90ZRIfCgtyZXNvbHZlZF9ieRgQIAEoCVIKcmVzb2x2ZWRCeRI7Cg'
+    'tyZXNvbHZlZF9hdBgRIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXBSCnJlc29sdmVk'
+    'QXQSJwoPcmVzb2x1dGlvbl9ub3RlGBIgASgJUg5yZXNvbHV0aW9uTm90ZQ==');
 
 @$core.Deprecated('Use purchaseOrderSuggestionDescriptor instead')
 const PurchaseOrderSuggestion$json = {
@@ -385,8 +649,22 @@ const PurchaseOrderSuggestion$json = {
   '2': [
     {'1': 'supplier_id', '3': 1, '4': 1, '5': 9, '10': 'supplierId'},
     {'1': 'supplier_name', '3': 2, '4': 1, '5': 9, '10': 'supplierName'},
-    {'1': 'lines', '3': 3, '4': 3, '5': 11, '6': '.procurement.v1.PurchaseOrderSuggestionLine', '10': 'lines'},
-    {'1': 'estimated_total', '3': 4, '4': 1, '5': 11, '6': '.common.v1.Money', '10': 'estimatedTotal'},
+    {
+      '1': 'lines',
+      '3': 3,
+      '4': 3,
+      '5': 11,
+      '6': '.procurement.v1.PurchaseOrderSuggestionLine',
+      '10': 'lines'
+    },
+    {
+      '1': 'estimated_total',
+      '3': 4,
+      '4': 1,
+      '5': 11,
+      '6': '.common.v1.Money',
+      '10': 'estimatedTotal'
+    },
   ],
 };
 
@@ -403,10 +681,23 @@ const PurchaseOrderSuggestionLine$json = {
   '2': [
     {'1': 'inventory_item_id', '3': 1, '4': 1, '5': 9, '10': 'inventoryItemId'},
     {'1': 'item_name', '3': 2, '4': 1, '5': 9, '10': 'itemName'},
-    {'1': 'shortage_quantity', '3': 3, '4': 1, '5': 1, '10': 'shortageQuantity'},
+    {
+      '1': 'shortage_quantity',
+      '3': 3,
+      '4': 1,
+      '5': 1,
+      '10': 'shortageQuantity'
+    },
     {'1': 'unit', '3': 4, '4': 1, '5': 9, '10': 'unit'},
     {'1': 'supplier_item_id', '3': 5, '4': 1, '5': 9, '10': 'supplierItemId'},
-    {'1': 'unit_price', '3': 6, '4': 1, '5': 11, '6': '.common.v1.Money', '10': 'unitPrice'},
+    {
+      '1': 'unit_price',
+      '3': 6,
+      '4': 1,
+      '5': 11,
+      '6': '.common.v1.Money',
+      '10': 'unitPrice'
+    },
   ],
 };
 
@@ -425,12 +716,39 @@ const SupplierSaveRequest$json = {
     {'1': 'id', '3': 1, '4': 1, '5': 9, '10': 'id'},
     {'1': 'profile_id', '3': 2, '4': 1, '5': 9, '10': 'profileId'},
     {'1': 'name', '3': 3, '4': 1, '5': 9, '10': 'name'},
-    {'1': 'supplier_type', '3': 4, '4': 1, '5': 14, '6': '.procurement.v1.SupplierType', '10': 'supplierType'},
-    {'1': 'status', '3': 5, '4': 1, '5': 14, '6': '.procurement.v1.SupplierStatus', '10': 'status'},
-    {'1': 'payment_terms_days', '3': 6, '4': 1, '5': 5, '10': 'paymentTermsDays'},
+    {
+      '1': 'supplier_type',
+      '3': 4,
+      '4': 1,
+      '5': 14,
+      '6': '.procurement.v1.SupplierType',
+      '10': 'supplierType'
+    },
+    {
+      '1': 'status',
+      '3': 5,
+      '4': 1,
+      '5': 14,
+      '6': '.procurement.v1.SupplierStatus',
+      '10': 'status'
+    },
+    {
+      '1': 'payment_terms_days',
+      '3': 6,
+      '4': 1,
+      '5': 5,
+      '10': 'paymentTermsDays'
+    },
     {'1': 'currency', '3': 7, '4': 1, '5': 9, '10': 'currency'},
     {'1': 'lead_time_days', '3': 8, '4': 1, '5': 5, '10': 'leadTimeDays'},
-    {'1': 'rating', '3': 9, '4': 1, '5': 14, '6': '.procurement.v1.SupplierRating', '10': 'rating'},
+    {
+      '1': 'rating',
+      '3': 9,
+      '4': 1,
+      '5': 14,
+      '6': '.procurement.v1.SupplierRating',
+      '10': 'rating'
+    },
     {'1': 'notes', '3': 10, '4': 1, '5': 9, '10': 'notes'},
   ],
 };
@@ -450,7 +768,14 @@ final $typed_data.Uint8List supplierSaveRequestDescriptor = $convert.base64Decod
 const SupplierSaveResponse$json = {
   '1': 'SupplierSaveResponse',
   '2': [
-    {'1': 'supplier', '3': 1, '4': 1, '5': 11, '6': '.procurement.v1.Supplier', '10': 'supplier'},
+    {
+      '1': 'supplier',
+      '3': 1,
+      '4': 1,
+      '5': 11,
+      '6': '.procurement.v1.Supplier',
+      '10': 'supplier'
+    },
   ],
 };
 
@@ -468,14 +793,21 @@ const SupplierGetRequest$json = {
 };
 
 /// Descriptor for `SupplierGetRequest`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List supplierGetRequestDescriptor = $convert.base64Decode(
-    'ChJTdXBwbGllckdldFJlcXVlc3QSDgoCaWQYASABKAlSAmlk');
+final $typed_data.Uint8List supplierGetRequestDescriptor =
+    $convert.base64Decode('ChJTdXBwbGllckdldFJlcXVlc3QSDgoCaWQYASABKAlSAmlk');
 
 @$core.Deprecated('Use supplierGetResponseDescriptor instead')
 const SupplierGetResponse$json = {
   '1': 'SupplierGetResponse',
   '2': [
-    {'1': 'supplier', '3': 1, '4': 1, '5': 11, '6': '.procurement.v1.Supplier', '10': 'supplier'},
+    {
+      '1': 'supplier',
+      '3': 1,
+      '4': 1,
+      '5': 11,
+      '6': '.procurement.v1.Supplier',
+      '10': 'supplier'
+    },
   ],
 };
 
@@ -488,9 +820,30 @@ final $typed_data.Uint8List supplierGetResponseDescriptor = $convert.base64Decod
 const SupplierSearchRequest$json = {
   '1': 'SupplierSearchRequest',
   '2': [
-    {'1': 'search', '3': 1, '4': 1, '5': 11, '6': '.common.v1.SearchRequest', '10': 'search'},
-    {'1': 'supplier_type', '3': 2, '4': 1, '5': 14, '6': '.procurement.v1.SupplierType', '10': 'supplierType'},
-    {'1': 'status', '3': 3, '4': 1, '5': 14, '6': '.procurement.v1.SupplierStatus', '10': 'status'},
+    {
+      '1': 'search',
+      '3': 1,
+      '4': 1,
+      '5': 11,
+      '6': '.common.v1.SearchRequest',
+      '10': 'search'
+    },
+    {
+      '1': 'supplier_type',
+      '3': 2,
+      '4': 1,
+      '5': 14,
+      '6': '.procurement.v1.SupplierType',
+      '10': 'supplierType'
+    },
+    {
+      '1': 'status',
+      '3': 3,
+      '4': 1,
+      '5': 14,
+      '6': '.procurement.v1.SupplierStatus',
+      '10': 'status'
+    },
   ],
 };
 
@@ -505,7 +858,14 @@ final $typed_data.Uint8List supplierSearchRequestDescriptor = $convert.base64Dec
 const SupplierSearchResponse$json = {
   '1': 'SupplierSearchResponse',
   '2': [
-    {'1': 'suppliers', '3': 1, '4': 3, '5': 11, '6': '.procurement.v1.Supplier', '10': 'suppliers'},
+    {
+      '1': 'suppliers',
+      '3': 1,
+      '4': 3,
+      '5': 11,
+      '6': '.procurement.v1.Supplier',
+      '10': 'suppliers'
+    },
     {'1': 'next_page', '3': 2, '4': 1, '5': 9, '10': 'nextPage'},
   ],
 };
@@ -523,13 +883,46 @@ const SupplierItemSaveRequest$json = {
     {'1': 'supplier_id', '3': 2, '4': 1, '5': 9, '10': 'supplierId'},
     {'1': 'inventory_item_id', '3': 3, '4': 1, '5': 9, '10': 'inventoryItemId'},
     {'1': 'supplier_sku', '3': 4, '4': 1, '5': 9, '10': 'supplierSku'},
-    {'1': 'unit_price', '3': 5, '4': 1, '5': 11, '6': '.common.v1.Money', '10': 'unitPrice'},
-    {'1': 'min_order_quantity', '3': 6, '4': 1, '5': 1, '10': 'minOrderQuantity'},
+    {
+      '1': 'unit_price',
+      '3': 5,
+      '4': 1,
+      '5': 11,
+      '6': '.common.v1.Money',
+      '10': 'unitPrice'
+    },
+    {
+      '1': 'min_order_quantity',
+      '3': 6,
+      '4': 1,
+      '5': 1,
+      '10': 'minOrderQuantity'
+    },
     {'1': 'unit', '3': 7, '4': 1, '5': 9, '10': 'unit'},
     {'1': 'lead_time_days', '3': 8, '4': 1, '5': 5, '10': 'leadTimeDays'},
-    {'1': 'status', '3': 9, '4': 1, '5': 14, '6': '.procurement.v1.SupplierItemStatus', '10': 'status'},
-    {'1': 'supply_kind', '3': 10, '4': 1, '5': 14, '6': '.procurement.v1.SupplyKind', '10': 'supplyKind'},
-    {'1': 'product_variant_id', '3': 11, '4': 1, '5': 9, '10': 'productVariantId'},
+    {
+      '1': 'status',
+      '3': 9,
+      '4': 1,
+      '5': 14,
+      '6': '.procurement.v1.SupplierItemStatus',
+      '10': 'status'
+    },
+    {
+      '1': 'supply_kind',
+      '3': 10,
+      '4': 1,
+      '5': 14,
+      '6': '.procurement.v1.SupplyKind',
+      '10': 'supplyKind'
+    },
+    {
+      '1': 'product_variant_id',
+      '3': 11,
+      '4': 1,
+      '5': 9,
+      '10': 'productVariantId'
+    },
   ],
 };
 
@@ -549,14 +942,22 @@ final $typed_data.Uint8List supplierItemSaveRequestDescriptor = $convert.base64D
 const SupplierItemSaveResponse$json = {
   '1': 'SupplierItemSaveResponse',
   '2': [
-    {'1': 'supplier_item', '3': 1, '4': 1, '5': 11, '6': '.procurement.v1.SupplierItem', '10': 'supplierItem'},
+    {
+      '1': 'supplier_item',
+      '3': 1,
+      '4': 1,
+      '5': 11,
+      '6': '.procurement.v1.SupplierItem',
+      '10': 'supplierItem'
+    },
   ],
 };
 
 /// Descriptor for `SupplierItemSaveResponse`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List supplierItemSaveResponseDescriptor = $convert.base64Decode(
-    'ChhTdXBwbGllckl0ZW1TYXZlUmVzcG9uc2USQQoNc3VwcGxpZXJfaXRlbRgBIAEoCzIcLnByb2'
-    'N1cmVtZW50LnYxLlN1cHBsaWVySXRlbVIMc3VwcGxpZXJJdGVt');
+final $typed_data.Uint8List supplierItemSaveResponseDescriptor =
+    $convert.base64Decode(
+        'ChhTdXBwbGllckl0ZW1TYXZlUmVzcG9uc2USQQoNc3VwcGxpZXJfaXRlbRgBIAEoCzIcLnByb2'
+        'N1cmVtZW50LnYxLlN1cHBsaWVySXRlbVIMc3VwcGxpZXJJdGVt');
 
 @$core.Deprecated('Use supplierItemSearchRequestDescriptor instead')
 const SupplierItemSearchRequest$json = {
@@ -564,7 +965,14 @@ const SupplierItemSearchRequest$json = {
   '2': [
     {'1': 'supplier_id', '3': 1, '4': 1, '5': 9, '10': 'supplierId'},
     {'1': 'inventory_item_id', '3': 2, '4': 1, '5': 9, '10': 'inventoryItemId'},
-    {'1': 'search', '3': 3, '4': 1, '5': 11, '6': '.common.v1.SearchRequest', '10': 'search'},
+    {
+      '1': 'search',
+      '3': 3,
+      '4': 1,
+      '5': 11,
+      '6': '.common.v1.SearchRequest',
+      '10': 'search'
+    },
   ],
 };
 
@@ -578,16 +986,24 @@ final $typed_data.Uint8List supplierItemSearchRequestDescriptor = $convert.base6
 const SupplierItemSearchResponse$json = {
   '1': 'SupplierItemSearchResponse',
   '2': [
-    {'1': 'supplier_items', '3': 1, '4': 3, '5': 11, '6': '.procurement.v1.SupplierItem', '10': 'supplierItems'},
+    {
+      '1': 'supplier_items',
+      '3': 1,
+      '4': 3,
+      '5': 11,
+      '6': '.procurement.v1.SupplierItem',
+      '10': 'supplierItems'
+    },
     {'1': 'next_page', '3': 2, '4': 1, '5': 9, '10': 'nextPage'},
   ],
 };
 
 /// Descriptor for `SupplierItemSearchResponse`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List supplierItemSearchResponseDescriptor = $convert.base64Decode(
-    'ChpTdXBwbGllckl0ZW1TZWFyY2hSZXNwb25zZRJDCg5zdXBwbGllcl9pdGVtcxgBIAMoCzIcLn'
-    'Byb2N1cmVtZW50LnYxLlN1cHBsaWVySXRlbVINc3VwcGxpZXJJdGVtcxIbCgluZXh0X3BhZ2UY'
-    'AiABKAlSCG5leHRQYWdl');
+final $typed_data.Uint8List supplierItemSearchResponseDescriptor =
+    $convert.base64Decode(
+        'ChpTdXBwbGllckl0ZW1TZWFyY2hSZXNwb25zZRJDCg5zdXBwbGllcl9pdGVtcxgBIAMoCzIcLn'
+        'Byb2N1cmVtZW50LnYxLlN1cHBsaWVySXRlbVINc3VwcGxpZXJJdGVtcxIbCgluZXh0X3BhZ2UY'
+        'AiABKAlSCG5leHRQYWdl');
 
 @$core.Deprecated('Use purchaseOrderCreateRequestDescriptor instead')
 const PurchaseOrderCreateRequest$json = {
@@ -596,10 +1012,24 @@ const PurchaseOrderCreateRequest$json = {
     {'1': 'idempotency_key', '3': 1, '4': 1, '5': 9, '10': 'idempotencyKey'},
     {'1': 'property_id', '3': 2, '4': 1, '5': 9, '10': 'propertyId'},
     {'1': 'supplier_id', '3': 3, '4': 1, '5': 9, '10': 'supplierId'},
-    {'1': 'expected_delivery_date', '3': 4, '4': 1, '5': 11, '6': '.google.protobuf.Timestamp', '10': 'expectedDeliveryDate'},
+    {
+      '1': 'expected_delivery_date',
+      '3': 4,
+      '4': 1,
+      '5': 11,
+      '6': '.google.protobuf.Timestamp',
+      '10': 'expectedDeliveryDate'
+    },
     {'1': 'notes', '3': 5, '4': 1, '5': 9, '10': 'notes'},
     {'1': 'plan_id', '3': 6, '4': 1, '5': 9, '10': 'planId'},
-    {'1': 'lines', '3': 7, '4': 3, '5': 11, '6': '.procurement.v1.PurchaseOrderLineInput', '10': 'lines'},
+    {
+      '1': 'lines',
+      '3': 7,
+      '4': 3,
+      '5': 11,
+      '6': '.procurement.v1.PurchaseOrderLineInput',
+      '10': 'lines'
+    },
   ],
 };
 
@@ -634,14 +1064,22 @@ final $typed_data.Uint8List purchaseOrderLineInputDescriptor = $convert.base64De
 const PurchaseOrderCreateResponse$json = {
   '1': 'PurchaseOrderCreateResponse',
   '2': [
-    {'1': 'purchase_order', '3': 1, '4': 1, '5': 11, '6': '.procurement.v1.PurchaseOrder', '10': 'purchaseOrder'},
+    {
+      '1': 'purchase_order',
+      '3': 1,
+      '4': 1,
+      '5': 11,
+      '6': '.procurement.v1.PurchaseOrder',
+      '10': 'purchaseOrder'
+    },
   ],
 };
 
 /// Descriptor for `PurchaseOrderCreateResponse`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List purchaseOrderCreateResponseDescriptor = $convert.base64Decode(
-    'ChtQdXJjaGFzZU9yZGVyQ3JlYXRlUmVzcG9uc2USRAoOcHVyY2hhc2Vfb3JkZXIYASABKAsyHS'
-    '5wcm9jdXJlbWVudC52MS5QdXJjaGFzZU9yZGVyUg1wdXJjaGFzZU9yZGVy');
+final $typed_data.Uint8List purchaseOrderCreateResponseDescriptor =
+    $convert.base64Decode(
+        'ChtQdXJjaGFzZU9yZGVyQ3JlYXRlUmVzcG9uc2USRAoOcHVyY2hhc2Vfb3JkZXIYASABKAsyHS'
+        '5wcm9jdXJlbWVudC52MS5QdXJjaGFzZU9yZGVyUg1wdXJjaGFzZU9yZGVy');
 
 @$core.Deprecated('Use purchaseOrderGetRequestDescriptor instead')
 const PurchaseOrderGetRequest$json = {
@@ -652,21 +1090,29 @@ const PurchaseOrderGetRequest$json = {
 };
 
 /// Descriptor for `PurchaseOrderGetRequest`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List purchaseOrderGetRequestDescriptor = $convert.base64Decode(
-    'ChdQdXJjaGFzZU9yZGVyR2V0UmVxdWVzdBIOCgJpZBgBIAEoCVICaWQ=');
+final $typed_data.Uint8List purchaseOrderGetRequestDescriptor = $convert
+    .base64Decode('ChdQdXJjaGFzZU9yZGVyR2V0UmVxdWVzdBIOCgJpZBgBIAEoCVICaWQ=');
 
 @$core.Deprecated('Use purchaseOrderGetResponseDescriptor instead')
 const PurchaseOrderGetResponse$json = {
   '1': 'PurchaseOrderGetResponse',
   '2': [
-    {'1': 'purchase_order', '3': 1, '4': 1, '5': 11, '6': '.procurement.v1.PurchaseOrder', '10': 'purchaseOrder'},
+    {
+      '1': 'purchase_order',
+      '3': 1,
+      '4': 1,
+      '5': 11,
+      '6': '.procurement.v1.PurchaseOrder',
+      '10': 'purchaseOrder'
+    },
   ],
 };
 
 /// Descriptor for `PurchaseOrderGetResponse`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List purchaseOrderGetResponseDescriptor = $convert.base64Decode(
-    'ChhQdXJjaGFzZU9yZGVyR2V0UmVzcG9uc2USRAoOcHVyY2hhc2Vfb3JkZXIYASABKAsyHS5wcm'
-    '9jdXJlbWVudC52MS5QdXJjaGFzZU9yZGVyUg1wdXJjaGFzZU9yZGVy');
+final $typed_data.Uint8List purchaseOrderGetResponseDescriptor =
+    $convert.base64Decode(
+        'ChhQdXJjaGFzZU9yZGVyR2V0UmVzcG9uc2USRAoOcHVyY2hhc2Vfb3JkZXIYASABKAsyHS5wcm'
+        '9jdXJlbWVudC52MS5QdXJjaGFzZU9yZGVyUg1wdXJjaGFzZU9yZGVy');
 
 @$core.Deprecated('Use purchaseOrderSearchRequestDescriptor instead')
 const PurchaseOrderSearchRequest$json = {
@@ -674,8 +1120,22 @@ const PurchaseOrderSearchRequest$json = {
   '2': [
     {'1': 'property_id', '3': 1, '4': 1, '5': 9, '10': 'propertyId'},
     {'1': 'supplier_id', '3': 2, '4': 1, '5': 9, '10': 'supplierId'},
-    {'1': 'status', '3': 3, '4': 1, '5': 14, '6': '.procurement.v1.PurchaseOrderStatus', '10': 'status'},
-    {'1': 'search', '3': 4, '4': 1, '5': 11, '6': '.common.v1.SearchRequest', '10': 'search'},
+    {
+      '1': 'status',
+      '3': 3,
+      '4': 1,
+      '5': 14,
+      '6': '.procurement.v1.PurchaseOrderStatus',
+      '10': 'status'
+    },
+    {
+      '1': 'search',
+      '3': 4,
+      '4': 1,
+      '5': 11,
+      '6': '.common.v1.SearchRequest',
+      '10': 'search'
+    },
   ],
 };
 
@@ -690,16 +1150,24 @@ final $typed_data.Uint8List purchaseOrderSearchRequestDescriptor = $convert.base
 const PurchaseOrderSearchResponse$json = {
   '1': 'PurchaseOrderSearchResponse',
   '2': [
-    {'1': 'purchase_orders', '3': 1, '4': 3, '5': 11, '6': '.procurement.v1.PurchaseOrder', '10': 'purchaseOrders'},
+    {
+      '1': 'purchase_orders',
+      '3': 1,
+      '4': 3,
+      '5': 11,
+      '6': '.procurement.v1.PurchaseOrder',
+      '10': 'purchaseOrders'
+    },
     {'1': 'next_page', '3': 2, '4': 1, '5': 9, '10': 'nextPage'},
   ],
 };
 
 /// Descriptor for `PurchaseOrderSearchResponse`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List purchaseOrderSearchResponseDescriptor = $convert.base64Decode(
-    'ChtQdXJjaGFzZU9yZGVyU2VhcmNoUmVzcG9uc2USRgoPcHVyY2hhc2Vfb3JkZXJzGAEgAygLMh'
-    '0ucHJvY3VyZW1lbnQudjEuUHVyY2hhc2VPcmRlclIOcHVyY2hhc2VPcmRlcnMSGwoJbmV4dF9w'
-    'YWdlGAIgASgJUghuZXh0UGFnZQ==');
+final $typed_data.Uint8List purchaseOrderSearchResponseDescriptor =
+    $convert.base64Decode(
+        'ChtQdXJjaGFzZU9yZGVyU2VhcmNoUmVzcG9uc2USRgoPcHVyY2hhc2Vfb3JkZXJzGAEgAygLMh'
+        '0ucHJvY3VyZW1lbnQudjEuUHVyY2hhc2VPcmRlclIOcHVyY2hhc2VPcmRlcnMSGwoJbmV4dF9w'
+        'YWdlGAIgASgJUghuZXh0UGFnZQ==');
 
 @$core.Deprecated('Use purchaseOrderSubmitRequestDescriptor instead')
 const PurchaseOrderSubmitRequest$json = {
@@ -710,21 +1178,30 @@ const PurchaseOrderSubmitRequest$json = {
 };
 
 /// Descriptor for `PurchaseOrderSubmitRequest`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List purchaseOrderSubmitRequestDescriptor = $convert.base64Decode(
-    'ChpQdXJjaGFzZU9yZGVyU3VibWl0UmVxdWVzdBIOCgJpZBgBIAEoCVICaWQ=');
+final $typed_data.Uint8List purchaseOrderSubmitRequestDescriptor =
+    $convert.base64Decode(
+        'ChpQdXJjaGFzZU9yZGVyU3VibWl0UmVxdWVzdBIOCgJpZBgBIAEoCVICaWQ=');
 
 @$core.Deprecated('Use purchaseOrderSubmitResponseDescriptor instead')
 const PurchaseOrderSubmitResponse$json = {
   '1': 'PurchaseOrderSubmitResponse',
   '2': [
-    {'1': 'purchase_order', '3': 1, '4': 1, '5': 11, '6': '.procurement.v1.PurchaseOrder', '10': 'purchaseOrder'},
+    {
+      '1': 'purchase_order',
+      '3': 1,
+      '4': 1,
+      '5': 11,
+      '6': '.procurement.v1.PurchaseOrder',
+      '10': 'purchaseOrder'
+    },
   ],
 };
 
 /// Descriptor for `PurchaseOrderSubmitResponse`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List purchaseOrderSubmitResponseDescriptor = $convert.base64Decode(
-    'ChtQdXJjaGFzZU9yZGVyU3VibWl0UmVzcG9uc2USRAoOcHVyY2hhc2Vfb3JkZXIYASABKAsyHS'
-    '5wcm9jdXJlbWVudC52MS5QdXJjaGFzZU9yZGVyUg1wdXJjaGFzZU9yZGVy');
+final $typed_data.Uint8List purchaseOrderSubmitResponseDescriptor =
+    $convert.base64Decode(
+        'ChtQdXJjaGFzZU9yZGVyU3VibWl0UmVzcG9uc2USRAoOcHVyY2hhc2Vfb3JkZXIYASABKAsyHS'
+        '5wcm9jdXJlbWVudC52MS5QdXJjaGFzZU9yZGVyUg1wdXJjaGFzZU9yZGVy');
 
 @$core.Deprecated('Use purchaseOrderCancelRequestDescriptor instead')
 const PurchaseOrderCancelRequest$json = {
@@ -736,22 +1213,31 @@ const PurchaseOrderCancelRequest$json = {
 };
 
 /// Descriptor for `PurchaseOrderCancelRequest`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List purchaseOrderCancelRequestDescriptor = $convert.base64Decode(
-    'ChpQdXJjaGFzZU9yZGVyQ2FuY2VsUmVxdWVzdBIOCgJpZBgBIAEoCVICaWQSFgoGcmVhc29uGA'
-    'IgASgJUgZyZWFzb24=');
+final $typed_data.Uint8List purchaseOrderCancelRequestDescriptor =
+    $convert.base64Decode(
+        'ChpQdXJjaGFzZU9yZGVyQ2FuY2VsUmVxdWVzdBIOCgJpZBgBIAEoCVICaWQSFgoGcmVhc29uGA'
+        'IgASgJUgZyZWFzb24=');
 
 @$core.Deprecated('Use purchaseOrderCancelResponseDescriptor instead')
 const PurchaseOrderCancelResponse$json = {
   '1': 'PurchaseOrderCancelResponse',
   '2': [
-    {'1': 'purchase_order', '3': 1, '4': 1, '5': 11, '6': '.procurement.v1.PurchaseOrder', '10': 'purchaseOrder'},
+    {
+      '1': 'purchase_order',
+      '3': 1,
+      '4': 1,
+      '5': 11,
+      '6': '.procurement.v1.PurchaseOrder',
+      '10': 'purchaseOrder'
+    },
   ],
 };
 
 /// Descriptor for `PurchaseOrderCancelResponse`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List purchaseOrderCancelResponseDescriptor = $convert.base64Decode(
-    'ChtQdXJjaGFzZU9yZGVyQ2FuY2VsUmVzcG9uc2USRAoOcHVyY2hhc2Vfb3JkZXIYASABKAsyHS'
-    '5wcm9jdXJlbWVudC52MS5QdXJjaGFzZU9yZGVyUg1wdXJjaGFzZU9yZGVy');
+final $typed_data.Uint8List purchaseOrderCancelResponseDescriptor =
+    $convert.base64Decode(
+        'ChtQdXJjaGFzZU9yZGVyQ2FuY2VsUmVzcG9uc2USRAoOcHVyY2hhc2Vfb3JkZXIYASABKAsyHS'
+        '5wcm9jdXJlbWVudC52MS5QdXJjaGFzZU9yZGVyUg1wdXJjaGFzZU9yZGVy');
 
 @$core.Deprecated('Use purchaseOrderCloseRequestDescriptor instead')
 const PurchaseOrderCloseRequest$json = {
@@ -763,22 +1249,31 @@ const PurchaseOrderCloseRequest$json = {
 };
 
 /// Descriptor for `PurchaseOrderCloseRequest`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List purchaseOrderCloseRequestDescriptor = $convert.base64Decode(
-    'ChlQdXJjaGFzZU9yZGVyQ2xvc2VSZXF1ZXN0Eg4KAmlkGAEgASgJUgJpZBIWCgZyZWFzb24YAi'
-    'ABKAlSBnJlYXNvbg==');
+final $typed_data.Uint8List purchaseOrderCloseRequestDescriptor =
+    $convert.base64Decode(
+        'ChlQdXJjaGFzZU9yZGVyQ2xvc2VSZXF1ZXN0Eg4KAmlkGAEgASgJUgJpZBIWCgZyZWFzb24YAi'
+        'ABKAlSBnJlYXNvbg==');
 
 @$core.Deprecated('Use purchaseOrderCloseResponseDescriptor instead')
 const PurchaseOrderCloseResponse$json = {
   '1': 'PurchaseOrderCloseResponse',
   '2': [
-    {'1': 'purchase_order', '3': 1, '4': 1, '5': 11, '6': '.procurement.v1.PurchaseOrder', '10': 'purchaseOrder'},
+    {
+      '1': 'purchase_order',
+      '3': 1,
+      '4': 1,
+      '5': 11,
+      '6': '.procurement.v1.PurchaseOrder',
+      '10': 'purchaseOrder'
+    },
   ],
 };
 
 /// Descriptor for `PurchaseOrderCloseResponse`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List purchaseOrderCloseResponseDescriptor = $convert.base64Decode(
-    'ChpQdXJjaGFzZU9yZGVyQ2xvc2VSZXNwb25zZRJECg5wdXJjaGFzZV9vcmRlchgBIAEoCzIdLn'
-    'Byb2N1cmVtZW50LnYxLlB1cmNoYXNlT3JkZXJSDXB1cmNoYXNlT3JkZXI=');
+final $typed_data.Uint8List purchaseOrderCloseResponseDescriptor =
+    $convert.base64Decode(
+        'ChpQdXJjaGFzZU9yZGVyQ2xvc2VSZXNwb25zZRJECg5wdXJjaGFzZV9vcmRlchgBIAEoCzIdLn'
+        'Byb2N1cmVtZW50LnYxLlB1cmNoYXNlT3JkZXJSDXB1cmNoYXNlT3JkZXI=');
 
 @$core.Deprecated('Use goodsReceiptCreateRequestDescriptor instead')
 const GoodsReceiptCreateRequest$json = {
@@ -788,7 +1283,14 @@ const GoodsReceiptCreateRequest$json = {
     {'1': 'purchase_order_id', '3': 2, '4': 1, '5': 9, '10': 'purchaseOrderId'},
     {'1': 'property_id', '3': 3, '4': 1, '5': 9, '10': 'propertyId'},
     {'1': 'notes', '3': 4, '4': 1, '5': 9, '10': 'notes'},
-    {'1': 'lines', '3': 5, '4': 3, '5': 11, '6': '.procurement.v1.GoodsReceiptLineInput', '10': 'lines'},
+    {
+      '1': 'lines',
+      '3': 5,
+      '4': 3,
+      '5': 11,
+      '6': '.procurement.v1.GoodsReceiptLineInput',
+      '10': 'lines'
+    },
     {'1': 'stock_location_id', '3': 6, '4': 1, '5': 9, '10': 'stockLocationId'},
   ],
 };
@@ -805,11 +1307,30 @@ final $typed_data.Uint8List goodsReceiptCreateRequestDescriptor = $convert.base6
 const GoodsReceiptLineInput$json = {
   '1': 'GoodsReceiptLineInput',
   '2': [
-    {'1': 'purchase_order_line_id', '3': 1, '4': 1, '5': 9, '10': 'purchaseOrderLineId'},
+    {
+      '1': 'purchase_order_line_id',
+      '3': 1,
+      '4': 1,
+      '5': 9,
+      '10': 'purchaseOrderLineId'
+    },
     {'1': 'inventory_item_id', '3': 2, '4': 1, '5': 9, '10': 'inventoryItemId'},
-    {'1': 'received_quantity', '3': 3, '4': 1, '5': 1, '10': 'receivedQuantity'},
+    {
+      '1': 'received_quantity',
+      '3': 3,
+      '4': 1,
+      '5': 1,
+      '10': 'receivedQuantity'
+    },
     {'1': 'lot_number', '3': 4, '4': 1, '5': 9, '10': 'lotNumber'},
-    {'1': 'expiry_date', '3': 5, '4': 1, '5': 11, '6': '.google.protobuf.Timestamp', '10': 'expiryDate'},
+    {
+      '1': 'expiry_date',
+      '3': 5,
+      '4': 1,
+      '5': 11,
+      '6': '.google.protobuf.Timestamp',
+      '10': 'expiryDate'
+    },
     {'1': 'unit', '3': 6, '4': 1, '5': 9, '10': 'unit'},
   ],
 };
@@ -827,14 +1348,22 @@ final $typed_data.Uint8List goodsReceiptLineInputDescriptor = $convert.base64Dec
 const GoodsReceiptCreateResponse$json = {
   '1': 'GoodsReceiptCreateResponse',
   '2': [
-    {'1': 'goods_receipt', '3': 1, '4': 1, '5': 11, '6': '.procurement.v1.GoodsReceipt', '10': 'goodsReceipt'},
+    {
+      '1': 'goods_receipt',
+      '3': 1,
+      '4': 1,
+      '5': 11,
+      '6': '.procurement.v1.GoodsReceipt',
+      '10': 'goodsReceipt'
+    },
   ],
 };
 
 /// Descriptor for `GoodsReceiptCreateResponse`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List goodsReceiptCreateResponseDescriptor = $convert.base64Decode(
-    'ChpHb29kc1JlY2VpcHRDcmVhdGVSZXNwb25zZRJBCg1nb29kc19yZWNlaXB0GAEgASgLMhwucH'
-    'JvY3VyZW1lbnQudjEuR29vZHNSZWNlaXB0Ugxnb29kc1JlY2VpcHQ=');
+final $typed_data.Uint8List goodsReceiptCreateResponseDescriptor =
+    $convert.base64Decode(
+        'ChpHb29kc1JlY2VpcHRDcmVhdGVSZXNwb25zZRJBCg1nb29kc19yZWNlaXB0GAEgASgLMhwucH'
+        'JvY3VyZW1lbnQudjEuR29vZHNSZWNlaXB0Ugxnb29kc1JlY2VpcHQ=');
 
 @$core.Deprecated('Use goodsReceiptGetRequestDescriptor instead')
 const GoodsReceiptGetRequest$json = {
@@ -845,21 +1374,29 @@ const GoodsReceiptGetRequest$json = {
 };
 
 /// Descriptor for `GoodsReceiptGetRequest`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List goodsReceiptGetRequestDescriptor = $convert.base64Decode(
-    'ChZHb29kc1JlY2VpcHRHZXRSZXF1ZXN0Eg4KAmlkGAEgASgJUgJpZA==');
+final $typed_data.Uint8List goodsReceiptGetRequestDescriptor = $convert
+    .base64Decode('ChZHb29kc1JlY2VpcHRHZXRSZXF1ZXN0Eg4KAmlkGAEgASgJUgJpZA==');
 
 @$core.Deprecated('Use goodsReceiptGetResponseDescriptor instead')
 const GoodsReceiptGetResponse$json = {
   '1': 'GoodsReceiptGetResponse',
   '2': [
-    {'1': 'goods_receipt', '3': 1, '4': 1, '5': 11, '6': '.procurement.v1.GoodsReceipt', '10': 'goodsReceipt'},
+    {
+      '1': 'goods_receipt',
+      '3': 1,
+      '4': 1,
+      '5': 11,
+      '6': '.procurement.v1.GoodsReceipt',
+      '10': 'goodsReceipt'
+    },
   ],
 };
 
 /// Descriptor for `GoodsReceiptGetResponse`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List goodsReceiptGetResponseDescriptor = $convert.base64Decode(
-    'ChdHb29kc1JlY2VpcHRHZXRSZXNwb25zZRJBCg1nb29kc19yZWNlaXB0GAEgASgLMhwucHJvY3'
-    'VyZW1lbnQudjEuR29vZHNSZWNlaXB0Ugxnb29kc1JlY2VpcHQ=');
+final $typed_data.Uint8List goodsReceiptGetResponseDescriptor =
+    $convert.base64Decode(
+        'ChdHb29kc1JlY2VpcHRHZXRSZXNwb25zZRJBCg1nb29kc19yZWNlaXB0GAEgASgLMhwucHJvY3'
+        'VyZW1lbnQudjEuR29vZHNSZWNlaXB0Ugxnb29kc1JlY2VpcHQ=');
 
 @$core.Deprecated('Use goodsReceiptSearchRequestDescriptor instead')
 const GoodsReceiptSearchRequest$json = {
@@ -867,8 +1404,22 @@ const GoodsReceiptSearchRequest$json = {
   '2': [
     {'1': 'purchase_order_id', '3': 1, '4': 1, '5': 9, '10': 'purchaseOrderId'},
     {'1': 'property_id', '3': 2, '4': 1, '5': 9, '10': 'propertyId'},
-    {'1': 'status', '3': 3, '4': 1, '5': 14, '6': '.procurement.v1.GoodsReceiptStatus', '10': 'status'},
-    {'1': 'search', '3': 4, '4': 1, '5': 11, '6': '.common.v1.SearchRequest', '10': 'search'},
+    {
+      '1': 'status',
+      '3': 3,
+      '4': 1,
+      '5': 14,
+      '6': '.procurement.v1.GoodsReceiptStatus',
+      '10': 'status'
+    },
+    {
+      '1': 'search',
+      '3': 4,
+      '4': 1,
+      '5': 11,
+      '6': '.common.v1.SearchRequest',
+      '10': 'search'
+    },
   ],
 };
 
@@ -883,16 +1434,24 @@ final $typed_data.Uint8List goodsReceiptSearchRequestDescriptor = $convert.base6
 const GoodsReceiptSearchResponse$json = {
   '1': 'GoodsReceiptSearchResponse',
   '2': [
-    {'1': 'goods_receipts', '3': 1, '4': 3, '5': 11, '6': '.procurement.v1.GoodsReceipt', '10': 'goodsReceipts'},
+    {
+      '1': 'goods_receipts',
+      '3': 1,
+      '4': 3,
+      '5': 11,
+      '6': '.procurement.v1.GoodsReceipt',
+      '10': 'goodsReceipts'
+    },
     {'1': 'next_page', '3': 2, '4': 1, '5': 9, '10': 'nextPage'},
   ],
 };
 
 /// Descriptor for `GoodsReceiptSearchResponse`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List goodsReceiptSearchResponseDescriptor = $convert.base64Decode(
-    'ChpHb29kc1JlY2VpcHRTZWFyY2hSZXNwb25zZRJDCg5nb29kc19yZWNlaXB0cxgBIAMoCzIcLn'
-    'Byb2N1cmVtZW50LnYxLkdvb2RzUmVjZWlwdFINZ29vZHNSZWNlaXB0cxIbCgluZXh0X3BhZ2UY'
-    'AiABKAlSCG5leHRQYWdl');
+final $typed_data.Uint8List goodsReceiptSearchResponseDescriptor =
+    $convert.base64Decode(
+        'ChpHb29kc1JlY2VpcHRTZWFyY2hSZXNwb25zZRJDCg5nb29kc19yZWNlaXB0cxgBIAMoCzIcLn'
+        'Byb2N1cmVtZW50LnYxLkdvb2RzUmVjZWlwdFINZ29vZHNSZWNlaXB0cxIbCgluZXh0X3BhZ2UY'
+        'AiABKAlSCG5leHRQYWdl');
 
 @$core.Deprecated('Use suggestPurchaseOrdersRequestDescriptor instead')
 const SuggestPurchaseOrdersRequest$json = {
@@ -905,23 +1464,32 @@ const SuggestPurchaseOrdersRequest$json = {
 };
 
 /// Descriptor for `SuggestPurchaseOrdersRequest`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List suggestPurchaseOrdersRequestDescriptor = $convert.base64Decode(
-    'ChxTdWdnZXN0UHVyY2hhc2VPcmRlcnNSZXF1ZXN0Eh8KC3Byb3BlcnR5X2lkGAEgASgJUgpwcm'
-    '9wZXJ0eUlkEhcKB3BsYW5faWQYAiABKAlSBnBsYW5JZBIjCg1jdXJyZW5jeV9jb2RlGAMgASgJ'
-    'UgxjdXJyZW5jeUNvZGU=');
+final $typed_data.Uint8List suggestPurchaseOrdersRequestDescriptor =
+    $convert.base64Decode(
+        'ChxTdWdnZXN0UHVyY2hhc2VPcmRlcnNSZXF1ZXN0Eh8KC3Byb3BlcnR5X2lkGAEgASgJUgpwcm'
+        '9wZXJ0eUlkEhcKB3BsYW5faWQYAiABKAlSBnBsYW5JZBIjCg1jdXJyZW5jeV9jb2RlGAMgASgJ'
+        'UgxjdXJyZW5jeUNvZGU=');
 
 @$core.Deprecated('Use suggestPurchaseOrdersResponseDescriptor instead')
 const SuggestPurchaseOrdersResponse$json = {
   '1': 'SuggestPurchaseOrdersResponse',
   '2': [
-    {'1': 'suggestions', '3': 1, '4': 3, '5': 11, '6': '.procurement.v1.PurchaseOrderSuggestion', '10': 'suggestions'},
+    {
+      '1': 'suggestions',
+      '3': 1,
+      '4': 3,
+      '5': 11,
+      '6': '.procurement.v1.PurchaseOrderSuggestion',
+      '10': 'suggestions'
+    },
   ],
 };
 
 /// Descriptor for `SuggestPurchaseOrdersResponse`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List suggestPurchaseOrdersResponseDescriptor = $convert.base64Decode(
-    'Ch1TdWdnZXN0UHVyY2hhc2VPcmRlcnNSZXNwb25zZRJJCgtzdWdnZXN0aW9ucxgBIAMoCzInLn'
-    'Byb2N1cmVtZW50LnYxLlB1cmNoYXNlT3JkZXJTdWdnZXN0aW9uUgtzdWdnZXN0aW9ucw==');
+final $typed_data.Uint8List suggestPurchaseOrdersResponseDescriptor =
+    $convert.base64Decode(
+        'Ch1TdWdnZXN0UHVyY2hhc2VPcmRlcnNSZXNwb25zZRJJCgtzdWdnZXN0aW9ucxgBIAMoCzInLn'
+        'Byb2N1cmVtZW50LnYxLlB1cmNoYXNlT3JkZXJTdWdnZXN0aW9uUgtzdWdnZXN0aW9ucw==');
 
 @$core.Deprecated('Use goodsReceiptDeliverRequestDescriptor instead')
 const GoodsReceiptDeliverRequest$json = {
@@ -932,8 +1500,9 @@ const GoodsReceiptDeliverRequest$json = {
 };
 
 /// Descriptor for `GoodsReceiptDeliverRequest`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List goodsReceiptDeliverRequestDescriptor = $convert.base64Decode(
-    'ChpHb29kc1JlY2VpcHREZWxpdmVyUmVxdWVzdBIUCgVsaW1pdBgBIAEoBVIFbGltaXQ=');
+final $typed_data.Uint8List goodsReceiptDeliverRequestDescriptor =
+    $convert.base64Decode(
+        'ChpHb29kc1JlY2VpcHREZWxpdmVyUmVxdWVzdBIUCgVsaW1pdBgBIAEoBVIFbGltaXQ=');
 
 @$core.Deprecated('Use goodsReceiptDeliverResponseDescriptor instead')
 const GoodsReceiptDeliverResponse$json = {
@@ -946,68 +1515,207 @@ const GoodsReceiptDeliverResponse$json = {
 };
 
 /// Descriptor for `GoodsReceiptDeliverResponse`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List goodsReceiptDeliverResponseDescriptor = $convert.base64Decode(
-    'ChtHb29kc1JlY2VpcHREZWxpdmVyUmVzcG9uc2USHAoJZGVsaXZlcmVkGAEgASgFUglkZWxpdm'
-    'VyZWQSGAoHcGVuZGluZxgCIAEoBVIHcGVuZGluZxIWCgZmYWlsZWQYAyABKAVSBmZhaWxlZA==');
+final $typed_data.Uint8List goodsReceiptDeliverResponseDescriptor =
+    $convert.base64Decode(
+        'ChtHb29kc1JlY2VpcHREZWxpdmVyUmVzcG9uc2USHAoJZGVsaXZlcmVkGAEgASgFUglkZWxpdm'
+        'VyZWQSGAoHcGVuZGluZxgCIAEoBVIHcGVuZGluZxIWCgZmYWlsZWQYAyABKAVSBmZhaWxlZA==');
+
+@$core.Deprecated('Use goodsReceiptLineResolveRequestDescriptor instead')
+const GoodsReceiptLineResolveRequest$json = {
+  '1': 'GoodsReceiptLineResolveRequest',
+  '2': [
+    {'1': 'goods_receipt_id', '3': 1, '4': 1, '5': 9, '10': 'goodsReceiptId'},
+    {'1': 'line_id', '3': 2, '4': 1, '5': 9, '10': 'lineId'},
+    {
+      '1': 'resolution',
+      '3': 3,
+      '4': 1,
+      '5': 14,
+      '6': '.procurement.v1.GoodsReceiptLineResolution',
+      '10': 'resolution'
+    },
+    {'1': 'note', '3': 4, '4': 1, '5': 9, '10': 'note'},
+  ],
+};
+
+/// Descriptor for `GoodsReceiptLineResolveRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List goodsReceiptLineResolveRequestDescriptor =
+    $convert.base64Decode(
+        'Ch5Hb29kc1JlY2VpcHRMaW5lUmVzb2x2ZVJlcXVlc3QSKAoQZ29vZHNfcmVjZWlwdF9pZBgBIA'
+        'EoCVIOZ29vZHNSZWNlaXB0SWQSFwoHbGluZV9pZBgCIAEoCVIGbGluZUlkEkoKCnJlc29sdXRp'
+        'b24YAyABKA4yKi5wcm9jdXJlbWVudC52MS5Hb29kc1JlY2VpcHRMaW5lUmVzb2x1dGlvblIKcm'
+        'Vzb2x1dGlvbhISCgRub3RlGAQgASgJUgRub3Rl');
+
+@$core.Deprecated('Use goodsReceiptLineResolveResponseDescriptor instead')
+const GoodsReceiptLineResolveResponse$json = {
+  '1': 'GoodsReceiptLineResolveResponse',
+  '2': [
+    {
+      '1': 'goods_receipt',
+      '3': 1,
+      '4': 1,
+      '5': 11,
+      '6': '.procurement.v1.GoodsReceipt',
+      '10': 'goodsReceipt'
+    },
+  ],
+};
+
+/// Descriptor for `GoodsReceiptLineResolveResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List goodsReceiptLineResolveResponseDescriptor =
+    $convert.base64Decode(
+        'Ch9Hb29kc1JlY2VpcHRMaW5lUmVzb2x2ZVJlc3BvbnNlEkEKDWdvb2RzX3JlY2VpcHQYASABKA'
+        'syHC5wcm9jdXJlbWVudC52MS5Hb29kc1JlY2VpcHRSDGdvb2RzUmVjZWlwdA==');
 
 const $core.Map<$core.String, $core.dynamic> ProcurementServiceBase$json = {
   '1': 'ProcurementService',
   '2': [
-    {'1': 'SupplierSave', '2': '.procurement.v1.SupplierSaveRequest', '3': '.procurement.v1.SupplierSaveResponse', '4': {}},
-    {'1': 'SupplierGet', '2': '.procurement.v1.SupplierGetRequest', '3': '.procurement.v1.SupplierGetResponse', '4': {}},
-    {'1': 'SupplierSearch', '2': '.procurement.v1.SupplierSearchRequest', '3': '.procurement.v1.SupplierSearchResponse', '4': {}},
-    {'1': 'SupplierItemSave', '2': '.procurement.v1.SupplierItemSaveRequest', '3': '.procurement.v1.SupplierItemSaveResponse', '4': {}},
-    {'1': 'SupplierItemSearch', '2': '.procurement.v1.SupplierItemSearchRequest', '3': '.procurement.v1.SupplierItemSearchResponse', '4': {}},
-    {'1': 'PurchaseOrderCreate', '2': '.procurement.v1.PurchaseOrderCreateRequest', '3': '.procurement.v1.PurchaseOrderCreateResponse', '4': {}},
-    {'1': 'PurchaseOrderGet', '2': '.procurement.v1.PurchaseOrderGetRequest', '3': '.procurement.v1.PurchaseOrderGetResponse', '4': {}},
-    {'1': 'PurchaseOrderSearch', '2': '.procurement.v1.PurchaseOrderSearchRequest', '3': '.procurement.v1.PurchaseOrderSearchResponse', '4': {}},
-    {'1': 'PurchaseOrderSubmit', '2': '.procurement.v1.PurchaseOrderSubmitRequest', '3': '.procurement.v1.PurchaseOrderSubmitResponse', '4': {}},
-    {'1': 'PurchaseOrderCancel', '2': '.procurement.v1.PurchaseOrderCancelRequest', '3': '.procurement.v1.PurchaseOrderCancelResponse', '4': {}},
-    {'1': 'PurchaseOrderClose', '2': '.procurement.v1.PurchaseOrderCloseRequest', '3': '.procurement.v1.PurchaseOrderCloseResponse', '4': {}},
-    {'1': 'GoodsReceiptCreate', '2': '.procurement.v1.GoodsReceiptCreateRequest', '3': '.procurement.v1.GoodsReceiptCreateResponse', '4': {}},
-    {'1': 'GoodsReceiptGet', '2': '.procurement.v1.GoodsReceiptGetRequest', '3': '.procurement.v1.GoodsReceiptGetResponse', '4': {}},
-    {'1': 'GoodsReceiptSearch', '2': '.procurement.v1.GoodsReceiptSearchRequest', '3': '.procurement.v1.GoodsReceiptSearchResponse', '4': {}},
-    {'1': 'GoodsReceiptDeliver', '2': '.procurement.v1.GoodsReceiptDeliverRequest', '3': '.procurement.v1.GoodsReceiptDeliverResponse', '4': {}},
-    {'1': 'SuggestPurchaseOrders', '2': '.procurement.v1.SuggestPurchaseOrdersRequest', '3': '.procurement.v1.SuggestPurchaseOrdersResponse', '4': {}},
+    {
+      '1': 'SupplierSave',
+      '2': '.procurement.v1.SupplierSaveRequest',
+      '3': '.procurement.v1.SupplierSaveResponse',
+      '4': {}
+    },
+    {
+      '1': 'SupplierGet',
+      '2': '.procurement.v1.SupplierGetRequest',
+      '3': '.procurement.v1.SupplierGetResponse',
+      '4': {}
+    },
+    {
+      '1': 'SupplierSearch',
+      '2': '.procurement.v1.SupplierSearchRequest',
+      '3': '.procurement.v1.SupplierSearchResponse',
+      '4': {}
+    },
+    {
+      '1': 'SupplierItemSave',
+      '2': '.procurement.v1.SupplierItemSaveRequest',
+      '3': '.procurement.v1.SupplierItemSaveResponse',
+      '4': {}
+    },
+    {
+      '1': 'SupplierItemSearch',
+      '2': '.procurement.v1.SupplierItemSearchRequest',
+      '3': '.procurement.v1.SupplierItemSearchResponse',
+      '4': {}
+    },
+    {
+      '1': 'PurchaseOrderCreate',
+      '2': '.procurement.v1.PurchaseOrderCreateRequest',
+      '3': '.procurement.v1.PurchaseOrderCreateResponse',
+      '4': {}
+    },
+    {
+      '1': 'PurchaseOrderGet',
+      '2': '.procurement.v1.PurchaseOrderGetRequest',
+      '3': '.procurement.v1.PurchaseOrderGetResponse',
+      '4': {}
+    },
+    {
+      '1': 'PurchaseOrderSearch',
+      '2': '.procurement.v1.PurchaseOrderSearchRequest',
+      '3': '.procurement.v1.PurchaseOrderSearchResponse',
+      '4': {}
+    },
+    {
+      '1': 'PurchaseOrderSubmit',
+      '2': '.procurement.v1.PurchaseOrderSubmitRequest',
+      '3': '.procurement.v1.PurchaseOrderSubmitResponse',
+      '4': {}
+    },
+    {
+      '1': 'PurchaseOrderCancel',
+      '2': '.procurement.v1.PurchaseOrderCancelRequest',
+      '3': '.procurement.v1.PurchaseOrderCancelResponse',
+      '4': {}
+    },
+    {
+      '1': 'PurchaseOrderClose',
+      '2': '.procurement.v1.PurchaseOrderCloseRequest',
+      '3': '.procurement.v1.PurchaseOrderCloseResponse',
+      '4': {}
+    },
+    {
+      '1': 'GoodsReceiptCreate',
+      '2': '.procurement.v1.GoodsReceiptCreateRequest',
+      '3': '.procurement.v1.GoodsReceiptCreateResponse',
+      '4': {}
+    },
+    {
+      '1': 'GoodsReceiptGet',
+      '2': '.procurement.v1.GoodsReceiptGetRequest',
+      '3': '.procurement.v1.GoodsReceiptGetResponse',
+      '4': {}
+    },
+    {
+      '1': 'GoodsReceiptSearch',
+      '2': '.procurement.v1.GoodsReceiptSearchRequest',
+      '3': '.procurement.v1.GoodsReceiptSearchResponse',
+      '4': {}
+    },
+    {
+      '1': 'GoodsReceiptDeliver',
+      '2': '.procurement.v1.GoodsReceiptDeliverRequest',
+      '3': '.procurement.v1.GoodsReceiptDeliverResponse',
+      '4': {}
+    },
+    {
+      '1': 'GoodsReceiptLineResolve',
+      '2': '.procurement.v1.GoodsReceiptLineResolveRequest',
+      '3': '.procurement.v1.GoodsReceiptLineResolveResponse',
+      '4': {}
+    },
+    {
+      '1': 'SuggestPurchaseOrders',
+      '2': '.procurement.v1.SuggestPurchaseOrdersRequest',
+      '3': '.procurement.v1.SuggestPurchaseOrdersResponse',
+      '4': {}
+    },
   ],
   '3': {},
 };
 
 @$core.Deprecated('Use procurementServiceDescriptor instead')
-const $core.Map<$core.String, $core.Map<$core.String, $core.dynamic>> ProcurementServiceBase$messageJson = {
+const $core.Map<$core.String, $core.Map<$core.String, $core.dynamic>>
+    ProcurementServiceBase$messageJson = {
   '.procurement.v1.SupplierSaveRequest': SupplierSaveRequest$json,
   '.procurement.v1.SupplierSaveResponse': SupplierSaveResponse$json,
   '.procurement.v1.Supplier': Supplier$json,
-  '.google.protobuf.Timestamp': $2.Timestamp$json,
+  '.google.protobuf.Timestamp': $0.Timestamp$json,
   '.procurement.v1.SupplierGetRequest': SupplierGetRequest$json,
   '.procurement.v1.SupplierGetResponse': SupplierGetResponse$json,
   '.procurement.v1.SupplierSearchRequest': SupplierSearchRequest$json,
-  '.common.v1.SearchRequest': $8.SearchRequest$json,
-  '.common.v1.PageCursor': $8.PageCursor$json,
-  '.google.protobuf.Struct': $6.Struct$json,
-  '.google.protobuf.Struct.FieldsEntry': $6.Struct_FieldsEntry$json,
-  '.google.protobuf.Value': $6.Value$json,
-  '.google.protobuf.ListValue': $6.ListValue$json,
+  '.common.v1.SearchRequest': $2.SearchRequest$json,
+  '.common.v1.PageCursor': $2.PageCursor$json,
+  '.google.protobuf.Struct': $3.Struct$json,
+  '.google.protobuf.Struct.FieldsEntry': $3.Struct_FieldsEntry$json,
+  '.google.protobuf.Value': $3.Value$json,
+  '.google.protobuf.ListValue': $3.ListValue$json,
   '.procurement.v1.SupplierSearchResponse': SupplierSearchResponse$json,
   '.procurement.v1.SupplierItemSaveRequest': SupplierItemSaveRequest$json,
-  '.common.v1.Money': $7.Money$json,
+  '.common.v1.Money': $1.Money$json,
   '.procurement.v1.SupplierItemSaveResponse': SupplierItemSaveResponse$json,
   '.procurement.v1.SupplierItem': SupplierItem$json,
   '.procurement.v1.SupplierItemSearchRequest': SupplierItemSearchRequest$json,
   '.procurement.v1.SupplierItemSearchResponse': SupplierItemSearchResponse$json,
   '.procurement.v1.PurchaseOrderCreateRequest': PurchaseOrderCreateRequest$json,
   '.procurement.v1.PurchaseOrderLineInput': PurchaseOrderLineInput$json,
-  '.procurement.v1.PurchaseOrderCreateResponse': PurchaseOrderCreateResponse$json,
+  '.procurement.v1.PurchaseOrderCreateResponse':
+      PurchaseOrderCreateResponse$json,
   '.procurement.v1.PurchaseOrder': PurchaseOrder$json,
   '.procurement.v1.PurchaseOrderLine': PurchaseOrderLine$json,
   '.procurement.v1.PurchaseOrderGetRequest': PurchaseOrderGetRequest$json,
   '.procurement.v1.PurchaseOrderGetResponse': PurchaseOrderGetResponse$json,
   '.procurement.v1.PurchaseOrderSearchRequest': PurchaseOrderSearchRequest$json,
-  '.procurement.v1.PurchaseOrderSearchResponse': PurchaseOrderSearchResponse$json,
+  '.procurement.v1.PurchaseOrderSearchResponse':
+      PurchaseOrderSearchResponse$json,
   '.procurement.v1.PurchaseOrderSubmitRequest': PurchaseOrderSubmitRequest$json,
-  '.procurement.v1.PurchaseOrderSubmitResponse': PurchaseOrderSubmitResponse$json,
+  '.procurement.v1.PurchaseOrderSubmitResponse':
+      PurchaseOrderSubmitResponse$json,
   '.procurement.v1.PurchaseOrderCancelRequest': PurchaseOrderCancelRequest$json,
-  '.procurement.v1.PurchaseOrderCancelResponse': PurchaseOrderCancelResponse$json,
+  '.procurement.v1.PurchaseOrderCancelResponse':
+      PurchaseOrderCancelResponse$json,
   '.procurement.v1.PurchaseOrderCloseRequest': PurchaseOrderCloseRequest$json,
   '.procurement.v1.PurchaseOrderCloseResponse': PurchaseOrderCloseResponse$json,
   '.procurement.v1.GoodsReceiptCreateRequest': GoodsReceiptCreateRequest$json,
@@ -1020,11 +1728,19 @@ const $core.Map<$core.String, $core.Map<$core.String, $core.dynamic>> Procuremen
   '.procurement.v1.GoodsReceiptSearchRequest': GoodsReceiptSearchRequest$json,
   '.procurement.v1.GoodsReceiptSearchResponse': GoodsReceiptSearchResponse$json,
   '.procurement.v1.GoodsReceiptDeliverRequest': GoodsReceiptDeliverRequest$json,
-  '.procurement.v1.GoodsReceiptDeliverResponse': GoodsReceiptDeliverResponse$json,
-  '.procurement.v1.SuggestPurchaseOrdersRequest': SuggestPurchaseOrdersRequest$json,
-  '.procurement.v1.SuggestPurchaseOrdersResponse': SuggestPurchaseOrdersResponse$json,
+  '.procurement.v1.GoodsReceiptDeliverResponse':
+      GoodsReceiptDeliverResponse$json,
+  '.procurement.v1.GoodsReceiptLineResolveRequest':
+      GoodsReceiptLineResolveRequest$json,
+  '.procurement.v1.GoodsReceiptLineResolveResponse':
+      GoodsReceiptLineResolveResponse$json,
+  '.procurement.v1.SuggestPurchaseOrdersRequest':
+      SuggestPurchaseOrdersRequest$json,
+  '.procurement.v1.SuggestPurchaseOrdersResponse':
+      SuggestPurchaseOrdersResponse$json,
   '.procurement.v1.PurchaseOrderSuggestion': PurchaseOrderSuggestion$json,
-  '.procurement.v1.PurchaseOrderSuggestionLine': PurchaseOrderSuggestionLine$json,
+  '.procurement.v1.PurchaseOrderSuggestionLine':
+      PurchaseOrderSuggestionLine$json,
 };
 
 /// Descriptor for `ProcurementService`. Decode as a `google.protobuf.ServiceDescriptorProto`.
@@ -1064,26 +1780,29 @@ final $typed_data.Uint8List procurementServiceDescriptor = $convert.base64Decode
     'aFJlcXVlc3QaKi5wcm9jdXJlbWVudC52MS5Hb29kc1JlY2VpcHRTZWFyY2hSZXNwb25zZSIYgr'
     'UYFAoSZ29vZHNfcmVjZWlwdF92aWV3EosBChNHb29kc1JlY2VpcHREZWxpdmVyEioucHJvY3Vy'
     'ZW1lbnQudjEuR29vZHNSZWNlaXB0RGVsaXZlclJlcXVlc3QaKy5wcm9jdXJlbWVudC52MS5Hb2'
-    '9kc1JlY2VpcHREZWxpdmVyUmVzcG9uc2UiG4K1GBcKFWdvb2RzX3JlY2VpcHRfZGVsaXZlchKR'
-    'AQoVU3VnZ2VzdFB1cmNoYXNlT3JkZXJzEiwucHJvY3VyZW1lbnQudjEuU3VnZ2VzdFB1cmNoYX'
-    'NlT3JkZXJzUmVxdWVzdBotLnByb2N1cmVtZW50LnYxLlN1Z2dlc3RQdXJjaGFzZU9yZGVyc1Jl'
-    'c3BvbnNlIhuCtRgXChVwdXJjaGFzZV9vcmRlcl9jcmVhdGUa0QeCtRjMBwoTc2VydmljZV9wcm'
-    '9jdXJlbWVudBINc3VwcGxpZXJfdmlldxIPc3VwcGxpZXJfbWFuYWdlEhNwdXJjaGFzZV9vcmRl'
-    'cl92aWV3EhVwdXJjaGFzZV9vcmRlcl9jcmVhdGUSFXB1cmNoYXNlX29yZGVyX3N1Ym1pdBIVcH'
-    'VyY2hhc2Vfb3JkZXJfY2FuY2VsEhJnb29kc19yZWNlaXB0X3ZpZXcSFGdvb2RzX3JlY2VpcHRf'
-    'Y3JlYXRlEhVnb29kc19yZWNlaXB0X2RlbGl2ZXIavQEIARINc3VwcGxpZXJfdmlldxIPc3VwcG'
-    'xpZXJfbWFuYWdlEhNwdXJjaGFzZV9vcmRlcl92aWV3EhVwdXJjaGFzZV9vcmRlcl9jcmVhdGUS'
-    'FXB1cmNoYXNlX29yZGVyX3N1Ym1pdBIVcHVyY2hhc2Vfb3JkZXJfY2FuY2VsEhJnb29kc19yZW'
-    'NlaXB0X3ZpZXcSFGdvb2RzX3JlY2VpcHRfY3JlYXRlEhVnb29kc19yZWNlaXB0X2RlbGl2ZXIa'
-    'vQEIAhINc3VwcGxpZXJfdmlldxIPc3VwcGxpZXJfbWFuYWdlEhNwdXJjaGFzZV9vcmRlcl92aW'
-    'V3EhVwdXJjaGFzZV9vcmRlcl9jcmVhdGUSFXB1cmNoYXNlX29yZGVyX3N1Ym1pdBIVcHVyY2hh'
-    'c2Vfb3JkZXJfY2FuY2VsEhJnb29kc19yZWNlaXB0X3ZpZXcSFGdvb2RzX3JlY2VpcHRfY3JlYX'
-    'RlEhVnb29kc19yZWNlaXB0X2RlbGl2ZXIafggDEg1zdXBwbGllcl92aWV3EhNwdXJjaGFzZV9v'
-    'cmRlcl92aWV3EhVwdXJjaGFzZV9vcmRlcl9jcmVhdGUSFXB1cmNoYXNlX29yZGVyX3N1Ym1pdB'
-    'ISZ29vZHNfcmVjZWlwdF92aWV3EhRnb29kc19yZWNlaXB0X2NyZWF0ZRo6CAQSDXN1cHBsaWVy'
-    'X3ZpZXcSE3B1cmNoYXNlX29yZGVyX3ZpZXcSEmdvb2RzX3JlY2VpcHRfdmlldxq9AQgGEg1zdX'
-    'BwbGllcl92aWV3Eg9zdXBwbGllcl9tYW5hZ2USE3B1cmNoYXNlX29yZGVyX3ZpZXcSFXB1cmNo'
-    'YXNlX29yZGVyX2NyZWF0ZRIVcHVyY2hhc2Vfb3JkZXJfc3VibWl0EhVwdXJjaGFzZV9vcmRlcl'
-    '9jYW5jZWwSEmdvb2RzX3JlY2VpcHRfdmlldxIUZ29vZHNfcmVjZWlwdF9jcmVhdGUSFWdvb2Rz'
-    'X3JlY2VpcHRfZGVsaXZlcg==');
-
+    '9kc1JlY2VpcHREZWxpdmVyUmVzcG9uc2UiG4K1GBcKFWdvb2RzX3JlY2VpcHRfZGVsaXZlchKX'
+    'AQoXR29vZHNSZWNlaXB0TGluZVJlc29sdmUSLi5wcm9jdXJlbWVudC52MS5Hb29kc1JlY2VpcH'
+    'RMaW5lUmVzb2x2ZVJlcXVlc3QaLy5wcm9jdXJlbWVudC52MS5Hb29kc1JlY2VpcHRMaW5lUmVz'
+    'b2x2ZVJlc3BvbnNlIhuCtRgXChVnb29kc19yZWNlaXB0X3Jlc29sdmUSkQEKFVN1Z2dlc3RQdX'
+    'JjaGFzZU9yZGVycxIsLnByb2N1cmVtZW50LnYxLlN1Z2dlc3RQdXJjaGFzZU9yZGVyc1JlcXVl'
+    'c3QaLS5wcm9jdXJlbWVudC52MS5TdWdnZXN0UHVyY2hhc2VPcmRlcnNSZXNwb25zZSIbgrUYFw'
+    'oVcHVyY2hhc2Vfb3JkZXJfY3JlYXRlGq0IgrUYqAgKE3NlcnZpY2VfcHJvY3VyZW1lbnQSDXN1'
+    'cHBsaWVyX3ZpZXcSD3N1cHBsaWVyX21hbmFnZRITcHVyY2hhc2Vfb3JkZXJfdmlldxIVcHVyY2'
+    'hhc2Vfb3JkZXJfY3JlYXRlEhVwdXJjaGFzZV9vcmRlcl9zdWJtaXQSFXB1cmNoYXNlX29yZGVy'
+    'X2NhbmNlbBISZ29vZHNfcmVjZWlwdF92aWV3EhRnb29kc19yZWNlaXB0X2NyZWF0ZRIVZ29vZH'
+    'NfcmVjZWlwdF9kZWxpdmVyEhVnb29kc19yZWNlaXB0X3Jlc29sdmUa1AEIARINc3VwcGxpZXJf'
+    'dmlldxIPc3VwcGxpZXJfbWFuYWdlEhNwdXJjaGFzZV9vcmRlcl92aWV3EhVwdXJjaGFzZV9vcm'
+    'Rlcl9jcmVhdGUSFXB1cmNoYXNlX29yZGVyX3N1Ym1pdBIVcHVyY2hhc2Vfb3JkZXJfY2FuY2Vs'
+    'EhJnb29kc19yZWNlaXB0X3ZpZXcSFGdvb2RzX3JlY2VpcHRfY3JlYXRlEhVnb29kc19yZWNlaX'
+    'B0X2RlbGl2ZXISFWdvb2RzX3JlY2VpcHRfcmVzb2x2ZRrUAQgCEg1zdXBwbGllcl92aWV3Eg9z'
+    'dXBwbGllcl9tYW5hZ2USE3B1cmNoYXNlX29yZGVyX3ZpZXcSFXB1cmNoYXNlX29yZGVyX2NyZW'
+    'F0ZRIVcHVyY2hhc2Vfb3JkZXJfc3VibWl0EhVwdXJjaGFzZV9vcmRlcl9jYW5jZWwSEmdvb2Rz'
+    'X3JlY2VpcHRfdmlldxIUZ29vZHNfcmVjZWlwdF9jcmVhdGUSFWdvb2RzX3JlY2VpcHRfZGVsaX'
+    'ZlchIVZ29vZHNfcmVjZWlwdF9yZXNvbHZlGn4IAxINc3VwcGxpZXJfdmlldxITcHVyY2hhc2Vf'
+    'b3JkZXJfdmlldxIVcHVyY2hhc2Vfb3JkZXJfY3JlYXRlEhVwdXJjaGFzZV9vcmRlcl9zdWJtaX'
+    'QSEmdvb2RzX3JlY2VpcHRfdmlldxIUZ29vZHNfcmVjZWlwdF9jcmVhdGUaOggEEg1zdXBwbGll'
+    'cl92aWV3EhNwdXJjaGFzZV9vcmRlcl92aWV3EhJnb29kc19yZWNlaXB0X3ZpZXca1AEIBhINc3'
+    'VwcGxpZXJfdmlldxIPc3VwcGxpZXJfbWFuYWdlEhNwdXJjaGFzZV9vcmRlcl92aWV3EhVwdXJj'
+    'aGFzZV9vcmRlcl9jcmVhdGUSFXB1cmNoYXNlX29yZGVyX3N1Ym1pdBIVcHVyY2hhc2Vfb3JkZX'
+    'JfY2FuY2VsEhJnb29kc19yZWNlaXB0X3ZpZXcSFGdvb2RzX3JlY2VpcHRfY3JlYXRlEhVnb29k'
+    'c19yZWNlaXB0X2RlbGl2ZXISFWdvb2RzX3JlY2VpcHRfcmVzb2x2ZQ==');

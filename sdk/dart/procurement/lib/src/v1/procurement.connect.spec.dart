@@ -125,6 +125,17 @@ abstract final class ProcurementService {
     v1procurement.GoodsReceiptDeliverResponse.new,
   );
 
+  /// Settles a receipt line that needs a person: stock booked by hand
+  /// (BOOKED_MANUALLY) is marked resolved with who, when and why; a FAILED
+  /// product variant line is put back to PENDING and pushed once (RETRY).
+  /// Authorised on the receipt's property (goods_receipt_manage).
+  static const goodsReceiptLineResolve = connect.Spec(
+    '/$name/GoodsReceiptLineResolve',
+    connect.StreamType.unary,
+    v1procurement.GoodsReceiptLineResolveRequest.new,
+    v1procurement.GoodsReceiptLineResolveResponse.new,
+  );
+
   /// ---- Suggestions ----
   static const suggestPurchaseOrders = connect.Spec(
     '/$name/SuggestPurchaseOrders',

@@ -104,6 +104,9 @@ const (
 	// CommerceServiceRecordOrderPaymentProcedure is the procedure name of the CommerceService's
 	// RecordOrderPayment RPC.
 	CommerceServiceRecordOrderPaymentProcedure = "/commerce.v1.CommerceService/RecordOrderPayment"
+	// CommerceServiceResolveOrderRefundProcedure is the procedure name of the CommerceService's
+	// ResolveOrderRefund RPC.
+	CommerceServiceResolveOrderRefundProcedure = "/commerce.v1.CommerceService/ResolveOrderRefund"
 	// CommerceServiceListOrderEventsProcedure is the procedure name of the CommerceService's
 	// ListOrderEvents RPC.
 	CommerceServiceListOrderEventsProcedure = "/commerce.v1.CommerceService/ListOrderEvents"
@@ -339,6 +342,13 @@ var (
 			Procedure:  CommerceServiceRecordOrderPaymentProcedure,
 		}
 	})
+	commerceServiceResolveOrderRefundSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_commerce_proto.Services().ByName("CommerceService").Methods().ByName("ResolveOrderRefund"),
+			Procedure:  CommerceServiceResolveOrderRefundProcedure,
+		}
+	})
 	commerceServiceListOrderEventsSpec = sync.OnceValue(func() connect.Spec {
 		return connect.Spec{
 			StreamType: connect.StreamTypeUnary,
@@ -544,6 +554,9 @@ type CommerceServiceClient interface {
 	// an instalment against the order. Staff only. A reference already
 	// recorded on the order is returned as-is, so retries are safe.
 	RecordOrderPayment(context.Context, *v1.RecordOrderPaymentRequest) (*v1.RecordOrderPaymentResponse, error)
+	// Settles a refund the payment service failed: send it again, or record
+	// that the shop paid the buyer back itself. Staff only.
+	ResolveOrderRefund(context.Context, *v1.ResolveOrderRefundRequest) (*v1.ResolveOrderRefundResponse, error)
 	// Lists payment and lifecycle signals for an order, or for every order in
 	// a shop, oldest first. The same events are pushed to the shop's webhook.
 	ListOrderEvents(context.Context, *v1.ListOrderEventsRequest) (*v1.ListOrderEventsResponse, error)
@@ -668,6 +681,9 @@ type CommerceServiceHandler interface {
 	// an instalment against the order. Staff only. A reference already
 	// recorded on the order is returned as-is, so retries are safe.
 	RecordOrderPayment(context.Context, *v1.RecordOrderPaymentRequest) (*v1.RecordOrderPaymentResponse, error)
+	// Settles a refund the payment service failed: send it again, or record
+	// that the shop paid the buyer back itself. Staff only.
+	ResolveOrderRefund(context.Context, *v1.ResolveOrderRefundRequest) (*v1.ResolveOrderRefundResponse, error)
 	// Lists payment and lifecycle signals for an order, or for every order in
 	// a shop, oldest first. The same events are pushed to the shop's webhook.
 	ListOrderEvents(context.Context, *v1.ListOrderEventsRequest) (*v1.ListOrderEventsResponse, error)
@@ -746,6 +762,7 @@ func RegisterCommerceServiceHandler(server *connect.Server, svc CommerceServiceH
 		connect.Method{Spec: commerceServiceConfirmOrderPaymentSpec(), Handler: adapter.confirmOrderPayment},
 		connect.Method{Spec: commerceServiceCancelOrderSpec(), Handler: adapter.cancelOrder},
 		connect.Method{Spec: commerceServiceRecordOrderPaymentSpec(), Handler: adapter.recordOrderPayment},
+		connect.Method{Spec: commerceServiceResolveOrderRefundSpec(), Handler: adapter.resolveOrderRefund},
 		connect.Method{Spec: commerceServiceListOrderEventsSpec(), Handler: adapter.listOrderEvents},
 		connect.Method{Spec: commerceServiceReconcilePaymentsSpec(), Handler: adapter.reconcilePayments},
 		connect.Method{Spec: commerceServiceRunEndOfDayLedgerSpec(), Handler: adapter.runEndOfDayLedger},
@@ -869,6 +886,10 @@ func (UnimplementedCommerceServiceHandler) CancelOrder(context.Context, *v1.Canc
 
 func (UnimplementedCommerceServiceHandler) RecordOrderPayment(context.Context, *v1.RecordOrderPaymentRequest) (*v1.RecordOrderPaymentResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, "commerce.v1.CommerceService.RecordOrderPayment is not implemented")
+}
+
+func (UnimplementedCommerceServiceHandler) ResolveOrderRefund(context.Context, *v1.ResolveOrderRefundRequest) (*v1.ResolveOrderRefundResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "commerce.v1.CommerceService.ResolveOrderRefund is not implemented")
 }
 
 func (UnimplementedCommerceServiceHandler) ListOrderEvents(context.Context, *v1.ListOrderEventsRequest) (*v1.ListOrderEventsResponse, error) {
@@ -1146,6 +1167,14 @@ func (c *commerceServiceClient) CancelOrder(ctx context.Context, req *v1.CancelO
 func (c *commerceServiceClient) RecordOrderPayment(ctx context.Context, req *v1.RecordOrderPaymentRequest) (*v1.RecordOrderPaymentResponse, error) {
 	var res v1.RecordOrderPaymentResponse
 	if err := c.client.CallUnary(ctx, commerceServiceRecordOrderPaymentSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *commerceServiceClient) ResolveOrderRefund(ctx context.Context, req *v1.ResolveOrderRefundRequest) (*v1.ResolveOrderRefundResponse, error) {
+	var res v1.ResolveOrderRefundResponse
+	if err := c.client.CallUnary(ctx, commerceServiceResolveOrderRefundSpec(), req, &res); err != nil {
 		return nil, err
 	}
 	return &res, nil
@@ -1599,6 +1628,18 @@ func (h commerceServiceHandler) recordOrderPayment(ctx context.Context, _ connec
 		return err
 	}
 	res, err := h.svc.RecordOrderPayment(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h commerceServiceHandler) resolveOrderRefund(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.ResolveOrderRefundRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.ResolveOrderRefund(ctx, &req)
 	if err != nil {
 		return err
 	}

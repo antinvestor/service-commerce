@@ -202,6 +202,37 @@ type OrderRefund struct {
 	// LedgerTransactionID is the end-of-day transaction the reversal was
 	// merged into.
 	LedgerTransactionID string `gorm:"type:varchar(64);index:idx_order_refund_ledger"`
+	// Attempt counts staff retries of a failed refund; each is a new
+	// payment, sent under its own reference.
+	Attempt int32
+	// ResolvedBy and Note record staff who paid the buyer back themselves.
+	ResolvedBy string `gorm:"type:varchar(50)"`
+	Note       string `gorm:"type:varchar(500)"`
+}
+
+// PaymentReference is the reference the refund's current payment is sent
+// under: the payment service pays a reference once, so a retry after a
+// failed payment needs a new one.
+func (r *OrderRefund) PaymentReference() string {
+	if r.Attempt == 0 {
+		return r.Reference
+	}
+	return fmt.Sprintf("%s:retry%d", r.Reference, r.Attempt)
+}
+
+func (r *OrderRefund) ToAPI() *commercev1.OrderRefund {
+	api := &commercev1.OrderRefund{
+		Id:         r.ID,
+		Amount:     MoneyFromNanos(r.Currency, r.AmountNanos),
+		Status:     commercev1.OrderRefundStatus(r.Status),
+		LastError:  r.LastError,
+		ResolvedBy: r.ResolvedBy,
+		Note:       r.Note,
+	}
+	if r.ConfirmedAt != nil {
+		api.ConfirmedAt = timestamppb.New(*r.ConfirmedAt)
+	}
+	return api
 }
 
 // Order event delivery states, mirroring commercev1.OrderEventDelivery.

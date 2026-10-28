@@ -416,6 +416,13 @@ service CommerceService {
       permissions: ["order_manage"]
     };
   }
+  // Settles a refund the payment service failed: send it again, or record
+  // that the shop paid the buyer back itself. Staff only.
+  rpc ResolveOrderRefund(ResolveOrderRefundRequest) returns (ResolveOrderRefundResponse) {
+    option (common.v1.method_permissions) = {
+      permissions: ["order_manage"]
+    };
+  }
   // Lists payment and lifecycle signals for an order, or for every order in
   // a shop, oldest first. The same events are pushed to the shop's webhook.
   rpc ListOrderEvents(ListOrderEventsRequest) returns (ListOrderEventsResponse) {
@@ -1179,6 +1186,46 @@ message Order {
   // checkout session that charged a different amount from the one issued;
   // the reconciler stops retrying it.
   string payment_review = 28;
+  // Money owed back to the buyer, oldest first, and where each payment back
+  // stands.
+  repeated OrderRefund refunds = 29;
+}
+
+// OrderRefund is money owed back to an order's buyer: an overpayment, a
+// payment on a cancelled order, or what was paid before cancelling.
+message OrderRefund {
+  string id = 1;
+  common.v1.Money amount = 2;
+  OrderRefundStatus status = 3;
+  // Why the last attempt did not settle it.
+  string last_error = 4;
+  google.protobuf.Timestamp confirmed_at = 5;
+  // Staff who recorded paying the buyer back themselves, and their note.
+  string resolved_by = 6;
+  string note = 7;
+}
+
+enum OrderRefundStatus {
+  ORDER_REFUND_STATUS_UNSPECIFIED = 0;
+  // Raised; sent to the payment service on the next run.
+  ORDER_REFUND_STATUS_PENDING = 1;
+  // The payment service holds it; confirmed once the money arrives.
+  ORDER_REFUND_STATUS_SENT = 2;
+  // The buyer has been paid back.
+  ORDER_REFUND_STATUS_CONFIRMED = 3;
+  // The payment service could not pay it; staff resolve it
+  // (ResolveOrderRefund).
+  ORDER_REFUND_STATUS_FAILED = 4;
+}
+
+// How staff settle a refund the payment service failed.
+enum OrderRefundResolution {
+  ORDER_REFUND_RESOLUTION_UNSPECIFIED = 0;
+  // Send it again, as a new payment; it goes back to PENDING and is sent
+  // straight away.
+  ORDER_REFUND_RESOLUTION_RETRY = 1;
+  // The shop paid the buyer back itself; the refund is confirmed.
+  ORDER_REFUND_RESOLUTION_PAID_BACK = 2;
 }
 
 // OrderPayment is one instalment applied to an order.
@@ -1410,6 +1457,28 @@ message RecordOrderPaymentRequest {
 }
 
 message RecordOrderPaymentResponse {
+  Order order = 1;
+}
+
+message ResolveOrderRefundRequest {
+  string order_id = 1 [
+    (buf.validate.field).string.min_len = 3,
+    (buf.validate.field).string.max_len = 40,
+    (buf.validate.field).string.pattern = "[0-9a-z_-]{3,40}"
+  ];
+  string refund_id = 2 [
+    (buf.validate.field).string.min_len = 3,
+    (buf.validate.field).string.max_len = 40
+  ];
+  OrderRefundResolution resolution = 3 [(buf.validate.field).enum = {
+    defined_only: true
+    not_in: [0]
+  }];
+  // How the buyer was paid back, or why it is sent again.
+  string note = 4 [(buf.validate.field).string.max_len = 500];
+}
+
+message ResolveOrderRefundResponse {
   Order order = 1;
 }
 

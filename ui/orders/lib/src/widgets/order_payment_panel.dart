@@ -10,6 +10,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../providers/order_providers.dart';
 import '../utils/instalments.dart';
 import 'order_payment_dialogs.dart';
+import 'order_refunds.dart';
 
 /// Payment state and actions for one order.
 ///
@@ -108,8 +109,19 @@ class _OrderPaymentPanelState extends ConsumerState<OrderPaymentPanel> {
     final refundedMinor = order.hasAmountRefunded()
         ? moneyToMinor(order.amountRefunded)
         : 0;
+    final failedRefunds = order.refunds
+        .where((r) => r.status == OrderRefundStatus.ORDER_REFUND_STATUS_FAILED)
+        .toList();
+    // On its way: some refund is still with the payment service (orders
+    // from before refunds were listed show only the payment status).
     final refundPending =
-        order.paymentStatus == PaymentStatus.PAYMENT_STATUS_REFUND_PENDING;
+        order.paymentStatus == PaymentStatus.PAYMENT_STATUS_REFUND_PENDING &&
+        (order.refunds.isEmpty ||
+            order.refunds.any(
+              (r) =>
+                  r.status == OrderRefundStatus.ORDER_REFUND_STATUS_PENDING ||
+                  r.status == OrderRefundStatus.ORDER_REFUND_STATUS_SENT,
+            ));
     final owedBackMinor = rules.paidMinor > refundedMinor
         ? rules.paidMinor - refundedMinor
         : 0;
@@ -188,6 +200,12 @@ class _OrderPaymentPanelState extends ConsumerState<OrderPaymentPanel> {
                   'is on its way to the buyer. It is sent automatically; '
                   'the order shows Refunded once the payment service '
                   'confirms it.',
+            ),
+          for (final refund in failedRefunds)
+            FailedRefundCard(
+              order: order,
+              refund: refund,
+              canManage: canManage,
             ),
           if (order.paymentReview.isNotEmpty)
             _notice(

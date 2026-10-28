@@ -394,9 +394,9 @@ func (f *fakeRefunds) Send(_ context.Context, refund *models.OrderRefund) (*busi
 	}
 	f.sends++
 	state := &business.RefundState{PaymentID: "pay-" + util.RandomAlphaNumericString(8)}
-	f.sent[refund.Reference] = state
-	f.amounts[refund.Reference] = refund.AmountNanos
-	f.payees[refund.Reference] = refund.ProfileID + "/" + refund.ContactID
+	f.sent[refund.PaymentReference()] = state
+	f.amounts[refund.PaymentReference()] = refund.AmountNanos
+	f.payees[refund.PaymentReference()] = refund.ProfileID + "/" + refund.ContactID
 	if f.loseResponse {
 		f.loseResponse = false
 		return nil, connect.NewError(connect.CodeUnavailable, "connection reset")
@@ -418,7 +418,7 @@ func (f *fakeRefunds) Status(_ context.Context, refund *models.OrderRefund) (*bu
 func (f *fakeRefunds) FindByReference(_ context.Context, refund *models.OrderRefund) (*business.RefundState, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	state, ok := f.sent[refund.Reference]
+	state, ok := f.sent[refund.PaymentReference()]
 	if !ok {
 		return nil, nil //nolint:nilnil // holds none
 	}
@@ -431,6 +431,15 @@ func (f *fakeRefunds) confirmAll() {
 	defer f.mu.Unlock()
 	for _, state := range f.sent {
 		state.Outcome = business.RefundOutcomeSucceeded
+	}
+}
+
+// failAll fails every sent refund the way the payment rail would.
+func (f *fakeRefunds) failAll() {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	for _, state := range f.sent {
+		state.Outcome = business.RefundOutcomeFailed
 	}
 }
 

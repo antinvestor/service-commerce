@@ -419,6 +419,33 @@ class OrderNotifier extends Notifier<AsyncValue<void>> {
     }
   }
 
+  /// Settles a refund the payment service failed: [resolution] RETRY sends
+  /// it again, PAID_BACK records that the shop paid the buyer back itself.
+  Future<Order> resolveRefund(
+    String orderId,
+    String refundId,
+    OrderRefundResolution resolution, {
+    String note = '',
+  }) async {
+    state = const AsyncValue.loading();
+    try {
+      final request = ResolveOrderRefundRequest(
+        orderId: orderId,
+        refundId: refundId,
+        resolution: resolution,
+      );
+      if (note.isNotEmpty) request.note = note;
+      final response = await _client.resolveOrderRefund(request);
+      state = const AsyncValue.data(null);
+      ref.invalidate(orderByIdProvider(orderId));
+      ref.invalidate(orderEventsProvider(orderId));
+      return response.order;
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+      rethrow;
+    }
+  }
+
   /// Cancels an unfulfilled order and returns its stock.
   Future<Order> cancel(String orderId, {String reason = ''}) async {
     state = const AsyncValue.loading();

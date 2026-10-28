@@ -75,6 +75,7 @@ Each finding was checked against the code before being fixed on branch `fix/prod
   - A refund is a payout through payment `Send` to the buyer's profile (and contact). Payment picks the route.
   - The reference is fixed per cause. The refund is claimed before it is sent, and a lost answer is resolved by looking up the reference.
   - The order shows `REFUND_PENDING` until payment confirms, then `REFUNDED`.
+  - A refund payment fails only to staff: the order lists its refunds, and `ResolveOrderRefund` sends a failed one again (as a new payment, under a new reference) or records that the shop paid the buyer back.
   - Overpayments and payments on cancelled orders take the same path.
 - **Cancel, pay and overdue races:**
   - Cancelling decides inside a version-checked transaction, so a payment landing mid-cancel is refunded, never dropped.
@@ -112,11 +113,12 @@ Each finding was checked against the code before being fixed on branch `fix/prod
 ### Procurement
 - **Supplier items** declare a `supply_kind`:
   - Resale variants raise commerce stock through the internal `ReceiveStock` call, once per receipt line reference.
-  - Raw materials wait as `PENDING_TRANSFER` (see conditions).
+  - Raw materials received into a stock location (the receipt's `stock_location_id`) are booked into manufacturing inventory through `RecordStockIn`, in the receipt's tenancy, once per line (the line reference is the idempotency key).
+  - Raw materials received without a location wait as `PENDING_TRANSFER`; staff choose a location (`RETRY` with `location_id`) or book them by hand.
 - **Delivery:**
   - Delivery state is saved with the receipt.
   - Failures are retried hourly by Trustage (`GoodsReceiptDeliver`).
-  - Staff resolve stuck lines with `GoodsReceiptLineResolve` (booked manually, or retry).
+  - Staff resolve stuck lines with `GoodsReceiptLineResolve` (booked manually, or retry, a raw material to a chosen location).
 - **Purchase orders:**
   - Receipts are accepted only on submitted orders, checked under a row lock.
   - `PurchaseOrderClose` closes short.
@@ -133,7 +135,7 @@ Each finding was checked against the code before being fixed on branch `fix/prod
 - **Orders:**
   - Refund and review states are shown.
   - Cancelling a paid order explains the automatic refund.
-- **Procurement screens:** supply-kind pickers, close short, per-line delivery status with resolve, and cursor paging.
+- **Procurement screens:** supply-kind pickers, close short, per-line delivery status with resolve, a stock-location picker for raw materials (on the receipt and on resolve), and cursor paging.
 - **Permissions:** routes, menus and tiles are gated on the real permission names, mapped from token roles and tested against the protos.
 - **Server filters:** `ListOrders` filters by `profile_id`, `statuses` and `payment_statuses` on the server.
 - **Phone width:** lists render as cards on narrow screens.
@@ -157,10 +159,10 @@ Each finding was checked against the code before being fixed on branch `fix/prod
 - Optional storefront limits: `STOREFRONT_*`, `LATE_PAYMENT_WINDOW`.
 
 **Procurement:**
-- `COMMERCE_SERVICE_URI`.
+- `COMMERCE_SERVICE_URI` and `MANUFACTURING_SERVICE_URI`.
 - Setup Job: `TRUSTAGE_SERVICE_URI` and `PROCUREMENT_SERVICE_URI`.
-- Audiences `/commerce` and `/trustage`, plus `/manufacturing` if suggestions are used.
-- Grant `stock_receive` in `service_commerce`.
+- Audiences `/commerce`, `/trustage` and `/manufacturing`.
+- Grants `stock_receive` in `service_commerce`, and `inventory_manage` in `service_manufacturing` (raw-material receipts; suggestions also need `plan_view` and `inventory_view`).
 
 **Trustage:**
 - Audience `/procurement`.
@@ -173,12 +175,10 @@ Each finding was checked against the code before being fixed on branch `fix/prod
 
 **Neon:** commerce's project needs compute restored before anything above can run.
 
-### Other repositories
-- **service-manufacturing:**
-  - `RecordStockIn` needs a service-account path: take the tenant from the request, write no tuples in the check, and keep the idempotency key. Raw-material receipts can then be pushed instead of booked by hand.
-  - Its property check writes Keto tuples from a request-supplied id; the same issue was removed here.
-- **Payment Send:** `Send` ignores `reference_id`. Commerce's claim-and-lookup is the only guard against a double refund. Payment should deduplicate on the reference.
-- **Console dependencies:** the console cannot resolve its dependencies until service-manufacturing (Dart SDK and UI packages), service-payment/ui/payment and service-notification/ui release protobuf 6 versions. After that, run console `pub get`, analyze, tests and `flutter build web`.
+### Other repositories (fixed on local branches, not pushed)
+- **service-manufacturing** (`fix/stock-in-service-path`): property checks only read Keto; a denied property check falls back to the same permission on the caller's partition, so procurement's service account books `RecordStockIn` with its partition grant. Ship it before procurement's raw-material delivery is used.
+- **service-payment** (`fix/send-dedup-reference`): `Send` claims its `reference_id` before sending; a resend answers the first payout, a conflicting one is refused, and references up to 150 characters are stored (commerce refund references are longer than the old 50). Ship it before commerce refunds go live.
+- **Console dependencies:** service-manufacturing (`feat/dart-protobuf6`: SDK 0.2.0 and every UI package 0.2.0), service-payment (`feat/ui-protobuf6`: antinvestor_ui_payment 0.3.0) and service-notification (`feat/ui-protobuf6`: antinvestor_ui_notification 0.4.0) are on protobuf 6 / connect-dart 2. With those branches checked out, the console resolves, analyzes clean, passes its 77 tests and builds for web.
 - **Procurement SDK publish:** `antinvestor_api_procurement` needs its first pub.dev publish done by hand before tag publishing works.
 
 ### Data and integrations
@@ -188,7 +188,7 @@ Each finding was checked against the code before being fixed on branch `fix/prod
 - **Hugo shortcode:** it now takes `slug`, `apiUrl` and `mediaBaseUrl`.
 
 ### Known limits
-- **Stuck refunds:** a refund payment that fails stays `REFUND_PENDING` for staff. There is no automatic resend.
+- **Failed refunds:** never resent automatically; staff send them again or record paying back by hand.
 - **Ledger booking day:** checkout sessions carry no completion time, so a payment is booked on the day commerce noticed it.
 - **Page-load limit:** the storefront GET limit (120 per minute per visitor) is per instance. Checkout limits are shared.
 - **Console permissions:** they reflect partition roles in the token only. Per-shop grants are enforced by the server but not reflected in the UI.

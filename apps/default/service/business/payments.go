@@ -124,6 +124,10 @@ type PaymentBusiness interface {
 	// RecordOrderPayment applies an offline instalment. A reference already
 	// recorded on the order is a no-op.
 	RecordOrderPayment(ctx context.Context, payment RecordedPayment) (*commercev1.Order, error)
+	// ResolveOrderRefund settles a refund the payment service failed: sends
+	// it again as a new payment, or records that the shop paid the buyer
+	// back itself.
+	ResolveOrderRefund(ctx context.Context, resolution RefundResolution) (*commercev1.Order, error)
 	// CancelOrder cancels an unfulfilled order and returns stock. Buyers may
 	// only cancel orders with nothing paid; staff (staff=true) may cancel
 	// paid and part-paid ones, which pays what was paid back to the buyer

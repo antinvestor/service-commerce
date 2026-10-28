@@ -54,6 +54,7 @@ func (r *orderRepository) GetWithLines(ctx context.Context, id string) (*models.
 		Preload("Lines").
 		Preload("Shop").
 		Preload("Payments", func(db *gorm.DB) *gorm.DB { return db.Order("paid_at ASC") }).
+		Preload("Refunds", func(db *gorm.DB) *gorm.DB { return db.Order("created_at ASC") }).
 		First(order, "id = ?", id).Error
 	return order, err
 }

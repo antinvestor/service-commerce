@@ -225,6 +225,15 @@ abstract final class CommerceService {
     v1commerce.RecordOrderPaymentResponse.new,
   );
 
+  /// Settles a refund the payment service failed: send it again, or record
+  /// that the shop paid the buyer back itself. Staff only.
+  static const resolveOrderRefund = connect.Spec(
+    '/$name/ResolveOrderRefund',
+    connect.StreamType.unary,
+    v1commerce.ResolveOrderRefundRequest.new,
+    v1commerce.ResolveOrderRefundResponse.new,
+  );
+
   /// Lists payment and lifecycle signals for an order, or for every order in
   /// a shop, oldest first. The same events are pushed to the shop's webhook.
   static const listOrderEvents = connect.Spec(

@@ -71,6 +71,8 @@ abstract class CommerceServiceBase extends $pb.GeneratedService {
       $pb.ServerContext ctx, $5.CancelOrderRequest request);
   $async.Future<$5.RecordOrderPaymentResponse> recordOrderPayment(
       $pb.ServerContext ctx, $5.RecordOrderPaymentRequest request);
+  $async.Future<$5.ResolveOrderRefundResponse> resolveOrderRefund(
+      $pb.ServerContext ctx, $5.ResolveOrderRefundRequest request);
   $async.Future<$5.ListOrderEventsResponse> listOrderEvents(
       $pb.ServerContext ctx, $5.ListOrderEventsRequest request);
   $async.Future<$5.ReconcilePaymentsResponse> reconcilePayments(
@@ -165,6 +167,8 @@ abstract class CommerceServiceBase extends $pb.GeneratedService {
         return $5.CancelOrderRequest();
       case 'RecordOrderPayment':
         return $5.RecordOrderPaymentRequest();
+      case 'ResolveOrderRefund':
+        return $5.ResolveOrderRefundRequest();
       case 'ListOrderEvents':
         return $5.ListOrderEventsRequest();
       case 'ReconcilePayments':
@@ -267,6 +271,8 @@ abstract class CommerceServiceBase extends $pb.GeneratedService {
         return cancelOrder(ctx, request as $5.CancelOrderRequest);
       case 'RecordOrderPayment':
         return recordOrderPayment(ctx, request as $5.RecordOrderPaymentRequest);
+      case 'ResolveOrderRefund':
+        return resolveOrderRefund(ctx, request as $5.ResolveOrderRefundRequest);
       case 'ListOrderEvents':
         return listOrderEvents(ctx, request as $5.ListOrderEventsRequest);
       case 'ReconcilePayments':

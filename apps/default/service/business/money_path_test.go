@@ -413,6 +413,69 @@ func (bts *BusinessTestSuite) TestRefund_LostSendResponseIsConfirmedNotResent() 
 	})
 }
 
+// A refund the payment service fails stays with staff, who send it again
+// as a new payment or record that the shop paid the buyer back.
+func (bts *BusinessTestSuite) TestRefund_FailedIsRetriedOrPaidBackByStaff() {
+	t := bts.T()
+
+	bts.WithTestDependancies(t, func(t *testing.T, dep *definition.DependencyOption) {
+		ctx, svc := bts.CreateService(t, dep)
+		biz := bts.getBusiness(ctx, svc)
+		shop := bts.createTestShop(ctx, biz)
+		_, variant := bts.createTestProductWithVariant(ctx, biz, shop.GetId())
+		order := bts.buyerOrder(ctx, biz, shop.GetId(), variant.GetId(), "buyer-f", 1)
+		bts.payOrder(ctx, biz, order.GetId())
+
+		_, err := biz.paymentBiz.CancelOrder(ctx, order.GetId(), "out of stock", true)
+		require.NoError(t, err)
+		failRun := func() *commercev1.OrderRefund {
+			biz.refunds.failAll()
+			_, runErr := biz.paymentBiz.ReconcilePayments(ctx, "", 0)
+			require.NoError(t, runErr)
+			got, getErr := biz.orderBiz.GetOrder(ctx, order.GetId())
+			require.NoError(t, getErr)
+			require.Equal(t, commercev1.PaymentStatus_PAYMENT_STATUS_REFUND_PENDING, got.GetPaymentStatus())
+			require.Len(t, got.GetRefunds(), 1)
+			return got.GetRefunds()[0]
+		}
+		failed := failRun()
+		require.Equal(t, commercev1.OrderRefundStatus_ORDER_REFUND_STATUS_FAILED, failed.GetStatus())
+		require.NotEmpty(t, failed.GetLastError())
+
+		resolve := func(refundID string, how commercev1.OrderRefundResolution, note string) (*commercev1.Order, error) {
+			return biz.paymentBiz.ResolveOrderRefund(ctx, business.RefundResolution{
+				OrderID: order.GetId(), RefundID: refundID, Resolution: how, Note: note, ResolvedBy: "staff-1",
+			})
+		}
+		retry := commercev1.OrderRefundResolution_ORDER_REFUND_RESOLUTION_RETRY
+		paidBack := commercev1.OrderRefundResolution_ORDER_REFUND_RESOLUTION_PAID_BACK
+
+		_, err = resolve("no-such-refund", retry, "")
+		require.Equal(t, connect.CodeNotFound, connect.CodeOf(err))
+
+		// Sent again straight away, as a new payment under its own reference.
+		retried, err := resolve(failed.GetId(), retry, "buyer fixed their wallet")
+		require.NoError(t, err)
+		require.Equal(t, commercev1.OrderRefundStatus_ORDER_REFUND_STATUS_SENT, retried.GetRefunds()[0].GetStatus())
+		require.Equal(t, 2, biz.refunds.sendCount())
+		_, err = resolve(failed.GetId(), retry, "")
+		require.Equal(t, connect.CodeFailedPrecondition, connect.CodeOf(err), "only a failed refund is resolved")
+
+		// Failed again, the shop pays the buyer back itself.
+		failed = failRun()
+		require.Equal(t, commercev1.OrderRefundStatus_ORDER_REFUND_STATUS_FAILED, failed.GetStatus())
+		settled, err := resolve(failed.GetId(), paidBack, "cash at the till")
+		require.NoError(t, err)
+		require.Equal(t, commercev1.PaymentStatus_PAYMENT_STATUS_REFUNDED, settled.GetPaymentStatus())
+		refund := settled.GetRefunds()[0]
+		require.Equal(t, commercev1.OrderRefundStatus_ORDER_REFUND_STATUS_CONFIRMED, refund.GetStatus())
+		require.Equal(t, "staff-1", refund.GetResolvedBy())
+		require.Equal(t, "cash at the till", refund.GetNote())
+		require.Equal(t, order.GetTotal().GetUnits(), settled.GetAmountRefunded().GetUnits())
+		require.Equal(t, 2, biz.refunds.sendCount(), "paying back by hand sends nothing")
+	})
+}
+
 func (bts *BusinessTestSuite) TestRunEndOfDayLedger_PagesEveryShop() {
 	t := bts.T()
 

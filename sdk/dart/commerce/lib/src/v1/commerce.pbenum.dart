@@ -183,6 +183,79 @@ class CartStatus extends $pb.ProtobufEnum {
   const CartStatus._(super.value, super.name);
 }
 
+class OrderRefundStatus extends $pb.ProtobufEnum {
+  static const OrderRefundStatus ORDER_REFUND_STATUS_UNSPECIFIED =
+      OrderRefundStatus._(
+          0, _omitEnumNames ? '' : 'ORDER_REFUND_STATUS_UNSPECIFIED');
+
+  /// Raised; sent to the payment service on the next run.
+  static const OrderRefundStatus ORDER_REFUND_STATUS_PENDING =
+      OrderRefundStatus._(
+          1, _omitEnumNames ? '' : 'ORDER_REFUND_STATUS_PENDING');
+
+  /// The payment service holds it; confirmed once the money arrives.
+  static const OrderRefundStatus ORDER_REFUND_STATUS_SENT =
+      OrderRefundStatus._(2, _omitEnumNames ? '' : 'ORDER_REFUND_STATUS_SENT');
+
+  /// The buyer has been paid back.
+  static const OrderRefundStatus ORDER_REFUND_STATUS_CONFIRMED =
+      OrderRefundStatus._(
+          3, _omitEnumNames ? '' : 'ORDER_REFUND_STATUS_CONFIRMED');
+
+  /// The payment service could not pay it; staff resolve it
+  /// (ResolveOrderRefund).
+  static const OrderRefundStatus ORDER_REFUND_STATUS_FAILED =
+      OrderRefundStatus._(
+          4, _omitEnumNames ? '' : 'ORDER_REFUND_STATUS_FAILED');
+
+  static const $core.List<OrderRefundStatus> values = <OrderRefundStatus>[
+    ORDER_REFUND_STATUS_UNSPECIFIED,
+    ORDER_REFUND_STATUS_PENDING,
+    ORDER_REFUND_STATUS_SENT,
+    ORDER_REFUND_STATUS_CONFIRMED,
+    ORDER_REFUND_STATUS_FAILED,
+  ];
+
+  static final $core.List<OrderRefundStatus?> _byValue =
+      $pb.ProtobufEnum.$_initByValueList(values, 4);
+  static OrderRefundStatus? valueOf($core.int value) =>
+      value < 0 || value >= _byValue.length ? null : _byValue[value];
+
+  const OrderRefundStatus._(super.value, super.name);
+}
+
+/// How staff settle a refund the payment service failed.
+class OrderRefundResolution extends $pb.ProtobufEnum {
+  static const OrderRefundResolution ORDER_REFUND_RESOLUTION_UNSPECIFIED =
+      OrderRefundResolution._(
+          0, _omitEnumNames ? '' : 'ORDER_REFUND_RESOLUTION_UNSPECIFIED');
+
+  /// Send it again, as a new payment; it goes back to PENDING and is sent
+  /// straight away.
+  static const OrderRefundResolution ORDER_REFUND_RESOLUTION_RETRY =
+      OrderRefundResolution._(
+          1, _omitEnumNames ? '' : 'ORDER_REFUND_RESOLUTION_RETRY');
+
+  /// The shop paid the buyer back itself; the refund is confirmed.
+  static const OrderRefundResolution ORDER_REFUND_RESOLUTION_PAID_BACK =
+      OrderRefundResolution._(
+          2, _omitEnumNames ? '' : 'ORDER_REFUND_RESOLUTION_PAID_BACK');
+
+  static const $core.List<OrderRefundResolution> values =
+      <OrderRefundResolution>[
+    ORDER_REFUND_RESOLUTION_UNSPECIFIED,
+    ORDER_REFUND_RESOLUTION_RETRY,
+    ORDER_REFUND_RESOLUTION_PAID_BACK,
+  ];
+
+  static final $core.List<OrderRefundResolution?> _byValue =
+      $pb.ProtobufEnum.$_initByValueList(values, 2);
+  static OrderRefundResolution? valueOf($core.int value) =>
+      value < 0 || value >= _byValue.length ? null : _byValue[value];
+
+  const OrderRefundResolution._(super.value, super.name);
+}
+
 class OrderPaymentSource extends $pb.ProtobufEnum {
   static const OrderPaymentSource ORDER_PAYMENT_SOURCE_UNSPECIFIED =
       OrderPaymentSource._(

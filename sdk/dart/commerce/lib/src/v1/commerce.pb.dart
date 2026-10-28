@@ -3986,6 +3986,7 @@ class Order extends $pb.GeneratedMessage {
     $0.Timestamp? paymentDueAt,
     $4.Money? amountRefunded,
     $core.String? paymentReview,
+    $core.Iterable<OrderRefund>? refunds,
   }) {
     final result = Order._();
     if (id != null) result.id = id;
@@ -4017,6 +4018,7 @@ class Order extends $pb.GeneratedMessage {
     if (paymentDueAt != null) result.paymentDueAt = paymentDueAt;
     if (amountRefunded != null) result.amountRefunded = amountRefunded;
     if (paymentReview != null) result.paymentReview = paymentReview;
+    if (refunds != null) result.refunds.addAll(refunds);
     return result;
   }
 
@@ -4077,6 +4079,8 @@ class Order extends $pb.GeneratedMessage {
     ..aOM<$4.Money>(27, _omitFieldNames ? '' : 'amountRefunded',
         subBuilder: $4.Money.$_createMessage)
     ..aOS(28, _omitFieldNames ? '' : 'paymentReview')
+    ..pPM<OrderRefund>(29, _omitFieldNames ? '' : 'refunds',
+        subBuilder: OrderRefund.$_createMessage)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -4375,6 +4379,151 @@ class Order extends $pb.GeneratedMessage {
   $core.bool hasPaymentReview() => $_has(27);
   @$pb.TagNumber(28)
   void clearPaymentReview() => $_clearField(28);
+
+  /// Money owed back to the buyer, oldest first, and where each payment back
+  /// stands.
+  @$pb.TagNumber(29)
+  $pb.PbList<OrderRefund> get refunds => $_getList(28);
+}
+
+/// OrderRefund is money owed back to an order's buyer: an overpayment, a
+/// payment on a cancelled order, or what was paid before cancelling.
+class OrderRefund extends $pb.GeneratedMessage {
+  factory OrderRefund({
+    $core.String? id,
+    $4.Money? amount,
+    OrderRefundStatus? status,
+    $core.String? lastError,
+    $0.Timestamp? confirmedAt,
+    $core.String? resolvedBy,
+    $core.String? note,
+  }) {
+    final result = OrderRefund._();
+    if (id != null) result.id = id;
+    if (amount != null) result.amount = amount;
+    if (status != null) result.status = status;
+    if (lastError != null) result.lastError = lastError;
+    if (confirmedAt != null) result.confirmedAt = confirmedAt;
+    if (resolvedBy != null) result.resolvedBy = resolvedBy;
+    if (note != null) result.note = note;
+    return result;
+  }
+
+  OrderRefund._();
+
+  factory OrderRefund.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      OrderRefund()..mergeFromBuffer(data, registry);
+  factory OrderRefund.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      OrderRefund()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'OrderRefund',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'commerce.v1'),
+      createEmptyInstance: OrderRefund.$_createMessage)
+    ..aOS(1, _omitFieldNames ? '' : 'id')
+    ..aOM<$4.Money>(2, _omitFieldNames ? '' : 'amount',
+        subBuilder: $4.Money.$_createMessage)
+    ..aE<OrderRefundStatus>(3, _omitFieldNames ? '' : 'status',
+        enumValues: OrderRefundStatus.values)
+    ..aOS(4, _omitFieldNames ? '' : 'lastError')
+    ..aOM<$0.Timestamp>(5, _omitFieldNames ? '' : 'confirmedAt',
+        subBuilder: $0.Timestamp.$_createMessage)
+    ..aOS(6, _omitFieldNames ? '' : 'resolvedBy')
+    ..aOS(7, _omitFieldNames ? '' : 'note')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  OrderRefund clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  OrderRefund copyWith(void Function(OrderRefund) updates) =>
+      super.copyWith((message) => updates(message as OrderRefund))
+          as OrderRefund;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  @$core.Deprecated('Use OrderRefund() / OrderRefund.new instead')
+  static OrderRefund create() => OrderRefund._();
+  static $pb.GeneratedMessage $_createMessage() => OrderRefund._();
+  @$core.override
+  OrderRefund createEmptyInstance() => OrderRefund._();
+  @$core.pragma('dart2js:noInline')
+  static OrderRefund getDefault() =>
+      _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<OrderRefund>(
+          OrderRefund.$_createMessage);
+  static OrderRefund? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get id => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set id($core.String value) => $_setString(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearId() => $_clearField(1);
+
+  @$pb.TagNumber(2)
+  $4.Money get amount => $_getN(1);
+  @$pb.TagNumber(2)
+  set amount($4.Money value) => $_setField(2, value);
+  @$pb.TagNumber(2)
+  $core.bool hasAmount() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearAmount() => $_clearField(2);
+  @$pb.TagNumber(2)
+  $4.Money ensureAmount() => $_ensure(1);
+
+  @$pb.TagNumber(3)
+  OrderRefundStatus get status => $_getN(2);
+  @$pb.TagNumber(3)
+  set status(OrderRefundStatus value) => $_setField(3, value);
+  @$pb.TagNumber(3)
+  $core.bool hasStatus() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearStatus() => $_clearField(3);
+
+  /// Why the last attempt did not settle it.
+  @$pb.TagNumber(4)
+  $core.String get lastError => $_getSZ(3);
+  @$pb.TagNumber(4)
+  set lastError($core.String value) => $_setString(3, value);
+  @$pb.TagNumber(4)
+  $core.bool hasLastError() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearLastError() => $_clearField(4);
+
+  @$pb.TagNumber(5)
+  $0.Timestamp get confirmedAt => $_getN(4);
+  @$pb.TagNumber(5)
+  set confirmedAt($0.Timestamp value) => $_setField(5, value);
+  @$pb.TagNumber(5)
+  $core.bool hasConfirmedAt() => $_has(4);
+  @$pb.TagNumber(5)
+  void clearConfirmedAt() => $_clearField(5);
+  @$pb.TagNumber(5)
+  $0.Timestamp ensureConfirmedAt() => $_ensure(4);
+
+  /// Staff who recorded paying the buyer back themselves, and their note.
+  @$pb.TagNumber(6)
+  $core.String get resolvedBy => $_getSZ(5);
+  @$pb.TagNumber(6)
+  set resolvedBy($core.String value) => $_setString(5, value);
+  @$pb.TagNumber(6)
+  $core.bool hasResolvedBy() => $_has(5);
+  @$pb.TagNumber(6)
+  void clearResolvedBy() => $_clearField(6);
+
+  @$pb.TagNumber(7)
+  $core.String get note => $_getSZ(6);
+  @$pb.TagNumber(7)
+  set note($core.String value) => $_setString(6, value);
+  @$pb.TagNumber(7)
+  $core.bool hasNote() => $_has(6);
+  @$pb.TagNumber(7)
+  void clearNote() => $_clearField(7);
 }
 
 /// OrderPayment is one instalment applied to an order.
@@ -5818,6 +5967,170 @@ class RecordOrderPaymentResponse extends $pb.GeneratedMessage {
       $pb.GeneratedMessage.$_defaultFor<RecordOrderPaymentResponse>(
           RecordOrderPaymentResponse.$_createMessage);
   static RecordOrderPaymentResponse? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  Order get order => $_getN(0);
+  @$pb.TagNumber(1)
+  set order(Order value) => $_setField(1, value);
+  @$pb.TagNumber(1)
+  $core.bool hasOrder() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearOrder() => $_clearField(1);
+  @$pb.TagNumber(1)
+  Order ensureOrder() => $_ensure(0);
+}
+
+class ResolveOrderRefundRequest extends $pb.GeneratedMessage {
+  factory ResolveOrderRefundRequest({
+    $core.String? orderId,
+    $core.String? refundId,
+    OrderRefundResolution? resolution,
+    $core.String? note,
+  }) {
+    final result = ResolveOrderRefundRequest._();
+    if (orderId != null) result.orderId = orderId;
+    if (refundId != null) result.refundId = refundId;
+    if (resolution != null) result.resolution = resolution;
+    if (note != null) result.note = note;
+    return result;
+  }
+
+  ResolveOrderRefundRequest._();
+
+  factory ResolveOrderRefundRequest.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      ResolveOrderRefundRequest()..mergeFromBuffer(data, registry);
+  factory ResolveOrderRefundRequest.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      ResolveOrderRefundRequest()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'ResolveOrderRefundRequest',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'commerce.v1'),
+      createEmptyInstance: ResolveOrderRefundRequest.$_createMessage)
+    ..aOS(1, _omitFieldNames ? '' : 'orderId')
+    ..aOS(2, _omitFieldNames ? '' : 'refundId')
+    ..aE<OrderRefundResolution>(3, _omitFieldNames ? '' : 'resolution',
+        enumValues: OrderRefundResolution.values)
+    ..aOS(4, _omitFieldNames ? '' : 'note')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  ResolveOrderRefundRequest clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  ResolveOrderRefundRequest copyWith(
+          void Function(ResolveOrderRefundRequest) updates) =>
+      super.copyWith((message) => updates(message as ResolveOrderRefundRequest))
+          as ResolveOrderRefundRequest;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  @$core.Deprecated(
+      'Use ResolveOrderRefundRequest() / ResolveOrderRefundRequest.new instead')
+  static ResolveOrderRefundRequest create() => ResolveOrderRefundRequest._();
+  static $pb.GeneratedMessage $_createMessage() =>
+      ResolveOrderRefundRequest._();
+  @$core.override
+  ResolveOrderRefundRequest createEmptyInstance() =>
+      ResolveOrderRefundRequest._();
+  @$core.pragma('dart2js:noInline')
+  static ResolveOrderRefundRequest getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<ResolveOrderRefundRequest>(
+          ResolveOrderRefundRequest.$_createMessage);
+  static ResolveOrderRefundRequest? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get orderId => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set orderId($core.String value) => $_setString(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasOrderId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearOrderId() => $_clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get refundId => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set refundId($core.String value) => $_setString(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasRefundId() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearRefundId() => $_clearField(2);
+
+  @$pb.TagNumber(3)
+  OrderRefundResolution get resolution => $_getN(2);
+  @$pb.TagNumber(3)
+  set resolution(OrderRefundResolution value) => $_setField(3, value);
+  @$pb.TagNumber(3)
+  $core.bool hasResolution() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearResolution() => $_clearField(3);
+
+  /// How the buyer was paid back, or why it is sent again.
+  @$pb.TagNumber(4)
+  $core.String get note => $_getSZ(3);
+  @$pb.TagNumber(4)
+  set note($core.String value) => $_setString(3, value);
+  @$pb.TagNumber(4)
+  $core.bool hasNote() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearNote() => $_clearField(4);
+}
+
+class ResolveOrderRefundResponse extends $pb.GeneratedMessage {
+  factory ResolveOrderRefundResponse({
+    Order? order,
+  }) {
+    final result = ResolveOrderRefundResponse._();
+    if (order != null) result.order = order;
+    return result;
+  }
+
+  ResolveOrderRefundResponse._();
+
+  factory ResolveOrderRefundResponse.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      ResolveOrderRefundResponse()..mergeFromBuffer(data, registry);
+  factory ResolveOrderRefundResponse.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      ResolveOrderRefundResponse()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'ResolveOrderRefundResponse',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'commerce.v1'),
+      createEmptyInstance: ResolveOrderRefundResponse.$_createMessage)
+    ..aOM<Order>(1, _omitFieldNames ? '' : 'order',
+        subBuilder: Order.$_createMessage)
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  ResolveOrderRefundResponse clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  ResolveOrderRefundResponse copyWith(
+          void Function(ResolveOrderRefundResponse) updates) =>
+      super.copyWith(
+              (message) => updates(message as ResolveOrderRefundResponse))
+          as ResolveOrderRefundResponse;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  @$core.Deprecated(
+      'Use ResolveOrderRefundResponse() / ResolveOrderRefundResponse.new instead')
+  static ResolveOrderRefundResponse create() => ResolveOrderRefundResponse._();
+  static $pb.GeneratedMessage $_createMessage() =>
+      ResolveOrderRefundResponse._();
+  @$core.override
+  ResolveOrderRefundResponse createEmptyInstance() =>
+      ResolveOrderRefundResponse._();
+  @$core.pragma('dart2js:noInline')
+  static ResolveOrderRefundResponse getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<ResolveOrderRefundResponse>(
+          ResolveOrderRefundResponse.$_createMessage);
+  static ResolveOrderRefundResponse? _defaultInstance;
 
   @$pb.TagNumber(1)
   Order get order => $_getN(0);
@@ -10694,6 +11007,13 @@ class CommerceServiceApi {
           $pb.ClientContext? ctx, RecordOrderPaymentRequest request) =>
       _client.invoke<RecordOrderPaymentResponse>(ctx, 'CommerceService',
           'RecordOrderPayment', request, RecordOrderPaymentResponse());
+
+  /// Settles a refund the payment service failed: send it again, or record
+  /// that the shop paid the buyer back itself. Staff only.
+  $async.Future<ResolveOrderRefundResponse> resolveOrderRefund(
+          $pb.ClientContext? ctx, ResolveOrderRefundRequest request) =>
+      _client.invoke<ResolveOrderRefundResponse>(ctx, 'CommerceService',
+          'ResolveOrderRefund', request, ResolveOrderRefundResponse());
 
   /// Lists payment and lifecycle signals for an order, or for every order in
   /// a shop, oldest first. The same events are pushed to the shop's webhook.

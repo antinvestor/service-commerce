@@ -176,6 +176,52 @@ func (r *orderRepository) ConfirmRefund(
 	confirmedAt time.Time,
 	events func(order *models.Order, refund *models.OrderRefund) []*models.OrderEvent,
 ) (*models.Order, []*models.OrderEvent, error) {
+	return r.confirmRefund(ctx, refundID, []int32{models.RefundPending, models.RefundSent},
+		map[string]any{}, confirmedAt, events)
+}
+
+// RecordRefundPaidBack confirms a failed refund the shop paid back itself,
+// noting who did and how, as ConfirmRefund confirms one the payment service
+// paid. It returns a nil order when the refund was not failed.
+func (r *orderRepository) RecordRefundPaidBack(
+	ctx context.Context,
+	refundID, by, note string,
+	at time.Time,
+	events func(order *models.Order, refund *models.OrderRefund) []*models.OrderEvent,
+) (*models.Order, []*models.OrderEvent, error) {
+	return r.confirmRefund(ctx, refundID, []int32{models.RefundFailed},
+		map[string]any{"resolved_by": by, "note": note}, at, events)
+}
+
+// RequeueRefund puts a failed refund back to be sent as a new payment, under
+// its next reference. It reports false when the refund was not failed.
+func (r *orderRepository) RequeueRefund(ctx context.Context, refundID, note string) (bool, error) {
+	result := r.Pool().DB(ctx, false).
+		Model(&models.OrderRefund{}).
+		Where("id = ? AND status = ?", refundID, models.RefundFailed).
+		UpdateColumns(map[string]any{
+			columnStatus:     models.RefundPending,
+			"attempt":        gorm.Expr("attempt + 1"),
+			"sent_at":        nil,
+			columnPaymentID:  "",
+			columnLastError:  "",
+			"note":           note,
+			columnModifiedAt: time.Now(),
+		})
+	if result.Error != nil {
+		return false, fmt.Errorf("requeue refund: %w", result.Error)
+	}
+	return result.RowsAffected > 0, nil
+}
+
+func (r *orderRepository) confirmRefund(
+	ctx context.Context,
+	refundID string,
+	from []int32,
+	extra map[string]any,
+	confirmedAt time.Time,
+	events func(order *models.Order, refund *models.OrderRefund) []*models.OrderEvent,
+) (*models.Order, []*models.OrderEvent, error) {
 	var (
 		order    *models.Order
 		recorded []*models.OrderEvent
@@ -185,12 +231,16 @@ func (r *orderRepository) ConfirmRefund(
 		if err := tx.First(refund, "id = ?", refundID).Error; err != nil {
 			return fmt.Errorf("load refund: %w", err)
 		}
+		updates := map[string]any{
+			columnStatus: models.RefundConfirmed, "confirmed_at": confirmedAt, columnLastError: "",
+			columnModifiedAt: confirmedAt,
+		}
+		for column, value := range extra {
+			updates[column] = value
+		}
 		result := tx.Model(&models.OrderRefund{}).
-			Where("id = ? AND status IN ?", refundID, []int32{models.RefundPending, models.RefundSent}).
-			UpdateColumns(map[string]any{
-				columnStatus: models.RefundConfirmed, "confirmed_at": confirmedAt, columnLastError: "",
-				columnModifiedAt: confirmedAt,
-			})
+			Where("id = ? AND status IN ?", refundID, from).
+			UpdateColumns(updates)
 		if result.Error != nil {
 			return fmt.Errorf("confirm refund: %w", result.Error)
 		}
@@ -204,13 +254,13 @@ func (r *orderRepository) ConfirmRefund(
 			Count(&open).Error; err != nil {
 			return fmt.Errorf("count open refunds: %w", err)
 		}
-		updates := map[string]any{
+		orderUpdates := map[string]any{
 			"amount_refunded_nanos": gorm.Expr("amount_refunded_nanos + ?", refund.AmountNanos),
 			columnVersion:           bumpVersion(),
 			columnModifiedAt:        confirmedAt,
 		}
 		if open == 0 {
-			updates["payment_status"] = gorm.Expr(
+			orderUpdates["payment_status"] = gorm.Expr(
 				"CASE WHEN status = ? AND payment_status = ? THEN ? ELSE payment_status END",
 				orderStatusCancelled,
 				paymentStatusRefundPending,
@@ -218,7 +268,7 @@ func (r *orderRepository) ConfirmRefund(
 			)
 		}
 		if err := tx.Model(&models.Order{}).Where("id = ?", refund.OrderID).
-			UpdateColumns(updates).Error; err != nil {
+			UpdateColumns(orderUpdates).Error; err != nil {
 			return fmt.Errorf("record refund on order: %w", err)
 		}
 		order = &models.Order{}

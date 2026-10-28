@@ -18,12 +18,15 @@ import (
 	"context"
 	"errors"
 	"io"
+	"slices"
 	"strings"
 	"time"
 
 	commonv1 "buf.build/gen/go/antinvestor/common/protocolbuffers/go/common/v1"
 	"buf.build/gen/go/antinvestor/payment/connectrpc/go/v2/v1/paymentv1connect"
 	paymentv1 "buf.build/gen/go/antinvestor/payment/protocolbuffers/go/v1"
+	"connectrpc.com/connect/v2"
+	"github.com/pitabwire/frame/v3/data"
 	"github.com/pitabwire/frame/v3/security"
 	"github.com/pitabwire/util"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -271,6 +274,80 @@ func (pb *paymentBusiness) touchRefund(ctx context.Context, refund *models.Order
 	}
 }
 
+// RefundResolution is how staff settle a refund the payment service failed.
+type RefundResolution struct {
+	OrderID    string
+	RefundID   string
+	Resolution commercev1.OrderRefundResolution
+	Note       string
+	// ResolvedBy is the staff member settling it.
+	ResolvedBy string
+}
+
+func (pb *paymentBusiness) ResolveOrderRefund(
+	ctx context.Context,
+	resolution RefundResolution,
+) (*commercev1.Order, error) {
+	refunds, err := pb.orderRepo.ListRefunds(ctx, resolution.OrderID)
+	if err != nil {
+		return nil, err
+	}
+	idx := slices.IndexFunc(refunds, func(r *models.OrderRefund) bool { return r.GetID() == resolution.RefundID })
+	if idx < 0 {
+		return nil, connect.NewError(connect.CodeNotFound, "the order has no such refund")
+	}
+	refund := refunds[idx]
+	if refund.Status != models.RefundFailed {
+		return nil, connect.NewError(connect.CodeFailedPrecondition,
+			"only a refund the payment service failed can be resolved")
+	}
+	note := strings.TrimSpace(resolution.Note)
+
+	switch resolution.Resolution {
+	case commercev1.OrderRefundResolution_ORDER_REFUND_RESOLUTION_RETRY:
+		if pb.refunds == nil {
+			return nil, connect.NewError(connect.CodeFailedPrecondition,
+				"refunds are not configured; pay the buyer back and record it")
+		}
+		requeued, reqErr := pb.orderRepo.RequeueRefund(ctx, refund.GetID(), note)
+		if reqErr != nil {
+			return nil, reqErr
+		}
+		if !requeued {
+			return nil, connect.NewError(connect.CodeFailedPrecondition, "the refund changed; reload the order")
+		}
+		pb.sendOrderRefunds(ctx, resolution.OrderID)
+
+	case commercev1.OrderRefundResolution_ORDER_REFUND_RESOLUTION_PAID_BACK:
+		shop, shopErr := pb.shopRepo.GetByID(ctx, refund.ShopID)
+		if shopErr != nil {
+			return nil, data.ErrorConvertToAPI(shopErr)
+		}
+		order, events, confirmErr := pb.orderRepo.RecordRefundPaidBack(ctx, refund.GetID(),
+			resolution.ResolvedBy, note, time.Now(),
+			func(order *models.Order, r *models.OrderRefund) []*models.OrderEvent {
+				return []*models.OrderEvent{
+					newOrderEvent(shop, order, commercev1.OrderEventType_ORDER_EVENT_TYPE_REFUNDED, r.AmountNanos),
+				}
+			})
+		if confirmErr != nil {
+			return nil, confirmErr
+		}
+		if order == nil {
+			return nil, connect.NewError(connect.CodeFailedPrecondition, "the refund changed; reload the order")
+		}
+		if pb.events != nil {
+			pb.events.Publish(ctx, shop, order, nil, events)
+		}
+
+	case commercev1.OrderRefundResolution_ORDER_REFUND_RESOLUTION_UNSPECIFIED:
+		return nil, connect.NewError(connect.CodeInvalidArgument, "resolution is RETRY or PAID_BACK")
+	default:
+		return nil, connect.NewError(connect.CodeInvalidArgument, "resolution is RETRY or PAID_BACK")
+	}
+	return pb.refresh(ctx, resolution.OrderID)
+}
+
 // --- Connect-backed refund gateway ---
 
 type connectRefundGateway struct {
@@ -304,7 +381,7 @@ func inTenancy(ctx context.Context, refund *models.OrderRefund) context.Context 
 func (g *connectRefundGateway) Send(ctx context.Context, refund *models.OrderRefund) (*RefundState, error) {
 	resp, err := g.cli.Send(inTenancy(ctx, refund), paymentv1.SendRequest_builder{
 		Data: paymentv1.Payment_builder{
-			ReferenceId: refund.Reference,
+			ReferenceId: refund.PaymentReference(),
 			Recipient: commonv1.ContactLink_builder{
 				ProfileId: refund.ProfileID,
 				ContactId: refund.ContactID,
@@ -336,7 +413,7 @@ func (g *connectRefundGateway) FindByReference(
 	refund *models.OrderRefund,
 ) (*RefundState, error) {
 	stream, err := g.cli.Search(inTenancy(ctx, refund), commonv1.SearchRequest_builder{
-		Query:      refund.Reference,
+		Query:      refund.PaymentReference(),
 		Properties: []string{"reference_id"},
 		Cursor:     commonv1.PageCursor_builder{Limit: refundSearchLimit}.Build(),
 	}.Build())
@@ -355,7 +432,7 @@ func (g *connectRefundGateway) FindByReference(
 		}
 		for _, p := range msg.GetData() {
 			seen++
-			if p.GetReferenceId() == refund.Reference && p.GetOutbound() && refundMatches(p, refund) {
+			if p.GetReferenceId() == refund.PaymentReference() && p.GetOutbound() && refundMatches(p, refund) {
 				return &RefundState{PaymentID: p.GetId(), Outcome: outcomeOf(p.GetStatus())}, nil
 			}
 		}

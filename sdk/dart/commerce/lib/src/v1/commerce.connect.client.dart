@@ -473,6 +473,25 @@ extension type CommerceServiceClient (connect.Transport _transport) {
     );
   }
 
+  /// Settles a refund the payment service failed: send it again, or record
+  /// that the shop paid the buyer back itself. Staff only.
+  Future<v1commerce.ResolveOrderRefundResponse> resolveOrderRefund(
+    v1commerce.ResolveOrderRefundRequest input, {
+    connect.Headers? headers,
+    connect.AbortSignal? signal,
+    Function(connect.Headers)? onHeader,
+    Function(connect.Headers)? onTrailer,
+  }) {
+    return connect.Client(_transport).unary(
+      specs.CommerceService.resolveOrderRefund,
+      input,
+      signal: signal,
+      headers: headers,
+      onHeader: onHeader,
+      onTrailer: onTrailer,
+    );
+  }
+
   /// Lists payment and lifecycle signals for an order, or for every order in
   /// a shop, oldest first. The same events are pushed to the shop's webhook.
   Future<v1commerce.ListOrderEventsResponse> listOrderEvents(

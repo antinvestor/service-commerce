@@ -1093,6 +1093,26 @@ func (cs *CommerceServer) RecordOrderPayment(
 	return &commercev1.RecordOrderPaymentResponse{Order: order}, nil
 }
 
+func (cs *CommerceServer) ResolveOrderRefund(
+	ctx context.Context,
+	req *commercev1.ResolveOrderRefundRequest,
+) (*commercev1.ResolveOrderRefundResponse, error) {
+	if err := cs.requireOrderPermission(ctx, req.GetOrderId(), cs.authz.CanOrdersManage); err != nil {
+		return nil, err
+	}
+	order, err := cs.paymentBusiness.ResolveOrderRefund(ctx, business.RefundResolution{
+		OrderID:    req.GetOrderId(),
+		RefundID:   req.GetRefundId(),
+		Resolution: req.GetResolution(),
+		Note:       req.GetNote(),
+		ResolvedBy: callerSubject(ctx),
+	})
+	if err != nil {
+		return nil, errorutil.CleanErr(err)
+	}
+	return &commercev1.ResolveOrderRefundResponse{Order: order}, nil
+}
+
 // ListOrderEvents serves an order's signals to its buyer or to staff, and a
 // shop's to staff.
 func (cs *CommerceServer) ListOrderEvents(

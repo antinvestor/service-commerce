@@ -298,6 +298,7 @@ type Order struct {
 
 	Lines    []*OrderLine    `gorm:"foreignKey:OrderID"`
 	Payments []*OrderPayment `gorm:"foreignKey:OrderID"`
+	Refunds  []*OrderRefund  `gorm:"foreignKey:OrderID"`
 	Shop     *Shop           `gorm:"foreignKey:ShopID"`
 }
 
@@ -344,6 +345,9 @@ func (o *Order) ToAPI() *commercev1.Order {
 	}
 	for _, payment := range o.Payments {
 		api.Payments = append(api.Payments, payment.ToAPI())
+	}
+	for _, refund := range o.Refunds {
+		api.Refunds = append(api.Refunds, refund.ToAPI())
 	}
 	if o.AmountRefundedNanos > 0 {
 		api.AmountRefunded = MoneyFromNanos(o.TotalCurrency, o.AmountRefundedNanos)

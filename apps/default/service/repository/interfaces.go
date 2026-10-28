@@ -177,6 +177,16 @@ type OrderRepository interface {
 		confirmedAt time.Time,
 		events func(order *models.Order, refund *models.OrderRefund) []*models.OrderEvent,
 	) (*models.Order, []*models.OrderEvent, error)
+	// RecordRefundPaidBack confirms a failed refund the shop paid back
+	// itself.
+	RecordRefundPaidBack(
+		ctx context.Context,
+		refundID, by, note string,
+		at time.Time,
+		events func(order *models.Order, refund *models.OrderRefund) []*models.OrderEvent,
+	) (*models.Order, []*models.OrderEvent, error)
+	// RequeueRefund puts a failed refund back to be sent as a new payment.
+	RequeueRefund(ctx context.Context, refundID, note string) (bool, error)
 	// ClaimLedgerItems fixes, and returns, what one end-of-day transaction
 	// merges.
 	ClaimLedgerItems(ctx context.Context, shopID string, to time.Time, transactionID string) (*LedgerItems, error)

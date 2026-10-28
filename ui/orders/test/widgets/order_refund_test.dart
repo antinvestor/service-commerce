@@ -28,6 +28,7 @@ class _Backend {
 
   Order order;
   final cancels = <CancelOrderRequest>[];
+  final resolutions = <ResolveOrderRefundRequest>[];
 
   CommerceServiceClient client() => CommerceServiceClient(
     FakeTransportBuilder()
@@ -40,6 +41,22 @@ class _Backend {
             ..status = OrderStatus.ORDER_STATUS_CANCELLED
             ..paymentStatus = PaymentStatus.PAYMENT_STATUS_REFUND_PENDING;
           return CancelOrderResponse(order: order);
+        })
+        .unary(CommerceService.resolveOrderRefund, (req, _) {
+          resolutions.add(req);
+          final paidBack =
+              req.resolution ==
+              OrderRefundResolution.ORDER_REFUND_RESOLUTION_PAID_BACK;
+          order = order.deepCopy();
+          order.refunds.first.status = paidBack
+              ? OrderRefundStatus.ORDER_REFUND_STATUS_CONFIRMED
+              : OrderRefundStatus.ORDER_REFUND_STATUS_SENT;
+          if (paidBack) {
+            order
+              ..paymentStatus = PaymentStatus.PAYMENT_STATUS_REFUNDED
+              ..amountRefunded = order.refunds.first.amount;
+          }
+          return ResolveOrderRefundResponse(order: order);
         })
         .build(),
   );
@@ -88,7 +105,94 @@ Future<_Backend> _pump(
   return backend;
 }
 
+/// A cancelled, paid order whose refund the payment service failed.
+Order _failedRefund() => _paid()
+  ..status = OrderStatus.ORDER_STATUS_CANCELLED
+  ..paymentStatus = PaymentStatus.PAYMENT_STATUS_REFUND_PENDING
+  ..refunds.add(
+    OrderRefund(
+      id: 'ref-1',
+      amount: _kes(1500),
+      status: OrderRefundStatus.ORDER_REFUND_STATUS_FAILED,
+      lastError: 'wallet closed',
+    ),
+  );
+
 void main() {
+  group('failed refunds', () {
+    testWidgets('say why and are not shown as on their way', (tester) async {
+      await _pump(tester, _failedRefund());
+      final card = find.byKey(const ValueKey('refund-failed-ref-1'));
+      expect(card, findsOneWidget);
+      expect(
+        find.descendant(
+          of: card,
+          matching: find.textContaining('wallet closed'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('payment-refund-pending')),
+        findsNothing,
+      );
+    });
+
+    testWidgets('staff send one again', (tester) async {
+      final backend = await _pump(tester, _failedRefund());
+      await tester.tap(find.byKey(const ValueKey('refund-retry-ref-1')));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const Key('refund_resolve_note')),
+        '  wallet reopened ',
+      );
+      await tester.tap(find.byKey(const Key('refund_resolve_confirm')));
+      await tester.pumpAndSettle();
+
+      final request = backend.resolutions.single;
+      expect(request.orderId, 'ord-1');
+      expect(request.refundId, 'ref-1');
+      expect(
+        request.resolution,
+        OrderRefundResolution.ORDER_REFUND_RESOLUTION_RETRY,
+      );
+      expect(request.note, 'wallet reopened');
+      expect(find.text('Refund sent again'), findsOneWidget);
+      // Back with the payment service: on its way again.
+      expect(find.byKey(const ValueKey('refund-failed-ref-1')), findsNothing);
+      expect(
+        find.byKey(const ValueKey('payment-refund-pending')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('staff record paying the buyer back', (tester) async {
+      final backend = await _pump(tester, _failedRefund());
+      await tester.tap(find.byKey(const ValueKey('refund-paid-back-ref-1')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('refund_resolve_confirm')));
+      await tester.pumpAndSettle();
+
+      expect(
+        backend.resolutions.single.resolution,
+        OrderRefundResolution.ORDER_REFUND_RESOLUTION_PAID_BACK,
+      );
+      expect(find.text('Refund recorded as paid back'), findsOneWidget);
+      expect(find.byKey(const ValueKey('payment-refunded')), findsOneWidget);
+    });
+
+    testWidgets('without order_manage there is nothing to press', (
+      tester,
+    ) async {
+      await _pump(tester, _failedRefund(), permissions: const {'order_view'});
+      expect(find.byKey(const ValueKey('refund-failed-ref-1')), findsOneWidget);
+      expect(find.byKey(const ValueKey('refund-retry-ref-1')), findsNothing);
+      expect(
+        find.byKey(const ValueKey('refund-paid-back-ref-1')),
+        findsNothing,
+      );
+    });
+  });
+
   group('refunds', () {
     testWidgets('a refund in flight says it is on its way and automatic', (
       tester,

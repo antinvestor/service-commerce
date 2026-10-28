@@ -19,10 +19,7 @@ class SplashPage extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              AppColors.primary,
-              Color(0xFF1E293B),
-            ],
+            colors: [AppColors.primary, Color(0xFF1E293B)],
           ),
         ),
         child: Center(
@@ -46,9 +43,9 @@ class SplashPage extends StatelessWidget {
               Text(
                 'Antinvestor Console',
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
-                    ),
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
               ),
               const SizedBox(height: 32),
               const SizedBox(

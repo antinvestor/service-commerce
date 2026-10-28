@@ -1,4 +1,6 @@
 import 'package:antinvestor_api_commerce/antinvestor_api_commerce.dart';
+import 'package:antinvestor_ui_core/permissions/permission_provider.dart';
+import 'package:antinvestor_ui_core/permissions/permission_guard.dart';
 import 'package:antinvestor_ui_core/widgets/edit_dialog.dart';
 import 'package:antinvestor_ui_core/widgets/error_helpers.dart';
 import 'package:flutter/material.dart';
@@ -60,13 +62,18 @@ class _DiscountRulesScreenState extends ConsumerState<DiscountRulesScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final asyncRules = ref.watch(discountRuleListProvider(shopId));
+    final canManage = ref.watch(hasPermissionProvider('discount_manage'));
+    final canApprove = ref.watch(hasPermissionProvider('discount_approve'));
 
     return Scaffold(
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () =>
-            showDiscountRuleForm(context: context, ref: ref, shopId: shopId),
-        icon: const Icon(Icons.add),
-        label: const Text('New Discount'),
+      floatingActionButton: PermissionGuard(
+        permissions: const {'discount_manage'},
+        child: FloatingActionButton.extended(
+          onPressed: () =>
+              showDiscountRuleForm(context: context, ref: ref, shopId: shopId),
+          icon: const Icon(Icons.add),
+          label: const Text('New Discount'),
+        ),
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -164,13 +171,15 @@ class _DiscountRulesScreenState extends ConsumerState<DiscountRulesScreen> {
                           child: DiscountRuleCard(
                             rule: r,
                             approving: _approving.contains(r.id),
-                            onApprove: () => _approve(r),
-                            onTap: () => showDiscountRuleForm(
-                              context: context,
-                              ref: ref,
-                              shopId: shopId,
-                              existing: r,
-                            ),
+                            onApprove: canApprove ? () => _approve(r) : null,
+                            onTap: !canManage
+                                ? null
+                                : () => showDiscountRuleForm(
+                                    context: context,
+                                    ref: ref,
+                                    shopId: shopId,
+                                    existing: r,
+                                  ),
                           ),
                         ),
                       ),

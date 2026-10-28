@@ -1,5 +1,6 @@
 import 'package:antinvestor_api_commerce/antinvestor_api_commerce.dart';
 import 'package:antinvestor_ui_core/widgets/amount_display.dart';
+import 'package:antinvestor_ui_core/widgets/status_badge.dart';
 import 'package:flutter/material.dart';
 
 import 'order_status_badge.dart';
@@ -12,11 +13,7 @@ String _formatDate(DateTime dt) =>
 ///
 /// Shows order number, status badges, customer profile ID, total, and date.
 class OrderCard extends StatelessWidget {
-  const OrderCard({
-    super.key,
-    required this.order,
-    this.onTap,
-  });
+  const OrderCard({super.key, required this.order, this.onTap});
 
   final Order order;
   final VoidCallback? onTap;
@@ -56,41 +53,50 @@ class OrderCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      order.orderNumber.isNotEmpty
-                          ? '#${order.orderNumber}'
-                          : order.id,
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
                     Row(
                       children: [
-                        OrderStatusBadge(status: order.status),
+                        Expanded(
+                          child: Text(
+                            order.orderNumber.isNotEmpty
+                                ? '#${order.orderNumber}'
+                                : order.id,
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
                         const SizedBox(width: 8),
-                        PaymentStatusBadge(status: order.paymentStatus),
+                        AmountDisplay(amount: order.total),
                       ],
                     ),
+                    const SizedBox(height: 4),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
+                      children: [
+                        OrderStatusBadge(status: order.status),
+                        PaymentStatusBadge(status: order.paymentStatus),
+                        if (order.paymentReview.isNotEmpty)
+                          const StatusBadge(
+                            label: 'Needs review',
+                            color: Colors.red,
+                            icon: Icons.flag_outlined,
+                          ),
+                      ],
+                    ),
+                    if (order.hasCreatedAt()) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        _formatDate(order.createdAt.toDateTime()),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
-              ),
-              const SizedBox(width: 8),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  AmountDisplay(amount: order.total),
-                  const SizedBox(height: 4),
-                  if (order.hasCreatedAt())
-                    Text(
-                      _formatDate(order.createdAt.toDateTime()),
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                ],
               ),
               const SizedBox(width: 4),
               Icon(

@@ -22,10 +22,7 @@ void main() {
     Widget buildTestWidget({VoidCallback? onTap}) {
       return MaterialApp(
         home: Scaffold(
-          body: ProductCard(
-            product: product,
-            onTap: onTap,
-          ),
+          body: ProductCard(product: product, onTap: onTap),
         ),
       );
     }
@@ -63,24 +60,22 @@ void main() {
         status: ProductStatus.PRODUCT_STATUS_ACTIVE,
         fulfilmentType: FulfilmentType.FULFILMENT_TYPE_DIGITAL,
       );
-      await tester.pumpWidget(MaterialApp(
-        home: Scaffold(
-          body: ProductCard(product: product),
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(body: ProductCard(product: product)),
         ),
-      ));
+      );
       expect(find.text('prod-456'), findsOneWidget);
     });
 
-    testWidgets('uses Card with elevation 0 and border radius 12',
-        (tester) async {
+    testWidgets('uses Card with elevation 0 and border radius 12', (
+      tester,
+    ) async {
       await tester.pumpWidget(buildTestWidget());
       final card = tester.widget<Card>(find.byType(Card));
       expect(card.elevation, 0);
       final shape = card.shape as RoundedRectangleBorder;
-      expect(
-        shape.borderRadius,
-        BorderRadius.circular(12),
-      );
+      expect(shape.borderRadius, BorderRadius.circular(12));
     });
   });
 }

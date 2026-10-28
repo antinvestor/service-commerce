@@ -21,10 +21,7 @@ void main() {
     Widget buildTestWidget({VoidCallback? onTap}) {
       return MaterialApp(
         home: Scaffold(
-          body: OrderCard(
-            order: order,
-            onTap: onTap,
-          ),
+          body: OrderCard(order: order, onTap: onTap),
         ),
       );
     }
@@ -51,31 +48,28 @@ void main() {
       expect(tapped, isTrue);
     });
 
-    testWidgets('falls back to ID when order number is empty',
-        (tester) async {
+    testWidgets('falls back to ID when order number is empty', (tester) async {
       order = Order(
         id: 'ord-456',
         status: OrderStatus.ORDER_STATUS_CONFIRMED,
         paymentStatus: PaymentStatus.PAYMENT_STATUS_PAID,
       );
-      await tester.pumpWidget(MaterialApp(
-        home: Scaffold(
-          body: OrderCard(order: order),
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(body: OrderCard(order: order)),
         ),
-      ));
+      );
       expect(find.text('ord-456'), findsOneWidget);
     });
 
-    testWidgets('uses Card with elevation 0 and border radius 12',
-        (tester) async {
+    testWidgets('uses Card with elevation 0 and border radius 12', (
+      tester,
+    ) async {
       await tester.pumpWidget(buildTestWidget());
       final card = tester.widget<Card>(find.byType(Card));
       expect(card.elevation, 0);
       final shape = card.shape as RoundedRectangleBorder;
-      expect(
-        shape.borderRadius,
-        BorderRadius.circular(12),
-      );
+      expect(shape.borderRadius, BorderRadius.circular(12));
     });
   });
 }

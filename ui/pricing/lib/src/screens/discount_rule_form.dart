@@ -230,6 +230,7 @@ class _DiscountRuleFormDialogState extends State<DiscountRuleFormDialog> {
                   children: [
                     Expanded(
                       child: DropdownButtonFormField<DiscountType>(
+                        isExpanded: true,
                         initialValue: _type,
                         decoration: const InputDecoration(
                           labelText: 'Discount Type',
@@ -265,6 +266,7 @@ class _DiscountRuleFormDialogState extends State<DiscountRuleFormDialog> {
                 ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<DiscountAppliesTo>(
+                  isExpanded: true,
                   initialValue: _scope,
                   decoration: const InputDecoration(labelText: 'Applies To'),
                   items: [
@@ -368,6 +370,7 @@ class _DiscountRuleFormDialogState extends State<DiscountRuleFormDialog> {
                   ),
                 const SizedBox(height: 8),
                 DropdownButtonFormField<DiscountRuleStatus>(
+                  isExpanded: true,
                   initialValue: _status,
                   decoration: const InputDecoration(labelText: 'Status'),
                   items: [

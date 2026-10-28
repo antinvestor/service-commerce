@@ -33,6 +33,7 @@ abstract class CommerceServiceBase extends $pb.GeneratedService {
   $async.Future<$9.UpdateProductVariantResponse> updateProductVariant($pb.ServerContext ctx, $9.UpdateProductVariantRequest request);
   $async.Future<$9.UpdateProductResponse> updateProduct($pb.ServerContext ctx, $9.UpdateProductRequest request);
   $async.Future<$9.ListProductVariantsResponse> listProductVariants($pb.ServerContext ctx, $9.ListProductVariantsRequest request);
+  $async.Future<$9.ReceiveStockResponse> receiveStock($pb.ServerContext ctx, $9.ReceiveStockRequest request);
   $async.Future<$9.CreateCartResponse> createCart($pb.ServerContext ctx, $9.CreateCartRequest request);
   $async.Future<$9.GetCartResponse> getCart($pb.ServerContext ctx, $9.GetCartRequest request);
   $async.Future<$9.AddCartLineResponse> addCartLine($pb.ServerContext ctx, $9.AddCartLineRequest request);
@@ -79,6 +80,7 @@ abstract class CommerceServiceBase extends $pb.GeneratedService {
       case 'UpdateProductVariant': return $9.UpdateProductVariantRequest();
       case 'UpdateProduct': return $9.UpdateProductRequest();
       case 'ListProductVariants': return $9.ListProductVariantsRequest();
+      case 'ReceiveStock': return $9.ReceiveStockRequest();
       case 'CreateCart': return $9.CreateCartRequest();
       case 'GetCart': return $9.GetCartRequest();
       case 'AddCartLine': return $9.AddCartLineRequest();
@@ -128,6 +130,7 @@ abstract class CommerceServiceBase extends $pb.GeneratedService {
       case 'UpdateProductVariant': return this.updateProductVariant(ctx, request as $9.UpdateProductVariantRequest);
       case 'UpdateProduct': return this.updateProduct(ctx, request as $9.UpdateProductRequest);
       case 'ListProductVariants': return this.listProductVariants(ctx, request as $9.ListProductVariantsRequest);
+      case 'ReceiveStock': return this.receiveStock(ctx, request as $9.ReceiveStockRequest);
       case 'CreateCart': return this.createCart(ctx, request as $9.CreateCartRequest);
       case 'GetCart': return this.getCart(ctx, request as $9.GetCartRequest);
       case 'AddCartLine': return this.addCartLine(ctx, request as $9.AddCartLineRequest);

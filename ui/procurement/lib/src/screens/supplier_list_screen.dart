@@ -1,4 +1,5 @@
 import 'package:antinvestor_api_procurement/antinvestor_api_procurement.dart';
+import 'package:antinvestor_ui_core/permissions/permission_guard.dart';
 import 'package:antinvestor_ui_core/widgets/error_helpers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,6 +7,7 @@ import 'package:go_router/go_router.dart';
 
 import '../providers/procurement_providers.dart';
 import '../routing/procurement_paths.dart';
+import '../widgets/load_more_footer.dart';
 import '../widgets/supplier_card.dart';
 import 'supplier_form.dart';
 
@@ -28,13 +30,16 @@ class _SupplierListScreenState extends ConsumerState<SupplierListScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final asyncSuppliers = ref.watch(supplierListProvider(_filter));
+    final asyncSuppliers = ref.watch(supplierPagesProvider(_filter));
 
     return Scaffold(
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => showSupplierForm(context: context, ref: ref),
-        icon: const Icon(Icons.add),
-        label: const Text('New Supplier'),
+      floatingActionButton: PermissionGuard(
+        permissions: const {'supplier_manage'},
+        child: FloatingActionButton.extended(
+          onPressed: () => showSupplierForm(context: context, ref: ref),
+          icon: const Icon(Icons.add),
+          label: const Text('New Supplier'),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -67,7 +72,9 @@ class _SupplierListScreenState extends ConsumerState<SupplierListScreen> {
                       ),
                       if (asyncSuppliers.hasValue)
                         Text(
-                          '${asyncSuppliers.requireValue.length} suppliers',
+                          '${asyncSuppliers.requireValue.items.length}'
+                          '${asyncSuppliers.requireValue.hasMore ? '+' : ''}'
+                          ' suppliers',
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: theme.colorScheme.onSurfaceVariant,
                           ),
@@ -121,14 +128,15 @@ class _SupplierListScreenState extends ConsumerState<SupplierListScreen> {
                     const SizedBox(height: 16),
                     OutlinedButton.icon(
                       onPressed: () =>
-                          ref.invalidate(supplierListProvider(_filter)),
+                          ref.invalidate(supplierPagesProvider(_filter)),
                       icon: const Icon(Icons.refresh, size: 18),
                       label: const Text('Retry'),
                     ),
                   ],
                 ),
               ),
-              data: (suppliers) {
+              data: (list) {
+                final suppliers = list.items;
                 if (suppliers.isEmpty) {
                   return Padding(
                     padding: const EdgeInsets.symmetric(vertical: 48),
@@ -166,6 +174,12 @@ class _SupplierListScreenState extends ConsumerState<SupplierListScreen> {
                               context.go(ProcurementPaths.supplier(s.id)),
                         ),
                       ),
+                    LoadMoreFooter(
+                      list: list,
+                      onLoadMore: () => ref
+                          .read(supplierPagesProvider(_filter).notifier)
+                          .loadMore(),
+                    ),
                   ],
                 );
               },

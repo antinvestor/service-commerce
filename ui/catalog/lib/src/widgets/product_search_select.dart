@@ -123,8 +123,10 @@ class _ProductSearchSelectState extends ConsumerState<ProductSearchSelect> {
           labelText: widget.label,
           prefixIcon: const Icon(Icons.search, size: 20),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 12,
+          ),
           isDense: true,
         ),
       ),
@@ -183,9 +185,9 @@ class _ResultsList extends ConsumerWidget {
                   size: 20,
                   color: Theme.of(context).colorScheme.primary,
                 ),
-                title: Text(product.name.isNotEmpty
-                    ? product.name
-                    : product.id),
+                title: Text(
+                  product.name.isNotEmpty ? product.name : product.id,
+                ),
                 subtitle: product.description.isNotEmpty
                     ? Text(
                         product.description,

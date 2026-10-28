@@ -1,5 +1,9 @@
 import 'package:antinvestor_api_commerce/antinvestor_api_commerce.dart';
+// ignore: implementation_imports
+import 'package:antinvestor_api_commerce/src/common/v1/money.pb.dart'
+    show Money;
 import 'package:antinvestor_ui_catalog/antinvestor_ui_catalog.dart';
+import 'package:antinvestor_ui_core/permissions/permission_provider.dart';
 import 'package:connectrpc/connect.dart' show Transport;
 import 'package:connectrpc/test.dart';
 import 'package:fixnum/fixnum.dart';
@@ -14,14 +18,64 @@ void _bigView(WidgetTester tester) {
   addTearDown(tester.view.reset);
 }
 
-Widget _app(Transport transport, Widget home) => ProviderScope(
+const _manager = {'product_view', 'product_manage'};
+
+Widget _app(
+  Transport transport,
+  Widget home, {
+  Set<String> permissions = _manager,
+}) => ProviderScope(
   overrides: [
     catalogServiceClientProvider.overrideWithValue(
       CommerceServiceClient(transport),
     ),
+    userPermissionsProvider.overrideWith((ref) async => permissions),
   ],
   child: MaterialApp(home: Scaffold(body: home)),
 );
+
+void _phoneView(WidgetTester tester) {
+  tester.view.physicalSize = const Size(360, 800);
+  tester.view.devicePixelRatio = 1;
+  addTearDown(tester.view.reset);
+}
+
+/// Serves one product with one variant for the product page.
+Transport _productPage() => FakeTransportBuilder()
+    .unary(
+      CommerceService.getProduct,
+      (req, _) => GetProductResponse(
+        product: Product(
+          id: req.id,
+          shopId: 'shop-1',
+          name: 'Kericho loose leaf tea',
+          status: ProductStatus.PRODUCT_STATUS_ACTIVE,
+        ),
+      ),
+    )
+    .unary(
+      CommerceService.getShop,
+      (req, _) => GetShopResponse(
+        shop: Shop(id: req.id, currency: 'KES'),
+      ),
+    )
+    .unary(
+      CommerceService.listProductVariants,
+      (req, _) => ListProductVariantsResponse(
+        productVariants: [
+          ProductVariant(
+            id: 'v-1',
+            productId: 'prod-1',
+            sku: 'TEA-1KG',
+            name: '1kg',
+            price: Money(currencyCode: 'KES', units: Int64(500)),
+            stockQuantity: Int64(5),
+            status: ProductVariantStatus.PRODUCT_VARIANT_STATUS_ACTIVE,
+          ),
+        ],
+      ),
+    )
+    .build();
 
 void main() {
   group('buildProductUpdateRequest', () {
@@ -293,4 +347,64 @@ void main() {
       expect(find.text('detail page'), findsOneWidget);
     },
   );
+
+  group('phone width and permissions', () {
+    testWidgets('the catalogue is a list of cards on a phone', (tester) async {
+      _phoneView(tester);
+      final transport = FakeTransportBuilder()
+          .unary(
+            CommerceService.listProducts,
+            (req, _) => ListProductsResponse(
+              products: [Product(id: 'p-1', name: 'First')],
+            ),
+          )
+          .build();
+      await tester.pumpWidget(
+        _app(transport, const CatalogBrowseScreen(shopId: 'shop-1')),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(DataTable), findsNothing);
+      expect(find.byType(ProductCard), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('the product page and its edit dialogs fit a phone', (
+      tester,
+    ) async {
+      _phoneView(tester);
+      await tester.pumpWidget(
+        _app(_productPage(), const ProductDetailScreen(productId: 'prod-1')),
+      );
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+
+      await tester.tap(find.widgetWithText(OutlinedButton, 'Edit'));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byTooltip('Edit variant'));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('a viewer cannot edit products or add variants', (
+      tester,
+    ) async {
+      _bigView(tester);
+      await tester.pumpWidget(
+        _app(
+          _productPage(),
+          const ProductDetailScreen(productId: 'prod-1'),
+          permissions: const {'product_view'},
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Kericho loose leaf tea'), findsWidgets);
+      expect(find.widgetWithText(OutlinedButton, 'Edit'), findsNothing);
+      expect(find.text('Add Variant'), findsNothing);
+      expect(find.byTooltip('Edit variant'), findsNothing);
+    });
+  });
 }

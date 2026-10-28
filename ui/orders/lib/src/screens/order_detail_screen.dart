@@ -1,5 +1,7 @@
+import 'package:antinvestor_ui_core/permissions/permission_guard.dart';
 import 'package:antinvestor_ui_core/widgets/amount_display.dart';
 import 'package:antinvestor_ui_core/widgets/error_helpers.dart';
+import 'package:antinvestor_ui_core/widgets/status_badge.dart';
 import 'package:antinvestor_ui_profile/antinvestor_ui_profile.dart'
     show ProfileBadgeById;
 import 'package:flutter/material.dart';
@@ -100,10 +102,14 @@ class OrderDetailScreen extends ConsumerWidget {
                       ],
                     ),
                   ),
-                  FilledButton.tonalIcon(
-                    onPressed: () => context.go('/orders/$orderId/fulfilment'),
-                    icon: const Icon(Icons.local_shipping_outlined, size: 18),
-                    label: const Text('Fulfilment'),
+                  PermissionGuard(
+                    permissions: const {'fulfilment_view'},
+                    child: IconButton.filledTonal(
+                      tooltip: 'Fulfilment',
+                      onPressed: () =>
+                          context.go('/orders/$orderId/fulfilment'),
+                      icon: const Icon(Icons.local_shipping_outlined),
+                    ),
                   ),
                 ],
               ),
@@ -117,6 +123,12 @@ class OrderDetailScreen extends ConsumerWidget {
                   OrderStatusBadge(status: order.status),
                   PaymentStatusBadge(status: order.paymentStatus),
                   FulfilmentStatusBadge(status: order.fulfilmentStatus),
+                  if (order.paymentReview.isNotEmpty)
+                    const StatusBadge(
+                      label: 'Needs review',
+                      color: Colors.red,
+                      icon: Icons.flag_outlined,
+                    ),
                 ],
               ),
               const SizedBox(height: 20),

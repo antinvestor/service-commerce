@@ -44,11 +44,10 @@ class PriceListEntryTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  variantName.isNotEmpty
-                      ? variantName
-                      : entry.productVariantId,
-                  style: theme.textTheme.bodyMedium
-                      ?.copyWith(fontWeight: FontWeight.w500),
+                  variantName.isNotEmpty ? variantName : entry.productVariantId,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w500,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),

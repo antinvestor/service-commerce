@@ -43,6 +43,11 @@ class POStatusBadge extends StatelessWidget {
           Colors.red,
           null,
         ),
+        PurchaseOrderStatus.PURCHASE_ORDER_STATUS_CLOSED => (
+          'Closed short',
+          Colors.blueGrey,
+          null,
+        ),
         _ => ('Unknown', Colors.grey, null),
       },
     );

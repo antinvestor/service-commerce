@@ -31,10 +31,16 @@ export 'src/widgets/po_line_tile.dart';
 export 'src/widgets/goods_receipt_card.dart';
 export 'src/widgets/goods_receipt_status_badge.dart';
 export 'src/widgets/receipt_line_tile.dart';
+export 'src/widgets/stock_delivery_badge.dart';
+export 'src/widgets/load_more_footer.dart';
 
 // Providers
 export 'src/providers/procurement_transport_provider.dart';
 export 'src/providers/procurement_providers.dart';
+export 'src/providers/procurement_api.dart';
+export 'src/providers/paged_list.dart';
+export 'src/providers/supply_pickers.dart';
 
 // Utilities
 export 'src/util/idempotency.dart';
+export 'src/util/supply.dart';

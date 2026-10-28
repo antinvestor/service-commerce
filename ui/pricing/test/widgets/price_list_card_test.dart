@@ -20,10 +20,7 @@ void main() {
     Widget buildTestWidget({VoidCallback? onTap}) {
       return MaterialApp(
         home: Scaffold(
-          body: PriceListCard(
-            priceList: priceList,
-            onTap: onTap,
-          ),
+          body: PriceListCard(priceList: priceList, onTap: onTap),
         ),
       );
     }
@@ -51,16 +48,17 @@ void main() {
         currency: 'USD',
         status: PriceListStatus.PRICE_LIST_STATUS_DRAFT,
       );
-      await tester.pumpWidget(MaterialApp(
-        home: Scaffold(
-          body: PriceListCard(priceList: priceList),
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(body: PriceListCard(priceList: priceList)),
         ),
-      ));
+      );
       expect(find.text('pl-456'), findsOneWidget);
     });
 
-    testWidgets('uses Card with elevation 0 and border radius 12',
-        (tester) async {
+    testWidgets('uses Card with elevation 0 and border radius 12', (
+      tester,
+    ) async {
       await tester.pumpWidget(buildTestWidget());
       final card = tester.widget<Card>(find.byType(Card));
       expect(card.elevation, 0);

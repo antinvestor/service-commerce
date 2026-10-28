@@ -10,7 +10,7 @@ endif
 include .tmp/Makefile.common
 
 # Dart proto modules — each gets its own buf.gen.dart.<module>.yaml.
-DART_MODULES := commerce property
+DART_MODULES := commerce procurement property
 
 .PHONY: proto-generate-dart
 proto-generate-dart: $(BIN)/buf ## Regenerate the per-module dart SDKs

@@ -5,10 +5,7 @@ import 'package:flutter/material.dart';
 
 /// Shows a resolved price with its source badge.
 class PriceResolverPreview extends StatelessWidget {
-  const PriceResolverPreview({
-    super.key,
-    required this.resolved,
-  });
+  const PriceResolverPreview({super.key, required this.resolved});
 
   final ResolvedPrice resolved;
 
@@ -29,26 +26,37 @@ class PriceResolverPreview extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(Icons.price_check,
-                    size: 24, color: theme.colorScheme.primary),
+                Icon(
+                  Icons.price_check,
+                  size: 24,
+                  color: theme.colorScheme.primary,
+                ),
                 const SizedBox(width: 12),
-                Text('Resolved Price',
-                    style: theme.textTheme.titleSmall
-                        ?.copyWith(fontWeight: FontWeight.w600)),
+                Text(
+                  'Resolved Price',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
                 const Spacer(),
                 _PriceSourceBadge(source: resolved.priceSource),
               ],
             ),
             const SizedBox(height: 16),
-            _Row(label: 'Unit Price', child: AmountDisplay(amount: resolved.unitPrice)),
+            _Row(
+              label: 'Unit Price',
+              child: AmountDisplay(amount: resolved.unitPrice),
+            ),
             if (resolved.hasPreDiscountPrice())
               _Row(
-                  label: 'Pre-discount',
-                  child: AmountDisplay(amount: resolved.preDiscountPrice)),
+                label: 'Pre-discount',
+                child: AmountDisplay(amount: resolved.preDiscountPrice),
+              ),
             if (resolved.hasDiscountAmount())
               _Row(
-                  label: 'Discount',
-                  child: AmountDisplay(amount: resolved.discountAmount)),
+                label: 'Discount',
+                child: AmountDisplay(amount: resolved.discountAmount),
+              ),
             if (resolved.priceListId.isNotEmpty)
               _Row(label: 'Price List', value: resolved.priceListId),
             if (resolved.overrideId.isNotEmpty)
@@ -72,12 +80,17 @@ class _PriceSourceBadge extends StatelessWidget {
     return StatusBadge.fromEnum(
       value: source,
       mapper: (s) => switch (s) {
-        PriceSource.PRICE_SOURCE_CATALOG =>
-          ('Catalog', Colors.blue, null),
-        PriceSource.PRICE_SOURCE_PRICE_LIST =>
-          ('Price List', Colors.teal, null),
-        PriceSource.PRICE_SOURCE_CUSTOMER_OVERRIDE =>
-          ('Override', Colors.purple, null),
+        PriceSource.PRICE_SOURCE_CATALOG => ('Catalog', Colors.blue, null),
+        PriceSource.PRICE_SOURCE_PRICE_LIST => (
+          'Price List',
+          Colors.teal,
+          null,
+        ),
+        PriceSource.PRICE_SOURCE_CUSTOMER_OVERRIDE => (
+          'Override',
+          Colors.purple,
+          null,
+        ),
         _ => ('Unknown', Colors.grey, null),
       },
     );
@@ -101,15 +114,22 @@ class _Row extends StatelessWidget {
         children: [
           SizedBox(
             width: 110,
-            child: Text(label,
-                style: theme.textTheme.bodySmall
-                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+            child: Text(
+              label,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
           ),
           Expanded(
-            child: child ??
-                Text(value ?? '',
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(fontWeight: FontWeight.w500)),
+            child:
+                child ??
+                Text(
+                  value ?? '',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
           ),
         ],
       ),

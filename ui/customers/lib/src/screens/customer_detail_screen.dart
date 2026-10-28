@@ -9,14 +9,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../providers/customer_providers.dart';
-import '../widgets/customer_balance_card.dart';
-import '../widgets/customer_credit_badge.dart';
-import '../widgets/customer_note_tile.dart';
 
 /// Detail screen for a single customer.
 ///
-/// Shows a profile header (reusing [ProfileCard]) with tabs:
-/// Orders | Balance | Locations | Notes.
+/// Shows a profile header with tabs: Orders (the customer's history in the
+/// shop, newest first; open an order to record a payment) | Locations.
 class CustomerDetailScreen extends ConsumerWidget {
   const CustomerDetailScreen({
     super.key,
@@ -38,19 +35,19 @@ class CustomerDetailScreen extends ConsumerWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.error_outline,
-                size: 48, color: theme.colorScheme.error),
+            Icon(Icons.error_outline, size: 48, color: theme.colorScheme.error),
             const SizedBox(height: 16),
-            Text('Failed to load customer',
-                style: theme.textTheme.titleMedium),
+            Text('Failed to load customer', style: theme.textTheme.titleMedium),
             const SizedBox(height: 8),
-            Text(friendlyError(error),
-                style: theme.textTheme.bodySmall
-                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+            Text(
+              friendlyError(error),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
             const SizedBox(height: 16),
             OutlinedButton.icon(
-              onPressed: () =>
-                  ref.invalidate(customerByIdProvider(customerId)),
+              onPressed: () => ref.invalidate(customerByIdProvider(customerId)),
               icon: const Icon(Icons.refresh, size: 18),
               label: const Text('Retry'),
             ),
@@ -82,15 +79,14 @@ class _CustomerDetailContent extends ConsumerStatefulWidget {
       _CustomerDetailContentState();
 }
 
-class _CustomerDetailContentState
-    extends ConsumerState<_CustomerDetailContent>
+class _CustomerDetailContentState extends ConsumerState<_CustomerDetailContent>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 2, vsync: this);
   }
 
   @override
@@ -111,14 +107,16 @@ class _CustomerDetailContentState
         children: [
           // Header
           Padding(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.fromLTRB(8, 16, 24, 16),
             child: Row(
               children: [
-                ProfileAvatar(
-                  profileId: profile.id,
-                  name: name,
-                  size: 48,
+                IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  tooltip: 'Customers',
+                  onPressed: () => context.go('/customers'),
                 ),
+                const SizedBox(width: 8),
+                ProfileAvatar(profileId: profile.id, name: name, size: 48),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Column(
@@ -126,14 +124,17 @@ class _CustomerDetailContentState
                     children: [
                       Text(
                         name,
-                        style: theme.textTheme.headlineSmall
-                            ?.copyWith(fontWeight: FontWeight.w600),
+                        style: theme.textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                       const SizedBox(height: 4),
-                      Row(
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 4,
+                        crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
                           ProfileTypeBadge(type: profile.type),
-                          const SizedBox(width: 8),
                           SelectableText(
                             'ID: ${profile.id}',
                             style: theme.textTheme.bodySmall?.copyWith(
@@ -146,18 +147,6 @@ class _CustomerDetailContentState
                     ],
                   ),
                 ),
-                OutlinedButton.icon(
-                  onPressed: () => context.go('/customers'),
-                  icon: const Icon(Icons.arrow_back, size: 18),
-                  label: const Text('Back'),
-                ),
-                const SizedBox(width: 8),
-                FilledButton.icon(
-                  onPressed: () => context.go(
-                      '/customers/${widget.customerId}/payment'),
-                  icon: const Icon(Icons.payment, size: 18),
-                  label: const Text('Receive Payment'),
-                ),
               ],
             ),
           ),
@@ -167,9 +156,7 @@ class _CustomerDetailContentState
             controller: _tabController,
             tabs: const [
               Tab(text: 'Orders'),
-              Tab(text: 'Balance'),
               Tab(text: 'Locations'),
-              Tab(text: 'Notes'),
             ],
           ),
 
@@ -181,9 +168,7 @@ class _CustomerDetailContentState
                   customerId: widget.customerId,
                   shopId: widget.shopId,
                 ),
-                _BalanceTab(customerId: widget.customerId),
                 _LocationsTab(profile: profile),
-                _NotesTab(customerId: widget.customerId),
               ],
             ),
           ),
@@ -203,9 +188,8 @@ class _OrdersTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final asyncOrders = ref.watch(
-      customerOrdersProvider((shopId: shopId, customerId: customerId)),
-    );
+    final query = (shopId: shopId, customerId: customerId);
+    final asyncOrders = ref.watch(customerOrdersProvider(query));
 
     return asyncOrders.when(
       loading: () => const Center(child: CircularProgressIndicator()),
@@ -213,35 +197,37 @@ class _OrdersTab extends ConsumerWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.error_outline,
-                size: 48, color: theme.colorScheme.error),
+            Icon(Icons.error_outline, size: 48, color: theme.colorScheme.error),
             const SizedBox(height: 16),
-            Text('Failed to load orders',
-                style: theme.textTheme.titleMedium),
+            Text('Failed to load orders', style: theme.textTheme.titleMedium),
             const SizedBox(height: 8),
-            Text(friendlyError(error),
-                style: theme.textTheme.bodySmall
-                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+            Text(
+              friendlyError(error),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
             const SizedBox(height: 16),
             OutlinedButton.icon(
-              onPressed: () => ref.invalidate(customerOrdersProvider(
-                  (shopId: shopId, customerId: customerId))),
+              onPressed: () => ref.invalidate(customerOrdersProvider(query)),
               icon: const Icon(Icons.refresh, size: 18),
               label: const Text('Retry'),
             ),
           ],
         ),
       ),
-      data: (orders) {
+      data: (history) {
+        final orders = history.orders;
         if (orders.isEmpty) {
           return Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.receipt_long_outlined,
-                    size: 48,
-                    color:
-                        theme.colorScheme.onSurfaceVariant.withAlpha(80)),
+                Icon(
+                  Icons.receipt_long_outlined,
+                  size: 48,
+                  color: theme.colorScheme.onSurfaceVariant.withAlpha(80),
+                ),
                 const SizedBox(height: 16),
                 Text(
                   'No orders yet',
@@ -254,26 +240,72 @@ class _OrdersTab extends ConsumerWidget {
           );
         }
 
-        return ListView.separated(
+        return ListView(
           padding: const EdgeInsets.all(24),
-          itemCount: orders.length,
-          separatorBuilder: (_, _) => const SizedBox(height: 8),
-          itemBuilder: (context, index) =>
-              _CustomerOrderTile(order: orders[index]),
+          children: [
+            Text(
+              'Open an order to record a payment against it.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 12),
+            for (final order in orders)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: CustomerOrderTile(
+                  order: order,
+                  onTap: () => context.go('/orders/${order.id}'),
+                ),
+              ),
+            if (history.loadMoreError != null)
+              Text(
+                friendlyError(history.loadMoreError!),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.error,
+                ),
+              ),
+            if (history.hasMore)
+              Center(
+                child: OutlinedButton(
+                  key: const ValueKey('customer-orders-load-more'),
+                  onPressed: history.loadingMore
+                      ? null
+                      : () => ref
+                            .read(customerOrdersProvider(query).notifier)
+                            .loadMore(),
+                  child: Text(history.loadingMore ? 'Loading…' : 'Load more'),
+                ),
+              ),
+          ],
         );
       },
     );
   }
 }
 
-/// Compact summary tile for a customer's order.
-class _CustomerOrderTile extends StatelessWidget {
-  const _CustomerOrderTile({required this.order});
+/// One of a customer's orders: number, where it stands, and what is still
+/// owed.
+class CustomerOrderTile extends StatelessWidget {
+  const CustomerOrderTile({super.key, required this.order, this.onTap});
 
   final Order order;
+  final VoidCallback? onTap;
 
-  static String _statusLabel(OrderStatus status) {
-    switch (status) {
+  static String statusLabel(Order order) {
+    switch (order.paymentStatus) {
+      case PaymentStatus.PAYMENT_STATUS_REFUND_PENDING:
+        return 'Cancelled, refund pending';
+      case PaymentStatus.PAYMENT_STATUS_REFUNDED:
+        return 'Refunded';
+      default:
+    }
+    switch (order.status) {
+      case OrderStatus.ORDER_STATUS_PENDING_PAYMENT:
+        return order.paymentStatus ==
+                PaymentStatus.PAYMENT_STATUS_PARTIALLY_PAID
+            ? 'Part paid'
+            : 'Awaiting payment';
       case OrderStatus.ORDER_STATUS_CONFIRMED:
         return 'Confirmed';
       case OrderStatus.ORDER_STATUS_CANCELLED:
@@ -291,6 +323,10 @@ class _CustomerOrderTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final owes =
+        order.status != OrderStatus.ORDER_STATUS_CANCELLED &&
+        order.hasBalance() &&
+        (order.balance.units > 0 || order.balance.nanos > 0);
 
     return Card(
       elevation: 0,
@@ -298,83 +334,69 @@ class _CustomerOrderTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(color: theme.colorScheme.outlineVariant),
       ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primaryContainer.withAlpha(80),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(
-                Icons.receipt_long_outlined,
-                size: 22,
-                color: theme.colorScheme.primary,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    order.orderNumber.isNotEmpty
-                        ? '#${order.orderNumber}'
-                        : order.id,
-                    style: theme.textTheme.titleSmall
-                        ?.copyWith(fontWeight: FontWeight.w600),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    _statusLabel(order.status),
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            order.orderNumber.isNotEmpty
+                                ? '#${order.orderNumber}'
+                                : order.id,
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        AmountDisplay(amount: order.total),
+                      ],
                     ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                AmountDisplay(amount: order.total),
-                const SizedBox(height: 4),
-                if (order.hasCreatedAt())
-                  Text(
-                    _formatDate(order.createdAt.toDateTime()),
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
+                    const SizedBox(height: 4),
+                    Text(
+                      [
+                        statusLabel(order),
+                        if (order.hasCreatedAt())
+                          _formatDate(order.createdAt.toDateTime()),
+                      ].join(' · '),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
                     ),
-                  ),
-              ],
-            ),
-          ],
+                    if (owes)
+                      Row(
+                        children: [
+                          Text(
+                            'Owes ',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.error,
+                            ),
+                          ),
+                          AmountDisplay(amount: order.balance),
+                        ],
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 4),
+              Icon(
+                Icons.chevron_right,
+                size: 20,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ],
+          ),
         ),
-      ),
-    );
-  }
-}
-
-// -- Balance Tab --
-
-class _BalanceTab extends StatelessWidget {
-  const _BalanceTab({required this.customerId});
-  final String customerId;
-
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: CustomerBalanceCard(
-        totalOwed: 0,
-        creditStatus: CreditStatus.paidUp,
-        paymentTerms: 'COD',
       ),
     );
   }
@@ -396,9 +418,11 @@ class _LocationsTab extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.location_off_outlined,
-                size: 48,
-                color: theme.colorScheme.onSurfaceVariant.withAlpha(80)),
+            Icon(
+              Icons.location_off_outlined,
+              size: 48,
+              color: theme.colorScheme.onSurfaceVariant.withAlpha(80),
+            ),
             const SizedBox(height: 16),
             Text(
               'No addresses on file',
@@ -419,97 +443,6 @@ class _LocationsTab extends StatelessWidget {
         final address = addresses[index];
         return AddressTile(address: address);
       },
-    );
-  }
-}
-
-// -- Notes Tab --
-
-class _NotesTab extends ConsumerStatefulWidget {
-  const _NotesTab({required this.customerId});
-  final String customerId;
-
-  @override
-  ConsumerState<_NotesTab> createState() => _NotesTabState();
-}
-
-class _NotesTabState extends ConsumerState<_NotesTab> {
-  final _noteController = TextEditingController();
-
-  @override
-  void dispose() {
-    _noteController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final notes = ref.watch(customerNoteNotifierProvider);
-
-    return Column(
-      children: [
-        // Add note input
-        Padding(
-          padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
-          child: Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _noteController,
-                  decoration: const InputDecoration(
-                    hintText: 'Add a note...',
-                    isDense: true,
-                  ),
-                  maxLines: 2,
-                  minLines: 1,
-                ),
-              ),
-              const SizedBox(width: 12),
-              IconButton.filled(
-                onPressed: () {
-                  final text = _noteController.text.trim();
-                  if (text.isNotEmpty) {
-                    ref
-                        .read(customerNoteNotifierProvider.notifier)
-                        .add(text: text);
-                    _noteController.clear();
-                  }
-                },
-                icon: const Icon(Icons.send, size: 18),
-              ),
-            ],
-          ),
-        ),
-
-        // Notes list
-        Expanded(
-          child: notes.isEmpty
-              ? Center(
-                  child: Text(
-                    'No notes yet',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                )
-              : ListView.separated(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  itemCount: notes.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 8),
-                  itemBuilder: (context, index) {
-                    // Show newest first.
-                    final note = notes[notes.length - 1 - index];
-                    return CustomerNoteTile(
-                      note: note,
-                      onDelete: () => ref
-                          .read(customerNoteNotifierProvider.notifier)
-                          .remove(note.id),
-                    );
-                  },
-                ),
-        ),
-      ],
     );
   }
 }

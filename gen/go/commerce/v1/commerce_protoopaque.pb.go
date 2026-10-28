@@ -6771,11 +6771,12 @@ func (b0 GetOrderResponse_builder) Build() *GetOrderResponse {
 }
 
 type ListOrdersRequest struct {
-	state             protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_ShopId string                 `protobuf:"bytes,1,opt,name=shop_id,json=shopId,proto3"`
-	xxx_hidden_Search *v1.SearchRequest      `protobuf:"bytes,2,opt,name=search,proto3"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	state                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_ShopId    string                 `protobuf:"bytes,1,opt,name=shop_id,json=shopId,proto3"`
+	xxx_hidden_Search    *v1.SearchRequest      `protobuf:"bytes,2,opt,name=search,proto3"`
+	xxx_hidden_ProfileId string                 `protobuf:"bytes,3,opt,name=profile_id,json=profileId,proto3"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *ListOrdersRequest) Reset() {
@@ -6817,12 +6818,23 @@ func (x *ListOrdersRequest) GetSearch() *v1.SearchRequest {
 	return nil
 }
 
+func (x *ListOrdersRequest) GetProfileId() string {
+	if x != nil {
+		return x.xxx_hidden_ProfileId
+	}
+	return ""
+}
+
 func (x *ListOrdersRequest) SetShopId(v string) {
 	x.xxx_hidden_ShopId = v
 }
 
 func (x *ListOrdersRequest) SetSearch(v *v1.SearchRequest) {
 	x.xxx_hidden_Search = v
+}
+
+func (x *ListOrdersRequest) SetProfileId(v string) {
+	x.xxx_hidden_ProfileId = v
 }
 
 func (x *ListOrdersRequest) HasSearch() bool {
@@ -6842,6 +6854,10 @@ type ListOrdersRequest_builder struct {
 	ShopId string
 	// Optional search parameters (query, cursor, etc.)
 	Search *v1.SearchRequest
+	// Only this buyer's orders. Staff with orders_view on the shop may name
+	// any profile; anyone else lists their own orders and may name only
+	// themselves.
+	ProfileId string
 }
 
 func (b0 ListOrdersRequest_builder) Build() *ListOrdersRequest {
@@ -6850,6 +6866,7 @@ func (b0 ListOrdersRequest_builder) Build() *ListOrdersRequest {
 	_, _ = b, x
 	x.xxx_hidden_ShopId = b.ShopId
 	x.xxx_hidden_Search = b.Search
+	x.xxx_hidden_ProfileId = b.ProfileId
 	return m0
 }
 
@@ -13252,10 +13269,12 @@ const file_v1_commerce_proto_rawDesc = "" +
 	"\x0fGetOrderRequest\x12+\n" +
 	"\x02id\x18\x01 \x01(\tB\x1b\xbaH\x18r\x16\x10\x03\x18(2\x10[0-9a-z_-]{3,40}R\x02id\"<\n" +
 	"\x10GetOrderResponse\x12(\n" +
-	"\x05order\x18\x01 \x01(\v2\x12.commerce.v1.OrderR\x05order\"{\n" +
+	"\x05order\x18\x01 \x01(\v2\x12.commerce.v1.OrderR\x05order\"\xa3\x01\n" +
 	"\x11ListOrdersRequest\x124\n" +
 	"\ashop_id\x18\x01 \x01(\tB\x1b\xbaH\x18r\x16\x10\x03\x18(2\x10[0-9a-z_-]{3,40}R\x06shopId\x120\n" +
-	"\x06search\x18\x02 \x01(\v2\x18.common.v1.SearchRequestR\x06search\"~\n" +
+	"\x06search\x18\x02 \x01(\v2\x18.common.v1.SearchRequestR\x06search\x12&\n" +
+	"\n" +
+	"profile_id\x18\x03 \x01(\tB\a\xbaH\x04r\x02\x18(R\tprofileId\"~\n" +
 	"\x12ListOrdersResponse\x12*\n" +
 	"\x06orders\x18\x01 \x03(\v2\x12.commerce.v1.OrderR\x06orders\x12\x1b\n" +
 	"\tnext_page\x18\x02 \x01(\tR\bnextPage\x12\x1f\n" +

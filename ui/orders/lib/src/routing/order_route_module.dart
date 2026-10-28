@@ -62,12 +62,15 @@ class OrderRouteModule extends RouteModule {
     ),
   ];
 
+  /// Route prefixes and the permissions (any of) that open them; names are
+  /// the service_commerce permissions in commerce.proto. `:param` segments
+  /// match any value.
   @override
   Map<String, Set<String>> get routePermissions => {
     '/orders': {'order_view'},
     '/orders/checkout': {'order_manage'},
     '/orders/events': {'order_view'},
-    '/orders/:orderId/fulfilment': {'fulfilment_manage'},
+    '/orders/:orderId/fulfilment': {'fulfilment_view'},
   };
 
   @override

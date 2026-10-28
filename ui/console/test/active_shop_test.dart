@@ -27,29 +27,29 @@ class _FakeShopBackend {
   final List<ListShopsRequest> listRequests = [];
 
   CommerceServiceClient client() => CommerceServiceClient(
-        FakeTransportBuilder()
-            .unary(CommerceService.listShops, (req, _) {
-              listRequests.add(req);
-              final page = req.search.cursor.page;
-              final start = page.isEmpty ? 0 : int.parse(page);
-              final end = (start + pageSize).clamp(0, shops.length);
-              return ListShopsResponse(
-                shops: shops.sublist(start, end),
-                nextPage: end < shops.length ? '$end' : '',
-              );
-            })
-            .unary(CommerceService.createShop, (req, _) {
-              final created = Shop(
-                id: 'srv-generated-${shops.length}',
-                name: req.name,
-                slug: req.slug,
-                status: ShopStatus.SHOP_STATUS_ACTIVE,
-              );
-              shops.add(created);
-              return CreateShopResponse(shop: created);
-            })
-            .build(),
-      );
+    FakeTransportBuilder()
+        .unary(CommerceService.listShops, (req, _) {
+          listRequests.add(req);
+          final page = req.search.cursor.page;
+          final start = page.isEmpty ? 0 : int.parse(page);
+          final end = (start + pageSize).clamp(0, shops.length);
+          return ListShopsResponse(
+            shops: shops.sublist(start, end),
+            nextPage: end < shops.length ? '$end' : '',
+          );
+        })
+        .unary(CommerceService.createShop, (req, _) {
+          final created = Shop(
+            id: 'srv-generated-${shops.length}',
+            name: req.name,
+            slug: req.slug,
+            status: ShopStatus.SHOP_STATUS_ACTIVE,
+          );
+          shops.add(created);
+          return CreateShopResponse(shop: created);
+        })
+        .build(),
+  );
 }
 
 ProviderContainer _container(_FakeShopBackend backend) {
@@ -110,10 +110,9 @@ void main() {
     });
 
     test('pages through every ListShops page', () async {
-      final backend = _FakeShopBackend(
-        [for (var i = 0; i < 5; i++) _shop('shop-$i')],
-        pageSize: 2,
-      );
+      final backend = _FakeShopBackend([
+        for (var i = 0; i < 5; i++) _shop('shop-$i'),
+      ], pageSize: 2);
       final container = _container(backend);
 
       final shops = await container.read(shopListProvider.future);
@@ -160,8 +159,10 @@ void main() {
 
       expect(created.id, 'srv-generated-1');
       expect(container.read(tenantScopeProvider).shopId, 'srv-generated-1');
-      expect((await container.read(currentShopProvider.future))?.name,
-          'Second');
+      expect(
+        (await container.read(currentShopProvider.future))?.name,
+        'Second',
+      );
     });
 
     test('currentShopProvider is null when no shop exists yet', () async {
@@ -197,15 +198,16 @@ void main() {
       expect(find.byKey(const ValueKey('shop-switcher')), findsNothing);
     });
 
-    testWidgets('offers a create hint when there are no shops',
-        (tester) async {
+    testWidgets('offers a create hint when there are no shops', (tester) async {
       await pumpSwitcher(tester, const []);
       expect(find.text('No shop yet — create one'), findsOneWidget);
     });
 
     testWidgets('switches the active shop from the menu', (tester) async {
-      final container =
-          await pumpSwitcher(tester, [_shop('one'), _shop('two')]);
+      final container = await pumpSwitcher(tester, [
+        _shop('one'),
+        _shop('two'),
+      ]);
       expect(find.text('Shop one'), findsOneWidget);
 
       await tester.tap(find.byKey(const ValueKey('shop-switcher')));

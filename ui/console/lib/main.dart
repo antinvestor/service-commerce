@@ -2,11 +2,15 @@ import 'package:antinvestor_auth_runtime/antinvestor_auth_runtime.dart'
     show AuthRuntime, authRuntimeProvider;
 import 'package:antinvestor_ui_core/api/api_base.dart'
     show authTokenProviderProvider;
+import 'package:antinvestor_ui_core/permissions/permission_provider.dart'
+    show userPermissionsProvider;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app.dart';
 import 'core/auth/auth_bridge.dart';
+import 'core/auth/console_permissions.dart';
+import 'core/auth/supply_pickers.dart';
 import 'core/auth/migration.dart';
 import 'core/auth/runtime_provider.dart';
 import 'core/config/url_strategy.dart';
@@ -46,6 +50,16 @@ Future<void> main() async {
         // Every service call goes through the runtime, which attaches the
         // signed-in user's token; the bridge above only carries logout.
         ...runtimeTransportOverrides(authRuntime),
+
+        // What the signed-in user may do, from the roles in their token;
+        // every PermissionGuard and route gate reads it.
+        userPermissionsProvider.overrideWith(
+          (ref) => ref.watch(consolePermissionsProvider.future),
+        ),
+
+        // Supplier items pick manufacturing inventory items and the shop's
+        // product variants instead of taking pasted IDs.
+        consoleSupplyPickersOverride,
       ],
       child: const ConsoleApp(),
     ),

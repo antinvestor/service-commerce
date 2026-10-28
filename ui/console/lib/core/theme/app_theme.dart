@@ -44,8 +44,9 @@ class AppTheme {
       colorScheme: scheme,
       textTheme: AppTypography.textTheme,
       fontFamily: AppTypography.fontFamily,
-      scaffoldBackgroundColor:
-          isLight ? AppColors.background : AppColors.primarySwatch[900]!,
+      scaffoldBackgroundColor: isLight
+          ? AppColors.background
+          : AppColors.primarySwatch[900]!,
       dividerColor: AppColors.divider,
       cardTheme: CardThemeData(
         elevation: 0,
@@ -77,8 +78,10 @@ class AppTheme {
           borderRadius: BorderRadius.circular(10),
           borderSide: BorderSide(color: AppColors.tertiary, width: 1.5),
         ),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 12,
+        ),
         hintStyle: AppTypography.textTheme.bodyMedium?.copyWith(
           color: AppColors.onSurfaceMuted,
         ),
@@ -89,8 +92,9 @@ class AppTheme {
           foregroundColor: AppColors.onPrimary,
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
           textStyle: AppTypography.textTheme.labelLarge,
         ),
       ),
@@ -99,8 +103,9 @@ class AppTheme {
           foregroundColor: AppColors.primary,
           side: BorderSide(color: AppColors.border),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
           textStyle: AppTypography.textTheme.labelLarge,
         ),
       ),
@@ -114,8 +119,7 @@ class AppTheme {
         backgroundColor: AppColors.surfaceVariant,
         selectedColor: AppColors.tertiarySwatch[50],
         labelStyle: AppTypography.textTheme.labelMedium!,
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         side: BorderSide(color: AppColors.border),
       ),
       dataTableTheme: DataTableThemeData(
@@ -124,8 +128,7 @@ class AppTheme {
         dividerThickness: 1,
       ),
       dialogTheme: DialogThemeData(
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         elevation: 4,
       ),
       navigationRailTheme: NavigationRailThemeData(

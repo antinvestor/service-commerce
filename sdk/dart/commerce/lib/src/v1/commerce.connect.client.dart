@@ -228,6 +228,26 @@ extension type CommerceServiceClient (connect.Transport _transport) {
     );
   }
 
+  /// Adds goods received from a supplier to a variant's stock. Internal: the
+  /// procurement service calls it once per goods receipt line, and a repeated
+  /// reference adds nothing (it answers with the stock as it stands).
+  Future<v1commerce.ReceiveStockResponse> receiveStock(
+    v1commerce.ReceiveStockRequest input, {
+    connect.Headers? headers,
+    connect.AbortSignal? signal,
+    Function(connect.Headers)? onHeader,
+    Function(connect.Headers)? onTrailer,
+  }) {
+    return connect.Client(_transport).unary(
+      specs.CommerceService.receiveStock,
+      input,
+      signal: signal,
+      headers: headers,
+      onHeader: onHeader,
+      onTrailer: onTrailer,
+    );
+  }
+
   Future<v1commerce.CreateCartResponse> createCart(
     v1commerce.CreateCartRequest input, {
     connect.Headers? headers,

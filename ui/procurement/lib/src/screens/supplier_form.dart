@@ -136,6 +136,7 @@ Future<bool> showSupplierForm({
     final notifier = ref.read(procurementNotifierProvider.notifier);
     final saved = await notifier.saveSupplier(request);
     ref.invalidate(supplierListProvider);
+    ref.invalidate(supplierPagesProvider);
     if (isEdit) ref.invalidate(supplierByIdProvider(saved.id));
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(

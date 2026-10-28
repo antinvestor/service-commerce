@@ -1,4 +1,5 @@
 import 'package:antinvestor_ui_core/widgets/error_helpers.dart';
+import 'package:antinvestor_ui_core/permissions/permission_guard.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -20,11 +21,14 @@ class PriceListScreen extends ConsumerWidget {
     final asyncLists = ref.watch(priceListProvider(shopId));
 
     return Scaffold(
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () =>
-            showPriceListForm(context: context, ref: ref, shopId: shopId),
-        icon: const Icon(Icons.add),
-        label: const Text('New Price List'),
+      floatingActionButton: PermissionGuard(
+        permissions: const {'price_list_manage'},
+        child: FloatingActionButton.extended(
+          onPressed: () =>
+              showPriceListForm(context: context, ref: ref, shopId: shopId),
+          icon: const Icon(Icons.add),
+          label: const Text('New Price List'),
+        ),
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

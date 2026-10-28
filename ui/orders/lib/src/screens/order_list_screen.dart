@@ -1,10 +1,12 @@
 import 'package:antinvestor_api_commerce/antinvestor_api_commerce.dart';
+import 'package:antinvestor_ui_core/permissions/permission_guard.dart';
 import 'package:antinvestor_ui_core/widgets/amount_display.dart';
 import 'package:antinvestor_ui_core/widgets/error_helpers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/order_providers.dart';
+import '../widgets/order_card.dart';
 import '../widgets/order_status_badge.dart';
 import '../widgets/payment_status_badge.dart';
 
@@ -42,10 +44,13 @@ class _OrderListScreenState extends ConsumerState<OrderListScreen> {
     final asyncOrders = ref.watch(orderListControllerProvider(widget.shopId));
 
     return Scaffold(
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.go('/orders/checkout'),
-        icon: const Icon(Icons.add),
-        label: const Text('New Order'),
+      floatingActionButton: PermissionGuard(
+        permissions: const {'order_manage'},
+        child: FloatingActionButton.extended(
+          onPressed: () => context.go('/orders/checkout'),
+          icon: const Icon(Icons.add),
+          label: const Text('New Order'),
+        ),
       ),
       body: asyncOrders.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -130,16 +135,25 @@ class _OrderListScreenState extends ConsumerState<OrderListScreen> {
                   ],
                 ),
               ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
               OutlinedButton.icon(
                 onPressed: () => context.go('/orders/events'),
                 icon: const Icon(Icons.notifications_active_outlined, size: 18),
                 label: const Text('Events'),
               ),
-              const SizedBox(width: 8),
-              FilledButton.icon(
-                onPressed: () => context.go('/orders/checkout'),
-                icon: const Icon(Icons.add, size: 18),
-                label: const Text('New Order'),
+              PermissionGuard(
+                permissions: const {'order_manage'},
+                child: FilledButton.icon(
+                  onPressed: () => context.go('/orders/checkout'),
+                  icon: const Icon(Icons.add, size: 18),
+                  label: const Text('New Order'),
+                ),
               ),
             ],
           ),
@@ -219,56 +233,22 @@ class _OrderListScreenState extends ConsumerState<OrderListScreen> {
           ),
           const SizedBox(height: 16),
 
-          // Data table
-          Container(
-            width: double.infinity,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: theme.colorScheme.outlineVariant),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: DataTable(
-                  showCheckboxColumn: false,
-                  columns: const [
-                    DataColumn(label: Text('ORDER')),
-                    DataColumn(label: Text('STATUS')),
-                    DataColumn(label: Text('PAYMENT')),
-                    DataColumn(label: Text('TOTAL')),
-                    DataColumn(label: Text('DATE')),
-                  ],
-                  rows: List.generate(pageItems.length, (i) {
-                    final order = pageItems[i];
-                    return DataRow(
-                      onSelectChanged: (_) => context.go('/orders/${order.id}'),
-                      cells: [
-                        DataCell(
-                          Text(
-                            order.orderNumber.isNotEmpty
-                                ? '#${order.orderNumber}'
-                                : order.id,
+          // A table where there is room for one; cards on a phone.
+          LayoutBuilder(
+            builder: (context, constraints) => constraints.maxWidth < 600
+                ? Column(
+                    children: [
+                      for (final order in pageItems)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: OrderCard(
+                            order: order,
+                            onTap: () => context.go('/orders/${order.id}'),
                           ),
                         ),
-                        DataCell(OrderStatusBadge(status: order.status)),
-                        DataCell(
-                          PaymentStatusBadge(status: order.paymentStatus),
-                        ),
-                        DataCell(AmountDisplay(amount: order.total)),
-                        DataCell(
-                          Text(
-                            order.hasCreatedAt()
-                                ? _formatDate(order.createdAt.toDateTime())
-                                : '',
-                          ),
-                        ),
-                      ],
-                    );
-                  }),
-                ),
-              ),
-            ),
+                    ],
+                  )
+                : _OrderTable(orders: pageItems),
           ),
 
           // Cursor paging
@@ -309,6 +289,65 @@ class _OrderListScreenState extends ConsumerState<OrderListScreen> {
               ),
             ),
         ],
+      ),
+    );
+  }
+}
+
+class _OrderTable extends StatelessWidget {
+  const _OrderTable({required this.orders});
+
+  final List<Order> orders;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: DataTable(
+            showCheckboxColumn: false,
+            columns: const [
+              DataColumn(label: Text('ORDER')),
+              DataColumn(label: Text('STATUS')),
+              DataColumn(label: Text('PAYMENT')),
+              DataColumn(label: Text('TOTAL')),
+              DataColumn(label: Text('DATE')),
+            ],
+            rows: [
+              for (final order in orders)
+                DataRow(
+                  onSelectChanged: (_) => context.go('/orders/${order.id}'),
+                  cells: [
+                    DataCell(
+                      Text(
+                        order.orderNumber.isNotEmpty
+                            ? '#${order.orderNumber}'
+                            : order.id,
+                      ),
+                    ),
+                    DataCell(OrderStatusBadge(status: order.status)),
+                    DataCell(PaymentStatusBadge(status: order.paymentStatus)),
+                    DataCell(AmountDisplay(amount: order.total)),
+                    DataCell(
+                      Text(
+                        order.hasCreatedAt()
+                            ? _formatDate(order.createdAt.toDateTime())
+                            : '',
+                      ),
+                    ),
+                  ],
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }

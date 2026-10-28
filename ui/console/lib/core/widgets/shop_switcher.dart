@@ -46,8 +46,11 @@ class ShopSwitcher extends ConsumerWidget {
       return Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.storefront_outlined,
-              size: 18, color: AppColors.onSurfaceMuted),
+          const Icon(
+            Icons.storefront_outlined,
+            size: 18,
+            color: AppColors.onSurfaceMuted,
+          ),
           const SizedBox(width: 6),
           Flexible(
             child: Text(
@@ -64,8 +67,7 @@ class ShopSwitcher extends ConsumerWidget {
       key: const ValueKey('shop-switcher'),
       tooltip: 'Switch shop',
       initialValue: active?.id,
-      onSelected: (id) =>
-          ref.read(selectedShopIdProvider.notifier).select(id),
+      onSelected: (id) => ref.read(selectedShopIdProvider.notifier).select(id),
       itemBuilder: (context) => [
         for (final shop in shops)
           CheckedPopupMenuItem<String>(
@@ -81,8 +83,11 @@ class ShopSwitcher extends ConsumerWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.storefront_outlined,
-              size: 18, color: AppColors.onSurfaceMuted),
+          const Icon(
+            Icons.storefront_outlined,
+            size: 18,
+            color: AppColors.onSurfaceMuted,
+          ),
           const SizedBox(width: 6),
           Flexible(
             child: Text(

@@ -28,8 +28,8 @@ class VariantCard extends StatelessWidget {
     final stockColor = stockQty <= 0
         ? Colors.red
         : stockQty < 10
-            ? Colors.orange
-            : Colors.green;
+        ? Colors.orange
+        : Colors.green;
 
     return Card(
       elevation: 0,
@@ -71,8 +71,12 @@ class VariantCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
-                    Row(
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
+                      crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
+                        AmountDisplay.compact(amount: variant.price),
                         if (variant.sku.isNotEmpty)
                           Text(
                             'SKU: ${variant.sku}',
@@ -82,38 +86,29 @@ class VariantCard extends StatelessWidget {
                               fontSize: 11,
                             ),
                           ),
-                        const SizedBox(width: 8),
                         VariantStatusBadge(status: variant.status),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: stockColor.withAlpha(25),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            '$stockQty in stock',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                              color: stockColor,
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(width: 8),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  AmountDisplay.compact(amount: variant.price),
-                  const SizedBox(height: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: stockColor.withAlpha(25),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      '$stockQty in stock',
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                        color: stockColor,
-                      ),
-                    ),
-                  ),
-                ],
               ),
               if (onEdit != null) ...[
                 const SizedBox(width: 4),

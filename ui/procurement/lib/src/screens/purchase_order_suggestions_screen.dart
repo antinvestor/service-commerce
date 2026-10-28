@@ -1,4 +1,5 @@
 import 'package:antinvestor_api_procurement/antinvestor_api_procurement.dart';
+import 'package:antinvestor_ui_core/permissions/permission_provider.dart';
 import 'package:antinvestor_ui_core/widgets/money_helpers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -50,7 +51,9 @@ class PurchaseOrderSuggestionsScreen extends ConsumerStatefulWidget {
 class _PurchaseOrderSuggestionsScreenState
     extends ConsumerState<PurchaseOrderSuggestionsScreen> {
   final _planController = TextEditingController();
+  final _currencyController = TextEditingController();
   String? _planId;
+  String _currency = '';
 
   /// One key per supplier per plan, so a double tap or retry never creates a
   /// second order.
@@ -60,6 +63,7 @@ class _PurchaseOrderSuggestionsScreenState
   @override
   void dispose() {
     _planController.dispose();
+    _currencyController.dispose();
     super.dispose();
   }
 
@@ -68,6 +72,7 @@ class _PurchaseOrderSuggestionsScreenState
     if (planId.isEmpty) return;
     setState(() {
       _planId = planId;
+      _currency = _currencyController.text.trim().toUpperCase();
       _keys.clear();
     });
   }
@@ -88,6 +93,7 @@ class _PurchaseOrderSuggestionsScreenState
             ),
           );
       ref.invalidate(purchaseOrderListProvider);
+      ref.invalidate(purchaseOrderPagesProvider);
       if (mounted) context.go(ProcurementPaths.order(created.id));
     } catch (e) {
       if (mounted) {
@@ -112,7 +118,8 @@ class _PurchaseOrderSuggestionsScreenState
           Text(
             'Enter a production plan to see what to buy. Each item comes '
             'from its cheapest active supplier, raised to the supplier\'s '
-            'minimum order.',
+            'minimum order. Prices are compared only within one currency: '
+            'name it to source items offered in several.',
             style: theme.textTheme.bodyMedium,
           ),
           const SizedBox(height: 12),
@@ -124,6 +131,21 @@ class _PurchaseOrderSuggestionsScreenState
                   controller: _planController,
                   decoration: const InputDecoration(
                     labelText: 'Production plan ID',
+                    border: OutlineInputBorder(),
+                  ),
+                  onSubmitted: (_) => _suggest(),
+                ),
+              ),
+              const SizedBox(width: 12),
+              SizedBox(
+                width: 96,
+                child: TextField(
+                  key: const Key('suggestion_currency'),
+                  controller: _currencyController,
+                  textCapitalization: TextCapitalization.characters,
+                  decoration: const InputDecoration(
+                    labelText: 'Currency',
+                    hintText: 'KES',
                     border: OutlineInputBorder(),
                   ),
                   onSubmitted: (_) => _suggest(),
@@ -144,6 +166,7 @@ class _PurchaseOrderSuggestionsScreenState
                   purchaseOrderSuggestionsProvider((
                     propertyId: widget.propertyId,
                     planId: planId,
+                    currencyCode: _currency,
                   )),
                 )
                 .when(
@@ -166,7 +189,13 @@ class _PurchaseOrderSuggestionsScreenState
                               _SuggestionCard(
                                 suggestion: s,
                                 creating: _creating.contains(s.supplierId),
-                                onCreate: s.supplierId.isEmpty
+                                onCreate:
+                                    s.supplierId.isEmpty ||
+                                        !ref.watch(
+                                          hasPermissionProvider(
+                                            'purchase_order_create',
+                                          ),
+                                        )
                                     ? null
                                     : () => _create(s),
                               ),

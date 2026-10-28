@@ -95,6 +95,22 @@ func (s *BuyerAccessSuite) TestBuyerSeesOnlyOwnOrders() {
 		staff, err := server.ListOrders(owner, &commercev1.ListOrdersRequest{ShopId: shopID})
 		require.NoError(t, err)
 		require.Len(t, staff.GetOrders(), 2)
+
+		// Staff narrow the shop's orders to one customer, in the query.
+		history, err := server.ListOrders(
+			owner,
+			&commercev1.ListOrdersRequest{ShopId: shopID, ProfileId: "someone-else"},
+		)
+		require.NoError(t, err)
+		require.Len(t, history.GetOrders(), 1)
+		require.Equal(t, theirs.GetId(), history.GetOrders()[0].GetId())
+
+		// A buyer may filter by themselves, never by someone else.
+		own, err := server.ListOrders(buyer, &commercev1.ListOrdersRequest{ShopId: shopID, ProfileId: buyerID})
+		require.NoError(t, err)
+		require.Len(t, own.GetOrders(), 1)
+		_, err = server.ListOrders(buyer, &commercev1.ListOrdersRequest{ShopId: shopID, ProfileId: "someone-else"})
+		require.Equal(t, connect.CodePermissionDenied, connect.CodeOf(err))
 	})
 }
 

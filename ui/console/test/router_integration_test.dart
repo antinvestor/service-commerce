@@ -8,9 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 /// MaterialApp is rendered.
 void main() {
   testWidgets('ConsoleApp boots without crashing', (tester) async {
-    await tester.pumpWidget(
-      const ProviderScope(child: ConsoleApp()),
-    );
+    await tester.pumpWidget(const ProviderScope(child: ConsoleApp()));
     await tester.pump();
     expect(find.byType(MaterialApp), findsOneWidget);
   });

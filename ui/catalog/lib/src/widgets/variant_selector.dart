@@ -53,9 +53,12 @@ class VariantSelector extends StatelessWidget {
             ),
             if (variant.attributes.isNotEmpty) ...[
               const SizedBox(height: 8),
-              Text('Attributes',
-                  style: theme.textTheme.labelMedium
-                      ?.copyWith(fontWeight: FontWeight.w500)),
+              Text(
+                'Attributes',
+                style: theme.textTheme.labelMedium?.copyWith(
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
               const SizedBox(height: 4),
               for (final entry in variant.attributes.entries)
                 _DetailRow(label: entry.key, value: entry.value),
@@ -82,9 +85,12 @@ class VariantSelector extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     if (variants.isEmpty) {
-      return Text('No variants available',
-          style: theme.textTheme.bodySmall
-              ?.copyWith(color: theme.colorScheme.onSurfaceVariant));
+      return Text(
+        'No variants available',
+        style: theme.textTheme.bodySmall?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
+      );
     }
 
     return SizedBox(
@@ -97,9 +103,7 @@ class VariantSelector extends StatelessWidget {
           final variant = variants[index];
           final isSelected = variant.id == selectedId;
           return ChoiceChip(
-            label: Text(
-              variant.name.isNotEmpty ? variant.name : variant.sku,
-            ),
+            label: Text(variant.name.isNotEmpty ? variant.name : variant.sku),
             selected: isSelected,
             onSelected: (_) => _showDetail(context, variant),
           );
@@ -126,15 +130,22 @@ class _DetailRow extends StatelessWidget {
         children: [
           SizedBox(
             width: 100,
-            child: Text(label,
-                style: theme.textTheme.bodySmall
-                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+            child: Text(
+              label,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
           ),
           Expanded(
-            child: child ??
-                Text(value ?? '',
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(fontWeight: FontWeight.w500)),
+            child:
+                child ??
+                Text(
+                  value ?? '',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
           ),
         ],
       ),

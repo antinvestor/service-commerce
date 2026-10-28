@@ -514,8 +514,10 @@ func (cs *CommerceServer) GetOrder(
 	return &commercev1.GetOrderResponse{Order: order}, nil
 }
 
-// ListOrders lists a shop's orders for staff. A caller without orders_view on
-// the shop gets their own orders instead, so buyers can see their history.
+// ListOrders lists a shop's orders for staff, narrowed to one buyer when
+// profile_id is set. A caller without orders_view on the shop gets their own
+// orders instead, so buyers can see their history; they may name only
+// themselves as profile_id.
 func (cs *CommerceServer) ListOrders(
 	ctx context.Context,
 	req *commercev1.ListOrdersRequest,
@@ -523,11 +525,14 @@ func (cs *CommerceServer) ListOrders(
 	var page *business.OrderPage
 	var err error
 
-	if authzErr := cs.authz.CanOrdersView(ctx, req.GetShopId()); authzErr == nil {
+	switch authzErr := cs.authz.CanOrdersView(ctx, req.GetShopId()); {
+	case authzErr == nil && req.GetProfileId() != "":
+		page, err = cs.orderBusiness.ListOrdersForProfile(ctx, req.GetProfileId(), req)
+	case authzErr == nil:
 		page, err = cs.orderBusiness.ListOrders(ctx, req)
-	} else {
+	default:
 		caller := callerSubject(ctx)
-		if caller == "" {
+		if caller == "" || (req.GetProfileId() != "" && req.GetProfileId() != caller) {
 			return nil, authorizer.ToConnectError(authzErr)
 		}
 		page, err = cs.orderBusiness.ListOrdersForProfile(ctx, caller, req)

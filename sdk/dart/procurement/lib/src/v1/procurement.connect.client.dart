@@ -181,6 +181,26 @@ extension type ProcurementServiceClient (connect.Transport _transport) {
     );
   }
 
+  /// Closes a partially received order short: what was received stands, the
+  /// remainder of every open line is cancelled and no further receipt is
+  /// accepted.
+  Future<v1procurement.PurchaseOrderCloseResponse> purchaseOrderClose(
+    v1procurement.PurchaseOrderCloseRequest input, {
+    connect.Headers? headers,
+    connect.AbortSignal? signal,
+    Function(connect.Headers)? onHeader,
+    Function(connect.Headers)? onTrailer,
+  }) {
+    return connect.Client(_transport).unary(
+      specs.ProcurementService.purchaseOrderClose,
+      input,
+      signal: signal,
+      headers: headers,
+      onHeader: onHeader,
+      onTrailer: onTrailer,
+    );
+  }
+
   /// ---- Goods Receipts ----
   Future<v1procurement.GoodsReceiptCreateResponse> goodsReceiptCreate(
     v1procurement.GoodsReceiptCreateRequest input, {
@@ -225,6 +245,26 @@ extension type ProcurementServiceClient (connect.Transport _transport) {
   }) {
     return connect.Client(_transport).unary(
       specs.ProcurementService.goodsReceiptSearch,
+      input,
+      signal: signal,
+      headers: headers,
+      onHeader: onHeader,
+      onTrailer: onTrailer,
+    );
+  }
+
+  /// Pushes received stock that has not reached its destination yet (commerce
+  /// product variants), oldest and least-tried first, at most limit lines.
+  /// Each line lands once whatever the number of calls. Scheduled.
+  Future<v1procurement.GoodsReceiptDeliverResponse> goodsReceiptDeliver(
+    v1procurement.GoodsReceiptDeliverRequest input, {
+    connect.Headers? headers,
+    connect.AbortSignal? signal,
+    Function(connect.Headers)? onHeader,
+    Function(connect.Headers)? onTrailer,
+  }) {
+    return connect.Client(_transport).unary(
+      specs.ProcurementService.goodsReceiptDeliver,
       input,
       signal: signal,
       headers: headers,

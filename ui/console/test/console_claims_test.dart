@@ -38,8 +38,8 @@ void main() {
       addTearDown(container.dispose);
 
       container.listen(consoleClaimsProvider, (_, _) {});
-    await container.read(consoleAuthStateProvider.future);
-    final claims = await container.read(consoleClaimsProvider.future);
+      await container.read(consoleAuthStateProvider.future);
+      final claims = await container.read(consoleClaimsProvider.future);
 
       expect(claims['name'], 'Wanjiku');
       expect(claims['partition_id'], 'partition-1');

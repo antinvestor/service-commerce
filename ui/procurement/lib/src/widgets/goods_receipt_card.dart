@@ -1,6 +1,7 @@
 import 'package:antinvestor_api_procurement/antinvestor_api_procurement.dart';
 import 'package:flutter/material.dart';
 
+import '../util/supply.dart';
 import 'goods_receipt_status_badge.dart';
 
 String _formatDate(DateTime dt) =>
@@ -16,6 +17,7 @@ class GoodsReceiptCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final needAction = receipt.lines.where(deliveryNeedsAction).length;
 
     return Card(
       elevation: 0,
@@ -57,16 +59,27 @@ class GoodsReceiptCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
-                    Row(
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
+                      crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
                         GoodsReceiptStatusBadge(status: receipt.status),
-                        const SizedBox(width: 8),
                         Text(
                           '${receipt.lines.length} lines',
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: theme.colorScheme.onSurfaceVariant,
                           ),
                         ),
+                        if (needAction > 0)
+                          Text(
+                            '$needAction need action',
+                            key: const Key('receipt_needs_action'),
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.error,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                       ],
                     ),
                   ],

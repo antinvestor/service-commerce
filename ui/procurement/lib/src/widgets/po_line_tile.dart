@@ -2,6 +2,8 @@ import 'package:antinvestor_api_procurement/antinvestor_api_procurement.dart';
 import 'package:antinvestor_ui_core/widgets/amount_display.dart';
 import 'package:flutter/material.dart';
 
+import '../util/supply.dart';
+
 /// A tile showing a single [PurchaseOrderLine].
 class POLineTile extends StatelessWidget {
   const POLineTile({super.key, required this.line, this.itemName = ''});
@@ -36,7 +38,13 @@ class POLineTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  itemName.isNotEmpty ? itemName : line.inventoryItemId,
+                  itemName.isNotEmpty
+                      ? itemName
+                      : suppliedId(
+                          line.supplyKind,
+                          inventoryItemId: line.inventoryItemId,
+                          productVariantId: line.productVariantId,
+                        ),
                   style: theme.textTheme.bodyMedium?.copyWith(
                     fontWeight: FontWeight.w500,
                   ),
@@ -44,6 +52,7 @@ class POLineTile extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(
+                  '${supplyKindLabel(line.supplyKind)} | '
                   'Ordered: ${line.orderedQuantity} ${line.unit} | Received: ${line.receivedQuantity}',
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,

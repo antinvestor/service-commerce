@@ -224,6 +224,8 @@ class SupplierItem extends $pb.GeneratedMessage {
     $core.String? unit,
     $core.int? leadTimeDays,
     SupplierItemStatus? status,
+    SupplyKind? supplyKind,
+    $core.String? productVariantId,
     $2.Timestamp? createdAt,
   }) {
     final $result = create();
@@ -254,6 +256,12 @@ class SupplierItem extends $pb.GeneratedMessage {
     if (status != null) {
       $result.status = status;
     }
+    if (supplyKind != null) {
+      $result.supplyKind = supplyKind;
+    }
+    if (productVariantId != null) {
+      $result.productVariantId = productVariantId;
+    }
     if (createdAt != null) {
       $result.createdAt = createdAt;
     }
@@ -273,6 +281,8 @@ class SupplierItem extends $pb.GeneratedMessage {
     ..aOS(7, _omitFieldNames ? '' : 'unit')
     ..a<$core.int>(8, _omitFieldNames ? '' : 'leadTimeDays', $pb.PbFieldType.O3)
     ..e<SupplierItemStatus>(9, _omitFieldNames ? '' : 'status', $pb.PbFieldType.OE, defaultOrMaker: SupplierItemStatus.SUPPLIER_ITEM_STATUS_UNSPECIFIED, valueOf: SupplierItemStatus.valueOf, enumValues: SupplierItemStatus.values)
+    ..e<SupplyKind>(10, _omitFieldNames ? '' : 'supplyKind', $pb.PbFieldType.OE, defaultOrMaker: SupplyKind.SUPPLY_KIND_UNSPECIFIED, valueOf: SupplyKind.valueOf, enumValues: SupplyKind.values)
+    ..aOS(11, _omitFieldNames ? '' : 'productVariantId')
     ..aOM<$2.Timestamp>(15, _omitFieldNames ? '' : 'createdAt', subBuilder: $2.Timestamp.create)
     ..hasRequiredFields = false
   ;
@@ -381,16 +391,34 @@ class SupplierItem extends $pb.GeneratedMessage {
   @$pb.TagNumber(9)
   void clearStatus() => clearField(9);
 
+  @$pb.TagNumber(10)
+  SupplyKind get supplyKind => $_getN(9);
+  @$pb.TagNumber(10)
+  set supplyKind(SupplyKind v) { setField(10, v); }
+  @$pb.TagNumber(10)
+  $core.bool hasSupplyKind() => $_has(9);
+  @$pb.TagNumber(10)
+  void clearSupplyKind() => clearField(10);
+
+  @$pb.TagNumber(11)
+  $core.String get productVariantId => $_getSZ(10);
+  @$pb.TagNumber(11)
+  set productVariantId($core.String v) { $_setString(10, v); }
+  @$pb.TagNumber(11)
+  $core.bool hasProductVariantId() => $_has(10);
+  @$pb.TagNumber(11)
+  void clearProductVariantId() => clearField(11);
+
   @$pb.TagNumber(15)
-  $2.Timestamp get createdAt => $_getN(9);
+  $2.Timestamp get createdAt => $_getN(11);
   @$pb.TagNumber(15)
   set createdAt($2.Timestamp v) { setField(15, v); }
   @$pb.TagNumber(15)
-  $core.bool hasCreatedAt() => $_has(9);
+  $core.bool hasCreatedAt() => $_has(11);
   @$pb.TagNumber(15)
   void clearCreatedAt() => clearField(15);
   @$pb.TagNumber(15)
-  $2.Timestamp ensureCreatedAt() => $_ensure(9);
+  $2.Timestamp ensureCreatedAt() => $_ensure(11);
 }
 
 class PurchaseOrder extends $pb.GeneratedMessage {
@@ -624,6 +652,8 @@ class PurchaseOrderLine extends $pb.GeneratedMessage {
     $7.Money? unitPrice,
     $core.String? unit,
     PurchaseOrderLineStatus? status,
+    SupplyKind? supplyKind,
+    $core.String? productVariantId,
   }) {
     final $result = create();
     if (id != null) {
@@ -653,6 +683,12 @@ class PurchaseOrderLine extends $pb.GeneratedMessage {
     if (status != null) {
       $result.status = status;
     }
+    if (supplyKind != null) {
+      $result.supplyKind = supplyKind;
+    }
+    if (productVariantId != null) {
+      $result.productVariantId = productVariantId;
+    }
     return $result;
   }
   PurchaseOrderLine._() : super();
@@ -669,6 +705,8 @@ class PurchaseOrderLine extends $pb.GeneratedMessage {
     ..aOM<$7.Money>(7, _omitFieldNames ? '' : 'unitPrice', subBuilder: $7.Money.create)
     ..aOS(8, _omitFieldNames ? '' : 'unit')
     ..e<PurchaseOrderLineStatus>(9, _omitFieldNames ? '' : 'status', $pb.PbFieldType.OE, defaultOrMaker: PurchaseOrderLineStatus.PURCHASE_ORDER_LINE_STATUS_UNSPECIFIED, valueOf: PurchaseOrderLineStatus.valueOf, enumValues: PurchaseOrderLineStatus.values)
+    ..e<SupplyKind>(10, _omitFieldNames ? '' : 'supplyKind', $pb.PbFieldType.OE, defaultOrMaker: SupplyKind.SUPPLY_KIND_UNSPECIFIED, valueOf: SupplyKind.valueOf, enumValues: SupplyKind.values)
+    ..aOS(11, _omitFieldNames ? '' : 'productVariantId')
     ..hasRequiredFields = false
   ;
 
@@ -775,6 +813,24 @@ class PurchaseOrderLine extends $pb.GeneratedMessage {
   $core.bool hasStatus() => $_has(8);
   @$pb.TagNumber(9)
   void clearStatus() => clearField(9);
+
+  @$pb.TagNumber(10)
+  SupplyKind get supplyKind => $_getN(9);
+  @$pb.TagNumber(10)
+  set supplyKind(SupplyKind v) { setField(10, v); }
+  @$pb.TagNumber(10)
+  $core.bool hasSupplyKind() => $_has(9);
+  @$pb.TagNumber(10)
+  void clearSupplyKind() => clearField(10);
+
+  @$pb.TagNumber(11)
+  $core.String get productVariantId => $_getSZ(10);
+  @$pb.TagNumber(11)
+  set productVariantId($core.String v) { $_setString(10, v); }
+  @$pb.TagNumber(11)
+  $core.bool hasProductVariantId() => $_has(10);
+  @$pb.TagNumber(11)
+  void clearProductVariantId() => clearField(11);
 }
 
 class GoodsReceipt extends $pb.GeneratedMessage {
@@ -787,6 +843,7 @@ class GoodsReceipt extends $pb.GeneratedMessage {
     GoodsReceiptStatus? status,
     $core.String? notes,
     $core.Iterable<GoodsReceiptLine>? lines,
+    $core.String? stockLocationId,
     $2.Timestamp? createdAt,
   }) {
     final $result = create();
@@ -814,6 +871,9 @@ class GoodsReceipt extends $pb.GeneratedMessage {
     if (lines != null) {
       $result.lines.addAll(lines);
     }
+    if (stockLocationId != null) {
+      $result.stockLocationId = stockLocationId;
+    }
     if (createdAt != null) {
       $result.createdAt = createdAt;
     }
@@ -832,6 +892,7 @@ class GoodsReceipt extends $pb.GeneratedMessage {
     ..e<GoodsReceiptStatus>(6, _omitFieldNames ? '' : 'status', $pb.PbFieldType.OE, defaultOrMaker: GoodsReceiptStatus.GOODS_RECEIPT_STATUS_UNSPECIFIED, valueOf: GoodsReceiptStatus.valueOf, enumValues: GoodsReceiptStatus.values)
     ..aOS(7, _omitFieldNames ? '' : 'notes')
     ..pc<GoodsReceiptLine>(8, _omitFieldNames ? '' : 'lines', $pb.PbFieldType.PM, subBuilder: GoodsReceiptLine.create)
+    ..aOS(9, _omitFieldNames ? '' : 'stockLocationId')
     ..aOM<$2.Timestamp>(15, _omitFieldNames ? '' : 'createdAt', subBuilder: $2.Timestamp.create)
     ..hasRequiredFields = false
   ;
@@ -925,16 +986,26 @@ class GoodsReceipt extends $pb.GeneratedMessage {
   @$pb.TagNumber(8)
   $core.List<GoodsReceiptLine> get lines => $_getList(7);
 
+  /// Manufacturing stock location raw materials are received into.
+  @$pb.TagNumber(9)
+  $core.String get stockLocationId => $_getSZ(8);
+  @$pb.TagNumber(9)
+  set stockLocationId($core.String v) { $_setString(8, v); }
+  @$pb.TagNumber(9)
+  $core.bool hasStockLocationId() => $_has(8);
+  @$pb.TagNumber(9)
+  void clearStockLocationId() => clearField(9);
+
   @$pb.TagNumber(15)
-  $2.Timestamp get createdAt => $_getN(8);
+  $2.Timestamp get createdAt => $_getN(9);
   @$pb.TagNumber(15)
   set createdAt($2.Timestamp v) { setField(15, v); }
   @$pb.TagNumber(15)
-  $core.bool hasCreatedAt() => $_has(8);
+  $core.bool hasCreatedAt() => $_has(9);
   @$pb.TagNumber(15)
   void clearCreatedAt() => clearField(15);
   @$pb.TagNumber(15)
-  $2.Timestamp ensureCreatedAt() => $_ensure(8);
+  $2.Timestamp ensureCreatedAt() => $_ensure(9);
 }
 
 class GoodsReceiptLine extends $pb.GeneratedMessage {
@@ -950,6 +1021,10 @@ class GoodsReceiptLine extends $pb.GeneratedMessage {
     $core.String? lotNumber,
     $2.Timestamp? expiryDate,
     $core.String? unit,
+    SupplyKind? supplyKind,
+    $core.String? productVariantId,
+    StockDeliveryStatus? deliveryStatus,
+    $core.String? deliveryNote,
   }) {
     final $result = create();
     if (id != null) {
@@ -985,6 +1060,18 @@ class GoodsReceiptLine extends $pb.GeneratedMessage {
     if (unit != null) {
       $result.unit = unit;
     }
+    if (supplyKind != null) {
+      $result.supplyKind = supplyKind;
+    }
+    if (productVariantId != null) {
+      $result.productVariantId = productVariantId;
+    }
+    if (deliveryStatus != null) {
+      $result.deliveryStatus = deliveryStatus;
+    }
+    if (deliveryNote != null) {
+      $result.deliveryNote = deliveryNote;
+    }
     return $result;
   }
   GoodsReceiptLine._() : super();
@@ -1003,6 +1090,10 @@ class GoodsReceiptLine extends $pb.GeneratedMessage {
     ..aOS(9, _omitFieldNames ? '' : 'lotNumber')
     ..aOM<$2.Timestamp>(10, _omitFieldNames ? '' : 'expiryDate', subBuilder: $2.Timestamp.create)
     ..aOS(11, _omitFieldNames ? '' : 'unit')
+    ..e<SupplyKind>(12, _omitFieldNames ? '' : 'supplyKind', $pb.PbFieldType.OE, defaultOrMaker: SupplyKind.SUPPLY_KIND_UNSPECIFIED, valueOf: SupplyKind.valueOf, enumValues: SupplyKind.values)
+    ..aOS(13, _omitFieldNames ? '' : 'productVariantId')
+    ..e<StockDeliveryStatus>(14, _omitFieldNames ? '' : 'deliveryStatus', $pb.PbFieldType.OE, defaultOrMaker: StockDeliveryStatus.STOCK_DELIVERY_STATUS_UNSPECIFIED, valueOf: StockDeliveryStatus.valueOf, enumValues: StockDeliveryStatus.values)
+    ..aOS(15, _omitFieldNames ? '' : 'deliveryNote')
     ..hasRequiredFields = false
   ;
 
@@ -1127,6 +1218,42 @@ class GoodsReceiptLine extends $pb.GeneratedMessage {
   $core.bool hasUnit() => $_has(10);
   @$pb.TagNumber(11)
   void clearUnit() => clearField(11);
+
+  @$pb.TagNumber(12)
+  SupplyKind get supplyKind => $_getN(11);
+  @$pb.TagNumber(12)
+  set supplyKind(SupplyKind v) { setField(12, v); }
+  @$pb.TagNumber(12)
+  $core.bool hasSupplyKind() => $_has(11);
+  @$pb.TagNumber(12)
+  void clearSupplyKind() => clearField(12);
+
+  @$pb.TagNumber(13)
+  $core.String get productVariantId => $_getSZ(12);
+  @$pb.TagNumber(13)
+  set productVariantId($core.String v) { $_setString(12, v); }
+  @$pb.TagNumber(13)
+  $core.bool hasProductVariantId() => $_has(12);
+  @$pb.TagNumber(13)
+  void clearProductVariantId() => clearField(13);
+
+  @$pb.TagNumber(14)
+  StockDeliveryStatus get deliveryStatus => $_getN(13);
+  @$pb.TagNumber(14)
+  set deliveryStatus(StockDeliveryStatus v) { setField(14, v); }
+  @$pb.TagNumber(14)
+  $core.bool hasDeliveryStatus() => $_has(13);
+  @$pb.TagNumber(14)
+  void clearDeliveryStatus() => clearField(14);
+
+  @$pb.TagNumber(15)
+  $core.String get deliveryNote => $_getSZ(14);
+  @$pb.TagNumber(15)
+  set deliveryNote($core.String v) { $_setString(14, v); }
+  @$pb.TagNumber(15)
+  $core.bool hasDeliveryNote() => $_has(14);
+  @$pb.TagNumber(15)
+  void clearDeliveryNote() => clearField(15);
 }
 
 class PurchaseOrderSuggestion extends $pb.GeneratedMessage {
@@ -1818,6 +1945,8 @@ class SupplierItemSaveRequest extends $pb.GeneratedMessage {
     $core.String? unit,
     $core.int? leadTimeDays,
     SupplierItemStatus? status,
+    SupplyKind? supplyKind,
+    $core.String? productVariantId,
   }) {
     final $result = create();
     if (id != null) {
@@ -1847,6 +1976,12 @@ class SupplierItemSaveRequest extends $pb.GeneratedMessage {
     if (status != null) {
       $result.status = status;
     }
+    if (supplyKind != null) {
+      $result.supplyKind = supplyKind;
+    }
+    if (productVariantId != null) {
+      $result.productVariantId = productVariantId;
+    }
     return $result;
   }
   SupplierItemSaveRequest._() : super();
@@ -1863,6 +1998,8 @@ class SupplierItemSaveRequest extends $pb.GeneratedMessage {
     ..aOS(7, _omitFieldNames ? '' : 'unit')
     ..a<$core.int>(8, _omitFieldNames ? '' : 'leadTimeDays', $pb.PbFieldType.O3)
     ..e<SupplierItemStatus>(9, _omitFieldNames ? '' : 'status', $pb.PbFieldType.OE, defaultOrMaker: SupplierItemStatus.SUPPLIER_ITEM_STATUS_UNSPECIFIED, valueOf: SupplierItemStatus.valueOf, enumValues: SupplierItemStatus.values)
+    ..e<SupplyKind>(10, _omitFieldNames ? '' : 'supplyKind', $pb.PbFieldType.OE, defaultOrMaker: SupplyKind.SUPPLY_KIND_UNSPECIFIED, valueOf: SupplyKind.valueOf, enumValues: SupplyKind.values)
+    ..aOS(11, _omitFieldNames ? '' : 'productVariantId')
     ..hasRequiredFields = false
   ;
 
@@ -1969,6 +2106,26 @@ class SupplierItemSaveRequest extends $pb.GeneratedMessage {
   $core.bool hasStatus() => $_has(8);
   @$pb.TagNumber(9)
   void clearStatus() => clearField(9);
+
+  /// Fixed when the item is created. Unspecified with an inventory_item_id
+  /// means SUPPLY_KIND_MATERIAL.
+  @$pb.TagNumber(10)
+  SupplyKind get supplyKind => $_getN(9);
+  @$pb.TagNumber(10)
+  set supplyKind(SupplyKind v) { setField(10, v); }
+  @$pb.TagNumber(10)
+  $core.bool hasSupplyKind() => $_has(9);
+  @$pb.TagNumber(10)
+  void clearSupplyKind() => clearField(10);
+
+  @$pb.TagNumber(11)
+  $core.String get productVariantId => $_getSZ(10);
+  @$pb.TagNumber(11)
+  set productVariantId($core.String v) { $_setString(10, v); }
+  @$pb.TagNumber(11)
+  $core.bool hasProductVariantId() => $_has(10);
+  @$pb.TagNumber(11)
+  void clearProductVariantId() => clearField(11);
 }
 
 class SupplierItemSaveResponse extends $pb.GeneratedMessage {
@@ -2907,6 +3064,122 @@ class PurchaseOrderCancelResponse extends $pb.GeneratedMessage {
   PurchaseOrder ensurePurchaseOrder() => $_ensure(0);
 }
 
+class PurchaseOrderCloseRequest extends $pb.GeneratedMessage {
+  factory PurchaseOrderCloseRequest({
+    $core.String? id,
+    $core.String? reason,
+  }) {
+    final $result = create();
+    if (id != null) {
+      $result.id = id;
+    }
+    if (reason != null) {
+      $result.reason = reason;
+    }
+    return $result;
+  }
+  PurchaseOrderCloseRequest._() : super();
+  factory PurchaseOrderCloseRequest.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory PurchaseOrderCloseRequest.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'PurchaseOrderCloseRequest', package: const $pb.PackageName(_omitMessageNames ? '' : 'procurement.v1'), createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'id')
+    ..aOS(2, _omitFieldNames ? '' : 'reason')
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  PurchaseOrderCloseRequest clone() => PurchaseOrderCloseRequest()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  PurchaseOrderCloseRequest copyWith(void Function(PurchaseOrderCloseRequest) updates) => super.copyWith((message) => updates(message as PurchaseOrderCloseRequest)) as PurchaseOrderCloseRequest;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static PurchaseOrderCloseRequest create() => PurchaseOrderCloseRequest._();
+  PurchaseOrderCloseRequest createEmptyInstance() => create();
+  static $pb.PbList<PurchaseOrderCloseRequest> createRepeated() => $pb.PbList<PurchaseOrderCloseRequest>();
+  @$core.pragma('dart2js:noInline')
+  static PurchaseOrderCloseRequest getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<PurchaseOrderCloseRequest>(create);
+  static PurchaseOrderCloseRequest? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get id => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set id($core.String v) { $_setString(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearId() => clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get reason => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set reason($core.String v) { $_setString(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasReason() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearReason() => clearField(2);
+}
+
+class PurchaseOrderCloseResponse extends $pb.GeneratedMessage {
+  factory PurchaseOrderCloseResponse({
+    PurchaseOrder? purchaseOrder,
+  }) {
+    final $result = create();
+    if (purchaseOrder != null) {
+      $result.purchaseOrder = purchaseOrder;
+    }
+    return $result;
+  }
+  PurchaseOrderCloseResponse._() : super();
+  factory PurchaseOrderCloseResponse.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory PurchaseOrderCloseResponse.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'PurchaseOrderCloseResponse', package: const $pb.PackageName(_omitMessageNames ? '' : 'procurement.v1'), createEmptyInstance: create)
+    ..aOM<PurchaseOrder>(1, _omitFieldNames ? '' : 'purchaseOrder', subBuilder: PurchaseOrder.create)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  PurchaseOrderCloseResponse clone() => PurchaseOrderCloseResponse()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  PurchaseOrderCloseResponse copyWith(void Function(PurchaseOrderCloseResponse) updates) => super.copyWith((message) => updates(message as PurchaseOrderCloseResponse)) as PurchaseOrderCloseResponse;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static PurchaseOrderCloseResponse create() => PurchaseOrderCloseResponse._();
+  PurchaseOrderCloseResponse createEmptyInstance() => create();
+  static $pb.PbList<PurchaseOrderCloseResponse> createRepeated() => $pb.PbList<PurchaseOrderCloseResponse>();
+  @$core.pragma('dart2js:noInline')
+  static PurchaseOrderCloseResponse getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<PurchaseOrderCloseResponse>(create);
+  static PurchaseOrderCloseResponse? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  PurchaseOrder get purchaseOrder => $_getN(0);
+  @$pb.TagNumber(1)
+  set purchaseOrder(PurchaseOrder v) { setField(1, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasPurchaseOrder() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearPurchaseOrder() => clearField(1);
+  @$pb.TagNumber(1)
+  PurchaseOrder ensurePurchaseOrder() => $_ensure(0);
+}
+
 class GoodsReceiptCreateRequest extends $pb.GeneratedMessage {
   factory GoodsReceiptCreateRequest({
     $core.String? idempotencyKey,
@@ -2914,6 +3187,7 @@ class GoodsReceiptCreateRequest extends $pb.GeneratedMessage {
     $core.String? propertyId,
     $core.String? notes,
     $core.Iterable<GoodsReceiptLineInput>? lines,
+    $core.String? stockLocationId,
   }) {
     final $result = create();
     if (idempotencyKey != null) {
@@ -2931,6 +3205,9 @@ class GoodsReceiptCreateRequest extends $pb.GeneratedMessage {
     if (lines != null) {
       $result.lines.addAll(lines);
     }
+    if (stockLocationId != null) {
+      $result.stockLocationId = stockLocationId;
+    }
     return $result;
   }
   GoodsReceiptCreateRequest._() : super();
@@ -2943,6 +3220,7 @@ class GoodsReceiptCreateRequest extends $pb.GeneratedMessage {
     ..aOS(3, _omitFieldNames ? '' : 'propertyId')
     ..aOS(4, _omitFieldNames ? '' : 'notes')
     ..pc<GoodsReceiptLineInput>(5, _omitFieldNames ? '' : 'lines', $pb.PbFieldType.PM, subBuilder: GoodsReceiptLineInput.create)
+    ..aOS(6, _omitFieldNames ? '' : 'stockLocationId')
     ..hasRequiredFields = false
   ;
 
@@ -3005,6 +3283,16 @@ class GoodsReceiptCreateRequest extends $pb.GeneratedMessage {
 
   @$pb.TagNumber(5)
   $core.List<GoodsReceiptLineInput> get lines => $_getList(4);
+
+  /// Manufacturing stock location raw materials are received into.
+  @$pb.TagNumber(6)
+  $core.String get stockLocationId => $_getSZ(5);
+  @$pb.TagNumber(6)
+  set stockLocationId($core.String v) { $_setString(5, v); }
+  @$pb.TagNumber(6)
+  $core.bool hasStockLocationId() => $_has(5);
+  @$pb.TagNumber(6)
+  void clearStockLocationId() => clearField(6);
 }
 
 class GoodsReceiptLineInput extends $pb.GeneratedMessage {
@@ -3439,6 +3727,7 @@ class SuggestPurchaseOrdersRequest extends $pb.GeneratedMessage {
   factory SuggestPurchaseOrdersRequest({
     $core.String? propertyId,
     $core.String? planId,
+    $core.String? currencyCode,
   }) {
     final $result = create();
     if (propertyId != null) {
@@ -3446,6 +3735,9 @@ class SuggestPurchaseOrdersRequest extends $pb.GeneratedMessage {
     }
     if (planId != null) {
       $result.planId = planId;
+    }
+    if (currencyCode != null) {
+      $result.currencyCode = currencyCode;
     }
     return $result;
   }
@@ -3456,6 +3748,7 @@ class SuggestPurchaseOrdersRequest extends $pb.GeneratedMessage {
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'SuggestPurchaseOrdersRequest', package: const $pb.PackageName(_omitMessageNames ? '' : 'procurement.v1'), createEmptyInstance: create)
     ..aOS(1, _omitFieldNames ? '' : 'propertyId')
     ..aOS(2, _omitFieldNames ? '' : 'planId')
+    ..aOS(3, _omitFieldNames ? '' : 'currencyCode')
     ..hasRequiredFields = false
   ;
 
@@ -3497,6 +3790,18 @@ class SuggestPurchaseOrdersRequest extends $pb.GeneratedMessage {
   $core.bool hasPlanId() => $_has(1);
   @$pb.TagNumber(2)
   void clearPlanId() => clearField(2);
+
+  /// Only supplier items priced in this currency are considered. When empty,
+  /// a material offered in more than one currency is left unsourced rather
+  /// than compared across currencies.
+  @$pb.TagNumber(3)
+  $core.String get currencyCode => $_getSZ(2);
+  @$pb.TagNumber(3)
+  set currencyCode($core.String v) { $_setString(2, v); }
+  @$pb.TagNumber(3)
+  $core.bool hasCurrencyCode() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearCurrencyCode() => clearField(3);
 }
 
 class SuggestPurchaseOrdersResponse extends $pb.GeneratedMessage {
@@ -3543,6 +3848,137 @@ class SuggestPurchaseOrdersResponse extends $pb.GeneratedMessage {
   $core.List<PurchaseOrderSuggestion> get suggestions => $_getList(0);
 }
 
+class GoodsReceiptDeliverRequest extends $pb.GeneratedMessage {
+  factory GoodsReceiptDeliverRequest({
+    $core.int? limit,
+  }) {
+    final $result = create();
+    if (limit != null) {
+      $result.limit = limit;
+    }
+    return $result;
+  }
+  GoodsReceiptDeliverRequest._() : super();
+  factory GoodsReceiptDeliverRequest.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory GoodsReceiptDeliverRequest.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'GoodsReceiptDeliverRequest', package: const $pb.PackageName(_omitMessageNames ? '' : 'procurement.v1'), createEmptyInstance: create)
+    ..a<$core.int>(1, _omitFieldNames ? '' : 'limit', $pb.PbFieldType.O3)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  GoodsReceiptDeliverRequest clone() => GoodsReceiptDeliverRequest()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  GoodsReceiptDeliverRequest copyWith(void Function(GoodsReceiptDeliverRequest) updates) => super.copyWith((message) => updates(message as GoodsReceiptDeliverRequest)) as GoodsReceiptDeliverRequest;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static GoodsReceiptDeliverRequest create() => GoodsReceiptDeliverRequest._();
+  GoodsReceiptDeliverRequest createEmptyInstance() => create();
+  static $pb.PbList<GoodsReceiptDeliverRequest> createRepeated() => $pb.PbList<GoodsReceiptDeliverRequest>();
+  @$core.pragma('dart2js:noInline')
+  static GoodsReceiptDeliverRequest getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<GoodsReceiptDeliverRequest>(create);
+  static GoodsReceiptDeliverRequest? _defaultInstance;
+
+  /// Most lines to push in this call; 0 means 100, at most 500.
+  @$pb.TagNumber(1)
+  $core.int get limit => $_getIZ(0);
+  @$pb.TagNumber(1)
+  set limit($core.int v) { $_setSignedInt32(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasLimit() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearLimit() => clearField(1);
+}
+
+class GoodsReceiptDeliverResponse extends $pb.GeneratedMessage {
+  factory GoodsReceiptDeliverResponse({
+    $core.int? delivered,
+    $core.int? pending,
+    $core.int? failed,
+  }) {
+    final $result = create();
+    if (delivered != null) {
+      $result.delivered = delivered;
+    }
+    if (pending != null) {
+      $result.pending = pending;
+    }
+    if (failed != null) {
+      $result.failed = failed;
+    }
+    return $result;
+  }
+  GoodsReceiptDeliverResponse._() : super();
+  factory GoodsReceiptDeliverResponse.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory GoodsReceiptDeliverResponse.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'GoodsReceiptDeliverResponse', package: const $pb.PackageName(_omitMessageNames ? '' : 'procurement.v1'), createEmptyInstance: create)
+    ..a<$core.int>(1, _omitFieldNames ? '' : 'delivered', $pb.PbFieldType.O3)
+    ..a<$core.int>(2, _omitFieldNames ? '' : 'pending', $pb.PbFieldType.O3)
+    ..a<$core.int>(3, _omitFieldNames ? '' : 'failed', $pb.PbFieldType.O3)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  GoodsReceiptDeliverResponse clone() => GoodsReceiptDeliverResponse()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  GoodsReceiptDeliverResponse copyWith(void Function(GoodsReceiptDeliverResponse) updates) => super.copyWith((message) => updates(message as GoodsReceiptDeliverResponse)) as GoodsReceiptDeliverResponse;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static GoodsReceiptDeliverResponse create() => GoodsReceiptDeliverResponse._();
+  GoodsReceiptDeliverResponse createEmptyInstance() => create();
+  static $pb.PbList<GoodsReceiptDeliverResponse> createRepeated() => $pb.PbList<GoodsReceiptDeliverResponse>();
+  @$core.pragma('dart2js:noInline')
+  static GoodsReceiptDeliverResponse getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<GoodsReceiptDeliverResponse>(create);
+  static GoodsReceiptDeliverResponse? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.int get delivered => $_getIZ(0);
+  @$pb.TagNumber(1)
+  set delivered($core.int v) { $_setSignedInt32(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasDelivered() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearDelivered() => clearField(1);
+
+  /// Still pending after this call (transient failures), to retry later.
+  @$pb.TagNumber(2)
+  $core.int get pending => $_getIZ(1);
+  @$pb.TagNumber(2)
+  set pending($core.int v) { $_setSignedInt32(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasPending() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearPending() => clearField(2);
+
+  /// Refused for good and marked STOCK_DELIVERY_STATUS_FAILED.
+  @$pb.TagNumber(3)
+  $core.int get failed => $_getIZ(2);
+  @$pb.TagNumber(3)
+  set failed($core.int v) { $_setSignedInt32(2, v); }
+  @$pb.TagNumber(3)
+  $core.bool hasFailed() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearFailed() => clearField(3);
+}
+
 class ProcurementServiceApi {
   $pb.RpcClient _client;
   ProcurementServiceApi(this._client);
@@ -3577,6 +4013,9 @@ class ProcurementServiceApi {
   $async.Future<PurchaseOrderCancelResponse> purchaseOrderCancel($pb.ClientContext? ctx, PurchaseOrderCancelRequest request) =>
     _client.invoke<PurchaseOrderCancelResponse>(ctx, 'ProcurementService', 'PurchaseOrderCancel', request, PurchaseOrderCancelResponse())
   ;
+  $async.Future<PurchaseOrderCloseResponse> purchaseOrderClose($pb.ClientContext? ctx, PurchaseOrderCloseRequest request) =>
+    _client.invoke<PurchaseOrderCloseResponse>(ctx, 'ProcurementService', 'PurchaseOrderClose', request, PurchaseOrderCloseResponse())
+  ;
   $async.Future<GoodsReceiptCreateResponse> goodsReceiptCreate($pb.ClientContext? ctx, GoodsReceiptCreateRequest request) =>
     _client.invoke<GoodsReceiptCreateResponse>(ctx, 'ProcurementService', 'GoodsReceiptCreate', request, GoodsReceiptCreateResponse())
   ;
@@ -3585,6 +4024,9 @@ class ProcurementServiceApi {
   ;
   $async.Future<GoodsReceiptSearchResponse> goodsReceiptSearch($pb.ClientContext? ctx, GoodsReceiptSearchRequest request) =>
     _client.invoke<GoodsReceiptSearchResponse>(ctx, 'ProcurementService', 'GoodsReceiptSearch', request, GoodsReceiptSearchResponse())
+  ;
+  $async.Future<GoodsReceiptDeliverResponse> goodsReceiptDeliver($pb.ClientContext? ctx, GoodsReceiptDeliverRequest request) =>
+    _client.invoke<GoodsReceiptDeliverResponse>(ctx, 'ProcurementService', 'GoodsReceiptDeliver', request, GoodsReceiptDeliverResponse())
   ;
   $async.Future<SuggestPurchaseOrdersResponse> suggestPurchaseOrders($pb.ClientContext? ctx, SuggestPurchaseOrdersRequest request) =>
     _client.invoke<SuggestPurchaseOrdersResponse>(ctx, 'ProcurementService', 'SuggestPurchaseOrders', request, SuggestPurchaseOrdersResponse())

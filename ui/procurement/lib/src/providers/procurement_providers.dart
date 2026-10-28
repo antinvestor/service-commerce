@@ -1,25 +1,58 @@
 import 'package:antinvestor_api_procurement/antinvestor_api_procurement.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'paged_list.dart';
+import 'procurement_api.dart';
 import 'procurement_transport_provider.dart';
 
-/// Server-side filters for [supplierListProvider]. A null field means
-/// "any".
+/// Server-side filters for the supplier lists. A null field means "any".
 typedef SupplierFilter = ({SupplierType? type, SupplierStatus? status});
 
 /// The unfiltered supplier search.
 const SupplierFilter allSuppliers = (type: null, status: null);
 
-/// Search suppliers, optionally narrowed by type and status.
+SupplierSearchRequest _supplierSearch(SupplierFilter filter, SearchRequest s) {
+  final request = SupplierSearchRequest(search: s);
+  if (filter.type != null) request.supplierType = filter.type!;
+  if (filter.status != null) request.status = filter.status!;
+  return request;
+}
+
+/// Every supplier matching [SupplierFilter], up to [collectMaxPages] pages:
+/// for pickers and counts.
 final supplierListProvider =
-    FutureProvider.family<List<Supplier>, SupplierFilter>((ref, filter) async {
-      final client = ref.watch(procurementServiceClientProvider);
-      final request = SupplierSearchRequest();
-      if (filter.type != null) request.supplierType = filter.type!;
-      if (filter.status != null) request.status = filter.status!;
-      final response = await client.supplierSearch(request);
-      return response.suppliers;
+    FutureProvider.family<List<Supplier>, SupplierFilter>((ref, filter) {
+      final api = ref.watch(procurementApiProvider);
+      return collectPages((s) async {
+        final r = await api.supplierSearch(_supplierSearch(filter, s));
+        return (r.suppliers.toList(), r.nextPage);
+      });
     });
+
+/// Suppliers matching a filter, a page at a time.
+class SupplierPages extends PagedController<Supplier> {
+  SupplierPages(this.filter);
+
+  final SupplierFilter filter;
+
+  @override
+  Future<(List<Supplier>, String)> fetchPage(
+    ProcurementApi api,
+    String page,
+  ) async {
+    final r = await api.supplierSearch(
+      _supplierSearch(filter, pageSearch(page)),
+    );
+    return (r.suppliers.toList(), r.nextPage);
+  }
+}
+
+final supplierPagesProvider =
+    AsyncNotifierProvider.family<
+      SupplierPages,
+      PagedList<Supplier>,
+      SupplierFilter
+    >(SupplierPages.new);
 
 /// Get a single supplier by ID.
 final supplierByIdProvider = FutureProvider.family<Supplier, String>((
@@ -32,23 +65,91 @@ final supplierByIdProvider = FutureProvider.family<Supplier, String>((
   return response.supplier;
 });
 
-/// Search supplier items for a given supplier.
+/// Every item a supplier offers, up to [collectMaxPages] pages: for the
+/// purchase order wizard's item picker.
 final supplierItemListProvider =
-    FutureProvider.family<List<SupplierItem>, String>((ref, supplierId) async {
-      final client = ref.watch(procurementServiceClientProvider);
-      final request = SupplierItemSearchRequest()..supplierId = supplierId;
-      final response = await client.supplierItemSearch(request);
-      return response.supplierItems;
+    FutureProvider.family<List<SupplierItem>, String>((ref, supplierId) {
+      final api = ref.watch(procurementApiProvider);
+      return collectPages((s) async {
+        final r = await api.supplierItemSearch(
+          SupplierItemSearchRequest(supplierId: supplierId, search: s),
+        );
+        return (r.supplierItems.toList(), r.nextPage);
+      });
     });
 
-/// Search purchase orders by property.
+/// A supplier's items, a page at a time.
+class SupplierItemPages extends PagedController<SupplierItem> {
+  SupplierItemPages(this.supplierId);
+
+  final String supplierId;
+
+  @override
+  Future<(List<SupplierItem>, String)> fetchPage(
+    ProcurementApi api,
+    String page,
+  ) async {
+    final r = await api.supplierItemSearch(
+      SupplierItemSearchRequest(
+        supplierId: supplierId,
+        search: pageSearch(page),
+      ),
+    );
+    return (r.supplierItems.toList(), r.nextPage);
+  }
+}
+
+final supplierItemPagesProvider =
+    AsyncNotifierProvider.family<
+      SupplierItemPages,
+      PagedList<SupplierItem>,
+      String
+    >(SupplierItemPages.new);
+
+/// Every purchase order of a property, up to [collectMaxPages] pages: for
+/// counts on the home screen and the dashboard.
 final purchaseOrderListProvider =
-    FutureProvider.family<List<PurchaseOrder>, String>((ref, propertyId) async {
-      final client = ref.watch(procurementServiceClientProvider);
-      final request = PurchaseOrderSearchRequest()..propertyId = propertyId;
-      final response = await client.purchaseOrderSearch(request);
-      return response.purchaseOrders;
+    FutureProvider.family<List<PurchaseOrder>, String>((ref, propertyId) {
+      final api = ref.watch(procurementApiProvider);
+      return collectPages((s) async {
+        final r = await api.purchaseOrderSearch(
+          PurchaseOrderSearchRequest(propertyId: propertyId, search: s),
+        );
+        return (r.purchaseOrders.toList(), r.nextPage);
+      });
     });
+
+/// A property's purchase orders, optionally in one status.
+typedef PurchaseOrderQuery = ({String propertyId, PurchaseOrderStatus? status});
+
+/// Purchase orders matching a [PurchaseOrderQuery], a page at a time; the
+/// status is filtered by the server.
+class PurchaseOrderPages extends PagedController<PurchaseOrder> {
+  PurchaseOrderPages(this.query);
+
+  final PurchaseOrderQuery query;
+
+  @override
+  Future<(List<PurchaseOrder>, String)> fetchPage(
+    ProcurementApi api,
+    String page,
+  ) async {
+    final request = PurchaseOrderSearchRequest(
+      propertyId: query.propertyId,
+      search: pageSearch(page),
+    );
+    if (query.status != null) request.status = query.status!;
+    final r = await api.purchaseOrderSearch(request);
+    return (r.purchaseOrders.toList(), r.nextPage);
+  }
+}
+
+final purchaseOrderPagesProvider =
+    AsyncNotifierProvider.family<
+      PurchaseOrderPages,
+      PagedList<PurchaseOrder>,
+      PurchaseOrderQuery
+    >(PurchaseOrderPages.new);
 
 /// Get a single purchase order by ID.
 final purchaseOrderByIdProvider = FutureProvider.family<PurchaseOrder, String>((
@@ -61,21 +162,33 @@ final purchaseOrderByIdProvider = FutureProvider.family<PurchaseOrder, String>((
   return response.purchaseOrder;
 });
 
-/// Search goods receipts.
-final goodsReceiptListProvider =
-    FutureProvider.family<
-      List<GoodsReceipt>,
-      ({String? propertyId, String? purchaseOrderId})
-    >((ref, params) async {
-      final client = ref.watch(procurementServiceClientProvider);
-      final request = GoodsReceiptSearchRequest();
-      if (params.propertyId != null) request.propertyId = params.propertyId!;
-      if (params.purchaseOrderId != null) {
-        request.purchaseOrderId = params.purchaseOrderId!;
-      }
-      final response = await client.goodsReceiptSearch(request);
-      return response.goodsReceipts;
-    });
+/// The goods receipts recorded against one purchase order, a page at a time.
+class GoodsReceiptPages extends PagedController<GoodsReceipt> {
+  GoodsReceiptPages(this.purchaseOrderId);
+
+  final String purchaseOrderId;
+
+  @override
+  Future<(List<GoodsReceipt>, String)> fetchPage(
+    ProcurementApi api,
+    String page,
+  ) async {
+    final r = await api.goodsReceiptSearch(
+      GoodsReceiptSearchRequest(
+        purchaseOrderId: purchaseOrderId,
+        search: pageSearch(page),
+      ),
+    );
+    return (r.goodsReceipts.toList(), r.nextPage);
+  }
+}
+
+final goodsReceiptPagesProvider =
+    AsyncNotifierProvider.family<
+      GoodsReceiptPages,
+      PagedList<GoodsReceipt>,
+      String
+    >(GoodsReceiptPages.new);
 
 /// Get a single goods receipt by ID.
 final goodsReceiptByIdProvider = FutureProvider.family<GoodsReceipt, String>((
@@ -88,9 +201,14 @@ final goodsReceiptByIdProvider = FutureProvider.family<GoodsReceipt, String>((
   return response.goodsReceipt;
 });
 
-/// Notifier for procurement mutations.
-/// Which plan to propose purchase orders for.
-typedef SuggestionQuery = ({String propertyId, String planId});
+/// Which plan to propose purchase orders for, and the currency supplier
+/// prices are compared in (empty: materials offered in more than one
+/// currency are left unsourced).
+typedef SuggestionQuery = ({
+  String propertyId,
+  String planId,
+  String currencyCode,
+});
 
 /// Purchase orders that would cover a production plan's material shortages.
 /// A suggestion with no supplier lists shortages nobody supplies yet.
@@ -100,11 +218,13 @@ final purchaseOrderSuggestionsProvider = FutureProvider.autoDispose
       final response = await client.suggestPurchaseOrders(
         SuggestPurchaseOrdersRequest()
           ..propertyId = query.propertyId
-          ..planId = query.planId,
+          ..planId = query.planId
+          ..currencyCode = query.currencyCode,
       );
       return response.suggestions;
     });
 
+/// Notifier for procurement mutations.
 class ProcurementNotifier extends Notifier<AsyncValue<void>> {
   @override
   AsyncValue<void> build() => const AsyncValue.data(null);
@@ -164,6 +284,19 @@ class ProcurementNotifier extends Notifier<AsyncValue<void>> {
     state = const AsyncValue.loading();
     try {
       final response = await _client.purchaseOrderCancel(request);
+      state = const AsyncValue.data(null);
+      return response.purchaseOrder;
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+      rethrow;
+    }
+  }
+
+  /// Closes a partially received order short: nothing more is received.
+  Future<PurchaseOrder> closePO(PurchaseOrderCloseRequest request) async {
+    state = const AsyncValue.loading();
+    try {
+      final response = await _client.purchaseOrderClose(request);
       state = const AsyncValue.data(null);
       return response.purchaseOrder;
     } catch (e, st) {

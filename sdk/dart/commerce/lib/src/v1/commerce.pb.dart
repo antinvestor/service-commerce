@@ -2669,6 +2669,169 @@ class ListProductVariantsResponse extends $pb.GeneratedMessage {
   $core.List<ProductVariant> get productVariants => $_getList(0);
 }
 
+class ReceiveStockRequest extends $pb.GeneratedMessage {
+  factory ReceiveStockRequest({
+    $core.String? variantId,
+    $fixnum.Int64? quantity,
+    $core.String? reference,
+    $core.String? tenantId,
+  }) {
+    final $result = create();
+    if (variantId != null) {
+      $result.variantId = variantId;
+    }
+    if (quantity != null) {
+      $result.quantity = quantity;
+    }
+    if (reference != null) {
+      $result.reference = reference;
+    }
+    if (tenantId != null) {
+      $result.tenantId = tenantId;
+    }
+    return $result;
+  }
+  ReceiveStockRequest._() : super();
+  factory ReceiveStockRequest.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory ReceiveStockRequest.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'ReceiveStockRequest', package: const $pb.PackageName(_omitMessageNames ? '' : 'commerce.v1'), createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'variantId')
+    ..aInt64(2, _omitFieldNames ? '' : 'quantity')
+    ..aOS(3, _omitFieldNames ? '' : 'reference')
+    ..aOS(4, _omitFieldNames ? '' : 'tenantId')
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  ReceiveStockRequest clone() => ReceiveStockRequest()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  ReceiveStockRequest copyWith(void Function(ReceiveStockRequest) updates) => super.copyWith((message) => updates(message as ReceiveStockRequest)) as ReceiveStockRequest;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static ReceiveStockRequest create() => ReceiveStockRequest._();
+  ReceiveStockRequest createEmptyInstance() => create();
+  static $pb.PbList<ReceiveStockRequest> createRepeated() => $pb.PbList<ReceiveStockRequest>();
+  @$core.pragma('dart2js:noInline')
+  static ReceiveStockRequest getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<ReceiveStockRequest>(create);
+  static ReceiveStockRequest? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get variantId => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set variantId($core.String v) { $_setString(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasVariantId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearVariantId() => clearField(1);
+
+  /// Whole units received; must be positive.
+  @$pb.TagNumber(2)
+  $fixnum.Int64 get quantity => $_getI64(1);
+  @$pb.TagNumber(2)
+  set quantity($fixnum.Int64 v) { $_setInt64(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasQuantity() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearQuantity() => clearField(2);
+
+  /// Unique per receipt line (e.g. "procurement:grl:<line id>"). A reference
+  /// already received for the same variant and quantity adds nothing; for any
+  /// other variant or quantity it is refused.
+  @$pb.TagNumber(3)
+  $core.String get reference => $_getSZ(2);
+  @$pb.TagNumber(3)
+  set reference($core.String v) { $_setString(2, v); }
+  @$pb.TagNumber(3)
+  $core.bool hasReference() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearReference() => clearField(3);
+
+  /// The tenant the receipt was recorded in; the variant must belong to it.
+  @$pb.TagNumber(4)
+  $core.String get tenantId => $_getSZ(3);
+  @$pb.TagNumber(4)
+  set tenantId($core.String v) { $_setString(3, v); }
+  @$pb.TagNumber(4)
+  $core.bool hasTenantId() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearTenantId() => clearField(4);
+}
+
+class ReceiveStockResponse extends $pb.GeneratedMessage {
+  factory ReceiveStockResponse({
+    $fixnum.Int64? stockQuantity,
+    $core.bool? replayed,
+  }) {
+    final $result = create();
+    if (stockQuantity != null) {
+      $result.stockQuantity = stockQuantity;
+    }
+    if (replayed != null) {
+      $result.replayed = replayed;
+    }
+    return $result;
+  }
+  ReceiveStockResponse._() : super();
+  factory ReceiveStockResponse.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory ReceiveStockResponse.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'ReceiveStockResponse', package: const $pb.PackageName(_omitMessageNames ? '' : 'commerce.v1'), createEmptyInstance: create)
+    ..aInt64(1, _omitFieldNames ? '' : 'stockQuantity')
+    ..aOB(2, _omitFieldNames ? '' : 'replayed')
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  ReceiveStockResponse clone() => ReceiveStockResponse()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  ReceiveStockResponse copyWith(void Function(ReceiveStockResponse) updates) => super.copyWith((message) => updates(message as ReceiveStockResponse)) as ReceiveStockResponse;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static ReceiveStockResponse create() => ReceiveStockResponse._();
+  ReceiveStockResponse createEmptyInstance() => create();
+  static $pb.PbList<ReceiveStockResponse> createRepeated() => $pb.PbList<ReceiveStockResponse>();
+  @$core.pragma('dart2js:noInline')
+  static ReceiveStockResponse getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<ReceiveStockResponse>(create);
+  static ReceiveStockResponse? _defaultInstance;
+
+  /// The variant's stock after the receipt.
+  @$pb.TagNumber(1)
+  $fixnum.Int64 get stockQuantity => $_getI64(0);
+  @$pb.TagNumber(1)
+  set stockQuantity($fixnum.Int64 v) { $_setInt64(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasStockQuantity() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearStockQuantity() => clearField(1);
+
+  /// True when the reference had already been received.
+  @$pb.TagNumber(2)
+  $core.bool get replayed => $_getBF(1);
+  @$pb.TagNumber(2)
+  set replayed($core.bool v) { $_setBool(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasReplayed() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearReplayed() => clearField(2);
+}
+
 class UpdateProductVariantResponse extends $pb.GeneratedMessage {
   factory UpdateProductVariantResponse({
     ProductVariant? productVariant,
@@ -4669,6 +4832,7 @@ class ListOrdersRequest extends $pb.GeneratedMessage {
   factory ListOrdersRequest({
     $core.String? shopId,
     $7.SearchRequest? search,
+    $core.String? profileId,
   }) {
     final $result = create();
     if (shopId != null) {
@@ -4676,6 +4840,9 @@ class ListOrdersRequest extends $pb.GeneratedMessage {
     }
     if (search != null) {
       $result.search = search;
+    }
+    if (profileId != null) {
+      $result.profileId = profileId;
     }
     return $result;
   }
@@ -4686,6 +4853,7 @@ class ListOrdersRequest extends $pb.GeneratedMessage {
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'ListOrdersRequest', package: const $pb.PackageName(_omitMessageNames ? '' : 'commerce.v1'), createEmptyInstance: create)
     ..aOS(1, _omitFieldNames ? '' : 'shopId')
     ..aOM<$7.SearchRequest>(2, _omitFieldNames ? '' : 'search', subBuilder: $7.SearchRequest.create)
+    ..aOS(3, _omitFieldNames ? '' : 'profileId')
     ..hasRequiredFields = false
   ;
 
@@ -4730,6 +4898,18 @@ class ListOrdersRequest extends $pb.GeneratedMessage {
   void clearSearch() => clearField(2);
   @$pb.TagNumber(2)
   $7.SearchRequest ensureSearch() => $_ensure(1);
+
+  /// Only this buyer's orders. Staff with orders_view on the shop may name
+  /// any profile; anyone else lists their own orders and may name only
+  /// themselves.
+  @$pb.TagNumber(3)
+  $core.String get profileId => $_getSZ(2);
+  @$pb.TagNumber(3)
+  set profileId($core.String v) { $_setString(2, v); }
+  @$pb.TagNumber(3)
+  $core.bool hasProfileId() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearProfileId() => clearField(3);
 }
 
 class ListOrdersResponse extends $pb.GeneratedMessage {
@@ -9799,6 +9979,9 @@ class CommerceServiceApi {
   ;
   $async.Future<ListProductVariantsResponse> listProductVariants($pb.ClientContext? ctx, ListProductVariantsRequest request) =>
     _client.invoke<ListProductVariantsResponse>(ctx, 'CommerceService', 'ListProductVariants', request, ListProductVariantsResponse())
+  ;
+  $async.Future<ReceiveStockResponse> receiveStock($pb.ClientContext? ctx, ReceiveStockRequest request) =>
+    _client.invoke<ReceiveStockResponse>(ctx, 'CommerceService', 'ReceiveStock', request, ReceiveStockResponse())
   ;
   $async.Future<CreateCartResponse> createCart($pb.ClientContext? ctx, CreateCartRequest request) =>
     _client.invoke<CreateCartResponse>(ctx, 'CommerceService', 'CreateCart', request, CreateCartResponse())

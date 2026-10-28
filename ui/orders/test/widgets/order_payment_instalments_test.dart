@@ -1,4 +1,5 @@
 import 'package:antinvestor_api_commerce/antinvestor_api_commerce.dart';
+import 'package:antinvestor_ui_core/permissions/permission_provider.dart';
 import 'package:antinvestor_ui_orders/src/providers/order_providers.dart';
 import 'package:antinvestor_ui_orders/src/providers/order_transport_provider.dart';
 import 'package:antinvestor_ui_orders/src/utils/instalments.dart';
@@ -116,6 +117,7 @@ Future<void> _pump(WidgetTester tester, _FakeOrders backend) async {
     ProviderScope(
       overrides: [
         orderServiceClientProvider.overrideWithValue(backend.client()),
+        userPermissionsProvider.overrideWith((ref) async => {'order_manage'}),
       ],
       child: const MaterialApp(
         home: Scaffold(body: SingleChildScrollView(child: _Harness())),

@@ -75,7 +75,9 @@ void main() {
   );
 
   test('a body the browser already decompressed is accepted', () async {
-    final shop = GetShopResponse(shop: Shop(id: 'shop-1', name: 'Duka'));
+    final shop = GetShopResponse(
+      shop: Shop(id: 'shop-1', name: 'Duka'),
+    );
     final decoded = Uint8List.fromList(shop.writeToBuffer());
     // What a browser reports for a gzipped response: the wire headers with
     // the decoded body.

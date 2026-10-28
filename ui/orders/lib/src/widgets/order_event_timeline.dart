@@ -50,6 +50,11 @@ import '../utils/instalments.dart';
         Icons.cancel_outlined,
         Colors.red,
       ),
+      OrderEventType.ORDER_EVENT_TYPE_REFUNDED => (
+        'Refunded',
+        Icons.undo_outlined,
+        Colors.purple,
+      ),
       OrderEventType.ORDER_EVENT_TYPE_EXPIRED => (
         'Expired',
         Icons.timer_off_outlined,

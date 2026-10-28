@@ -83,6 +83,16 @@ abstract final class ProcurementService {
     v1procurement.PurchaseOrderCancelResponse.new,
   );
 
+  /// Closes a partially received order short: what was received stands, the
+  /// remainder of every open line is cancelled and no further receipt is
+  /// accepted.
+  static const purchaseOrderClose = connect.Spec(
+    '/$name/PurchaseOrderClose',
+    connect.StreamType.unary,
+    v1procurement.PurchaseOrderCloseRequest.new,
+    v1procurement.PurchaseOrderCloseResponse.new,
+  );
+
   /// ---- Goods Receipts ----
   static const goodsReceiptCreate = connect.Spec(
     '/$name/GoodsReceiptCreate',
@@ -103,6 +113,16 @@ abstract final class ProcurementService {
     connect.StreamType.unary,
     v1procurement.GoodsReceiptSearchRequest.new,
     v1procurement.GoodsReceiptSearchResponse.new,
+  );
+
+  /// Pushes received stock that has not reached its destination yet (commerce
+  /// product variants), oldest and least-tried first, at most limit lines.
+  /// Each line lands once whatever the number of calls. Scheduled.
+  static const goodsReceiptDeliver = connect.Spec(
+    '/$name/GoodsReceiptDeliver',
+    connect.StreamType.unary,
+    v1procurement.GoodsReceiptDeliverRequest.new,
+    v1procurement.GoodsReceiptDeliverResponse.new,
   );
 
   /// ---- Suggestions ----

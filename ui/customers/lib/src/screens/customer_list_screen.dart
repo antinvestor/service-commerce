@@ -41,14 +41,18 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
             // Header
             Row(
               children: [
-                Icon(Icons.people_outlined,
-                    size: 28, color: theme.colorScheme.primary),
+                Icon(
+                  Icons.people_outlined,
+                  size: 28,
+                  color: theme.colorScheme.primary,
+                ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     'Customers',
-                    style: theme.textTheme.headlineSmall
-                        ?.copyWith(fontWeight: FontWeight.w600),
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ],
@@ -58,8 +62,7 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
             // Search bar
             TextField(
               controller: _searchController,
-              onChanged: (value) =>
-                  setState(() => _query = value.trim()),
+              onChanged: (value) => setState(() => _query = value.trim()),
               decoration: const InputDecoration(
                 hintText: 'Search customers by name, email, or phone...',
                 prefixIcon: Icon(Icons.search, size: 20),
@@ -76,10 +79,13 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.person_search,
-                              size: 64,
-                              color: theme.colorScheme.onSurfaceVariant
-                                  .withAlpha(80)),
+                          Icon(
+                            Icons.person_search,
+                            size: 64,
+                            color: theme.colorScheme.onSurfaceVariant.withAlpha(
+                              80,
+                            ),
+                          ),
                           const SizedBox(height: 16),
                           Text(
                             'Type at least 2 characters to search',
@@ -114,19 +120,22 @@ class _SearchResults extends ConsumerWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.error_outline,
-                size: 48, color: theme.colorScheme.error),
+            Icon(Icons.error_outline, size: 48, color: theme.colorScheme.error),
             const SizedBox(height: 16),
-            Text('Failed to search customers',
-                style: theme.textTheme.titleMedium),
+            Text(
+              'Failed to search customers',
+              style: theme.textTheme.titleMedium,
+            ),
             const SizedBox(height: 8),
-            Text(friendlyError(error),
-                style: theme.textTheme.bodySmall
-                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+            Text(
+              friendlyError(error),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
             const SizedBox(height: 16),
             OutlinedButton.icon(
-              onPressed: () =>
-                  ref.invalidate(customerSearchProvider(query)),
+              onPressed: () => ref.invalidate(customerSearchProvider(query)),
               icon: const Icon(Icons.refresh, size: 18),
               label: const Text('Retry'),
             ),

@@ -1,3 +1,4 @@
+import 'package:antinvestor_api_procurement/antinvestor_api_procurement.dart';
 import 'package:antinvestor_ui_core/widgets/error_helpers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -129,6 +130,7 @@ class GoodsReceiptDetailScreen extends ConsumerWidget {
               if (receipt.notes.isNotEmpty)
                 _DetailRow(label: 'Notes', text: receipt.notes),
               const SizedBox(height: 16),
+              _DeliverySummary(lines: receipt.lines),
               Text(
                 'Lines (${receipt.lines.length})',
                 style: theme.textTheme.titleMedium?.copyWith(
@@ -143,6 +145,75 @@ class GoodsReceiptDetailScreen extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// What still needs a person on this receipt, in one line each, so staff
+/// see it before reading the lines.
+class _DeliverySummary extends StatelessWidget {
+  const _DeliverySummary({required this.lines});
+
+  final List<GoodsReceiptLine> lines;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    int count(StockDeliveryStatus s) =>
+        lines.where((l) => l.deliveryStatus == s).length;
+    final failed = count(StockDeliveryStatus.STOCK_DELIVERY_STATUS_FAILED);
+    final transfer = count(
+      StockDeliveryStatus.STOCK_DELIVERY_STATUS_PENDING_TRANSFER,
+    );
+    final pending = count(StockDeliveryStatus.STOCK_DELIVERY_STATUS_PENDING);
+    final messages = [
+      if (failed > 0)
+        '$failed ${_lines(failed)} refused by the shop: check the product '
+            'variant, then record the stock there.',
+      if (transfer > 0)
+        '$transfer ${_lines(transfer)} of raw material to book into '
+            'manufacturing inventory by hand.',
+      if (pending > 0)
+        '$pending ${_lines(pending)} on the way to the shop\'s stock; '
+            'retried automatically.',
+    ];
+    if (messages.isEmpty) return const SizedBox.shrink();
+    final urgent = failed > 0 || transfer > 0;
+    return Container(
+      key: const Key('receipt_delivery_summary'),
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: urgent
+            ? theme.colorScheme.errorContainer.withAlpha(90)
+            : theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            urgent ? Icons.warning_amber_outlined : Icons.schedule,
+            size: 20,
+            color: urgent
+                ? theme.colorScheme.error
+                : theme.colorScheme.onSurfaceVariant,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                for (final m in messages)
+                  Text(m, style: theme.textTheme.bodySmall),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static String _lines(int n) => n == 1 ? 'line' : 'lines';
 }
 
 class _DetailRow extends StatelessWidget {

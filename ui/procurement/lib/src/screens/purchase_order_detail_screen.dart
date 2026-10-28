@@ -1,4 +1,5 @@
 import 'package:antinvestor_api_procurement/antinvestor_api_procurement.dart';
+import 'package:antinvestor_ui_core/permissions/permission_guard.dart';
 import 'package:antinvestor_ui_core/widgets/amount_display.dart';
 import 'package:antinvestor_ui_core/widgets/error_helpers.dart';
 import 'package:antinvestor_ui_core/widgets/status_badge.dart';
@@ -9,6 +10,7 @@ import 'package:go_router/go_router.dart';
 import '../providers/procurement_providers.dart';
 import '../routing/procurement_paths.dart';
 import '../widgets/goods_receipt_card.dart';
+import '../widgets/load_more_footer.dart';
 import '../widgets/po_actions.dart';
 import '../widgets/po_line_tile.dart';
 import '../widgets/po_status_badge.dart';
@@ -158,28 +160,68 @@ class _Actions extends ConsumerWidget {
     final busy = ref.watch(procurementNotifierProvider).isLoading;
     final actions = <Widget>[
       if (canSubmitPO(po))
-        FilledButton.icon(
-          onPressed: busy ? null : () => submitPurchaseOrder(context, ref, po),
-          icon: const Icon(Icons.send_outlined, size: 18),
-          label: const Text('Submit'),
+        PermissionGuard(
+          permissions: const {'purchase_order_submit'},
+          child: FilledButton.icon(
+            onPressed: busy
+                ? null
+                : () => submitPurchaseOrder(context, ref, po),
+            icon: const Icon(Icons.send_outlined, size: 18),
+            label: const Text('Submit'),
+          ),
         ),
       if (canReceivePO(po))
-        FilledButton.icon(
-          onPressed: busy
-              ? null
-              : () => context.go(ProcurementPaths.receiveOrder(po.id)),
-          icon: const Icon(Icons.move_to_inbox_outlined, size: 18),
-          label: const Text('Receive goods'),
+        PermissionGuard(
+          permissions: const {'goods_receipt_create'},
+          child: FilledButton.icon(
+            onPressed: busy
+                ? null
+                : () => context.go(ProcurementPaths.receiveOrder(po.id)),
+            icon: const Icon(Icons.move_to_inbox_outlined, size: 18),
+            label: const Text('Receive goods'),
+          ),
+        ),
+      if (canClosePO(po))
+        PermissionGuard(
+          permissions: const {'purchase_order_cancel'},
+          child: OutlinedButton.icon(
+            key: const Key('po_close_short'),
+            onPressed: busy
+                ? null
+                : () => closePurchaseOrderShort(context, ref, po),
+            icon: const Icon(Icons.block_outlined, size: 18),
+            label: const Text('Close short'),
+          ),
         ),
       if (canCancelPO(po))
-        OutlinedButton.icon(
-          onPressed: busy ? null : () => cancelPurchaseOrder(context, ref, po),
-          icon: const Icon(Icons.cancel_outlined, size: 18),
-          label: const Text('Cancel'),
+        PermissionGuard(
+          permissions: const {'purchase_order_cancel'},
+          child: OutlinedButton.icon(
+            onPressed: busy
+                ? null
+                : () => cancelPurchaseOrder(context, ref, po),
+            icon: const Icon(Icons.cancel_outlined, size: 18),
+            label: const Text('Cancel'),
+          ),
         ),
     ];
     if (actions.isEmpty) return const SizedBox.shrink();
-    return Wrap(spacing: 8, runSpacing: 8, children: actions);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Wrap(spacing: 8, runSpacing: 8, children: actions),
+        if (canClosePO(po)) ...[
+          const SizedBox(height: 8),
+          Text(
+            'Part of this order has arrived. Receive the rest, or close it '
+            'short if no more is coming.',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ],
+    );
   }
 }
 
@@ -274,6 +316,11 @@ class _LineRow extends StatelessWidget {
               Colors.red,
               null,
             ),
+            PurchaseOrderLineStatus.PURCHASE_ORDER_LINE_STATUS_CLOSED => (
+              'Closed',
+              Colors.blueGrey,
+              null,
+            ),
             _ => ('Unknown', Colors.grey, null),
           },
         ),
@@ -290,9 +337,7 @@ class _ReceiptsSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final asyncReceipts = ref.watch(
-      goodsReceiptListProvider((propertyId: null, purchaseOrderId: po.id)),
-    );
+    final asyncReceipts = ref.watch(goodsReceiptPagesProvider(po.id));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -319,14 +364,25 @@ class _ReceiptsSection extends ConsumerWidget {
             padding: EdgeInsets.symmetric(vertical: 16),
             child: Center(child: CircularProgressIndicator()),
           ),
-          error: (error, _) => Text(
-            friendlyError(error),
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.error,
-            ),
+          error: (error, _) => Row(
+            children: [
+              Expanded(
+                child: Text(
+                  friendlyError(error),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.error,
+                  ),
+                ),
+              ),
+              TextButton(
+                onPressed: () =>
+                    ref.invalidate(goodsReceiptPagesProvider(po.id)),
+                child: const Text('Retry'),
+              ),
+            ],
           ),
-          data: (receipts) {
-            if (receipts.isEmpty) {
+          data: (list) {
+            if (list.items.isEmpty) {
               return Text(
                 'No goods received yet',
                 style: theme.textTheme.bodySmall?.copyWith(
@@ -336,7 +392,7 @@ class _ReceiptsSection extends ConsumerWidget {
             }
             return Column(
               children: [
-                for (final r in receipts)
+                for (final r in list.items)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 8),
                     child: GoodsReceiptCard(
@@ -344,6 +400,12 @@ class _ReceiptsSection extends ConsumerWidget {
                       onTap: () => context.go(ProcurementPaths.receipt(r.id)),
                     ),
                   ),
+                LoadMoreFooter(
+                  list: list,
+                  onLoadMore: () => ref
+                      .read(goodsReceiptPagesProvider(po.id).notifier)
+                      .loadMore(),
+                ),
               ],
             );
           },

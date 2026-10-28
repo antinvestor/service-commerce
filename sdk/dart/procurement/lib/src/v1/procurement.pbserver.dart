@@ -31,9 +31,11 @@ abstract class ProcurementServiceBase extends $pb.GeneratedService {
   $async.Future<$9.PurchaseOrderSearchResponse> purchaseOrderSearch($pb.ServerContext ctx, $9.PurchaseOrderSearchRequest request);
   $async.Future<$9.PurchaseOrderSubmitResponse> purchaseOrderSubmit($pb.ServerContext ctx, $9.PurchaseOrderSubmitRequest request);
   $async.Future<$9.PurchaseOrderCancelResponse> purchaseOrderCancel($pb.ServerContext ctx, $9.PurchaseOrderCancelRequest request);
+  $async.Future<$9.PurchaseOrderCloseResponse> purchaseOrderClose($pb.ServerContext ctx, $9.PurchaseOrderCloseRequest request);
   $async.Future<$9.GoodsReceiptCreateResponse> goodsReceiptCreate($pb.ServerContext ctx, $9.GoodsReceiptCreateRequest request);
   $async.Future<$9.GoodsReceiptGetResponse> goodsReceiptGet($pb.ServerContext ctx, $9.GoodsReceiptGetRequest request);
   $async.Future<$9.GoodsReceiptSearchResponse> goodsReceiptSearch($pb.ServerContext ctx, $9.GoodsReceiptSearchRequest request);
+  $async.Future<$9.GoodsReceiptDeliverResponse> goodsReceiptDeliver($pb.ServerContext ctx, $9.GoodsReceiptDeliverRequest request);
   $async.Future<$9.SuggestPurchaseOrdersResponse> suggestPurchaseOrders($pb.ServerContext ctx, $9.SuggestPurchaseOrdersRequest request);
 
   $pb.GeneratedMessage createRequest($core.String methodName) {
@@ -48,9 +50,11 @@ abstract class ProcurementServiceBase extends $pb.GeneratedService {
       case 'PurchaseOrderSearch': return $9.PurchaseOrderSearchRequest();
       case 'PurchaseOrderSubmit': return $9.PurchaseOrderSubmitRequest();
       case 'PurchaseOrderCancel': return $9.PurchaseOrderCancelRequest();
+      case 'PurchaseOrderClose': return $9.PurchaseOrderCloseRequest();
       case 'GoodsReceiptCreate': return $9.GoodsReceiptCreateRequest();
       case 'GoodsReceiptGet': return $9.GoodsReceiptGetRequest();
       case 'GoodsReceiptSearch': return $9.GoodsReceiptSearchRequest();
+      case 'GoodsReceiptDeliver': return $9.GoodsReceiptDeliverRequest();
       case 'SuggestPurchaseOrders': return $9.SuggestPurchaseOrdersRequest();
       default: throw $core.ArgumentError('Unknown method: $methodName');
     }
@@ -68,9 +72,11 @@ abstract class ProcurementServiceBase extends $pb.GeneratedService {
       case 'PurchaseOrderSearch': return this.purchaseOrderSearch(ctx, request as $9.PurchaseOrderSearchRequest);
       case 'PurchaseOrderSubmit': return this.purchaseOrderSubmit(ctx, request as $9.PurchaseOrderSubmitRequest);
       case 'PurchaseOrderCancel': return this.purchaseOrderCancel(ctx, request as $9.PurchaseOrderCancelRequest);
+      case 'PurchaseOrderClose': return this.purchaseOrderClose(ctx, request as $9.PurchaseOrderCloseRequest);
       case 'GoodsReceiptCreate': return this.goodsReceiptCreate(ctx, request as $9.GoodsReceiptCreateRequest);
       case 'GoodsReceiptGet': return this.goodsReceiptGet(ctx, request as $9.GoodsReceiptGetRequest);
       case 'GoodsReceiptSearch': return this.goodsReceiptSearch(ctx, request as $9.GoodsReceiptSearchRequest);
+      case 'GoodsReceiptDeliver': return this.goodsReceiptDeliver(ctx, request as $9.GoodsReceiptDeliverRequest);
       case 'SuggestPurchaseOrders': return this.suggestPurchaseOrders(ctx, request as $9.SuggestPurchaseOrdersRequest);
       default: throw $core.ArgumentError('Unknown method: $methodName');
     }

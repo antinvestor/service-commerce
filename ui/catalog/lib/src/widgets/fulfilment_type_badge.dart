@@ -25,11 +25,7 @@ class FulfilmentTypeBadge extends StatelessWidget {
         Icons.block_outlined,
         Colors.grey,
       ),
-      _ => (
-        'Unknown',
-        Icons.help_outline,
-        Colors.grey,
-      ),
+      _ => ('Unknown', Icons.help_outline, Colors.grey),
     };
 
     return Container(

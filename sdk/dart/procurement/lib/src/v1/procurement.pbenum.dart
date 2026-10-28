@@ -99,6 +99,7 @@ class PurchaseOrderStatus extends $pb.ProtobufEnum {
   static const PurchaseOrderStatus PURCHASE_ORDER_STATUS_PARTIALLY_RECEIVED = PurchaseOrderStatus._(4, _omitEnumNames ? '' : 'PURCHASE_ORDER_STATUS_PARTIALLY_RECEIVED');
   static const PurchaseOrderStatus PURCHASE_ORDER_STATUS_RECEIVED = PurchaseOrderStatus._(5, _omitEnumNames ? '' : 'PURCHASE_ORDER_STATUS_RECEIVED');
   static const PurchaseOrderStatus PURCHASE_ORDER_STATUS_CANCELLED = PurchaseOrderStatus._(6, _omitEnumNames ? '' : 'PURCHASE_ORDER_STATUS_CANCELLED');
+  static const PurchaseOrderStatus PURCHASE_ORDER_STATUS_CLOSED = PurchaseOrderStatus._(7, _omitEnumNames ? '' : 'PURCHASE_ORDER_STATUS_CLOSED');
 
   static const $core.List<PurchaseOrderStatus> values = <PurchaseOrderStatus> [
     PURCHASE_ORDER_STATUS_UNSPECIFIED,
@@ -108,6 +109,7 @@ class PurchaseOrderStatus extends $pb.ProtobufEnum {
     PURCHASE_ORDER_STATUS_PARTIALLY_RECEIVED,
     PURCHASE_ORDER_STATUS_RECEIVED,
     PURCHASE_ORDER_STATUS_CANCELLED,
+    PURCHASE_ORDER_STATUS_CLOSED,
   ];
 
   static final $core.Map<$core.int, PurchaseOrderStatus> _byValue = $pb.ProtobufEnum.initByValue(values);
@@ -122,6 +124,7 @@ class PurchaseOrderLineStatus extends $pb.ProtobufEnum {
   static const PurchaseOrderLineStatus PURCHASE_ORDER_LINE_STATUS_PARTIALLY_RECEIVED = PurchaseOrderLineStatus._(2, _omitEnumNames ? '' : 'PURCHASE_ORDER_LINE_STATUS_PARTIALLY_RECEIVED');
   static const PurchaseOrderLineStatus PURCHASE_ORDER_LINE_STATUS_RECEIVED = PurchaseOrderLineStatus._(3, _omitEnumNames ? '' : 'PURCHASE_ORDER_LINE_STATUS_RECEIVED');
   static const PurchaseOrderLineStatus PURCHASE_ORDER_LINE_STATUS_CANCELLED = PurchaseOrderLineStatus._(4, _omitEnumNames ? '' : 'PURCHASE_ORDER_LINE_STATUS_CANCELLED');
+  static const PurchaseOrderLineStatus PURCHASE_ORDER_LINE_STATUS_CLOSED = PurchaseOrderLineStatus._(5, _omitEnumNames ? '' : 'PURCHASE_ORDER_LINE_STATUS_CLOSED');
 
   static const $core.List<PurchaseOrderLineStatus> values = <PurchaseOrderLineStatus> [
     PURCHASE_ORDER_LINE_STATUS_UNSPECIFIED,
@@ -129,6 +132,7 @@ class PurchaseOrderLineStatus extends $pb.ProtobufEnum {
     PURCHASE_ORDER_LINE_STATUS_PARTIALLY_RECEIVED,
     PURCHASE_ORDER_LINE_STATUS_RECEIVED,
     PURCHASE_ORDER_LINE_STATUS_CANCELLED,
+    PURCHASE_ORDER_LINE_STATUS_CLOSED,
   ];
 
   static final $core.Map<$core.int, PurchaseOrderLineStatus> _byValue = $pb.ProtobufEnum.initByValue(values);
@@ -156,6 +160,46 @@ class GoodsReceiptStatus extends $pb.ProtobufEnum {
   static GoodsReceiptStatus? valueOf($core.int value) => _byValue[value];
 
   const GoodsReceiptStatus._($core.int v, $core.String n) : super(v, n);
+}
+
+/// What a supplier item supplies, and so where its received stock lands.
+class SupplyKind extends $pb.ProtobufEnum {
+  static const SupplyKind SUPPLY_KIND_UNSPECIFIED = SupplyKind._(0, _omitEnumNames ? '' : 'SUPPLY_KIND_UNSPECIFIED');
+  static const SupplyKind SUPPLY_KIND_MATERIAL = SupplyKind._(1, _omitEnumNames ? '' : 'SUPPLY_KIND_MATERIAL');
+  static const SupplyKind SUPPLY_KIND_PRODUCT_VARIANT = SupplyKind._(2, _omitEnumNames ? '' : 'SUPPLY_KIND_PRODUCT_VARIANT');
+
+  static const $core.List<SupplyKind> values = <SupplyKind> [
+    SUPPLY_KIND_UNSPECIFIED,
+    SUPPLY_KIND_MATERIAL,
+    SUPPLY_KIND_PRODUCT_VARIANT,
+  ];
+
+  static final $core.Map<$core.int, SupplyKind> _byValue = $pb.ProtobufEnum.initByValue(values);
+  static SupplyKind? valueOf($core.int value) => _byValue[value];
+
+  const SupplyKind._($core.int v, $core.String n) : super(v, n);
+}
+
+/// Whether a receipt line's stock has reached its destination.
+class StockDeliveryStatus extends $pb.ProtobufEnum {
+  static const StockDeliveryStatus STOCK_DELIVERY_STATUS_UNSPECIFIED = StockDeliveryStatus._(0, _omitEnumNames ? '' : 'STOCK_DELIVERY_STATUS_UNSPECIFIED');
+  static const StockDeliveryStatus STOCK_DELIVERY_STATUS_PENDING = StockDeliveryStatus._(1, _omitEnumNames ? '' : 'STOCK_DELIVERY_STATUS_PENDING');
+  static const StockDeliveryStatus STOCK_DELIVERY_STATUS_DELIVERED = StockDeliveryStatus._(2, _omitEnumNames ? '' : 'STOCK_DELIVERY_STATUS_DELIVERED');
+  static const StockDeliveryStatus STOCK_DELIVERY_STATUS_PENDING_TRANSFER = StockDeliveryStatus._(3, _omitEnumNames ? '' : 'STOCK_DELIVERY_STATUS_PENDING_TRANSFER');
+  static const StockDeliveryStatus STOCK_DELIVERY_STATUS_FAILED = StockDeliveryStatus._(4, _omitEnumNames ? '' : 'STOCK_DELIVERY_STATUS_FAILED');
+
+  static const $core.List<StockDeliveryStatus> values = <StockDeliveryStatus> [
+    STOCK_DELIVERY_STATUS_UNSPECIFIED,
+    STOCK_DELIVERY_STATUS_PENDING,
+    STOCK_DELIVERY_STATUS_DELIVERED,
+    STOCK_DELIVERY_STATUS_PENDING_TRANSFER,
+    STOCK_DELIVERY_STATUS_FAILED,
+  ];
+
+  static final $core.Map<$core.int, StockDeliveryStatus> _byValue = $pb.ProtobufEnum.initByValue(values);
+  static StockDeliveryStatus? valueOf($core.int value) => _byValue[value];
+
+  const StockDeliveryStatus._($core.int v, $core.String n) : super(v, n);
 }
 
 

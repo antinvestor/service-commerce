@@ -121,13 +121,18 @@ class ProcurementRouteModule extends RouteModule {
     ),
   ];
 
+  /// Route prefixes and the permissions (any of) that open them; names are
+  /// the service_procurement permissions in procurement.proto. `:param`
+  /// segments match any value.
   @override
   Map<String, Set<String>> get routePermissions => const {
     ProcurementPaths.root: {'supplier_view', 'purchase_order_view'},
     ProcurementPaths.suppliers: {'supplier_view'},
     ProcurementPaths.orders: {'purchase_order_view'},
     ProcurementPaths.newOrder: {'purchase_order_create'},
-    ProcurementPaths.receipts: {'purchase_order_view'},
+    '${ProcurementPaths.orders}/:poId/receive': {'goods_receipt_create'},
+    ProcurementPaths.receipts: {'goods_receipt_view'},
+    ProcurementPaths.suggestions: {'purchase_order_create'},
   };
 
   @override
@@ -160,8 +165,18 @@ class ProcurementRouteModule extends RouteModule {
         scope: PermissionScope.action,
       ),
       PermissionEntry(
+        key: 'purchase_order_cancel',
+        label: 'Cancel or Close Purchase Orders',
+        scope: PermissionScope.action,
+      ),
+      PermissionEntry(
+        key: 'goods_receipt_view',
+        label: 'View Goods Receipts',
+        scope: PermissionScope.service,
+      ),
+      PermissionEntry(
         key: 'goods_receipt_create',
-        label: 'Create Goods Receipts',
+        label: 'Receive Goods',
         scope: PermissionScope.action,
       ),
     ],

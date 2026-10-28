@@ -1318,6 +1318,11 @@ message ListOrdersRequest {
 
   // Optional search parameters (query, cursor, etc.)
   common.v1.SearchRequest search = 2;
+
+  // Only this buyer's orders. Staff with orders_view on the shop may name
+  // any profile; anyone else lists their own orders and may name only
+  // themselves.
+  string profile_id = 3 [(buf.validate.field).string.max_len = 40];
 }
 
 message ListOrdersResponse {

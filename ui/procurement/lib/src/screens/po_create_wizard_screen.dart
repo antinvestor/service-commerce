@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../providers/procurement_providers.dart';
 import '../routing/procurement_paths.dart';
 import '../util/idempotency.dart';
+import '../util/supply.dart';
 import '../widgets/supplier_card.dart';
 
 /// Multi-step wizard for creating a purchase order.
@@ -77,6 +78,7 @@ class _POCreateWizardScreenState extends ConsumerState<POCreateWizardScreen> {
       final notifier = ref.read(procurementNotifierProvider.notifier);
       final created = await notifier.createPO(request);
       ref.invalidate(purchaseOrderListProvider);
+      ref.invalidate(purchaseOrderPagesProvider);
 
       if (mounted) {
         ScaffoldMessenger.of(
@@ -371,14 +373,18 @@ class _StepLinesState extends ConsumerState<_StepLines> {
     final item = _item;
     final qty = double.tryParse(_qtyController.text.trim()) ?? 0;
     if (item == null || qty <= 0) return;
+    if (needsWholeUnits(item.supplyKind) && qty != qty.roundToDouble()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Products are ordered in whole units')),
+      );
+      return;
+    }
     final unit = _unitController.text.trim();
     widget.onAdd(
       _POLineItem(
         supplierItemId: item.id,
         inventoryItemId: item.inventoryItemId,
-        label: item.supplierSku.isNotEmpty
-            ? item.supplierSku
-            : item.inventoryItemId,
+        label: _itemLabel(item),
         quantity: qty,
         unit: unit.isNotEmpty ? unit : item.unit,
       ),
@@ -444,9 +450,7 @@ class _StepLinesState extends ConsumerState<_StepLines> {
                         DropdownMenuItem(
                           value: i,
                           child: Text(
-                            i.supplierSku.isNotEmpty
-                                ? '${i.supplierSku} (${i.inventoryItemId})'
-                                : i.inventoryItemId,
+                            _itemLabel(i),
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
@@ -519,6 +523,16 @@ class _StepLinesState extends ConsumerState<_StepLines> {
       ],
     );
   }
+}
+
+/// "SKU (id)" for a supplier item, naming the variant for resale items.
+String _itemLabel(SupplierItem item) {
+  final id = suppliedId(
+    item.supplyKind,
+    inventoryItemId: item.inventoryItemId,
+    productVariantId: item.productVariantId,
+  );
+  return item.supplierSku.isNotEmpty ? '${item.supplierSku} ($id)' : id;
 }
 
 String _formatQty(double qty) =>

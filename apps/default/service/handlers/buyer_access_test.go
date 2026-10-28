@@ -19,12 +19,14 @@ import (
 
 	commonv1 "buf.build/gen/go/antinvestor/common/protocolbuffers/go/common/v1"
 	"connectrpc.com/connect/v2"
+	"github.com/pitabwire/frame/v3/datastore"
 	"github.com/pitabwire/frame/v3/frametests/definition"
 	"github.com/pitabwire/util"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/antinvestor/service-commerce/apps/default/service/handlers"
+	"github.com/antinvestor/service-commerce/apps/default/service/models"
 	"github.com/antinvestor/service-commerce/apps/default/tests"
 	commercev1 "github.com/antinvestor/service-commerce/gen/go/commerce/v1"
 )
@@ -79,8 +81,29 @@ func (s *BuyerAccessSuite) TestBuyerSeesOnlyOwnOrders() {
 		_, err = server.GetShop(buyer, &commercev1.GetShopRequest{Id: shopID})
 		require.NoError(t, err, "buyers see the shop")
 
-		_, err = server.GetOrder(buyer, &commercev1.GetOrderRequest{Id: mine.GetId()})
+		// A refund staff settled by hand: why the payment failed and how it
+		// was paid back are for staff, not the buyer.
+		refund := &models.OrderRefund{
+			OrderID: mine.GetId(), ShopID: shopID, Reference: "test-refund-" + util.RandomAlphaNumericString(6),
+			Currency: "KES", AmountNanos: 500_000_000_000, Status: models.RefundConfirmed,
+			LastError: "wallet closed by the provider", ResolvedBy: "staff-1", Note: "cash at the till",
+		}
+		refund.GenID(owner)
+		dbPool := svc.DatastoreManager().GetPool(ctx, datastore.DefaultPoolName)
+		require.NoError(t, dbPool.DB(owner, false).Create(refund).Error)
+
+		got, err := server.GetOrder(buyer, &commercev1.GetOrderRequest{Id: mine.GetId()})
 		require.NoError(t, err)
+		require.Len(t, got.GetOrder().GetRefunds(), 1)
+		seen := got.GetOrder().GetRefunds()[0]
+		require.Equal(t, commercev1.OrderRefundStatus_ORDER_REFUND_STATUS_CONFIRMED, seen.GetStatus())
+		require.Empty(t, seen.GetLastError())
+		require.Empty(t, seen.GetResolvedBy())
+		require.Empty(t, seen.GetNote())
+		forStaff, err := server.GetOrder(owner, &commercev1.GetOrderRequest{Id: mine.GetId()})
+		require.NoError(t, err)
+		require.Equal(t, "cash at the till", forStaff.GetOrder().GetRefunds()[0].GetNote())
+
 		_, err = server.GetOrder(buyer, &commercev1.GetOrderRequest{Id: theirs.GetId()})
 		require.Equal(t, connect.CodeNotFound, connect.CodeOf(err))
 

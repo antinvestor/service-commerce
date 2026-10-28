@@ -511,7 +511,7 @@ func (cs *CommerceServer) GetOrder(
 			return nil, notVisible(authorizer.ToConnectError(authzErr))
 		}
 	}
-	return &commercev1.GetOrderResponse{Order: order}, nil
+	return &commercev1.GetOrderResponse{Order: cs.forViewer(ctx, order)}, nil
 }
 
 // ListOrders lists a shop's orders for staff, narrowed to one buyer when
@@ -540,6 +540,9 @@ func (cs *CommerceServer) ListOrders(
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
+	for _, order := range page.Orders {
+		cs.forViewer(ctx, order)
+	}
 	return &commercev1.ListOrdersResponse{
 		Orders:   page.Orders,
 		NextPage: page.NextPage,
@@ -564,7 +567,7 @@ func (cs *CommerceServer) CheckoutOrder(
 		return nil, errorutil.CleanErr(err)
 	}
 	return &commercev1.CheckoutOrderResponse{
-		Order:       result.Order,
+		Order:       cs.forViewer(ctx, result.Order),
 		CheckoutUrl: result.Order.GetCheckoutUrl(),
 		SessionRef:  result.Order.GetPaymentSessionRef(),
 		Amount:      result.Amount,
@@ -582,7 +585,7 @@ func (cs *CommerceServer) ConfirmOrderPayment(
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
-	return &commercev1.ConfirmOrderPaymentResponse{Order: order}, nil
+	return &commercev1.ConfirmOrderPaymentResponse{Order: cs.forViewer(ctx, order)}, nil
 }
 
 func (cs *CommerceServer) CancelOrder(
@@ -598,7 +601,7 @@ func (cs *CommerceServer) CancelOrder(
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
-	return &commercev1.CancelOrderResponse{Order: order}, nil
+	return &commercev1.CancelOrderResponse{Order: cs.forViewer(ctx, order)}, nil
 }
 
 // ReconcilePayments is a scheduled, partition-wide operation. The tenant
@@ -1015,6 +1018,22 @@ func (cs *CommerceServer) authorizedOrder(
 		return nil, authorizer.ToConnectError(authzErr)
 	}
 	return order, nil
+}
+
+// forViewer drops from an order what only shop staff see when its buyer is
+// the one reading it: why a refund payment failed (the payment service's
+// own words) and staff notes on how a refund was settled. It changes order
+// in place and returns it.
+func (cs *CommerceServer) forViewer(ctx context.Context, order *commercev1.Order) *commercev1.Order {
+	if len(order.GetRefunds()) == 0 || cs.authz.CanOrdersView(ctx, order.GetShopId()) == nil {
+		return order
+	}
+	for _, refund := range order.GetRefunds() {
+		refund.LastError = ""
+		refund.ResolvedBy = ""
+		refund.Note = ""
+	}
+	return order
 }
 
 // requireOrderPermission resolves the order's shop and applies check to it.

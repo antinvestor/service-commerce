@@ -80,7 +80,7 @@ func (pob *purchaseOrderBusiness) CreatePurchaseOrder(
 	if req.GetIdempotencyKey() != "" {
 		existing, err := pob.poRepo.GetByIdempotencyKey(ctx, req.GetIdempotencyKey())
 		if err == nil && existing != nil {
-			return existing.ToAPI(), nil
+			return replayedPurchaseOrder(existing, req)
 		}
 		if err != nil && !frame.ErrorIsNotFound(err) {
 			return nil, data.ErrorConvertToAPI(err)
@@ -138,13 +138,27 @@ func (pob *purchaseOrderBusiness) CreatePurchaseOrder(
 		if req.GetIdempotencyKey() != "" && data.ErrorIsDuplicateKey(createErr) {
 			existing, getErr := pob.poRepo.GetByIdempotencyKey(ctx, req.GetIdempotencyKey())
 			if getErr == nil {
-				return existing.ToAPI(), nil
+				return replayedPurchaseOrder(existing, req)
 			}
 		}
 		return nil, data.ErrorConvertToAPI(createErr)
 	}
 
 	return pob.GetPurchaseOrder(ctx, po.GetID())
+}
+
+// replayedPurchaseOrder returns the order an idempotency key already created,
+// only when the retry is for the same property and supplier; a key reused for
+// another order is refused rather than answered with someone else's order.
+func replayedPurchaseOrder(
+	existing *models.PurchaseOrder,
+	req *procurementv1.PurchaseOrderCreateRequest,
+) (*procurementv1.PurchaseOrder, error) {
+	if existing.PropertyID != req.GetPropertyId() || existing.SupplierID != req.GetSupplierId() {
+		return nil, connect.NewError(connect.CodeAlreadyExists,
+			"idempotency_key was already used for another purchase order")
+	}
+	return existing.ToAPI(), nil
 }
 
 func (pob *purchaseOrderBusiness) GetPurchaseOrder(

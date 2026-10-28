@@ -20,12 +20,14 @@ import (
 
 	commonv1 "buf.build/gen/go/antinvestor/common/protocolbuffers/go/common/v1"
 	procurementv1 "buf.build/gen/go/antinvestor/procurement/protocolbuffers/go/v1"
+	"connectrpc.com/connect/v2"
 	"github.com/pitabwire/frame/v3"
 	"github.com/pitabwire/frame/v3/datastore"
 	"github.com/pitabwire/frame/v3/frametests/definition"
 	"github.com/pitabwire/util"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+	"google.golang.org/protobuf/proto"
 
 	"github.com/antinvestor/service-commerce/apps/procurement/service/business"
 	"github.com/antinvestor/service-commerce/apps/procurement/service/repository"
@@ -148,6 +150,13 @@ func (pts *PurchaseOrderTestSuite) TestIdempotentCreate() {
 		po2, err := biz.poBiz.CreatePurchaseOrder(ctx, req)
 		require.NoError(t, err)
 		require.Equal(t, po1.GetId(), po2.GetId())
+
+		// The same key for another property is refused, not answered with
+		// the first property's order.
+		other := proto.Clone(req).(*procurementv1.PurchaseOrderCreateRequest)
+		other.PropertyId = "property-002"
+		_, err = biz.poBiz.CreatePurchaseOrder(ctx, other)
+		require.Equal(t, connect.CodeAlreadyExists, connect.CodeOf(err))
 	})
 }
 

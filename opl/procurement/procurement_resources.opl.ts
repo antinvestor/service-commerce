@@ -17,25 +17,22 @@
 // Enforced in handlers via authz.Middleware (procurement_property namespace).
 //
 // A property is the console's operational site (a branch, organisation or
-// partition). Each property bridges its roles to the caller's partition roles
-// by subject set, so staff roles the tenancy sync assigns on
-// service_procurement apply to every property in the partition.
+// partition). These relations hold per-property grants; staff roles on the
+// caller's own partition (service_procurement) apply to every property in it,
+// checked by the middleware rather than written here.
 
 import { Namespace, Context } from "@ory/keto-namespace-types"
 
 class profile_user implements Namespace {}
 
-// Partition-level procurement roles (see service_procurement.opl.ts).
-class service_procurement implements Namespace {}
-
 class procurement_property implements Namespace {
   related: {
-    owner: (profile_user | service_procurement)[]
-    admin: (profile_user | service_procurement)[]
-    operator: (profile_user | service_procurement)[]
-    viewer: (profile_user | service_procurement)[]
-    member: (profile_user | service_procurement)[]
-    service: (profile_user | service_procurement)[]
+    owner: profile_user[]
+    admin: profile_user[]
+    operator: profile_user[]
+    viewer: profile_user[]
+    member: profile_user[]
+    service: profile_user[]
 
     granted_property_view: profile_user[]
     granted_property_update: profile_user[]

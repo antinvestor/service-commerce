@@ -17,7 +17,6 @@ package authz
 import (
 	"context"
 	"fmt"
-	"sync"
 
 	"github.com/pitabwire/frame/v3/security"
 	"github.com/pitabwire/frame/v3/security/authorizer"
@@ -33,9 +32,6 @@ const (
 // middleware implements the Middleware interface.
 type middleware struct {
 	service security.Authorizer
-	// linked remembers the (partition, property) pairs already bridged in
-	// this process, so the bridge is written once rather than per request.
-	linked sync.Map
 }
 
 // NewMiddleware creates a new Middleware with the given authorizer service.
@@ -152,10 +148,6 @@ func (m *middleware) checkPropertyPermission(ctx context.Context, propertyID, pe
 		"permission":     permission,
 	}).Debug("checkPropertyPermission")
 
-	if err = m.linkPropertyToPartition(ctx, claims, propertyID); err != nil {
-		return fmt.Errorf("link property to partition: %w", err)
-	}
-
 	req := security.CheckRequest{
 		Object:     security.ObjectRef{Namespace: NamespaceProperty, ID: propertyID},
 		Permission: permission,
@@ -165,6 +157,12 @@ func (m *middleware) checkPropertyPermission(ctx context.Context, propertyID, pe
 	result, err := m.service.Check(ctx, req)
 	if err != nil {
 		return fmt.Errorf("authorization check failed: %w", err)
+	}
+	if !result.Allowed {
+		result, err = m.checkPartitionPermission(ctx, claims, subjectID, permission)
+		if err != nil {
+			return err
+		}
 	}
 
 	util.Log(ctx).WithFields(map[string]any{
@@ -180,48 +178,40 @@ func (m *middleware) checkPropertyPermission(ctx context.Context, propertyID, pe
 	return nil
 }
 
-// linkPropertyToPartition bridges the caller's partition roles onto
-// propertyID, as manufacturing does for the same console property ids (a
-// branch, organisation or partition):
-//
-//	procurement_property:<property>#<role> <- service_procurement:<tenant>/<partition>#<role>
-//
-// so the staff roles the tenancy sync assigns on the partition apply to every
-// property in it. The tenancy interceptor has already verified the caller may
-// act in that partition, and row-level security keeps each partition's
-// purchase orders to itself.
-func (m *middleware) linkPropertyToPartition(
-	ctx context.Context,
-	claims *security.AuthenticationClaims,
-	propertyID string,
-) error {
-	tenantID, partitionID := claims.GetTenantID(), claims.GetPartitionID()
-	if tenantID == "" || partitionID == "" || propertyID == "" {
-		return authorizer.ErrInvalidObject
-	}
-	tenancyPath := tenantID + "/" + partitionID
-	key := tenancyPath + "#" + propertyID
-	if _, done := m.linked.Load(key); done {
-		return nil
-	}
-	if err := m.service.WriteTuples(ctx, BuildPropertyInheritanceTuples(propertyID, tenancyPath)); err != nil {
-		return err
-	}
-	m.linked.Store(key, struct{}{})
-	return nil
+// partitionPermissions maps each property permission to the partition-level
+// permission that grants it on every property in the caller's partition.
+var partitionPermissions = map[string]string{ //nolint:gochecknoglobals // permission model registry
+	PermissionPropertyView:              PermissionPurchaseOrderView,
+	PermissionPurchaseOrderPropertyView: PermissionPurchaseOrderView,
+	PermissionPurchaseOrderManage:       PermissionPurchaseOrderCreate,
+	PermissionPropertyUpdate:            PermissionPurchaseOrderCreate,
+	PermissionGoodsReceiptView:          PermissionGoodsReceiptRead,
+	PermissionGoodsReceiptManage:        PermissionGoodsReceiptCreate,
 }
 
-// BuildPropertyInheritanceTuples returns one subject-set tuple per partition
-// role, linking propertyID to the partition at tenancyPath.
-func BuildPropertyInheritanceTuples(propertyID, tenancyPath string) []security.RelationTuple {
-	roles := append(ValidRoles(), RoleMember, RoleService)
-	tuples := make([]security.RelationTuple, 0, len(roles))
-	for _, role := range roles {
-		tuples = append(tuples, security.RelationTuple{
-			Object:   security.ObjectRef{Namespace: NamespaceProperty, ID: propertyID},
-			Relation: role,
-			Subject:  security.SubjectRef{Namespace: NamespaceProcurement, ID: tenancyPath, Relation: role},
-		})
+// checkPartitionPermission grants a property permission to a caller who holds
+// the matching permission on their own partition, where the tenancy sync
+// assigns staff roles. Properties are the console's sites (a branch,
+// organisation or partition); row-level security keeps each partition's
+// records to itself, so the partition grant never reaches another
+// partition's data. Nothing is written: a check only reads.
+func (m *middleware) checkPartitionPermission(
+	ctx context.Context,
+	claims *security.AuthenticationClaims,
+	subjectID, permission string,
+) (security.CheckResult, error) {
+	tenantID, partitionID := claims.GetTenantID(), claims.GetPartitionID()
+	partitionPermission, ok := partitionPermissions[permission]
+	if tenantID == "" || partitionID == "" || !ok {
+		return security.CheckResult{}, nil
 	}
-	return tuples
+	result, err := m.service.Check(ctx, security.CheckRequest{
+		Object:     security.ObjectRef{Namespace: NamespaceProcurement, ID: tenantID + "/" + partitionID},
+		Permission: partitionPermission,
+		Subject:    security.SubjectRef{Namespace: NamespaceProfile, ID: subjectID},
+	})
+	if err != nil {
+		return security.CheckResult{}, fmt.Errorf("partition authorization check failed: %w", err)
+	}
+	return result, nil
 }

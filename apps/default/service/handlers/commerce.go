@@ -909,7 +909,7 @@ func notVisible(err error) error {
 // own tenant, as row-level security binds their claims.
 func sweepContext(ctx context.Context, reason string) context.Context {
 	claims := security.ClaimsFromContext(ctx)
-	if claims != nil && (claims.IsInternalSystem() || claims.GetTenantID() == "") {
+	if claims != nil && claims.IsInternalSystem() {
 		return dbrole.AcrossTenants(ctx, reason)
 	}
 	return ctx

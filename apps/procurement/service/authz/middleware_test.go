@@ -199,6 +199,6 @@ func (s *MiddlewareTestSuite) TestPartitionRolesInheritedOnProperty() {
 	s.Require().NoError(mw.CanGoodsReceiptView(viewer, propertyID))
 	s.Require().Error(mw.CanPurchaseOrderManage(viewer, propertyID))
 
-	// Someone with no partition role gets nothing from the bridge.
+	// Someone with no partition role gets nothing.
 	s.Require().Error(mw.CanPurchaseOrderView(s.ctxWithClaims("stranger"), propertyID))
 }

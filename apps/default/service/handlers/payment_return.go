@@ -93,7 +93,7 @@ func NewPaymentReturnHandler(payments business.PaymentBusiness) http.Handler {
 		state := returnState(result, sessionRef)
 		if target := storefrontRedirect(result.RedirectURL, result.Order.GetId(), state); target != "" {
 			// The target is the storefront URL commerce itself stored on the
-			// session when the order was checked out, restricted to http(s).
+			// session, on a host commerce trusts.
 			w.Header().Set("Location", target)
 			w.WriteHeader(http.StatusSeeOther)
 			return
@@ -128,7 +128,8 @@ func returnState(result *business.PaymentReturn, sessionRef string) string {
 	// Only this session's own payment counts: an earlier instalment says
 	// nothing about the one the buyer just made.
 	for _, payment := range order.GetPayments() {
-		if payment.GetReference() == sessionRef {
+		if payment.GetSource() == commercev1.OrderPaymentSource_ORDER_PAYMENT_SOURCE_CHECKOUT &&
+			payment.GetReference() == sessionRef {
 			return returnStatePartPaid
 		}
 	}
@@ -138,14 +139,15 @@ func returnState(result *business.PaymentReturn, sessionRef string) string {
 	return returnStatePending
 }
 
-// storefrontRedirect appends the outcome to the storefront URL. Only absolute
-// http(s) targets are followed.
+// storefrontRedirect appends the outcome to the storefront URL. The business
+// layer only passes a destination on a host commerce trusts; anything but an
+// absolute https URL is still refused here.
 func storefrontRedirect(raw, orderID, state string) string {
 	if raw == "" {
 		return ""
 	}
 	u, err := url.Parse(raw)
-	if err != nil || (u.Scheme != "https" && u.Scheme != "http") || u.Host == "" {
+	if err != nil || u.Scheme != "https" || u.Host == "" || u.User != nil {
 		return ""
 	}
 	q := u.Query()
@@ -178,7 +180,7 @@ func statusPage(order *commercev1.Order, state string) returnPage {
 	case returnStateCancelled:
 		page.Title = "Order cancelled"
 		page.Message = "This order was cancelled before payment was confirmed. " +
-			"If you were charged, contact the shop for a refund."
+			"Any payment you made is refunded to you automatically."
 	default:
 		page.Title = "Confirming your payment"
 		page.Message = "We are waiting for your payment to be confirmed. This page updates automatically."

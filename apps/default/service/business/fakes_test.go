@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"sync"
 
 	commonv1 "buf.build/gen/go/antinvestor/common/protocolbuffers/go/common/v1"
@@ -44,6 +45,8 @@ type fakeCheckout struct {
 	// getErr, when set, fails every GetSession the way an unreachable
 	// checkout service would.
 	getErr error
+	// gets counts GetSession calls.
+	gets int
 }
 
 func newFakeCheckout() *fakeCheckout {
@@ -81,6 +84,7 @@ func (f *fakeCheckout) CreateSession(
 func (f *fakeCheckout) GetSession(_ context.Context, ref string) (*checkoutv1.CheckoutSession, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
+	f.gets++
 	if f.getErr != nil {
 		return nil, f.getErr
 	}
@@ -147,6 +151,12 @@ func (f *fakeCheckout) setGetErr(err error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.getErr = err
+}
+
+func (f *fakeCheckout) getCount() int {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.gets
 }
 
 func (f *fakeCheckout) createdSessions() int {
@@ -341,4 +351,110 @@ func checkoutOrder(
 		return nil, err
 	}
 	return result.Order, nil
+}
+
+// syncWebhookQueue delivers queued webhooks at once, as the Frame events
+// queue would shortly after.
+type syncWebhookQueue struct {
+	events business.EventBusiness
+}
+
+func (q *syncWebhookQueue) Enqueue(ctx context.Context, eventIDs []string) error {
+	q.events.Deliver(ctx, eventIDs)
+	return nil
+}
+
+// --- payment service (refunds) ---
+
+// fakeRefunds stands in for the payment service's Send and Status. A sent
+// refund stays pending until settle decides it.
+type fakeRefunds struct {
+	mu       sync.Mutex
+	sent     map[string]*business.RefundState // by reference
+	amounts  map[string]int64
+	payees   map[string]string
+	sends    int
+	failSend error
+	// loseResponse makes Send take the refund and then fail, the way a
+	// response lost on the network would.
+	loseResponse bool
+}
+
+func newFakeRefunds() *fakeRefunds {
+	return &fakeRefunds{
+		sent: map[string]*business.RefundState{}, amounts: map[string]int64{}, payees: map[string]string{},
+	}
+}
+
+func (f *fakeRefunds) Send(_ context.Context, refund *models.OrderRefund) (*business.RefundState, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if f.failSend != nil {
+		return nil, f.failSend
+	}
+	f.sends++
+	state := &business.RefundState{PaymentID: "pay-" + util.RandomAlphaNumericString(8)}
+	f.sent[refund.Reference] = state
+	f.amounts[refund.Reference] = refund.AmountNanos
+	f.payees[refund.Reference] = refund.ProfileID + "/" + refund.ContactID
+	if f.loseResponse {
+		f.loseResponse = false
+		return nil, connect.NewError(connect.CodeUnavailable, "connection reset")
+	}
+	return &business.RefundState{PaymentID: state.PaymentID, Outcome: state.Outcome}, nil
+}
+
+func (f *fakeRefunds) Status(_ context.Context, refund *models.OrderRefund) (*business.RefundState, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	for _, state := range f.sent {
+		if state.PaymentID == refund.PaymentID {
+			return &business.RefundState{PaymentID: state.PaymentID, Outcome: state.Outcome}, nil
+		}
+	}
+	return nil, connect.NewError(connect.CodeNotFound, "payment not found")
+}
+
+func (f *fakeRefunds) FindByReference(_ context.Context, refund *models.OrderRefund) (*business.RefundState, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	state, ok := f.sent[refund.Reference]
+	if !ok {
+		return nil, nil //nolint:nilnil // holds none
+	}
+	return &business.RefundState{PaymentID: state.PaymentID, Outcome: state.Outcome}, nil
+}
+
+// confirmAll completes every sent refund the way the payment rail would.
+func (f *fakeRefunds) confirmAll() {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	for _, state := range f.sent {
+		state.Outcome = business.RefundOutcomeSucceeded
+	}
+}
+
+func (f *fakeRefunds) sendCount() int {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.sends
+}
+
+// refunded returns the amount sent under references starting with prefix.
+func (f *fakeRefunds) refunded(prefix string) int64 {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	var total int64
+	for ref, amount := range f.amounts {
+		if strings.HasPrefix(ref, prefix) {
+			total += amount
+		}
+	}
+	return total
+}
+
+func (f *fakeRefunds) payee(reference string) string {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.payees[reference]
 }

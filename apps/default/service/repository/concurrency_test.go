@@ -186,9 +186,12 @@ func (rts *RepositoryTestSuite) TestApplyPayment_SeesConcurrentCancellation() {
 		transition := func(o *models.Order, p *models.OrderPayment) []*models.OrderEvent {
 			attempts++
 			if attempts == 1 {
-				ok, err := orderRepo.CancelAndRestock(ctx, o.GetID(), []int32{4}, 0, "raced", time.Now(), nil)
+				_, plan, err := orderRepo.Cancel(ctx, o.GetID(), time.Now(),
+					func(*models.Order, int64) (*repository.CancelPlan, error) {
+						return &repository.CancelPlan{Reason: "raced"}, nil
+					})
 				require.NoError(t, err)
-				require.True(t, ok)
+				require.NotNil(t, plan)
 			}
 			if o.Status != 2 {
 				o.Status = 1

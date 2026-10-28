@@ -3612,6 +3612,8 @@ class Order extends $pb.GeneratedMessage {
     PaymentPolicy? paymentPolicy,
     $core.Iterable<OrderPayment>? payments,
     $2.Timestamp? paymentDueAt,
+    $8.Money? amountRefunded,
+    $core.String? paymentReview,
   }) {
     final $result = create();
     if (id != null) {
@@ -3692,6 +3694,12 @@ class Order extends $pb.GeneratedMessage {
     if (paymentDueAt != null) {
       $result.paymentDueAt = paymentDueAt;
     }
+    if (amountRefunded != null) {
+      $result.amountRefunded = amountRefunded;
+    }
+    if (paymentReview != null) {
+      $result.paymentReview = paymentReview;
+    }
     return $result;
   }
   Order._() : super();
@@ -3725,6 +3733,8 @@ class Order extends $pb.GeneratedMessage {
     ..aOM<PaymentPolicy>(24, _omitFieldNames ? '' : 'paymentPolicy', subBuilder: PaymentPolicy.create)
     ..pc<OrderPayment>(25, _omitFieldNames ? '' : 'payments', $pb.PbFieldType.PM, subBuilder: OrderPayment.create)
     ..aOM<$2.Timestamp>(26, _omitFieldNames ? '' : 'paymentDueAt', subBuilder: $2.Timestamp.create)
+    ..aOM<$8.Money>(27, _omitFieldNames ? '' : 'amountRefunded', subBuilder: $8.Money.create)
+    ..aOS(28, _omitFieldNames ? '' : 'paymentReview')
     ..hasRequiredFields = false
   ;
 
@@ -4000,6 +4010,31 @@ class Order extends $pb.GeneratedMessage {
   void clearPaymentDueAt() => clearField(26);
   @$pb.TagNumber(26)
   $2.Timestamp ensurePaymentDueAt() => $_ensure(25);
+
+  /// What has been paid back to the buyer: refunds the payment service
+  /// confirmed.
+  @$pb.TagNumber(27)
+  $8.Money get amountRefunded => $_getN(26);
+  @$pb.TagNumber(27)
+  set amountRefunded($8.Money v) { setField(27, v); }
+  @$pb.TagNumber(27)
+  $core.bool hasAmountRefunded() => $_has(26);
+  @$pb.TagNumber(27)
+  void clearAmountRefunded() => clearField(27);
+  @$pb.TagNumber(27)
+  $8.Money ensureAmountRefunded() => $_ensure(26);
+
+  /// Set when a payment on this order needs staff attention, such as a
+  /// checkout session that charged a different amount from the one issued;
+  /// the reconciler stops retrying it.
+  @$pb.TagNumber(28)
+  $core.String get paymentReview => $_getSZ(27);
+  @$pb.TagNumber(28)
+  set paymentReview($core.String v) { $_setString(27, v); }
+  @$pb.TagNumber(28)
+  $core.bool hasPaymentReview() => $_has(27);
+  @$pb.TagNumber(28)
+  void clearPaymentReview() => clearField(28);
 }
 
 /// OrderPayment is one instalment applied to an order.
@@ -5756,6 +5791,8 @@ class ReconcilePaymentsResponse extends $pb.GeneratedMessage {
     $core.int? failed,
     $core.int? overdue,
     $core.int? eventsDelivered,
+    $core.int? refundsSent,
+    $core.int? refundsConfirmed,
   }) {
     final $result = create();
     if (examined != null) {
@@ -5776,6 +5813,12 @@ class ReconcilePaymentsResponse extends $pb.GeneratedMessage {
     if (eventsDelivered != null) {
       $result.eventsDelivered = eventsDelivered;
     }
+    if (refundsSent != null) {
+      $result.refundsSent = refundsSent;
+    }
+    if (refundsConfirmed != null) {
+      $result.refundsConfirmed = refundsConfirmed;
+    }
     return $result;
   }
   ReconcilePaymentsResponse._() : super();
@@ -5789,6 +5832,8 @@ class ReconcilePaymentsResponse extends $pb.GeneratedMessage {
     ..a<$core.int>(4, _omitFieldNames ? '' : 'failed', $pb.PbFieldType.O3)
     ..a<$core.int>(5, _omitFieldNames ? '' : 'overdue', $pb.PbFieldType.O3)
     ..a<$core.int>(6, _omitFieldNames ? '' : 'eventsDelivered', $pb.PbFieldType.O3)
+    ..a<$core.int>(7, _omitFieldNames ? '' : 'refundsSent', $pb.PbFieldType.O3)
+    ..a<$core.int>(8, _omitFieldNames ? '' : 'refundsConfirmed', $pb.PbFieldType.O3)
     ..hasRequiredFields = false
   ;
 
@@ -5868,6 +5913,26 @@ class ReconcilePaymentsResponse extends $pb.GeneratedMessage {
   $core.bool hasEventsDelivered() => $_has(5);
   @$pb.TagNumber(6)
   void clearEventsDelivered() => clearField(6);
+
+  /// Refunds handed to the payment service in this run.
+  @$pb.TagNumber(7)
+  $core.int get refundsSent => $_getIZ(6);
+  @$pb.TagNumber(7)
+  set refundsSent($core.int v) { $_setSignedInt32(6, v); }
+  @$pb.TagNumber(7)
+  $core.bool hasRefundsSent() => $_has(6);
+  @$pb.TagNumber(7)
+  void clearRefundsSent() => clearField(7);
+
+  /// Refunds the payment service confirmed in this run.
+  @$pb.TagNumber(8)
+  $core.int get refundsConfirmed => $_getIZ(7);
+  @$pb.TagNumber(8)
+  set refundsConfirmed($core.int v) { $_setSignedInt32(7, v); }
+  @$pb.TagNumber(8)
+  $core.bool hasRefundsConfirmed() => $_has(7);
+  @$pb.TagNumber(8)
+  void clearRefundsConfirmed() => clearField(8);
 }
 
 class RunEndOfDayLedgerRequest extends $pb.GeneratedMessage {

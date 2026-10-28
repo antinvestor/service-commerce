@@ -41,8 +41,9 @@ class WebhookSettingsSection extends ConsumerWidget {
         ),
         const SizedBox(height: 4),
         Text(
-          'Order events are POSTed here, signed with HMAC-SHA256 of the body '
-          'using the secret (X-Commerce-Signature).',
+          'Order events are POSTed here, signed with HMAC-SHA256 of '
+          '"<X-Commerce-Timestamp>.<body>" using the secret '
+          '(X-Commerce-Signature). A secret is required.',
           style: theme.textTheme.bodySmall?.copyWith(
             color: AppColors.onSurfaceMuted,
           ),

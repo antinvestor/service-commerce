@@ -1143,6 +1143,13 @@ message Order {
   repeated OrderPayment payments = 25;
   // Unpaid orders hold stock until this time.
   google.protobuf.Timestamp payment_due_at = 26;
+  // What has been paid back to the buyer: refunds the payment service
+  // confirmed.
+  common.v1.Money amount_refunded = 27;
+  // Set when a payment on this order needs staff attention, such as a
+  // checkout session that charged a different amount from the one issued;
+  // the reconciler stops retrying it.
+  string payment_review = 28;
 }
 
 // OrderPayment is one instalment applied to an order.
@@ -1193,6 +1200,10 @@ enum PaymentStatus {
   PAYMENT_STATUS_EXPIRED = 5;
   // At least one instalment is paid and a balance remains.
   PAYMENT_STATUS_PARTIALLY_PAID = 6;
+  // The order was cancelled after money arrived; the refund to the buyer
+  // has been raised with the payment service and is not yet confirmed.
+  // REFUNDED follows once every refund is confirmed.
+  PAYMENT_STATUS_REFUND_PENDING = 7;
 }
 
 message OrderLine {
@@ -1396,6 +1407,8 @@ enum OrderEventType {
   ORDER_EVENT_TYPE_CANCELLED = 8;
   // The payment window lapsed before anything was paid.
   ORDER_EVENT_TYPE_EXPIRED = 9;
+  // A refund to the buyer was confirmed by the payment service.
+  ORDER_EVENT_TYPE_REFUNDED = 10;
 }
 
 enum OrderEventDelivery {
@@ -1437,6 +1450,10 @@ message ReconcilePaymentsResponse {
   int32 overdue = 5;
   // Webhook deliveries that succeeded on retry.
   int32 events_delivered = 6;
+  // Refunds handed to the payment service in this run.
+  int32 refunds_sent = 7;
+  // Refunds the payment service confirmed in this run.
+  int32 refunds_confirmed = 8;
 }
 
 message RunEndOfDayLedgerRequest {

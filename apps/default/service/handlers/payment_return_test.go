@@ -81,6 +81,16 @@ func TestPaymentReturn_RedirectsToStorefrontWithOutcome(t *testing.T) {
 	require.Equal(t, "no-store", rec.Header().Get("Cache-Control"))
 }
 
+func TestPaymentReturn_OnlyRedirectsOverHTTPS(t *testing.T) {
+	for _, target := range []string{"http://store.example/thanks", "javascript:alert(1)", "https://u@store.example/"} {
+		stub := &stubPayments{result: &business.PaymentReturn{Order: paidOrder(), RedirectURL: target}}
+		rec := serveReturn(t, stub, http.MethodGet, "/payments/return?order=order-1&session=Ab12Cd34Ef56")
+		require.Equal(t, http.StatusOK, rec.Code, target)
+		require.Empty(t, rec.Header().Get("Location"), target)
+		require.Contains(t, rec.Body.String(), "Payment received", target)
+	}
+}
+
 func TestPaymentReturn_RendersStatusWithoutStorefront(t *testing.T) {
 	stub := &stubPayments{result: &business.PaymentReturn{Order: paidOrder()}}
 	rec := serveReturn(t, stub, http.MethodGet, "/payments/return?order=order-1&session=Ab12Cd34Ef56")
@@ -109,7 +119,17 @@ func TestPaymentReturn_RendersStatusWithoutStorefront(t *testing.T) {
 	rec = serveReturn(t, stub, http.MethodGet, "/payments/return?order=order-1&session=Ab12Cd34Ef56")
 	require.Contains(t, rec.Body.String(), "Confirming your payment")
 
-	deposit.Payments = append(deposit.Payments, &commercev1.OrderPayment{Reference: "Ab12Cd34Ef56"})
+	// A shop's recorded receipt that happens to read like the ref does not
+	// count either: only the session's own checkout payment does.
+	deposit.Payments = append(deposit.Payments, &commercev1.OrderPayment{
+		Reference: "Ab12Cd34Ef56", Source: commercev1.OrderPaymentSource_ORDER_PAYMENT_SOURCE_RECORDED,
+	})
+	rec = serveReturn(t, stub, http.MethodGet, "/payments/return?order=order-1&session=Ab12Cd34Ef56")
+	require.Contains(t, rec.Body.String(), "Confirming your payment")
+
+	deposit.Payments = append(deposit.Payments, &commercev1.OrderPayment{
+		Reference: "Ab12Cd34Ef56", Source: commercev1.OrderPaymentSource_ORDER_PAYMENT_SOURCE_CHECKOUT,
+	})
 	rec = serveReturn(t, stub, http.MethodGet, "/payments/return?order=order-1&session=Ab12Cd34Ef56")
 	body = rec.Body.String()
 	require.Contains(t, body, "Payment received")

@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "name": "commerce.reconcile_payments",
-  "description": "Every thirty minutes: apply checkout payments buyers completed without returning (whole orders and instalments), release stock from orders whose payment window lapsed, flag or cancel part-paid orders past their balance deadline, and retry undelivered order-event webhooks.",
+  "description": "Every thirty minutes: apply checkout payments buyers completed without returning (whole orders and instalments, and late payments on cancelled orders, which are refunded), release stock from orders whose payment window lapsed, flag or cancel part-paid orders past their balance deadline, send refunds and confirm them with the payment service, and retry undelivered order-event webhooks. A run with nothing to do costs one query.",
   "schedules": [
     {
       "name": "commerce.reconcile_payments.every_30m",

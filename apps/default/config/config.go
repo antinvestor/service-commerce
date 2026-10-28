@@ -29,8 +29,12 @@ type CommerceConfig struct {
 	// Peer services. An empty URI disables that integration: checkout falls
 	// back to marking orders pending, notifications are skipped, ledger
 	// posting reports skipped, and workflow sync is a no-op.
-	CheckoutServiceURI                       string `env:"CHECKOUT_SERVICE_URI"                          envDefault:""`
-	CheckoutServiceWorkloadAPITargetPath     string `env:"CHECKOUT_SERVICE_WORKLOAD_API_TARGET_PATH"     envDefault:"/ns/payment/sa/service-checkout"`
+	CheckoutServiceURI                   string `env:"CHECKOUT_SERVICE_URI"                      envDefault:""`
+	CheckoutServiceWorkloadAPITargetPath string `env:"CHECKOUT_SERVICE_WORKLOAD_API_TARGET_PATH" envDefault:"/ns/payment/sa/service-checkout"`
+	// PaymentServiceURI is the platform payment service refunds are paid out
+	// through. Without it refunds are recorded but stay pending.
+	PaymentServiceURI                        string `env:"PAYMENT_SERVICE_URI"                           envDefault:""`
+	PaymentServiceWorkloadAPITargetPath      string `env:"PAYMENT_SERVICE_WORKLOAD_API_TARGET_PATH"      envDefault:"/ns/payment/sa/service-payment"`
 	LedgerServiceURI                         string `env:"LEDGER_SERVICE_URI"                            envDefault:""`
 	LedgerServiceWorkloadAPITargetPath       string `env:"LEDGER_SERVICE_WORKLOAD_API_TARGET_PATH"       envDefault:"/ns/ledger/sa/service-ledger"`
 	NotificationServiceURI                   string `env:"NOTIFICATION_SERVICE_URI"                      envDefault:""`
@@ -69,6 +73,9 @@ type CommerceConfig struct {
 	// OrderPaymentWindow is how long a reservation is held for an unpaid
 	// order before ReconcilePayments releases the stock.
 	OrderPaymentWindow time.Duration `env:"ORDER_PAYMENT_WINDOW" envDefault:"45m"`
+	// LatePaymentWindow is how long after an order is cancelled its checkout
+	// sessions are still checked, so a late payment is found and refunded.
+	LatePaymentWindow time.Duration `env:"LATE_PAYMENT_WINDOW" envDefault:"24h"`
 	// PaymentReconcileBatchSize caps the orders examined per reconcile run.
 	PaymentReconcileBatchSize int `env:"PAYMENT_RECONCILE_BATCH_SIZE" envDefault:"200"`
 
@@ -103,6 +110,9 @@ func (c *CommerceConfig) StorefrontURL() string {
 	return c.ReturnBaseURL()
 }
 
+// PaymentEnabled reports whether refunds can be paid out.
+func (c *CommerceConfig) PaymentEnabled() bool { return c.PaymentServiceURI != "" }
+
 // LedgerEnabled reports whether end-of-day posting is wired.
 func (c *CommerceConfig) LedgerEnabled() bool { return c.LedgerServiceURI != "" }
 
@@ -113,9 +123,9 @@ func (c *CommerceConfig) NotificationsEnabled() bool { return c.NotificationServ
 func (c *CommerceConfig) TrustageEnabled() bool { return c.TrustageServiceURI != "" }
 
 // Validate refuses settings a secure deployment cannot run with: shop webhook
-// secrets would be stored unencrypted without WEBHOOK_SECRET_KEY, and the
-// public storefront cannot find or create its buyers without the profile
-// service. Local runs (RUN_SERVICE_SECURELY=false) may leave them unset.
+// secrets would be stored unencrypted without WEBHOOK_SECRET_KEY, the public
+// storefront cannot find or create its buyers without the profile service,
+// and money taken online cannot be refunded without the payment service. Local runs (RUN_SERVICE_SECURELY=false) may leave them unset.
 func (c *CommerceConfig) Validate() error {
 	if !c.IsRunSecurely() {
 		return nil
@@ -126,6 +136,12 @@ func (c *CommerceConfig) Validate() error {
 	}
 	if c.StorefrontURL() != "" && c.ProfileServiceURI == "" {
 		errs = append(errs, errors.New("PROFILE_SERVICE_URI is required while the storefront is served"))
+	}
+	if c.CheckoutEnabled() && !c.PaymentEnabled() {
+		errs = append(
+			errs,
+			errors.New("PAYMENT_SERVICE_URI is required while checkout is on: refunds are paid through it"),
+		)
 	}
 	return errors.Join(errs...)
 }

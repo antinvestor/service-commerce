@@ -57,6 +57,7 @@ type allBiz struct {
 	ledgerBiz        business.LedgerBusiness
 	eventBiz         business.EventBusiness
 	checkout         *fakeCheckout
+	refunds          *fakeRefunds
 	ledger           *fakeLedger
 	notifier         *recordingNotifier
 	webhooks         *fakeWebhooks
@@ -92,11 +93,16 @@ func (bts *BusinessTestSuite) getBusiness(ctx context.Context, svc *frame.Servic
 	ledger := newFakeLedger()
 	notifier := &recordingNotifier{}
 	webhooks := &fakeWebhooks{}
+	queue := &syncWebhookQueue{}
 	eventBiz := business.NewEventBusiness(
-		repository.NewOrderEventRepository(ctx, dbPool, workMan), shopRepo, notifier, webhooks, nil)
+		repository.NewOrderEventRepository(ctx, dbPool, workMan), shopRepo, notifier, webhooks, nil, queue)
+	queue.events = eventBiz
+	refunds := newFakeRefunds()
 	paymentPolicy := business.PaymentPolicy{
 		DefaultReturnURL: "https://shop.example/orders/{order_id}",
 		PaymentWindow:    30 * time.Minute,
+		// The deployment's storefront hosts.
+		ReturnHosts: []string{"api.example", "store.example"},
 	}
 
 	return allBiz{
@@ -124,18 +130,21 @@ func (bts *BusinessTestSuite) getBusiness(ctx context.Context, svc *frame.Servic
 			shopRepo,
 			notifier,
 		),
-		paymentBiz: business.NewPaymentBusiness(ctx, orderRepo, shopRepo, checkout, notifier, eventBiz, paymentPolicy),
-		returnPaymentBiz: business.NewPaymentBusiness(ctx, orderRepo, shopRepo, checkout, notifier, eventBiz,
+		paymentBiz: business.NewPaymentBusiness(
+			ctx, orderRepo, shopRepo, checkout, refunds, notifier, eventBiz, paymentPolicy),
+		returnPaymentBiz: business.NewPaymentBusiness(ctx, orderRepo, shopRepo, checkout, refunds, notifier, eventBiz,
 			business.PaymentPolicy{
 				DefaultReturnURL: paymentPolicy.DefaultReturnURL,
 				ReturnBaseURL:    "https://api.example/commerce/",
 				PaymentWindow:    paymentPolicy.PaymentWindow,
+				ReturnHosts:      paymentPolicy.ReturnHosts,
 			}),
 		pricingBiz: pricingBiz,
 		ledgerBiz: business.NewLedgerBusiness(ctx, orderRepo, shopRepo, postingRepo, ledger, notifier,
 			business.LedgerPolicy{BookType: "merchant", Timezone: "UTC"}),
 		eventBiz: eventBiz,
 		checkout: checkout,
+		refunds:  refunds,
 		ledger:   ledger,
 		notifier: notifier,
 		webhooks: webhooks,

@@ -174,6 +174,7 @@ class PaymentStatus extends $pb.ProtobufEnum {
   static const PaymentStatus PAYMENT_STATUS_REFUNDED = PaymentStatus._(4, _omitEnumNames ? '' : 'PAYMENT_STATUS_REFUNDED');
   static const PaymentStatus PAYMENT_STATUS_EXPIRED = PaymentStatus._(5, _omitEnumNames ? '' : 'PAYMENT_STATUS_EXPIRED');
   static const PaymentStatus PAYMENT_STATUS_PARTIALLY_PAID = PaymentStatus._(6, _omitEnumNames ? '' : 'PAYMENT_STATUS_PARTIALLY_PAID');
+  static const PaymentStatus PAYMENT_STATUS_REFUND_PENDING = PaymentStatus._(7, _omitEnumNames ? '' : 'PAYMENT_STATUS_REFUND_PENDING');
 
   static const $core.List<PaymentStatus> values = <PaymentStatus> [
     PAYMENT_STATUS_UNSPECIFIED,
@@ -183,6 +184,7 @@ class PaymentStatus extends $pb.ProtobufEnum {
     PAYMENT_STATUS_REFUNDED,
     PAYMENT_STATUS_EXPIRED,
     PAYMENT_STATUS_PARTIALLY_PAID,
+    PAYMENT_STATUS_REFUND_PENDING,
   ];
 
   static final $core.Map<$core.int, PaymentStatus> _byValue = $pb.ProtobufEnum.initByValue(values);
@@ -202,6 +204,7 @@ class OrderEventType extends $pb.ProtobufEnum {
   static const OrderEventType ORDER_EVENT_TYPE_OVERPAID = OrderEventType._(7, _omitEnumNames ? '' : 'ORDER_EVENT_TYPE_OVERPAID');
   static const OrderEventType ORDER_EVENT_TYPE_CANCELLED = OrderEventType._(8, _omitEnumNames ? '' : 'ORDER_EVENT_TYPE_CANCELLED');
   static const OrderEventType ORDER_EVENT_TYPE_EXPIRED = OrderEventType._(9, _omitEnumNames ? '' : 'ORDER_EVENT_TYPE_EXPIRED');
+  static const OrderEventType ORDER_EVENT_TYPE_REFUNDED = OrderEventType._(10, _omitEnumNames ? '' : 'ORDER_EVENT_TYPE_REFUNDED');
 
   static const $core.List<OrderEventType> values = <OrderEventType> [
     ORDER_EVENT_TYPE_UNSPECIFIED,
@@ -214,6 +217,7 @@ class OrderEventType extends $pb.ProtobufEnum {
     ORDER_EVENT_TYPE_OVERPAID,
     ORDER_EVENT_TYPE_CANCELLED,
     ORDER_EVENT_TYPE_EXPIRED,
+    ORDER_EVENT_TYPE_REFUNDED,
   ];
 
   static final $core.Map<$core.int, OrderEventType> _byValue = $pb.ProtobufEnum.initByValue(values);

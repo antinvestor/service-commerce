@@ -279,6 +279,19 @@ type Order struct {
 	BalanceDueAt    *time.Time `gorm:"index:idx_order_balance_due"`
 	OverdueAt       *time.Time
 
+	// Refunds. AmountRefundedNanos is what the payment service confirmed
+	// was paid back to the buyer.
+	AmountRefundedNanos int64
+
+	// Reconciliation. NextReconcileAt backs off an order the reconciler
+	// looked at without settling it, so a few stuck orders never hold up
+	// the rest; ReconcileAttempts counts those looks. PaymentReview is set
+	// when only staff can settle the order's payment, which takes it out of
+	// the sweep.
+	NextReconcileAt   *time.Time
+	ReconcileAttempts int32
+	PaymentReview     string `gorm:"type:varchar(255)"`
+
 	Lines    []*OrderLine    `gorm:"foreignKey:OrderID"`
 	Payments []*OrderPayment `gorm:"foreignKey:OrderID"`
 	Shop     *Shop           `gorm:"foreignKey:ShopID"`
@@ -328,6 +341,10 @@ func (o *Order) ToAPI() *commercev1.Order {
 	for _, payment := range o.Payments {
 		api.Payments = append(api.Payments, payment.ToAPI())
 	}
+	if o.AmountRefundedNanos > 0 {
+		api.AmountRefunded = MoneyFromNanos(o.TotalCurrency, o.AmountRefundedNanos)
+	}
+	api.PaymentReview = o.PaymentReview
 	return api
 }
 

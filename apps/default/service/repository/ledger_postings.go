@@ -16,6 +16,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/pitabwire/frame/v3/datastore"
 	"github.com/pitabwire/frame/v3/datastore/pool"
@@ -48,4 +49,25 @@ func (r *ledgerPostingRepository) GetByShopAndDay(
 	err := r.Pool().DB(ctx, true).
 		First(posting, "shop_id = ? AND trading_day = ?", shopID, tradingDay).Error
 	return posting, err
+}
+
+func (r *ledgerPostingRepository) ListFailedSince(
+	ctx context.Context,
+	shopID, sinceDay string,
+	limit int,
+) ([]*models.LedgerPosting, error) {
+	var postings []*models.LedgerPosting
+	query := r.Pool().DB(ctx, false).
+		Where("status = ? AND trading_day >= ?", models.LedgerPostingFailed, sinceDay).
+		Order("trading_day ASC")
+	if shopID != "" {
+		query = query.Where("shop_id = ?", shopID)
+	}
+	if limit > 0 {
+		query = query.Limit(limit)
+	}
+	if err := query.Find(&postings).Error; err != nil {
+		return nil, fmt.Errorf("list failed ledger postings: %w", err)
+	}
+	return postings, nil
 }

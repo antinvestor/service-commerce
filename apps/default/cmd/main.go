@@ -24,6 +24,7 @@ import (
 	"github.com/antinvestor/common/v3/permissions"
 	"github.com/pitabwire/frame/v3"
 	"github.com/pitabwire/frame/v3/config"
+	"github.com/pitabwire/frame/v3/events"
 	"github.com/pitabwire/frame/v3/security/authorizer"
 	connectInterceptors "github.com/pitabwire/frame/v3/security/interceptors/connect"
 	"github.com/pitabwire/frame/v3/setup"
@@ -118,12 +119,34 @@ func main() {
 		log.WithError(err).Fatal("could not build peer clients")
 	}
 
-	connectHandler := setupConnectServer(ctx, svc, &cfg, platform)
-	svc.Init(ctx, frame.WithHTTPHandler(connectHandler))
+	connectHandler, deliveries := setupConnectServer(ctx, svc, &cfg, platform)
+	svc.Init(ctx, frame.WithHTTPHandler(connectHandler), frame.WithRegisterEvents(deliveries))
 
 	if runErr := svc.Run(ctx, ""); runErr != nil {
 		log.WithError(runErr).Fatal("could not run Server")
 	}
+}
+
+// moneyGateways adapts the payment-side peers. Typed nils must not reach
+// the business layer as non-nil interfaces.
+func moneyGateways(
+	platform *clients.Platform,
+) (business.CheckoutGateway, business.RefundGateway, business.LedgerGateway) {
+	var (
+		checkout business.CheckoutGateway
+		refunds  business.RefundGateway
+		ledger   business.LedgerGateway
+	)
+	if platform.Checkout != nil {
+		checkout = business.NewConnectCheckoutGateway(platform.Checkout)
+	}
+	if platform.Payment != nil {
+		refunds = business.NewConnectRefundGateway(platform.Payment)
+	}
+	if platform.Ledger != nil {
+		ledger = business.NewConnectLedgerGateway(platform.Ledger)
+	}
+	return checkout, refunds, ledger
 }
 
 // setupConnectServer wires the interceptor chain and the Connect handler.
@@ -132,7 +155,7 @@ func setupConnectServer(
 	svc *frame.Service,
 	cfg *aconfig.CommerceConfig,
 	platform *clients.Platform,
-) http.Handler {
+) (http.Handler, events.EventI) {
 	securityMan := svc.SecurityManager()
 	auth := securityMan.GetAuthorizer(ctx)
 
@@ -157,14 +180,7 @@ func setupConnectServer(
 	// Layer 3: per-shop and per-record checks inside the handlers.
 	authzMiddleware := authz.NewMiddleware(auth)
 
-	var checkout business.CheckoutGateway
-	if platform.Checkout != nil {
-		checkout = business.NewConnectCheckoutGateway(platform.Checkout)
-	}
-	var ledger business.LedgerGateway
-	if platform.Ledger != nil {
-		ledger = business.NewConnectLedgerGateway(platform.Ledger)
-	}
+	checkout, refunds, ledger := moneyGateways(platform)
 
 	// Typed nils must not reach the directory as non-nil interfaces.
 	var (
@@ -191,18 +207,25 @@ func setupConnectServer(
 	}
 
 	implementation := handlers.NewCommerceServer(ctx, svc, authzMiddleware, handlers.Dependencies{
-		Checkout:   checkout,
-		Ledger:     ledger,
-		Currencies: business.NewConnectCurrencyDirectory(settingsCli, devicesCli, profilesCli),
-		Webhooks:   business.NewHTTPWebhookSender(ctx),
-		Secrets:    secrets,
-		Notifier:   notifications.New(platform.Notification),
+		Checkout:     checkout,
+		Refunds:      refunds,
+		Ledger:       ledger,
+		Currencies:   business.NewConnectCurrencyDirectory(settingsCli, devicesCli, profilesCli),
+		Webhooks:     business.NewHTTPWebhookSender(ctx),
+		WebhookQueue: business.NewFrameWebhookQueue(svc.EventsManager),
+		Secrets:      secrets,
+		Notifier:     notifications.New(platform.Notification),
 		PaymentPolicy: business.PaymentPolicy{
 			DefaultReturnURL:   cfg.CheckoutReturnURL,
 			ReturnBaseURL:      cfg.ReturnBaseURL(),
 			PaymentWindow:      cfg.OrderPaymentWindow,
 			SettleGrace:        cfg.PaymentSettleGrace,
 			ReconcileBatchSize: cfg.PaymentReconcileBatchSize,
+			LatePaymentWindow:  cfg.LatePaymentWindow,
+			ReturnHosts: []string{
+				business.ReturnHost(cfg.StorefrontURL()),
+				business.ReturnHost(cfg.CheckoutReturnURL),
+			},
 		},
 		LedgerPolicy: business.LedgerPolicy{
 			BookType: cfg.LedgerBookType,
@@ -220,5 +243,5 @@ func setupConnectServer(
 	implementation.MountStorefront(mux)
 	connecthttp.Mount(mux, server)
 
-	return mux
+	return mux, implementation.WebhookDeliveryEvent()
 }

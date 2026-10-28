@@ -16,6 +16,8 @@ package business
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"time"
 
 	"connectrpc.com/connect/v2"
@@ -36,7 +38,16 @@ const (
 	firstRetryDelay     = time.Minute
 	maxRetryDelay       = 6 * time.Hour
 	deliveryBatchSize   = 100
+	// deliveryLease holds a claimed event while one attempt runs; an attempt
+	// that dies leaves the event to be retried once the lease lapses.
+	deliveryLease = 2 * time.Minute
 )
+
+// WebhookQueue hands freshly recorded events to background delivery, so a
+// buyer's request never waits on a shop's webhook.
+type WebhookQueue interface {
+	Enqueue(ctx context.Context, eventIDs []string) error
+}
 
 // EventPage is one page of order events plus the next cursor.
 type EventPage struct {
@@ -47,10 +58,10 @@ type EventPage struct {
 // EventBusiness delivers the signals recorded alongside order changes and
 // serves them back to clients.
 type EventBusiness interface {
-	// Publish sends notifications for freshly committed events and makes a
-	// first webhook delivery attempt. payment is the instalment that raised
-	// them, when there is one. It never fails the caller: undelivered
-	// webhooks are retried by DeliverDue.
+	// Publish sends notifications for freshly committed events and queues
+	// their webhook delivery. payment is the instalment that raised them,
+	// when there is one. It never fails the caller: undelivered webhooks are
+	// retried by DeliverDue.
 	Publish(
 		ctx context.Context,
 		shop *models.Shop,
@@ -61,6 +72,9 @@ type EventBusiness interface {
 	// DeliverDue retries webhook deliveries whose time has come and reports
 	// how many were delivered.
 	DeliverDue(ctx context.Context, now time.Time) int
+	// Deliver makes one attempt at each of the events that is due, for the
+	// background queue, and reports how many were delivered.
+	Deliver(ctx context.Context, eventIDs []string) int
 	// List pages the events of a shop or an order, oldest first.
 	List(ctx context.Context, shopID, orderID string, page repository.Page) (*EventPage, error)
 }
@@ -73,12 +87,13 @@ func NewEventBusiness(
 	notifier notifications.Notifier,
 	sender WebhookSender,
 	secrets SecretBox,
+	queue WebhookQueue,
 ) EventBusiness {
 	if secrets == nil {
 		secrets = plainBox{}
 	}
 	return &eventBusiness{
-		eventRepo: eventRepo, shopRepo: shopRepo, notifier: notifier, sender: sender, secrets: secrets,
+		eventRepo: eventRepo, shopRepo: shopRepo, notifier: notifier, sender: sender, secrets: secrets, queue: queue,
 	}
 }
 
@@ -88,6 +103,7 @@ type eventBusiness struct {
 	notifier  notifications.Notifier
 	sender    WebhookSender
 	secrets   SecretBox
+	queue     WebhookQueue
 }
 
 func (eb *eventBusiness) Publish(
@@ -120,11 +136,17 @@ func (eb *eventBusiness) Publish(
 		eb.notifier.InstalmentReceived(ctx, shop, order, payment)
 	}
 
-	now := time.Now()
+	var pending []string
 	for _, event := range events {
 		if event.Delivery == models.EventDeliveryPending {
-			eb.deliver(ctx, shop, event, now)
+			pending = append(pending, event.GetID())
 		}
+	}
+	if len(pending) == 0 || eb.queue == nil || eb.sender == nil {
+		return
+	}
+	if err := eb.queue.Enqueue(ctx, pending); err != nil {
+		util.Log(ctx).WithError(err).Warn("could not queue webhook delivery; the reconcile run retries it")
 	}
 }
 
@@ -134,12 +156,37 @@ func (eb *eventBusiness) DeliverDue(ctx context.Context, now time.Time) int {
 		util.Log(ctx).WithError(err).Warn("could not list order events due for delivery")
 		return 0
 	}
+	ids := make([]string, 0, len(events))
+	for _, event := range events {
+		ids = append(ids, event.GetID())
+	}
+	return eb.deliverAll(ctx, ids, now)
+}
+
+func (eb *eventBusiness) Deliver(ctx context.Context, eventIDs []string) int {
+	return eb.deliverAll(ctx, eventIDs, time.Now())
+}
+
+func (eb *eventBusiness) deliverAll(ctx context.Context, eventIDs []string, now time.Time) int {
+	if eb.sender == nil {
+		return 0
+	}
 	shops := map[string]*models.Shop{}
 	var orphaned []string
 	delivered := 0
-	for _, event := range events {
+	for _, id := range eventIDs {
 		if ctx.Err() != nil {
 			break
+		}
+		// Claimed before sending: a concurrent run skips it, and the attempt
+		// is counted even if this one dies mid-send.
+		event, err := eb.eventRepo.ClaimDelivery(ctx, id, now, now.Add(deliveryLease))
+		if err != nil {
+			util.Log(ctx).WithError(err).WithField("event_id", id).Warn("could not claim order event delivery")
+			continue
+		}
+		if event == nil {
+			continue
 		}
 		shop, ok := shops[event.ShopID]
 		if !ok {
@@ -164,34 +211,10 @@ func (eb *eventBusiness) DeliverDue(ctx context.Context, now time.Time) int {
 	return delivered
 }
 
-// deliver makes one webhook attempt and records its outcome.
+// deliver makes the attempt claimed on event and records its outcome.
 func (eb *eventBusiness) deliver(ctx context.Context, shop *models.Shop, event *models.OrderEvent, now time.Time) bool {
-	if eb.sender == nil {
-		return false
-	}
 	log := util.Log(ctx).WithField("event_id", event.GetID()).WithField("shop_id", shop.GetID())
-	body, err := protojson.Marshal(event.ToAPI())
-	if err != nil {
-		log.WithError(err).Error("could not encode order event")
-		return false
-	}
-
-	secret, err := eb.secrets.Open(shop.WebhookSecret)
-	if err != nil {
-		// Unsigned delivery would let anyone forge events; keep it pending
-		// until the key is configured.
-		log.WithError(err).Error("could not open the shop's webhook secret")
-		return false
-	}
-
-	event.DeliveryAttempts++
-	sendErr := eb.sender.Send(ctx, WebhookDelivery{
-		URL:        shop.WebhookURL,
-		Secret:     secret,
-		EventType:  commercev1.OrderEventType(event.Type).String(),
-		DeliveryID: event.GetID(),
-		Body:       body,
-	})
+	sendErr := eb.send(ctx, shop, event, now)
 	if sendErr == nil {
 		event.Delivery = models.EventDeliveryDelivered
 		delivered := now
@@ -210,9 +233,38 @@ func (eb *eventBusiness) deliver(ctx context.Context, shop *models.Shop, event *
 		}
 	}
 	if recordErr := eb.eventRepo.RecordDelivery(ctx, event); recordErr != nil {
+		// The claim's lease lapses and the event is tried again.
 		log.WithError(recordErr).Warn("could not record webhook delivery")
 	}
 	return sendErr == nil
+}
+
+// errNoWebhookSecret refuses an unsigned delivery: anyone could forge one.
+var errNoWebhookSecret = errors.New("the shop has no webhook secret; deliveries are signed and need one")
+
+func (eb *eventBusiness) send(ctx context.Context, shop *models.Shop, event *models.OrderEvent, now time.Time) error {
+	body, err := protojson.Marshal(event.ToAPI())
+	if err != nil {
+		return fmt.Errorf("encode order event: %w", err)
+	}
+	if shop.WebhookSecret == "" {
+		return errNoWebhookSecret
+	}
+	secret, err := eb.secrets.Open(shop.WebhookSecret)
+	if err != nil {
+		return fmt.Errorf("open the shop's webhook secret: %w", err)
+	}
+	if secret == "" {
+		return errNoWebhookSecret
+	}
+	return eb.sender.Send(ctx, WebhookDelivery{
+		URL:        shop.WebhookURL,
+		Secret:     secret,
+		EventType:  commercev1.OrderEventType(event.Type).String(),
+		DeliveryID: event.GetID(),
+		Timestamp:  now.Unix(),
+		Body:       body,
+	})
 }
 
 const maxErrorLength = 500

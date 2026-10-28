@@ -21,6 +21,7 @@ import (
 	"connectrpc.com/connect/v2"
 	"github.com/pitabwire/frame/v3"
 	"github.com/pitabwire/frame/v3/datastore"
+	"github.com/pitabwire/frame/v3/events"
 	"github.com/pitabwire/frame/v3/security"
 	"github.com/pitabwire/frame/v3/security/authorizer"
 
@@ -61,10 +62,16 @@ var _ commercev1connect.CommerceServiceHandler = (*CommerceServer)(nil)
 
 // Dependencies are the peers and policies the server is built with.
 type Dependencies struct {
-	Checkout      business.CheckoutGateway
-	Ledger        business.LedgerGateway
-	Currencies    business.CurrencyDirectory
-	Webhooks      business.WebhookSender
+	Checkout business.CheckoutGateway
+	// Refunds pays refunds out through the payment service; nil leaves them
+	// pending.
+	Refunds    business.RefundGateway
+	Ledger     business.LedgerGateway
+	Currencies business.CurrencyDirectory
+	Webhooks   business.WebhookSender
+	// WebhookQueue delivers webhooks off the request path; nil leaves them
+	// to the reconcile run.
+	WebhookQueue  business.WebhookQueue
 	Secrets       business.SecretBox
 	Notifier      notifications.Notifier
 	PaymentPolicy business.PaymentPolicy
@@ -104,7 +111,9 @@ func NewCommerceServer(
 	discountRuleRepo := repository.NewDiscountRuleRepository(ctx, dbPool, workMan)
 	postingRepo := repository.NewLedgerPostingRepository(ctx, dbPool, workMan)
 	eventRepo := repository.NewOrderEventRepository(ctx, dbPool, workMan)
-	events := business.NewEventBusiness(eventRepo, shopRepo, deps.Notifier, deps.Webhooks, deps.Secrets)
+	events := business.NewEventBusiness(
+		eventRepo, shopRepo, deps.Notifier, deps.Webhooks, deps.Secrets, deps.WebhookQueue,
+	)
 
 	pricingBusiness := business.NewPricingBusiness(
 		ctx,
@@ -134,7 +143,7 @@ func NewCommerceServer(
 		business.OrderPolicy{PaymentWindow: deps.PaymentPolicy.PaymentWindow},
 	)
 	paymentBusiness := business.NewPaymentBusiness(
-		ctx, orderRepo, shopRepo, deps.Checkout, deps.Notifier, events, deps.PaymentPolicy,
+		ctx, orderRepo, shopRepo, deps.Checkout, deps.Refunds, deps.Notifier, events, deps.PaymentPolicy,
 	)
 
 	return &CommerceServer{
@@ -566,12 +575,14 @@ func (cs *CommerceServer) ReconcilePayments(
 		return nil, errorutil.CleanErr(err)
 	}
 	return &commercev1.ReconcilePaymentsResponse{
-		Examined:        summary.Examined,
-		Paid:            summary.Paid,
-		Expired:         summary.Expired,
-		Failed:          summary.Failed,
-		Overdue:         summary.Overdue,
-		EventsDelivered: summary.EventsDelivered,
+		Examined:         summary.Examined,
+		Paid:             summary.Paid,
+		Expired:          summary.Expired,
+		Failed:           summary.Failed,
+		Overdue:          summary.Overdue,
+		EventsDelivered:  summary.EventsDelivered,
+		RefundsSent:      summary.RefundsSent,
+		RefundsConfirmed: summary.RefundsConfirmed,
 	}, nil
 }
 
@@ -1124,4 +1135,9 @@ func (cs *CommerceServer) DiscountRuleApprove(
 		return nil, errorutil.CleanErr(err)
 	}
 	return &commercev1.DiscountRuleApproveResponse{DiscountRule: rule}, nil
+}
+
+// WebhookDeliveryEvent is the Frame event that delivers queued webhooks.
+func (cs *CommerceServer) WebhookDeliveryEvent() events.EventI {
+	return business.NewWebhookDeliveryEvent(cs.eventBusiness)
 }

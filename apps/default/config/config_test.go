@@ -33,6 +33,12 @@ func TestValidateRequiresSecretsWhenRunSecurely(t *testing.T) {
 	cfg.ProfileServiceURI = "https://profile.example"
 	require.NoError(t, cfg.Validate())
 
+	// Money taken online must be refundable.
+	cfg.CheckoutServiceURI = "https://checkout.example"
+	require.ErrorContains(t, cfg.Validate(), "PAYMENT_SERVICE_URI")
+	cfg.PaymentServiceURI = "https://payment.example"
+	require.NoError(t, cfg.Validate())
+
 	// A local run may leave both unset.
 	local := &config.CommerceConfig{CommerceServiceURI: "https://commerce.example"}
 	local.RunServiceSecurely = false

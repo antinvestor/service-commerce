@@ -166,6 +166,7 @@ const PaymentStatus$json = {
     {'1': 'PAYMENT_STATUS_REFUNDED', '2': 4},
     {'1': 'PAYMENT_STATUS_EXPIRED', '2': 5},
     {'1': 'PAYMENT_STATUS_PARTIALLY_PAID', '2': 6},
+    {'1': 'PAYMENT_STATUS_REFUND_PENDING', '2': 7},
   ],
 };
 
@@ -174,7 +175,8 @@ final $typed_data.Uint8List paymentStatusDescriptor = $convert.base64Decode(
     'Cg1QYXltZW50U3RhdHVzEh4KGlBBWU1FTlRfU1RBVFVTX1VOU1BFQ0lGSUVEEAASGgoWUEFZTU'
     'VOVF9TVEFUVVNfUEVORElORxABEhcKE1BBWU1FTlRfU1RBVFVTX1BBSUQQAhIZChVQQVlNRU5U'
     'X1NUQVRVU19GQUlMRUQQAxIbChdQQVlNRU5UX1NUQVRVU19SRUZVTkRFRBAEEhoKFlBBWU1FTl'
-    'RfU1RBVFVTX0VYUElSRUQQBRIhCh1QQVlNRU5UX1NUQVRVU19QQVJUSUFMTFlfUEFJRBAG');
+    'RfU1RBVFVTX0VYUElSRUQQBRIhCh1QQVlNRU5UX1NUQVRVU19QQVJUSUFMTFlfUEFJRBAGEiEK'
+    'HVBBWU1FTlRfU1RBVFVTX1JFRlVORF9QRU5ESU5HEAc=');
 
 @$core.Deprecated('Use orderEventTypeDescriptor instead')
 const OrderEventType$json = {
@@ -190,6 +192,7 @@ const OrderEventType$json = {
     {'1': 'ORDER_EVENT_TYPE_OVERPAID', '2': 7},
     {'1': 'ORDER_EVENT_TYPE_CANCELLED', '2': 8},
     {'1': 'ORDER_EVENT_TYPE_EXPIRED', '2': 9},
+    {'1': 'ORDER_EVENT_TYPE_REFUNDED', '2': 10},
   ],
 };
 
@@ -201,7 +204,8 @@ final $typed_data.Uint8List orderEventTypeDescriptor = $convert.base64Decode(
     'okT1JERVJfRVZFTlRfVFlQRV9GVUxGSUxNRU5UX1JFTEVBU0VEEAQSHwobT1JERVJfRVZFTlRf'
     'VFlQRV9GVUxMWV9QQUlEEAUSJAogT1JERVJfRVZFTlRfVFlQRV9CQUxBTkNFX09WRVJEVUUQBh'
     'IdChlPUkRFUl9FVkVOVF9UWVBFX09WRVJQQUlEEAcSHgoaT1JERVJfRVZFTlRfVFlQRV9DQU5D'
-    'RUxMRUQQCBIcChhPUkRFUl9FVkVOVF9UWVBFX0VYUElSRUQQCQ==');
+    'RUxMRUQQCBIcChhPUkRFUl9FVkVOVF9UWVBFX0VYUElSRUQQCRIdChlPUkRFUl9FVkVOVF9UWV'
+    'BFX1JFRlVOREVEEAo=');
 
 @$core.Deprecated('Use orderEventDeliveryDescriptor instead')
 const OrderEventDelivery$json = {
@@ -1173,6 +1177,8 @@ const Order$json = {
     {'1': 'payment_policy', '3': 24, '4': 1, '5': 11, '6': '.commerce.v1.PaymentPolicy', '10': 'paymentPolicy'},
     {'1': 'payments', '3': 25, '4': 3, '5': 11, '6': '.commerce.v1.OrderPayment', '10': 'payments'},
     {'1': 'payment_due_at', '3': 26, '4': 1, '5': 11, '6': '.google.protobuf.Timestamp', '10': 'paymentDueAt'},
+    {'1': 'amount_refunded', '3': 27, '4': 1, '5': 11, '6': '.common.v1.Money', '10': 'amountRefunded'},
+    {'1': 'payment_review', '3': 28, '4': 1, '5': 9, '10': 'paymentReview'},
   ],
 };
 
@@ -1202,7 +1208,9 @@ final $typed_data.Uint8List orderDescriptor = $convert.base64Decode(
     'VzdGFtcFIMYmFsYW5jZUR1ZUF0EkEKDnBheW1lbnRfcG9saWN5GBggASgLMhouY29tbWVyY2Uu'
     'djEuUGF5bWVudFBvbGljeVINcGF5bWVudFBvbGljeRI1CghwYXltZW50cxgZIAMoCzIZLmNvbW'
     '1lcmNlLnYxLk9yZGVyUGF5bWVudFIIcGF5bWVudHMSQAoOcGF5bWVudF9kdWVfYXQYGiABKAsy'
-    'Gi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wUgxwYXltZW50RHVlQXQ=');
+    'Gi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wUgxwYXltZW50RHVlQXQSOQoPYW1vdW50X3JlZn'
+    'VuZGVkGBsgASgLMhAuY29tbW9uLnYxLk1vbmV5Ug5hbW91bnRSZWZ1bmRlZBIlCg5wYXltZW50'
+    'X3JldmlldxgcIAEoCVINcGF5bWVudFJldmlldw==');
 
 @$core.Deprecated('Use orderPaymentDescriptor instead')
 const OrderPayment$json = {
@@ -1563,6 +1571,8 @@ const ReconcilePaymentsResponse$json = {
     {'1': 'failed', '3': 4, '4': 1, '5': 5, '10': 'failed'},
     {'1': 'overdue', '3': 5, '4': 1, '5': 5, '10': 'overdue'},
     {'1': 'events_delivered', '3': 6, '4': 1, '5': 5, '10': 'eventsDelivered'},
+    {'1': 'refunds_sent', '3': 7, '4': 1, '5': 5, '10': 'refundsSent'},
+    {'1': 'refunds_confirmed', '3': 8, '4': 1, '5': 5, '10': 'refundsConfirmed'},
   ],
 };
 
@@ -1571,7 +1581,8 @@ final $typed_data.Uint8List reconcilePaymentsResponseDescriptor = $convert.base6
     'ChlSZWNvbmNpbGVQYXltZW50c1Jlc3BvbnNlEhoKCGV4YW1pbmVkGAEgASgFUghleGFtaW5lZB'
     'ISCgRwYWlkGAIgASgFUgRwYWlkEhgKB2V4cGlyZWQYAyABKAVSB2V4cGlyZWQSFgoGZmFpbGVk'
     'GAQgASgFUgZmYWlsZWQSGAoHb3ZlcmR1ZRgFIAEoBVIHb3ZlcmR1ZRIpChBldmVudHNfZGVsaX'
-    'ZlcmVkGAYgASgFUg9ldmVudHNEZWxpdmVyZWQ=');
+    'ZlcmVkGAYgASgFUg9ldmVudHNEZWxpdmVyZWQSIQoMcmVmdW5kc19zZW50GAcgASgFUgtyZWZ1'
+    'bmRzU2VudBIrChFyZWZ1bmRzX2NvbmZpcm1lZBgIIAEoBVIQcmVmdW5kc0NvbmZpcm1lZA==');
 
 @$core.Deprecated('Use runEndOfDayLedgerRequestDescriptor instead')
 const RunEndOfDayLedgerRequest$json = {

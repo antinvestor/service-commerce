@@ -23,13 +23,13 @@ import (
 	"regexp"
 
 	"connectrpc.com/connect/v2"
-	"github.com/pitabwire/frame/v3/tenancy"
 	"github.com/pitabwire/util"
 
 	commercev1 "github.com/antinvestor/service-commerce/gen/go/commerce/v1"
 
 	"github.com/antinvestor/service-commerce/apps/default/service/business"
 	"github.com/antinvestor/service-commerce/apps/default/service/models"
+	"github.com/antinvestor/service-commerce/pkg/dbrole"
 )
 
 // Payment states reported to the storefront in the redirect.
@@ -83,7 +83,7 @@ func NewPaymentReturnHandler(payments business.PaymentBusiness) http.Handler {
 		}
 
 		// No caller identity: the lookup is keyed by the unguessable ref.
-		ctx := tenancy.WithSkipEnforcement(r.Context())
+		ctx := dbrole.AcrossTenants(r.Context(), "payment return page")
 		result, err := payments.HandlePaymentReturn(ctx, orderID, sessionRef)
 		if err != nil {
 			renderReturnError(ctx, w, orderID, err)

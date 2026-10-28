@@ -323,17 +323,31 @@ func (pb *pricingBusiness) BatchSavePriceListEntries(
 			"price_list_id is required")
 	}
 
-	// Validate price list exists
-	_, err := pb.priceListRepo.GetByID(ctx, req.GetPriceListId())
+	pl, err := pb.priceListRepo.GetByID(ctx, req.GetPriceListId())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeNotFound, "price list not found")
 	}
 
 	entries := make([]*models.PriceListEntry, 0, len(req.GetEntries()))
+	variantShops := map[string]string{}
 	for _, entry := range req.GetEntries() {
 		if entry.GetProductVariantId() == "" {
 			return nil, connect.NewError(connect.CodeInvalidArgument,
 				"every entry needs a product_variant_id")
+		}
+		// A price list prices only its own shop's variants; the caller was
+		// authorised on that shop alone.
+		shopID, seen := variantShops[entry.GetProductVariantId()]
+		if !seen {
+			shopID, err = pb.GetShopIDForVariant(ctx, entry.GetProductVariantId())
+			if err != nil {
+				return nil, err
+			}
+			variantShops[entry.GetProductVariantId()] = shopID
+		}
+		if shopID != pl.ShopID {
+			return nil, connect.NewError(connect.CodeInvalidArgument,
+				"every entry's variant must belong to the price list's shop")
 		}
 		currency, units, nanos := models.MoneyFromProto(entry.GetUnitPrice())
 		if currency == "" {
@@ -832,6 +846,7 @@ func (pb *pricingBusiness) ResolvePrice(
 	if req.GetCustomerId() != "" {
 		priceListPrice := pb.resolveFromPriceLists(
 			ctx,
+			shopID,
 			req.GetCustomerId(),
 			req.GetProductVariantId(),
 			req.GetQuantity(),
@@ -869,7 +884,7 @@ const percentDivisor = 100.0
 
 func (pb *pricingBusiness) resolveFromPriceLists(
 	ctx context.Context,
-	customerID, variantID string,
+	shopID, customerID, variantID string,
 	quantity int32,
 ) *priceListMatch {
 	assignments, _, err := pb.assignmentRepo.ListByCustomerID(
@@ -881,7 +896,7 @@ func (pb *pricingBusiness) resolveFromPriceLists(
 
 	var matches []*priceListMatch
 	for _, assignment := range assignments {
-		m := pb.matchPriceListEntry(ctx, assignment, variantID, quantity)
+		m := pb.matchPriceListEntry(ctx, assignment, shopID, variantID, quantity)
 		if m != nil {
 			matches = append(matches, m)
 		}
@@ -900,7 +915,7 @@ func (pb *pricingBusiness) resolveFromPriceLists(
 func (pb *pricingBusiness) matchPriceListEntry(
 	ctx context.Context,
 	assignment *models.CustomerPriceListAssignment,
-	variantID string,
+	shopID, variantID string,
 	quantity int32,
 ) *priceListMatch {
 	activeStatus := int32(
@@ -915,7 +930,8 @@ func (pb *pricingBusiness) matchPriceListEntry(
 		return nil
 	}
 
-	if !isPriceListActive(pl) {
+	// Another shop's list never prices this shop's variant.
+	if pl.ShopID != shopID || !isPriceListActive(pl) {
 		return nil
 	}
 

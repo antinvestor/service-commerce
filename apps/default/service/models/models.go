@@ -240,7 +240,7 @@ type Order struct {
 	// IdempotencyKey deduplicates retried creates. RequestHash fingerprints the
 	// request so a reused key with different content is rejected instead of
 	// silently returning an unrelated order.
-	IdempotencyKey   string `gorm:"type:varchar(255);uniqueIndex"`
+	IdempotencyKey   string `gorm:"type:varchar(255)"` // unique per tenancy: migrations/0001
 	RequestHash      string `gorm:"type:varchar(64)"`
 	Status           int32  `gorm:"default:1"`
 	PaymentStatus    int32  `gorm:"default:1"`

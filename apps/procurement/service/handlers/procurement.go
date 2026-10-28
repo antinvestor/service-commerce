@@ -36,9 +36,11 @@ type ProcurementServer struct {
 	purchaseOrderBusiness business.PurchaseOrderBusiness
 	goodsReceiptBusiness  business.GoodsReceiptBusiness
 	suggestionBusiness    business.SuggestionBusiness
-
-	procurementv1connect.UnimplementedProcurementServiceHandler
 }
+
+// The server implements every RPC itself: a method the published stub adds
+// or renames fails the build instead of answering Unimplemented.
+var _ procurementv1connect.ProcurementServiceHandler = (*ProcurementServer)(nil)
 
 func NewProcurementServer(
 	ctx context.Context,
@@ -73,7 +75,7 @@ func NewProcurementServer(
 // they are governed by connection-level RLS tenancy and the functional access
 // plane rather than a per-property Keto check (none exists for suppliers).
 
-func (ps *ProcurementServer) SaveSupplier(
+func (ps *ProcurementServer) SupplierSave(
 	ctx context.Context,
 	req *procurementv1.SupplierSaveRequest,
 ) (*procurementv1.SupplierSaveResponse, error) {
@@ -84,7 +86,7 @@ func (ps *ProcurementServer) SaveSupplier(
 	return &procurementv1.SupplierSaveResponse{Supplier: supplier}, nil
 }
 
-func (ps *ProcurementServer) GetSupplier(
+func (ps *ProcurementServer) SupplierGet(
 	ctx context.Context,
 	req *procurementv1.SupplierGetRequest,
 ) (*procurementv1.SupplierGetResponse, error) {
@@ -95,7 +97,7 @@ func (ps *ProcurementServer) GetSupplier(
 	return &procurementv1.SupplierGetResponse{Supplier: supplier}, nil
 }
 
-func (ps *ProcurementServer) SearchSuppliers(
+func (ps *ProcurementServer) SupplierSearch(
 	ctx context.Context,
 	req *procurementv1.SupplierSearchRequest,
 ) (*procurementv1.SupplierSearchResponse, error) {
@@ -106,7 +108,7 @@ func (ps *ProcurementServer) SearchSuppliers(
 	return &procurementv1.SupplierSearchResponse{Suppliers: suppliers}, nil
 }
 
-func (ps *ProcurementServer) SaveSupplierItem(
+func (ps *ProcurementServer) SupplierItemSave(
 	ctx context.Context,
 	req *procurementv1.SupplierItemSaveRequest,
 ) (*procurementv1.SupplierItemSaveResponse, error) {
@@ -117,7 +119,7 @@ func (ps *ProcurementServer) SaveSupplierItem(
 	return &procurementv1.SupplierItemSaveResponse{SupplierItem: item}, nil
 }
 
-func (ps *ProcurementServer) SearchSupplierItems(
+func (ps *ProcurementServer) SupplierItemSearch(
 	ctx context.Context,
 	req *procurementv1.SupplierItemSearchRequest,
 ) (*procurementv1.SupplierItemSearchResponse, error) {
@@ -136,7 +138,7 @@ func (ps *ProcurementServer) SearchSupplierItems(
 // property-scoped Keto check (Plane 3) in addition to tenancy RLS and the
 // functional access plane.
 
-func (ps *ProcurementServer) CreatePurchaseOrder(
+func (ps *ProcurementServer) PurchaseOrderCreate(
 	ctx context.Context,
 	req *procurementv1.PurchaseOrderCreateRequest,
 ) (*procurementv1.PurchaseOrderCreateResponse, error) {
@@ -151,7 +153,7 @@ func (ps *ProcurementServer) CreatePurchaseOrder(
 	return &procurementv1.PurchaseOrderCreateResponse{PurchaseOrder: po}, nil
 }
 
-func (ps *ProcurementServer) GetPurchaseOrder(
+func (ps *ProcurementServer) PurchaseOrderGet(
 	ctx context.Context,
 	req *procurementv1.PurchaseOrderGetRequest,
 ) (*procurementv1.PurchaseOrderGetResponse, error) {
@@ -160,12 +162,12 @@ func (ps *ProcurementServer) GetPurchaseOrder(
 		return nil, errorutil.CleanErr(err)
 	}
 	if err = ps.authz.CanPurchaseOrderView(ctx, po.GetPropertyId()); err != nil {
-		return nil, authorizer.ToConnectError(err)
+		return nil, notVisible(authorizer.ToConnectError(err))
 	}
 	return &procurementv1.PurchaseOrderGetResponse{PurchaseOrder: po}, nil
 }
 
-func (ps *ProcurementServer) SearchPurchaseOrders(
+func (ps *ProcurementServer) PurchaseOrderSearch(
 	ctx context.Context,
 	req *procurementv1.PurchaseOrderSearchRequest,
 ) (*procurementv1.PurchaseOrderSearchResponse, error) {
@@ -184,7 +186,7 @@ func (ps *ProcurementServer) SearchPurchaseOrders(
 	return &procurementv1.PurchaseOrderSearchResponse{PurchaseOrders: orders}, nil
 }
 
-func (ps *ProcurementServer) SubmitPurchaseOrder(
+func (ps *ProcurementServer) PurchaseOrderSubmit(
 	ctx context.Context,
 	req *procurementv1.PurchaseOrderSubmitRequest,
 ) (*procurementv1.PurchaseOrderSubmitResponse, error) {
@@ -203,7 +205,7 @@ func (ps *ProcurementServer) SubmitPurchaseOrder(
 	return &procurementv1.PurchaseOrderSubmitResponse{PurchaseOrder: po}, nil
 }
 
-func (ps *ProcurementServer) CancelPurchaseOrder(
+func (ps *ProcurementServer) PurchaseOrderCancel(
 	ctx context.Context,
 	req *procurementv1.PurchaseOrderCancelRequest,
 ) (*procurementv1.PurchaseOrderCancelResponse, error) {
@@ -248,12 +250,15 @@ func (ps *ProcurementServer) SuggestPurchaseOrders(
 // Goods receipts are per-property resources; handlers enforce the
 // property-scoped Keto check (Plane 3).
 
-func (ps *ProcurementServer) CreateGoodsReceipt(
+func (ps *ProcurementServer) GoodsReceiptCreate(
 	ctx context.Context,
 	req *procurementv1.GoodsReceiptCreateRequest,
 ) (*procurementv1.GoodsReceiptCreateResponse, error) {
-	if err := ps.authz.CanGoodsReceiptManage(ctx, req.GetPropertyId()); err != nil {
-		return nil, authorizer.ToConnectError(err)
+	// A receipt lands on its purchase order's property, so that property is
+	// the one the caller must manage, whatever property_id says.
+	if err := ps.checkPurchaseOrderProperty(ctx, req.GetPurchaseOrderId(), req.GetPropertyId(),
+		ps.authz.CanGoodsReceiptManage); err != nil {
+		return nil, err
 	}
 
 	gr, err := ps.goodsReceiptBusiness.CreateGoodsReceipt(ctx, req)
@@ -263,7 +268,7 @@ func (ps *ProcurementServer) CreateGoodsReceipt(
 	return &procurementv1.GoodsReceiptCreateResponse{GoodsReceipt: gr}, nil
 }
 
-func (ps *ProcurementServer) GetGoodsReceipt(
+func (ps *ProcurementServer) GoodsReceiptGet(
 	ctx context.Context,
 	req *procurementv1.GoodsReceiptGetRequest,
 ) (*procurementv1.GoodsReceiptGetResponse, error) {
@@ -272,32 +277,31 @@ func (ps *ProcurementServer) GetGoodsReceipt(
 		return nil, errorutil.CleanErr(err)
 	}
 	if err = ps.authz.CanGoodsReceiptView(ctx, gr.GetPropertyId()); err != nil {
-		return nil, authorizer.ToConnectError(err)
+		return nil, notVisible(authorizer.ToConnectError(err))
 	}
 	return &procurementv1.GoodsReceiptGetResponse{GoodsReceipt: gr}, nil
 }
 
-func (ps *ProcurementServer) SearchGoodsReceipts(
+func (ps *ProcurementServer) GoodsReceiptSearch(
 	ctx context.Context,
 	req *procurementv1.GoodsReceiptSearchRequest,
 ) (*procurementv1.GoodsReceiptSearchResponse, error) {
 	// Goods receipts may be scoped by property directly, or by a purchase
-	// order (whose property we resolve). Either way the caller must hold the
-	// property-level view permission.
-	propertyID := req.GetPropertyId()
-	if propertyID == "" {
-		if req.GetPurchaseOrderId() == "" {
-			return nil, connect.NewError(connect.CodeInvalidArgument,
-				"property_id or purchase_order_id is required")
+	// order, whose own property then decides. Either way the caller must
+	// hold the property-level view permission.
+	switch {
+	case req.GetPurchaseOrderId() != "":
+		if err := ps.checkPurchaseOrderProperty(ctx, req.GetPurchaseOrderId(), req.GetPropertyId(),
+			ps.authz.CanGoodsReceiptView); err != nil {
+			return nil, notVisible(err)
 		}
-		po, poErr := ps.purchaseOrderBusiness.GetPurchaseOrder(ctx, req.GetPurchaseOrderId())
-		if poErr != nil {
-			return nil, errorutil.CleanErr(poErr)
+	case req.GetPropertyId() != "":
+		if err := ps.authz.CanGoodsReceiptView(ctx, req.GetPropertyId()); err != nil {
+			return nil, authorizer.ToConnectError(err)
 		}
-		propertyID = po.GetPropertyId()
-	}
-	if err := ps.authz.CanGoodsReceiptView(ctx, propertyID); err != nil {
-		return nil, authorizer.ToConnectError(err)
+	default:
+		return nil, connect.NewError(connect.CodeInvalidArgument,
+			"property_id or purchase_order_id is required")
 	}
 
 	receipts, err := ps.goodsReceiptBusiness.SearchGoodsReceipts(ctx, req)
@@ -305,4 +309,37 @@ func (ps *ProcurementServer) SearchGoodsReceipts(
 		return nil, errorutil.CleanErr(err)
 	}
 	return &procurementv1.GoodsReceiptSearchResponse{GoodsReceipts: receipts}, nil
+}
+
+// notVisible answers a read of a record the caller may not see exactly as a
+// read of one that does not exist, so ids cannot be probed for existence.
+func notVisible(err error) error {
+	if connect.CodeOf(err) == connect.CodePermissionDenied {
+		return connect.NewError(connect.CodeNotFound, "record not found")
+	}
+	return err
+}
+
+// checkPurchaseOrderProperty loads a purchase order and applies check to its
+// property. A property_id the caller also sent must name that same property.
+func (ps *ProcurementServer) checkPurchaseOrderProperty(
+	ctx context.Context,
+	purchaseOrderID, claimedPropertyID string,
+	check func(context.Context, string) error,
+) error {
+	if purchaseOrderID == "" {
+		return connect.NewError(connect.CodeInvalidArgument, "purchase_order_id is required")
+	}
+	po, err := ps.purchaseOrderBusiness.GetPurchaseOrder(ctx, purchaseOrderID)
+	if err != nil {
+		return errorutil.CleanErr(err)
+	}
+	if err = check(ctx, po.GetPropertyId()); err != nil {
+		return authorizer.ToConnectError(err)
+	}
+	if claimedPropertyID != "" && claimedPropertyID != po.GetPropertyId() {
+		return connect.NewError(connect.CodeInvalidArgument,
+			"property_id does not match the purchase order's property")
+	}
+	return nil
 }

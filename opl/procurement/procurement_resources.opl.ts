@@ -15,19 +15,27 @@
 // Hand-authored resource-plane (Plane 3) OPL for per-property access control in
 // procurement. Complements the generated service_procurement.opl.ts (Plane 2).
 // Enforced in handlers via authz.Middleware (procurement_property namespace).
+//
+// A property is the console's operational site (a branch, organisation or
+// partition). Each property bridges its roles to the caller's partition roles
+// by subject set, so staff roles the tenancy sync assigns on
+// service_procurement apply to every property in the partition.
 
 import { Namespace, Context } from "@ory/keto-namespace-types"
 
 class profile_user implements Namespace {}
 
+// Partition-level procurement roles (see service_procurement.opl.ts).
+class service_procurement implements Namespace {}
+
 class procurement_property implements Namespace {
   related: {
-    owner: profile_user[]
-    admin: profile_user[]
-    operator: profile_user[]
-    viewer: profile_user[]
-    member: profile_user[]
-    service: profile_user[]
+    owner: (profile_user | service_procurement)[]
+    admin: (profile_user | service_procurement)[]
+    operator: (profile_user | service_procurement)[]
+    viewer: (profile_user | service_procurement)[]
+    member: (profile_user | service_procurement)[]
+    service: (profile_user | service_procurement)[]
 
     granted_property_view: profile_user[]
     granted_property_update: profile_user[]

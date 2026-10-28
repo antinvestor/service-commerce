@@ -69,11 +69,12 @@ func (grb *goodsReceiptBusiness) CreateGoodsReceipt(
 	ctx context.Context,
 	req *procurementv1.GoodsReceiptCreateRequest,
 ) (*procurementv1.GoodsReceipt, error) {
-	// Idempotency check
+	// Idempotency check: a replay returns the receipt only for the purchase
+	// order (and so the property) the caller was authorised on.
 	if req.GetIdempotencyKey() != "" {
 		existing, err := grb.grRepo.GetByIdempotencyKey(ctx, req.GetIdempotencyKey())
 		if err == nil && existing != nil {
-			return existing.ToAPI(), nil
+			return replayedReceipt(existing, req)
 		}
 		if err != nil && !frame.ErrorIsNotFound(err) {
 			return nil, data.ErrorConvertToAPI(err)
@@ -110,7 +111,7 @@ func (grb *goodsReceiptBusiness) CreateGoodsReceipt(
 		case req.GetIdempotencyKey() != "" && data.ErrorIsDuplicateKey(createErr):
 			existing, getErr := grb.grRepo.GetByIdempotencyKey(ctx, req.GetIdempotencyKey())
 			if getErr == nil {
-				return existing.ToAPI(), nil
+				return replayedReceipt(existing, req)
 			}
 			return nil, data.ErrorConvertToAPI(createErr)
 		default:
@@ -119,6 +120,19 @@ func (grb *goodsReceiptBusiness) CreateGoodsReceipt(
 	}
 
 	return grb.GetGoodsReceipt(ctx, gr.GetID())
+}
+
+// replayedReceipt answers a repeated idempotency key with the receipt it
+// created, provided that receipt is for the same purchase order.
+func replayedReceipt(
+	existing *models.GoodsReceipt,
+	req *procurementv1.GoodsReceiptCreateRequest,
+) (*procurementv1.GoodsReceipt, error) {
+	if existing.PurchaseOrderID != req.GetPurchaseOrderId() {
+		return nil, connect.NewError(connect.CodeAlreadyExists,
+			"idempotency_key was already used for another purchase order")
+	}
+	return existing.ToAPI(), nil
 }
 
 // validateGoodsReceipt checks the PO state and validates all requested receipt lines.

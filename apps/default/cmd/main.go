@@ -24,7 +24,6 @@ import (
 	"github.com/antinvestor/common/v3/permissions"
 	"github.com/pitabwire/frame/v3"
 	"github.com/pitabwire/frame/v3/config"
-	"github.com/pitabwire/frame/v3/datastore"
 	"github.com/pitabwire/frame/v3/security/authorizer"
 	connectInterceptors "github.com/pitabwire/frame/v3/security/interceptors/connect"
 	"github.com/pitabwire/frame/v3/setup"
@@ -40,6 +39,8 @@ import (
 	commercepb "github.com/antinvestor/service-commerce/gen/go/commerce/v1"
 	"github.com/antinvestor/service-commerce/gen/go/commerce/v1/commercev1connect"
 	"github.com/antinvestor/service-commerce/pkg/clients"
+	"github.com/antinvestor/service-commerce/pkg/dbmigrate"
+	"github.com/antinvestor/service-commerce/pkg/dbrole"
 	"github.com/antinvestor/service-commerce/pkg/messages"
 	workflowdefs "github.com/antinvestor/service-commerce/workflows"
 )
@@ -66,8 +67,15 @@ func main() {
 	svc.Setup().RegisterFunc(setup.NameMigrate, func(ctx context.Context) error {
 		return repository.Migrate(ctx, svc.DatastoreManager(), cfg.GetDatabaseMigrationPath())
 	})
+	svc.Setup().RegisterFunc(dbrole.StepName, dbrole.Step(svc.DatastoreManager()))
 	defer svc.Stop(ctx)
 	log := svc.Log(ctx)
+
+	// Frame keeps an empty pool when the database cannot be reached; stop
+	// here rather than build repositories or migrate on it.
+	if dbErr := dbmigrate.Ready(ctx, svc); dbErr != nil {
+		log.WithError(dbErr).Fatal("database is unavailable; check DATABASE_URL and the database provider's status")
+	}
 
 	// Setup Job: migrate, publish the permission manifest, register
 	// notification templates, and register scheduled workflows. Then exit.
@@ -94,11 +102,15 @@ func main() {
 	}
 
 	// Runtime: HTTP only, no permission registration.
-	// Without a database every repository would be built on a nil pool; say
-	// so plainly instead of crashing on the first dereference.
-	if svc.DatastoreManager().GetPool(ctx, datastore.DefaultPoolName) == nil {
-		log.Error("database is unavailable; check DATABASE_URL and the database provider's status")
-		return
+	if cfgErr := cfg.Validate(); cfgErr != nil {
+		log.WithError(cfgErr).Fatal("configuration is not deployment-safe")
+	}
+	dbrole.MustVerify(ctx, svc.DatastoreManager())
+	// A query that names no tenant is refused from here on; only the
+	// scheduled sweeps, the storefront slug lookup and the payment return
+	// page read across tenants, explicitly.
+	if tenancyErr := dbrole.FailClosed(svc); tenancyErr != nil {
+		log.WithError(tenancyErr).Fatal("could not enforce tenant isolation")
 	}
 
 	platform, err := clients.New(ctx, &cfg)
@@ -175,7 +187,7 @@ func setupConnectServer(
 		util.Log(ctx).WithError(err).Fatal("invalid WEBHOOK_SECRET_KEY")
 	}
 	if !business.Sealing(secrets) {
-		util.Log(ctx).Warn("WEBHOOK_SECRET_KEY not set; shop webhook secrets are stored unencrypted")
+		util.Log(ctx).Warn("WEBHOOK_SECRET_KEY not set; shop webhook secrets are stored unencrypted (local runs only)")
 	}
 
 	implementation := handlers.NewCommerceServer(ctx, svc, authzMiddleware, handlers.Dependencies{

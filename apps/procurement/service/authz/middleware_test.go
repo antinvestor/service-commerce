@@ -166,3 +166,39 @@ func (s *MiddlewareTestSuite) TestViewerCannotManage() {
 	s.Require().Error(mw.CanPurchaseOrderManage(ctx, propertyID))
 	s.Require().Error(mw.CanGoodsReceiptManage(ctx, propertyID))
 }
+
+// Partition roles flow onto any property the caller acts on: a partition
+// admin manages purchase orders and receipts there, and a partition viewer
+// only reads them. A property needs no per-profile tuples.
+func (s *MiddlewareTestSuite) TestPartitionRolesInheritedOnProperty() {
+	auth := s.newAuthorizer()
+	mw := authz.NewMiddleware(auth)
+	tenancyPath := testTenantID + "/" + testPartitionID
+
+	s.Require().NoError(auth.WriteTuples(s.T().Context(), []security.RelationTuple{
+		{
+			Object:   security.ObjectRef{Namespace: authz.NamespaceProcurement, ID: tenancyPath},
+			Relation: authz.RoleAdmin,
+			Subject:  security.SubjectRef{Namespace: authz.NamespaceProfile, ID: "partition-admin"},
+		},
+		{
+			Object:   security.ObjectRef{Namespace: authz.NamespaceProcurement, ID: tenancyPath},
+			Relation: authz.RoleViewer,
+			Subject:  security.SubjectRef{Namespace: authz.NamespaceProfile, ID: "partition-viewer"},
+		},
+	}))
+
+	propertyID := "branch-1"
+	admin := s.ctxWithClaims("partition-admin")
+	s.Require().NoError(mw.CanPurchaseOrderManage(admin, propertyID))
+	s.Require().NoError(mw.CanGoodsReceiptManage(admin, propertyID))
+	s.Require().NoError(mw.CanPurchaseOrderView(admin, propertyID))
+
+	viewer := s.ctxWithClaims("partition-viewer")
+	s.Require().NoError(mw.CanPurchaseOrderView(viewer, propertyID))
+	s.Require().NoError(mw.CanGoodsReceiptView(viewer, propertyID))
+	s.Require().Error(mw.CanPurchaseOrderManage(viewer, propertyID))
+
+	// Someone with no partition role gets nothing from the bridge.
+	s.Require().Error(mw.CanPurchaseOrderView(s.ctxWithClaims("stranger"), propertyID))
+}

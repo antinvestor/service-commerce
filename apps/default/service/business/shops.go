@@ -118,10 +118,12 @@ func (sb *shopBusiness) CreateShop(ctx context.Context, req *commercev1.CreateSh
 		slug = strings.ToLower(strings.ReplaceAll(name, " ", "-"))
 	}
 
-	// Check slug uniqueness
+	// Slugs are unique across tenants, but this lookup sees only the
+	// caller's; the create below catches another tenant's slug.
+	slugTaken := connect.NewError(connect.CodeAlreadyExists, "shop with this slug already exists")
 	existing, err := sb.shopRepo.GetBySlug(ctx, slug)
 	if err == nil && existing != nil {
-		return nil, connect.NewError(connect.CodeAlreadyExists, "shop with this slug already exists")
+		return nil, slugTaken
 	}
 	if err != nil && !frame.ErrorIsNotFound(err) {
 		return nil, err
@@ -154,6 +156,9 @@ func (sb *shopBusiness) CreateShop(ctx context.Context, req *commercev1.CreateSh
 	}
 
 	if createErr := sb.shopRepo.Create(ctx, shop); createErr != nil {
+		if data.ErrorIsDuplicateKey(createErr) {
+			return nil, slugTaken
+		}
 		return nil, data.ErrorConvertToAPI(createErr)
 	}
 

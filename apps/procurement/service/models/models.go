@@ -90,7 +90,7 @@ type PurchaseOrder struct {
 	data.BaseModel
 	PropertyID           string `gorm:"type:varchar(50);index:idx_po_property_id"`
 	SupplierID           string `gorm:"type:varchar(50);index:idx_po_supplier_id"`
-	OrderNumber          string `gorm:"type:varchar(100);uniqueIndex"`
+	OrderNumber          string `gorm:"type:varchar(100)"` // unique per tenancy: migrations/0001
 	Status               int32  `gorm:"default:1"`
 	ExpectedDeliveryDate *time.Time
 	SubmittedAt          *time.Time
@@ -100,7 +100,7 @@ type PurchaseOrder struct {
 	TotalNanos           int32
 	Notes                string `gorm:"type:text"`
 	PlanID               string `gorm:"type:varchar(50)"`
-	IdempotencyKey       string `gorm:"type:varchar(255);uniqueIndex"`
+	IdempotencyKey       string `gorm:"type:varchar(255)"` // unique per tenancy: migrations/0001
 
 	Lines    []*PurchaseOrderLine `gorm:"foreignKey:PurchaseOrderID"`
 	Supplier *Supplier            `gorm:"foreignKey:SupplierID"`
@@ -176,7 +176,7 @@ type GoodsReceipt struct {
 	ReceivedAt      *time.Time
 	Status          int32  `gorm:"default:1"`
 	Notes           string `gorm:"type:text"`
-	IdempotencyKey  string `gorm:"type:varchar(255);uniqueIndex"`
+	IdempotencyKey  string `gorm:"type:varchar(255)"` // unique per tenancy: migrations/0001
 
 	Lines         []*GoodsReceiptLine `gorm:"foreignKey:GoodsReceiptID"`
 	PurchaseOrder *PurchaseOrder      `gorm:"foreignKey:PurchaseOrderID"`

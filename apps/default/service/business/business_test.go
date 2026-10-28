@@ -21,6 +21,7 @@ import (
 	"time"
 
 	commonv1 "buf.build/gen/go/antinvestor/common/protocolbuffers/go/common/v1"
+	"connectrpc.com/connect/v2"
 	"github.com/pitabwire/frame/v3"
 	"github.com/pitabwire/frame/v3/datastore"
 	"github.com/pitabwire/frame/v3/frametests/definition"
@@ -263,7 +264,14 @@ func (bts *BusinessTestSuite) TestCreateShop_DuplicateSlug() {
 			Name: "Shop 2",
 			Slug: slug,
 		})
-		require.Error(t, err)
+		require.Equal(t, connect.CodeAlreadyExists, connect.CodeOf(err))
+
+		// Another tenant's shop holds the slug too: the answer is the same
+		// plain AlreadyExists, never the database's constraint error.
+		other := bts.WithAuthClaims(ctx, "tenant-"+util.RandomAlphaNumericString(6), "partition-x", "owner-x")
+		_, err = biz.shopBiz.CreateShop(other, &commercev1.CreateShopRequest{Name: "Shop 3", Slug: slug})
+		require.Equal(t, connect.CodeAlreadyExists, connect.CodeOf(err))
+		require.NotContains(t, err.Error(), "duplicate key")
 	})
 }
 

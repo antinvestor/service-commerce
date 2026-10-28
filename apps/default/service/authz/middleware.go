@@ -180,11 +180,13 @@ func (m *middleware) UpdateShopMemberRole(
 	}).Debug("UpdateShopMemberRole")
 	// Remove old relation if specified
 	if oldRole != "" {
-		_ = m.service.DeleteTuple(ctx, security.RelationTuple{
+		if err := m.service.DeleteTuple(ctx, security.RelationTuple{
 			Object:   security.ObjectRef{Namespace: NamespaceShop, ID: shopID},
 			Relation: RoleToRelation(oldRole),
 			Subject:  security.SubjectRef{Namespace: NamespaceProfile, ID: profileID},
-		})
+		}); err != nil {
+			return fmt.Errorf("remove old shop role: %w", err)
+		}
 	}
 
 	// Add new relation

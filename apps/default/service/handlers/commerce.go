@@ -31,6 +31,7 @@ import (
 	"github.com/antinvestor/service-commerce/apps/default/service/business"
 	"github.com/antinvestor/service-commerce/apps/default/service/notifications"
 	"github.com/antinvestor/service-commerce/apps/default/service/repository"
+	"github.com/antinvestor/service-commerce/pkg/dbrole"
 	"github.com/antinvestor/service-commerce/pkg/errorutil"
 )
 
@@ -262,7 +263,7 @@ func (cs *CommerceServer) GetProduct(
 		return nil, errorutil.CleanErr(err)
 	}
 	if authzErr := cs.authz.CanProductsView(ctx, product.GetShopId()); authzErr != nil {
-		return nil, authorizer.ToConnectError(authzErr)
+		return nil, notVisible(authorizer.ToConnectError(authzErr))
 	}
 	return &commercev1.GetProductResponse{Product: product}, nil
 }
@@ -311,7 +312,7 @@ func (cs *CommerceServer) ListProductVariants(
 		return nil, errorutil.CleanErr(err)
 	}
 	if authzErr := cs.authz.CanProductsView(ctx, product.GetShopId()); authzErr != nil {
-		return nil, authorizer.ToConnectError(authzErr)
+		return nil, notVisible(authorizer.ToConnectError(authzErr))
 	}
 	variants, err := cs.catalogBusiness.ListProductVariants(ctx, product.GetId())
 	if err != nil {
@@ -383,7 +384,7 @@ func (cs *CommerceServer) GetCart(
 ) (*commercev1.GetCartResponse, error) {
 	cart, err := cs.authorizedCart(ctx, req.GetId(), false)
 	if err != nil {
-		return nil, err
+		return nil, notVisible(err)
 	}
 	return &commercev1.GetCartResponse{Cart: cart}, nil
 }
@@ -459,7 +460,7 @@ func (cs *CommerceServer) GetOrder(
 	}
 	if caller := callerSubject(ctx); caller == "" || order.GetProfileId() != caller {
 		if authzErr := cs.authz.CanOrdersView(ctx, order.GetShopId()); authzErr != nil {
-			return nil, authorizer.ToConnectError(authzErr)
+			return nil, notVisible(authorizer.ToConnectError(authzErr))
 		}
 	}
 	return &commercev1.GetOrderResponse{Order: order}, nil
@@ -557,6 +558,8 @@ func (cs *CommerceServer) ReconcilePayments(
 		if err := cs.authz.CanOrdersManage(ctx, shopID); err != nil {
 			return nil, authorizer.ToConnectError(err)
 		}
+	} else {
+		ctx = sweepContext(ctx, "reconcile payments")
 	}
 	summary, err := cs.paymentBusiness.ReconcilePayments(ctx, req.GetShopId(), int(req.GetLimit()))
 	if err != nil {
@@ -580,6 +583,8 @@ func (cs *CommerceServer) RunEndOfDayLedger(
 		if err := cs.authz.CanOrdersManage(ctx, shopID); err != nil {
 			return nil, authorizer.ToConnectError(err)
 		}
+	} else {
+		ctx = sweepContext(ctx, "end-of-day ledger")
 	}
 	postings, err := cs.ledgerBusiness.RunEndOfDayLedger(ctx, req.GetShopId(), req.GetDate())
 	if err != nil {
@@ -639,7 +644,7 @@ func (cs *CommerceServer) GetFulfilment(
 	// The buyer may track their own shipment; staff need orders_view.
 	if caller := callerSubject(ctx); caller == "" || order.GetProfileId() != caller {
 		if authzErr := cs.authz.CanOrdersView(ctx, order.GetShopId()); authzErr != nil {
-			return nil, authorizer.ToConnectError(authzErr)
+			return nil, notVisible(authorizer.ToConnectError(authzErr))
 		}
 	}
 	return &commercev1.GetFulfilmentResponse{Fulfilment: fulfilment}, nil
@@ -681,7 +686,7 @@ func (cs *CommerceServer) PriceListGet(
 		return nil, errorutil.CleanErr(err)
 	}
 	if authzErr := cs.authz.CanPriceListView(ctx, pl.GetShopId()); authzErr != nil {
-		return nil, authorizer.ToConnectError(authzErr)
+		return nil, notVisible(authorizer.ToConnectError(authzErr))
 	}
 	return &commercev1.PriceListGetResponse{PriceList: pl}, nil
 }
@@ -879,6 +884,26 @@ func (cs *CommerceServer) ResolvePrice(
 // Helpers
 // ----------------------
 
+// notVisible answers a read of a record the caller may not see exactly as a
+// read of one that does not exist, so ids cannot be probed for existence.
+func notVisible(err error) error {
+	if connect.CodeOf(err) == connect.CodePermissionDenied {
+		return connect.NewError(connect.CodeNotFound, "record not found")
+	}
+	return err
+}
+
+// sweepContext lets a partition-wide scheduled run reach every tenant when
+// the scheduler (an internal service account) calls; staff stay within their
+// own tenant, as row-level security binds their claims.
+func sweepContext(ctx context.Context, reason string) context.Context {
+	claims := security.ClaimsFromContext(ctx)
+	if claims != nil && (claims.IsInternalSystem() || claims.GetTenantID() == "") {
+		return dbrole.AcrossTenants(ctx, reason)
+	}
+	return ctx
+}
+
 func callerSubject(ctx context.Context) string {
 	claims := security.ClaimsFromContext(ctx)
 	if claims == nil {
@@ -1024,7 +1049,7 @@ func (cs *CommerceServer) ListOrderEvents(
 	case orderID != "":
 		order, err := cs.authorizedOrder(ctx, orderID, cs.authz.CanOrdersView)
 		if err != nil {
-			return nil, err
+			return nil, notVisible(err)
 		}
 		if shopID != "" && shopID != order.GetShopId() {
 			return nil, connect.NewError(connect.CodeInvalidArgument, "order is not in that shop")
@@ -1074,7 +1099,7 @@ func (cs *CommerceServer) ListFulfilments(
 	req *commercev1.ListFulfilmentsRequest,
 ) (*commercev1.ListFulfilmentsResponse, error) {
 	if _, err := cs.authorizedOrder(ctx, req.GetOrderId(), cs.authz.CanOrdersView); err != nil {
-		return nil, err
+		return nil, notVisible(err)
 	}
 	fulfilments, err := cs.fulfilmentBusiness.ListFulfilments(ctx, req.GetOrderId())
 	if err != nil {

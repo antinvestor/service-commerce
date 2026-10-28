@@ -40,6 +40,8 @@ import (
 	"github.com/antinvestor/service-commerce/apps/procurement/service/business"
 	"github.com/antinvestor/service-commerce/apps/procurement/service/handlers"
 	"github.com/antinvestor/service-commerce/apps/procurement/service/repository"
+	"github.com/antinvestor/service-commerce/pkg/dbmigrate"
+	"github.com/antinvestor/service-commerce/pkg/dbrole"
 )
 
 func main() {
@@ -66,8 +68,15 @@ func main() {
 	svc.Setup().RegisterFunc(setup.NameMigrate, func(ctx context.Context) error {
 		return repository.Migrate(ctx, svc.DatastoreManager(), cfg.GetDatabaseMigrationPath())
 	})
+	svc.Setup().RegisterFunc(dbrole.StepName, dbrole.Step(svc.DatastoreManager()))
 	defer svc.Stop(ctx)
 	log := svc.Log(ctx)
+
+	// Frame keeps an empty pool when the database cannot be reached; stop
+	// here rather than build repositories or migrate on it.
+	if dbErr := dbmigrate.Ready(ctx, svc); dbErr != nil {
+		log.WithError(dbErr).Fatal("database is unavailable; check DATABASE_URL and the database provider's status")
+	}
 
 	// Setup Job: migrate + publish permission manifest only (no HTTP/runtime wiring).
 	procurementSD := procurementpb.File_v1_procurement_proto.Services().ByName("ProcurementService")
@@ -81,6 +90,12 @@ func main() {
 	}
 
 	// Runtime: HTTP only — no WithPermissionRegistration.
+	dbrole.MustVerify(ctx, svc.DatastoreManager())
+	// Every procurement call carries its caller's tenant; a query that names
+	// none is refused.
+	if tenancyErr := dbrole.FailClosed(svc); tenancyErr != nil {
+		log.WithError(tenancyErr).Fatal("could not enforce tenant isolation")
+	}
 	manufacturing, err := newManufacturingClient(ctx, &cfg)
 	if err != nil {
 		log.WithError(err).Fatal("could not build the manufacturing client")

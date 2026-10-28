@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	commonv1 "buf.build/gen/go/antinvestor/common/protocolbuffers/go/common/v1"
+	"connectrpc.com/connect/v2"
 	"github.com/pitabwire/frame/v3"
 	"github.com/pitabwire/frame/v3/datastore"
 	"github.com/pitabwire/frame/v3/frametests/definition"
@@ -27,6 +28,7 @@ import (
 	commercev1 "github.com/antinvestor/service-commerce/gen/go/commerce/v1"
 
 	"github.com/antinvestor/service-commerce/apps/default/service/business"
+	"github.com/antinvestor/service-commerce/apps/default/service/models"
 	"github.com/antinvestor/service-commerce/apps/default/service/repository"
 )
 
@@ -245,5 +247,55 @@ func (bts *BusinessTestSuite) TestResolvePrice() {
 		require.NoError(t, err)
 		require.Equal(t, commercev1.PriceSource_PRICE_SOURCE_CUSTOMER_OVERRIDE, resolved.GetPriceSource())
 		require.Equal(t, int64(5), resolved.GetUnitPrice().GetUnits())
+	})
+}
+
+// A price list may price only its own shop's variants, and a list that
+// somehow holds another shop's variant never prices it.
+func (bts *BusinessTestSuite) TestPriceListEntries_RejectOtherShopsVariant() {
+	t := bts.T()
+
+	bts.WithTestDependancies(t, func(t *testing.T, dep *definition.DependencyOption) {
+		ctx, svc := bts.CreateService(t, dep)
+		biz := bts.getBusiness(ctx, svc)
+		pricingBiz := bts.getPricingBusiness(svc)
+
+		mine := bts.createTestShop(ctx, biz)
+		theirs := bts.createTestShop(ctx, biz)
+		_, theirVariant := bts.createTestProductWithVariant(ctx, biz, theirs.GetId())
+
+		pl, err := pricingBiz.SavePriceList(ctx, &commercev1.PriceListSaveRequest{
+			ShopId: mine.GetId(), Name: "Mine", Currency: "USD", Priority: 100,
+		})
+		require.NoError(t, err)
+
+		_, err = pricingBiz.BatchSavePriceListEntries(ctx, &commercev1.PriceListEntryBatchSaveRequest{
+			PriceListId: pl.GetId(),
+			Entries: []*commercev1.PriceListEntry{{
+				ProductVariantId: theirVariant.GetId(),
+				UnitPrice:        &commonv1.Money{CurrencyCode: "USD", Units: 1},
+			}},
+		})
+		require.Equal(t, connect.CodeInvalidArgument, connect.CodeOf(err))
+
+		// An entry that predates the check: plant it under the repository.
+		dbPool := svc.DatastoreManager().GetPool(ctx, datastore.DefaultPoolName)
+		entryRepo := repository.NewPriceListEntryRepository(ctx, dbPool, svc.WorkManager())
+		require.NoError(t, entryRepo.ReplaceEntries(ctx, pl.GetId(), []*models.PriceListEntry{{
+			PriceListID: pl.GetId(), ProductVariantID: theirVariant.GetId(),
+			CurrencyCode: "USD", PriceUnits: 1,
+		}}))
+		customerID := "customer-" + util.RandomAlphaNumericString(8)
+		_, err = pricingBiz.SaveCustomerPriceListAssignment(ctx, &commercev1.CustomerPriceListAssignmentSaveRequest{
+			CustomerId: customerID, PriceListId: pl.GetId(), AssignedBy: "admin-user",
+		})
+		require.NoError(t, err)
+
+		resolved, err := pricingBiz.ResolvePrice(ctx, &commercev1.ResolvePriceRequest{
+			CustomerId: customerID, ProductVariantId: theirVariant.GetId(), Quantity: 1,
+		})
+		require.NoError(t, err)
+		require.Equal(t, commercev1.PriceSource_PRICE_SOURCE_CATALOG, resolved.GetPriceSource())
+		require.Equal(t, int64(10), resolved.GetUnitPrice().GetUnits())
 	})
 }

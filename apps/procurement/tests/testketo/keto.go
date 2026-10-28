@@ -21,6 +21,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/pitabwire/frame/v3/frametests/definition"
@@ -56,87 +59,32 @@ namespaces:
 
 `
 
-	oplNamespaces = `import { Namespace, Context } from "@ory/keto-namespace-types"
-
-class profile_user implements Namespace {}
-
-class tenancy_access implements Namespace {
-  related: {
-    member: (profile_user | tenancy_access)[]
-    service: profile_user[]
-  }
-}
-
-class procurement_property implements Namespace {
-  related: {
-    owner: profile_user[]
-    admin: profile_user[]
-    operator: profile_user[]
-    viewer: profile_user[]
-    member: profile_user[]
-    service: profile_user[]
-
-    granted_property_view: profile_user[]
-    granted_property_update: profile_user[]
-    granted_purchase_order_manage: profile_user[]
-    granted_purchase_order_property_view: profile_user[]
-    granted_goods_receipt_manage: profile_user[]
-    granted_goods_receipt_view: profile_user[]
-  }
-
-  permits = {
-    property_view: (ctx: Context): boolean =>
-      this.related.owner.includes(ctx.subject) ||
-      this.related.admin.includes(ctx.subject) ||
-      this.related.operator.includes(ctx.subject) ||
-      this.related.viewer.includes(ctx.subject) ||
-      this.related.member.includes(ctx.subject) ||
-      this.related.service.includes(ctx.subject) ||
-      this.related.granted_property_view.includes(ctx.subject),
-
-    purchase_order_property_view: (ctx: Context): boolean =>
-      this.related.owner.includes(ctx.subject) ||
-      this.related.admin.includes(ctx.subject) ||
-      this.related.operator.includes(ctx.subject) ||
-      this.related.viewer.includes(ctx.subject) ||
-      this.related.member.includes(ctx.subject) ||
-      this.related.service.includes(ctx.subject) ||
-      this.related.granted_purchase_order_property_view.includes(ctx.subject),
-
-    goods_receipt_view: (ctx: Context): boolean =>
-      this.related.owner.includes(ctx.subject) ||
-      this.related.admin.includes(ctx.subject) ||
-      this.related.operator.includes(ctx.subject) ||
-      this.related.viewer.includes(ctx.subject) ||
-      this.related.member.includes(ctx.subject) ||
-      this.related.service.includes(ctx.subject) ||
-      this.related.granted_goods_receipt_view.includes(ctx.subject),
-
-    property_update: (ctx: Context): boolean =>
-      this.related.owner.includes(ctx.subject) ||
-      this.related.admin.includes(ctx.subject) ||
-      this.related.service.includes(ctx.subject) ||
-      this.related.granted_property_update.includes(ctx.subject),
-
-    purchase_order_manage: (ctx: Context): boolean =>
-      this.related.owner.includes(ctx.subject) ||
-      this.related.admin.includes(ctx.subject) ||
-      this.related.operator.includes(ctx.subject) ||
-      this.related.service.includes(ctx.subject) ||
-      this.related.granted_purchase_order_manage.includes(ctx.subject),
-
-    goods_receipt_manage: (ctx: Context): boolean =>
-      this.related.owner.includes(ctx.subject) ||
-      this.related.admin.includes(ctx.subject) ||
-      this.related.operator.includes(ctx.subject) ||
-      this.related.service.includes(ctx.subject) ||
-      this.related.granted_goods_receipt_manage.includes(ctx.subject),
-  }
-}
-`
-
 	namespaceFile = "/home/ory/namespaces/procurement.ts"
 )
+
+// namespaces is the repository's own OPL: the procurement service namespace
+// followed by the resource-plane class (its stub classes dropped). Tests
+// therefore check the permits that ship, not a copy of them.
+var namespaces = loadNamespaces() //nolint:gochecknoglobals // read once per test binary
+
+func loadNamespaces() string {
+	_, here, _, _ := runtime.Caller(0)
+	dir := filepath.Join(filepath.Dir(here), "..", "..", "..", "..", "opl", "procurement")
+	service, err := os.ReadFile(filepath.Join(dir, "service_procurement.opl.ts"))
+	if err != nil {
+		panic(err)
+	}
+	resources, err := os.ReadFile(filepath.Join(dir, "procurement_resources.opl.ts"))
+	if err != nil {
+		panic(err)
+	}
+	plane := string(resources)
+	idx := strings.Index(plane, "class procurement_property ")
+	if idx < 0 {
+		panic("testketo: no procurement_property class in the resource OPL")
+	}
+	return string(service) + "\n" + plane[idx:]
+}
 
 type dependancy struct {
 	*definition.DefaultImpl
@@ -177,7 +125,7 @@ func (d *dependancy) migrateContainer(
 				FileMode:          definition.ContainerFileMode,
 			},
 			{
-				Reader:            strings.NewReader(oplNamespaces),
+				Reader:            strings.NewReader(namespaces),
 				ContainerFilePath: namespaceFile,
 				FileMode:          definition.ContainerFileMode,
 			},
@@ -232,7 +180,7 @@ func (d *dependancy) Setup(ctx context.Context, ntwk *testcontainers.DockerNetwo
 				FileMode:          definition.ContainerFileMode,
 			},
 			{
-				Reader:            strings.NewReader(oplNamespaces),
+				Reader:            strings.NewReader(namespaces),
 				ContainerFilePath: namespaceFile,
 				FileMode:          definition.ContainerFileMode,
 			},

@@ -26,13 +26,13 @@ import (
 	commonv1 "buf.build/gen/go/antinvestor/common/protocolbuffers/go/common/v1"
 	"connectrpc.com/connect/v2"
 	"github.com/pitabwire/frame/v3/security"
-	"github.com/pitabwire/frame/v3/tenancy"
 	"github.com/pitabwire/util"
 
 	commercev1 "github.com/antinvestor/service-commerce/gen/go/commerce/v1"
 
 	"github.com/antinvestor/service-commerce/apps/default/service/models"
 	"github.com/antinvestor/service-commerce/apps/default/service/repository"
+	"github.com/antinvestor/service-commerce/pkg/dbrole"
 )
 
 // Storefront limits keep an anonymous page cheap to render and an anonymous
@@ -249,7 +249,7 @@ func (sb *storefrontBusiness) openShop(
 
 	// Slugs are unique across tenants; the lookup runs before the tenant is
 	// known.
-	shop, err := sb.shopRepo.GetBySlug(tenancy.WithSkipEnforcement(ctx), slug)
+	shop, err := sb.shopRepo.GetBySlug(dbrole.AcrossTenants(ctx, "storefront slug lookup"), slug)
 	if err != nil || shop == nil {
 		return nil, nil, notFound
 	}

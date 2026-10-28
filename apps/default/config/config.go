@@ -15,6 +15,7 @@
 package config
 
 import (
+	"errors"
 	"time"
 
 	"github.com/pitabwire/frame/v3/config"
@@ -110,3 +111,21 @@ func (c *CommerceConfig) NotificationsEnabled() bool { return c.NotificationServ
 
 // TrustageEnabled reports whether scheduled workflows are wired.
 func (c *CommerceConfig) TrustageEnabled() bool { return c.TrustageServiceURI != "" }
+
+// Validate refuses settings a secure deployment cannot run with: shop webhook
+// secrets would be stored unencrypted without WEBHOOK_SECRET_KEY, and the
+// public storefront cannot find or create its buyers without the profile
+// service. Local runs (RUN_SERVICE_SECURELY=false) may leave them unset.
+func (c *CommerceConfig) Validate() error {
+	if !c.IsRunSecurely() {
+		return nil
+	}
+	var errs []error
+	if c.WebhookSecretKey == "" {
+		errs = append(errs, errors.New("WEBHOOK_SECRET_KEY is required"))
+	}
+	if c.StorefrontURL() != "" && c.ProfileServiceURI == "" {
+		errs = append(errs, errors.New("PROFILE_SERVICE_URI is required while the storefront is served"))
+	}
+	return errors.Join(errs...)
+}

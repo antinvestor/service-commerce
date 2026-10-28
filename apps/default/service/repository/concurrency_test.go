@@ -66,7 +66,7 @@ func newUnpaidOrder(
 		UnitPriceCurrency: "USD", UnitPriceUnits: 10, Quantity: 1,
 		TotalPriceCurrency: "USD", TotalPriceUnits: 10,
 	}}
-	return order, orderRepo.CreateWithLinesAndStock(ctx, order, lines, "", 0)
+	return order, orderRepo.CreateWithLinesAndStock(ctx, order, lines, repository.CreateOrderOptions{})
 }
 
 // addPaid is a transition that only records the money.

@@ -97,3 +97,56 @@ func (s *BuyerAccessSuite) TestBuyerSeesOnlyOwnOrders() {
 		require.Len(t, staff.GetOrders(), 2)
 	})
 }
+
+// A buyer's own cart and order reach them through their profile's default
+// contact: a contact id they send is not checked against their profile, so
+// it is not kept. Staff placing a cart for a customer may still name one.
+func (s *BuyerAccessSuite) TestBuyerCannotPointNotificationsAtAnotherContact() {
+	t := s.T()
+
+	s.WithTestDependancies(t, func(t *testing.T, dep *definition.DependencyOption) {
+		ctx, svc := s.CreateService(t, dep)
+		server := handlers.NewCommerceServer(ctx, svc, s.AuthzMiddleware, handlers.Dependencies{})
+
+		tenantID, partitionID := "tenant-"+util.RandomAlphaNumericString(6), "partition-1"
+		owner := s.WithAuthClaims(ctx, tenantID, partitionID, "owner-"+util.RandomAlphaNumericString(6))
+		buyerID := "buyer-" + util.RandomAlphaNumericString(6)
+		buyer := s.WithAuthClaims(ctx, tenantID, partitionID, buyerID)
+		s.SeedTenantRole(ctx, svc, tenantID, partitionID, buyerID, "member")
+
+		shop, err := server.CreateShop(owner, &commercev1.CreateShopRequest{
+			Name: "Duka", Slug: "duka-" + util.RandomAlphaNumericString(6), Currency: "KES",
+		})
+		require.NoError(t, err)
+		shopID := shop.GetShop().GetId()
+		product, err := server.CreateProduct(owner, &commercev1.CreateProductRequest{ShopId: shopID, Name: "Tea"})
+		require.NoError(t, err)
+		variant, err := server.CreateProductVariant(owner, &commercev1.CreateProductVariantRequest{
+			ProductId: product.GetProduct().GetId(), Sku: "TEA-" + util.RandomAlphaNumericString(6), Name: "1kg",
+			Price: &commonv1.Money{CurrencyCode: "KES", Units: 500}, StockQuantity: 10,
+		})
+		require.NoError(t, err)
+
+		cart, err := server.CreateCart(buyer, &commercev1.CreateCartRequest{
+			ShopId: shopID, ContactId: "someone-elses-contact",
+		})
+		require.NoError(t, err)
+		require.Empty(t, cart.GetCart().GetContactId())
+		_, err = server.AddCartLine(buyer, &commercev1.AddCartLineRequest{
+			CartId: cart.GetCart().GetId(), ProductVariantId: variant.GetProductVariant().GetId(), Quantity: 1,
+		})
+		require.NoError(t, err)
+		order, err := server.CreateOrderFromCart(buyer, &commercev1.CreateOrderFromCartRequest{
+			CartId: cart.GetCart().GetId(), ContactId: "someone-elses-contact",
+		})
+		require.NoError(t, err)
+		require.Equal(t, buyerID, order.GetOrder().GetProfileId())
+		require.Empty(t, order.GetOrder().GetContactId(), "notification picks the profile's own contact")
+
+		staffCart, err := server.CreateCart(owner, &commercev1.CreateCartRequest{
+			ShopId: shopID, ProfileId: buyerID, ContactId: "customers-contact",
+		})
+		require.NoError(t, err)
+		require.Equal(t, "customers-contact", staffCart.GetCart().GetContactId())
+	})
+}

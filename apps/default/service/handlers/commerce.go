@@ -81,6 +81,10 @@ type Dependencies struct {
 	Buyers business.BuyerDirectory
 	// StorefrontBaseURL is where shops' public pages are served.
 	StorefrontBaseURL string
+	// Storefront bounds anonymous checkouts; GuestUnitsCap bounds the units
+	// a shop's unpaid guest orders hold at once (0: no bound).
+	Storefront    business.StorefrontPolicy
+	GuestUnitsCap int64
 }
 
 func NewCommerceServer(
@@ -140,7 +144,7 @@ func NewCommerceServer(
 		cartRepo,
 		cartLineRepo,
 		pricingBusiness,
-		business.OrderPolicy{PaymentWindow: deps.PaymentPolicy.PaymentWindow},
+		business.OrderPolicy{PaymentWindow: deps.PaymentPolicy.PaymentWindow, GuestUnitsCap: deps.GuestUnitsCap},
 	)
 	paymentBusiness := business.NewPaymentBusiness(
 		ctx, orderRepo, shopRepo, deps.Checkout, deps.Refunds, deps.Notifier, events, deps.PaymentPolicy,
@@ -171,7 +175,8 @@ func NewCommerceServer(
 		pricingBusiness: pricingBusiness,
 		eventBusiness:   events,
 		storefront: business.NewStorefrontBusiness(
-			shopRepo, catalogBusiness, orderBusiness, paymentBusiness, deps.Buyers, deps.StorefrontBaseURL,
+			shopRepo, catalogBusiness, orderBusiness, paymentBusiness, deps.Buyers,
+			repository.NewLimitRepository(dbPool), deps.Storefront, deps.StorefrontBaseURL,
 		),
 	}
 }
@@ -369,10 +374,15 @@ func (cs *CommerceServer) CreateCart(
 		if err := cs.authz.CanProductsView(ctx, req.GetShopId()); err != nil {
 			return nil, authorizer.ToConnectError(err)
 		}
+		// A buyer's own cart is reached through their profile's default
+		// contact; a contact id they send is not checked against their
+		// profile, so it is not kept.
+		req.SetContactId("")
 	case req.GetProfileId() == caller:
 		if err := cs.authz.CanProductsView(ctx, req.GetShopId()); err != nil {
 			return nil, authorizer.ToConnectError(err)
 		}
+		req.SetContactId("")
 	default:
 		// Creating a cart on behalf of someone else is a staff action.
 		if err := cs.authz.CanOrdersManage(ctx, req.GetShopId()); err != nil {
@@ -434,8 +444,14 @@ func (cs *CommerceServer) CreateOrderFromCart(
 	ctx context.Context,
 	req *commercev1.CreateOrderFromCartRequest,
 ) (*commercev1.CreateOrderFromCartResponse, error) {
-	if _, err := cs.authorizedCart(ctx, req.GetCartId(), true); err != nil {
+	cart, err := cs.authorizedCart(ctx, req.GetCartId(), true)
+	if err != nil {
 		return nil, err
+	}
+	// As with carts: a buyer converting their own cart is reached through
+	// their profile's default contact.
+	if caller := callerSubject(ctx); caller != "" && cart.GetProfileId() == caller {
+		req.SetContactId("")
 	}
 	order, err := cs.orderBusiness.CreateOrderFromCart(ctx, req)
 	if err != nil {

@@ -883,3 +883,35 @@
     padding: 0 var(--ai-shop-spacing-sm);
   }
 }
+
+/* --- Guest order form --- */
+.ai-shop-variant-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ai-shop-spacing-sm);
+  padding: var(--ai-shop-spacing-sm) 0;
+  border-top: 1px solid var(--ai-shop-color-border);
+}
+
+.ai-shop-variant-row > span:first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.ai-shop-qty {
+  width: 5rem;
+  flex: 0 0 auto;
+  text-align: right;
+}
+
+.ai-shop-hint {
+  font-weight: 400;
+  color: var(--ai-shop-color-text-muted);
+  font-size: 0.9em;
+}
+
+.ai-shop-empty {
+  color: var(--ai-shop-color-text-muted);
+  padding: var(--ai-shop-spacing);
+}

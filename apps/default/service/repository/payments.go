@@ -183,7 +183,7 @@ func (r *orderRepository) ListPaymentSessions(
 	orderID string,
 ) ([]*models.OrderPaymentSession, error) {
 	var sessions []*models.OrderPaymentSession
-	err := r.Pool().DB(ctx, true).
+	err := r.Pool().DB(ctx, false).
 		Where("order_id = ?", orderID).
 		Order("created_at ASC").
 		Find(&sessions).Error

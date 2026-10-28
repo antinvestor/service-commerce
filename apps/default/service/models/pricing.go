@@ -139,11 +139,17 @@ func (o *CustomerPriceOverride) ToAPI() *commercev1.CustomerPriceOverride {
 // DiscountRule represents a rule that applies discounts to orders or line items.
 type DiscountRule struct {
 	data.BaseModel
-	ShopID             string `gorm:"type:varchar(50);index:idx_discount_shop_id"`
-	Name               string `gorm:"type:varchar(255)"`
-	DiscountType       int32  `gorm:"default:0"`
-	Value              float64
-	AppliesTo          int32 `gorm:"default:0"`
+	ShopID       string `gorm:"type:varchar(50);index:idx_discount_shop_id"`
+	Name         string `gorm:"type:varchar(255)"`
+	DiscountType int32  `gorm:"default:0"`
+	Value        float64
+	// A fixed discount takes this amount off a unit priced in
+	// AmountCurrency (the shop's), and nothing off any other price. Value
+	// is kept as it was entered.
+	AmountCurrency     string `gorm:"type:varchar(3);not null;default:''"`
+	AmountUnits        int64  `gorm:"not null;default:0"`
+	AmountNanos        int32  `gorm:"not null;default:0"`
+	AppliesTo          int32  `gorm:"default:0"`
 	Conditions         data.JSONMap
 	RequiresApproval   bool    `gorm:"default:false"`
 	MaxDiscountPercent float64 `gorm:"default:0"`

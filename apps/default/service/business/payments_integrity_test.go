@@ -293,8 +293,9 @@ func (bts *BusinessTestSuite) TestCheckoutOrder_LongShopNameFitsSessionLimits() 
 		ctx, svc := bts.CreateService(t, dep)
 		biz := bts.getBusiness(ctx, svc)
 		shop, err := biz.shopBiz.CreateShop(ctx, &commercev1.CreateShopRequest{
-			Name: strings.Repeat("Duka ", 50),
-			Slug: "long-name-shop",
+			Name:     strings.Repeat("Duka ", 50),
+			Slug:     "long-name-shop",
+			Currency: "USD",
 		})
 		require.NoError(t, err)
 		_, variant := bts.createTestProductWithVariant(ctx, biz, shop.GetId())

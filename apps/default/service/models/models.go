@@ -248,6 +248,10 @@ type Order struct {
 	ProfileID        string `gorm:"type:varchar(50);index:idx_order_profile_id"`
 	ContactID        string `gorm:"type:varchar(50)"`
 	AddressID        string `gorm:"type:varchar(50)"`
+	// Guest marks an order placed from a public storefront by someone who
+	// did not sign in: the contact on it is only what they typed, so
+	// nothing is sent to it until money has been paid.
+	Guest            bool   `gorm:"not null;default:false"`
 	SubtotalCurrency string `gorm:"type:varchar(3)"`
 	SubtotalUnits    int64
 	SubtotalNanos    int32

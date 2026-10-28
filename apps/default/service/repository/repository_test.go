@@ -531,7 +531,7 @@ func (rts *RepositoryTestSuite) TestOrderRepository_CreateWithLinesAndStock_Atom
 			},
 		}
 
-		err := orderRepo.CreateWithLinesAndStock(ctx, order, lines, "", 0)
+		err := orderRepo.CreateWithLinesAndStock(ctx, order, lines, repository.CreateOrderOptions{})
 		require.NoError(t, err)
 		require.NotEmpty(t, order.GetID())
 
@@ -603,7 +603,7 @@ func (rts *RepositoryTestSuite) TestOrderRepository_CreateWithLinesAndStock_Roll
 			},
 		}
 
-		err := orderRepo.CreateWithLinesAndStock(ctx, order, lines, "", 0)
+		err := orderRepo.CreateWithLinesAndStock(ctx, order, lines, repository.CreateOrderOptions{})
 		require.Error(t, err)
 		require.ErrorIs(t, err, repository.ErrInsufficientStock)
 

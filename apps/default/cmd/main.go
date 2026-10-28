@@ -233,6 +233,13 @@ func setupConnectServer(
 		},
 		Buyers:            business.NewProfileBuyerDirectory(profilesCli),
 		StorefrontBaseURL: cfg.StorefrontURL(),
+		Storefront: business.StorefrontPolicy{
+			Window:     cfg.StorefrontLimitWindow,
+			PerVisitor: cfg.StorefrontCheckoutsPerVisitor,
+			PerContact: cfg.StorefrontCheckoutsPerContact,
+			PerShop:    cfg.StorefrontCheckoutsPerShop,
+		},
+		GuestUnitsCap: cfg.StorefrontUnpaidUnitsPerShop,
 	})
 
 	server := connect.NewServer(defaultInterceptorList...)

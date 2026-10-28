@@ -16,6 +16,7 @@ package business
 
 import (
 	"context"
+	"fmt"
 
 	"connectrpc.com/connect/v2"
 	"github.com/pitabwire/frame/v3"
@@ -26,6 +27,10 @@ import (
 	"github.com/antinvestor/service-commerce/apps/default/service/models"
 	"github.com/antinvestor/service-commerce/apps/default/service/repository"
 )
+
+// MaxCartLines bounds the different items one cart, and so one order made
+// from it, may hold.
+const MaxCartLines = 50
 
 type CartBusiness interface {
 	CreateCart(ctx context.Context, req *commercev1.CreateCartRequest) (*commercev1.Cart, error)
@@ -109,6 +114,10 @@ func (cb *cartBusiness) AddCartLine(ctx context.Context, req *commercev1.AddCart
 
 	// Check if line already exists for this variant
 	existing, findErr := cb.cartLineRepo.GetByCartAndVariant(ctx, req.GetCartId(), req.GetProductVariantId())
+	if findErr != nil && frame.ErrorIsNotFound(findErr) && len(cart.Lines) >= MaxCartLines {
+		return nil, connect.NewError(connect.CodeFailedPrecondition,
+			fmt.Sprintf("a cart holds at most %d different items", MaxCartLines))
+	}
 
 	switch {
 	case findErr == nil && existing != nil:

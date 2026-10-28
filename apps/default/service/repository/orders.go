@@ -45,9 +45,12 @@ func NewOrderRepository(ctx context.Context, dbPool pool.Pool, workMan workerpoo
 	}
 }
 
+// GetWithLines and GetByIdempotencyKey read the primary: callers read back
+// what they have just written, and an idempotent replay must see the order
+// a moment-old retry created.
 func (r *orderRepository) GetWithLines(ctx context.Context, id string) (*models.Order, error) {
 	order := &models.Order{}
-	err := r.Pool().DB(ctx, true).
+	err := r.Pool().DB(ctx, false).
 		Preload("Lines").
 		Preload("Shop").
 		Preload("Payments", func(db *gorm.DB) *gorm.DB { return db.Order("paid_at ASC") }).
@@ -57,7 +60,7 @@ func (r *orderRepository) GetWithLines(ctx context.Context, id string) (*models.
 
 func (r *orderRepository) GetByIdempotencyKey(ctx context.Context, key string) (*models.Order, error) {
 	order := &models.Order{}
-	err := r.Pool().DB(ctx, true).
+	err := r.Pool().DB(ctx, false).
 		Preload(clause.Associations).
 		First(order, "idempotency_key = ?", key).Error
 	return order, err
@@ -81,19 +84,26 @@ func (r *orderRepository) ListByShopID(
 
 func (r *orderRepository) ListByProfileID(
 	ctx context.Context,
-	profileID string,
+	profileID, shopID string,
 	page Page,
 ) ([]*models.Order, *PageKey, error) {
 	var orders []*models.Order
 	query := r.Pool().DB(ctx, true).
 		Preload(clause.Associations).
 		Where("profile_id = ?", profileID)
+	if shopID != "" {
+		query = query.Where("shop_id = ?", shopID)
+	}
 	if err := applyKeyset(query, page).Find(&orders).Error; err != nil {
 		return nil, nil, err
 	}
 	orders, next := trimPage(orders, page, func(o *models.Order) PageKey { return baseKey(o.BaseModel) })
 	return orders, next, nil
 }
+
+// ErrGuestHoldLimit is returned when a guest order would take the units
+// held by a shop's unpaid guest orders past its cap.
+var ErrGuestHoldLimit = errors.New("too many units are held by unpaid guest orders")
 
 // CreateWithLinesAndStock atomically allocates the shop order number, creates
 // the order and its lines, reserves stock, and optionally converts the source
@@ -102,14 +112,18 @@ func (r *orderRepository) CreateWithLinesAndStock(
 	ctx context.Context,
 	order *models.Order,
 	lines []*models.OrderLine,
-	convertCartID string,
-	convertedCartStatus int32,
+	opts CreateOrderOptions,
 ) error {
 	if err := validateOrderInput(order, lines); err != nil {
 		return err
 	}
 
 	return r.Pool().DB(ctx, false).Transaction(func(tx *gorm.DB) error {
+		if order.Guest && opts.GuestUnitsCap > 0 {
+			if err := checkGuestHold(tx, order.ShopID, lines, opts.GuestUnitsCap); err != nil {
+				return err
+			}
+		}
 		if err := assignOrderNumber(tx, order); err != nil {
 			return err
 		}
@@ -119,11 +133,39 @@ func (r *orderRepository) CreateWithLinesAndStock(
 		if err := createLinesAndReserve(tx, order.GetID(), lines); err != nil {
 			return err
 		}
-		if convertCartID != "" {
-			return convertCart(tx, convertCartID, convertedCartStatus)
+		if opts.ConvertCartID != "" {
+			return convertCart(tx, opts.ConvertCartID, opts.ConvertedCartStatus)
 		}
 		return nil
 	})
+}
+
+// checkGuestHold refuses a guest order that would take the units held by
+// the shop's unpaid guest orders, still inside their payment window, past
+// limit. The shop row is locked first so concurrent guest orders are
+// counted one after another.
+func checkGuestHold(tx *gorm.DB, shopID string, lines []*models.OrderLine, limit int64) error {
+	var locked []string
+	if err := tx.Raw(`SELECT id FROM shops WHERE id = ? FOR UPDATE`, shopID).Scan(&locked).Error; err != nil {
+		return fmt.Errorf("lock shop for guest hold: %w", err)
+	}
+	var held int64
+	if err := tx.Raw(`
+		SELECT COALESCE(SUM(l.quantity), 0)
+		FROM orders o
+		JOIN order_lines l ON l.order_id = o.id AND l.deleted_at IS NULL
+		WHERE o.shop_id = ? AND o.guest AND o.status = ? AND o.amount_paid_nanos = 0
+		  AND o.payment_due_at > now() AND o.deleted_at IS NULL`,
+		shopID, orderStatusPendingPayment).Scan(&held).Error; err != nil {
+		return fmt.Errorf("sum units held by guest orders: %w", err)
+	}
+	for _, line := range lines {
+		held += line.Quantity
+	}
+	if held > limit {
+		return ErrGuestHoldLimit
+	}
+	return nil
 }
 
 func validateOrderInput(order *models.Order, lines []*models.OrderLine) error {

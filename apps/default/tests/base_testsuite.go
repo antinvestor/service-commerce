@@ -90,6 +90,46 @@ func (bs *CommerceBaseTestSuite) CreateService(
 	t *testing.T,
 	depOpts *definition.DependencyOption,
 ) (context.Context, *frame.Service) {
+	return bs.createService(t, depOpts, "")
+}
+
+// CreateServiceWithLaggingReplica is CreateService with a read replica that
+// has the schema but never receives a write, so a read routed to it sees
+// none of the test's data.
+func (bs *CommerceBaseTestSuite) CreateServiceWithLaggingReplica(
+	t *testing.T,
+	depOpts *definition.DependencyOption,
+) (context.Context, *frame.Service) {
+	res := depOpts.ByIsDatabase(t.Context())
+	replicaDS, cleanup, err := res.GetRandomisedDS(t.Context(), depOpts.Prefix()+"_replica")
+	require.NoError(t, err)
+	t.Cleanup(func() { cleanup(t.Context()) })
+
+	// Give the replica the schema, then let it fall behind for good.
+	_, schema := bs.createServiceOn(t, replicaDS.String(), "")
+	schema.Stop(context.Background())
+	return bs.createService(t, depOpts, replicaDS.String())
+}
+
+func (bs *CommerceBaseTestSuite) createService(
+	t *testing.T,
+	depOpts *definition.DependencyOption,
+	replicaDS string,
+) (context.Context, *frame.Service) {
+	res := depOpts.ByIsDatabase(t.Context())
+	testDS, cleanup, err0 := res.GetRandomisedDS(t.Context(), depOpts.Prefix())
+	require.NoError(t, err0)
+
+	t.Cleanup(func() {
+		cleanup(t.Context())
+	})
+	return bs.createServiceOn(t, testDS.String(), replicaDS)
+}
+
+func (bs *CommerceBaseTestSuite) createServiceOn(
+	t *testing.T,
+	primaryDS, replicaDS string,
+) (context.Context, *frame.Service) {
 	t.Setenv("OTEL_TRACES_EXPORTER", "none")
 
 	cfg, err := config.FromEnv[aconfig.CommerceConfig]()
@@ -103,16 +143,11 @@ func (bs *CommerceBaseTestSuite) CreateService(
 	cfg.DatabaseMaxOpenConnections = 2
 	cfg.DatabaseMaxIdleConnections = 0
 
-	res := depOpts.ByIsDatabase(t.Context())
-	testDS, cleanup, err0 := res.GetRandomisedDS(t.Context(), depOpts.Prefix())
-	require.NoError(t, err0)
-
-	t.Cleanup(func() {
-		cleanup(t.Context())
-	})
-
-	cfg.DatabasePrimaryURL = []string{testDS.String()}
+	cfg.DatabasePrimaryURL = []string{primaryDS}
 	cfg.DatabaseReplicaURL = []string{}
+	if replicaDS != "" {
+		cfg.DatabaseReplicaURL = []string{replicaDS}
+	}
 
 	// Configure real Keto authorizer URIs
 	cfg.AuthorizationServiceReadURI = bs.ketoReadURI

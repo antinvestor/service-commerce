@@ -67,6 +67,15 @@ type CommerceConfig struct {
 	// StorefrontBaseURL is where shops' public pages are served. Empty uses
 	// the payment return address, which is commerce itself.
 	StorefrontBaseURL string `env:"STOREFRONT_BASE_URL" envDefault:""`
+	// Anonymous storefront checkouts are counted in the database, so every
+	// instance enforces the same limits: per visitor address (IPv6 by /64),
+	// per typed contact and per shop, in fixed windows. A shop's unpaid
+	// guest orders may hold at most StorefrontUnpaidUnitsPerShop units.
+	StorefrontLimitWindow         time.Duration `env:"STOREFRONT_LIMIT_WINDOW"          envDefault:"10m"`
+	StorefrontCheckoutsPerVisitor int64         `env:"STOREFRONT_CHECKOUTS_PER_VISITOR" envDefault:"10"`
+	StorefrontCheckoutsPerContact int64         `env:"STOREFRONT_CHECKOUTS_PER_CONTACT" envDefault:"5"`
+	StorefrontCheckoutsPerShop    int64         `env:"STOREFRONT_CHECKOUTS_PER_SHOP"    envDefault:"120"`
+	StorefrontUnpaidUnitsPerShop  int64         `env:"STOREFRONT_UNPAID_UNITS_PER_SHOP" envDefault:"500"`
 	// PaymentSettleGrace keeps an overdue order reserved while a payment
 	// prompt is still outstanding at the provider.
 	PaymentSettleGrace time.Duration `env:"PAYMENT_SETTLE_GRACE" envDefault:"1h"`

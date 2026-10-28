@@ -40,6 +40,10 @@ type ProductRepository interface {
 type ProductVariantRepository interface {
 	datastore.BaseRepository[*models.ProductVariant]
 	ListByProductID(ctx context.Context, productID string) ([]*models.ProductVariant, error)
+	// ListByProductIDs returns the variants of every product in productIDs.
+	ListByProductIDs(ctx context.Context, productIDs []string) ([]*models.ProductVariant, error)
+	// ListByIDs returns the variants with ids, each with its Product loaded.
+	ListByIDs(ctx context.Context, ids []string) ([]*models.ProductVariant, error)
 	// SetStock is an explicit absolute stock take; never used by order flow.
 	SetStock(ctx context.Context, variantID string, quantity int64) error
 	DecrementStock(ctx context.Context, variantID string, quantity int64) error
@@ -57,23 +61,36 @@ type CartLineRepository interface {
 	GetByCartAndVariant(ctx context.Context, cartID, variantID string) (*models.CartLine, error)
 }
 
+// CreateOrderOptions are what order creation does besides the order itself.
+type CreateOrderOptions struct {
+	// ConvertCartID is the cart the order converts, set to
+	// ConvertedCartStatus in the same transaction.
+	ConvertCartID       string
+	ConvertedCartStatus int32
+	// GuestUnitsCap bounds the units a shop's unpaid guest orders may hold
+	// at once, this one included; 0 means no bound.
+	GuestUnitsCap int64
+}
+
 type OrderRepository interface {
 	datastore.BaseRepository[*models.Order]
 	GetWithLines(ctx context.Context, id string) (*models.Order, error)
 	GetByIdempotencyKey(ctx context.Context, key string) (*models.Order, error)
 	ListByShopID(ctx context.Context, shopID string, page Page) ([]*models.Order, *PageKey, error)
-	ListByProfileID(ctx context.Context, profileID string, page Page) ([]*models.Order, *PageKey, error)
+	// ListByProfileID pages a buyer's orders, narrowed to one shop when
+	// shopID is set.
+	ListByProfileID(ctx context.Context, profileID, shopID string, page Page) ([]*models.Order, *PageKey, error)
 	// CreateWithLinesAndStock allocates the order number, inserts the order and
 	// lines, and decrements stock for each line inside a single transaction.
-	// If convertCartID is non-empty, marks that cart as converted in the same
-	// transaction. Returns ErrInsufficientStock when any stock decrement
-	// updates zero rows and ErrCartNotConvertible when the cart is not active.
+	// If opts.ConvertCartID is non-empty, marks that cart as converted in the
+	// same transaction. Returns ErrInsufficientStock when any stock decrement
+	// updates zero rows, ErrCartNotConvertible when the cart is not active and
+	// ErrGuestHoldLimit when a guest order would pass opts.GuestUnitsCap.
 	CreateWithLinesAndStock(
 		ctx context.Context,
 		order *models.Order,
 		lines []*models.OrderLine,
-		convertCartID string,
-		convertedCartStatus int32,
+		opts CreateOrderOptions,
 	) error
 	// UpdateStatus performs a compare-and-set status transition. Returns false
 	// when the order was not in expectedStatus.
@@ -207,6 +224,8 @@ type PriceListRepository interface {
 		ctx context.Context, shopID string, page Page,
 	) ([]*models.PriceList, *PageKey, error)
 	ListActive(ctx context.Context, shopID string) ([]*models.PriceList, error)
+	// ListActiveByIDs returns those of ids that are active lists of shopID.
+	ListActiveByIDs(ctx context.Context, shopID string, ids []string) ([]*models.PriceList, error)
 }
 
 type PriceListEntryRepository interface {
@@ -223,6 +242,9 @@ type PriceListEntryRepository interface {
 	GetByPriceListAndVariant(
 		ctx context.Context, priceListID, variantID string,
 	) ([]*models.PriceListEntry, error)
+	// ListForVariants returns the entries of the given lists for the given
+	// variants, narrowest band first (min_quantity descending, then id).
+	ListForVariants(ctx context.Context, priceListIDs, variantIDs []string) ([]*models.PriceListEntry, error)
 }
 
 type CustomerPriceListAssignmentRepository interface {
@@ -243,6 +265,11 @@ type CustomerPriceOverrideRepository interface {
 	GetByCustomerAndVariant(
 		ctx context.Context, customerID, variantID string,
 	) (*models.CustomerPriceOverride, error)
+	// ListActiveForVariants returns customerID's active overrides on any of
+	// variantIDs, oldest first.
+	ListActiveForVariants(
+		ctx context.Context, customerID string, variantIDs []string,
+	) ([]*models.CustomerPriceOverride, error)
 }
 
 type DiscountRuleRepository interface {

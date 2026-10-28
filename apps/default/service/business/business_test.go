@@ -183,8 +183,9 @@ func listFulfilmentsForOrder(ctx context.Context, t *testing.T, svc *frame.Servi
 func (bts *BusinessTestSuite) createTestShop(ctx context.Context, biz allBiz) *commercev1.Shop {
 	t := bts.T()
 	shop, err := biz.shopBiz.CreateShop(ctx, &commercev1.CreateShopRequest{
-		Name: "Test Shop " + util.RandomAlphaNumericString(6),
-		Slug: "test-shop-" + util.RandomAlphaNumericString(6),
+		Name:     "Test Shop " + util.RandomAlphaNumericString(6),
+		Slug:     "test-shop-" + util.RandomAlphaNumericString(6),
+		Currency: "USD",
 	})
 	require.NoError(t, err)
 	return shop
@@ -445,13 +446,13 @@ func (bts *BusinessTestSuite) TestUpdateProductVariant() {
 			VariantId: variant.GetId(),
 			Name:      "Updated Variant",
 			Price: &commonv1.Money{
-				CurrencyCode: "EUR",
+				CurrencyCode: "USD",
 				Units:        20,
 			},
 		})
 		require.NoError(t, err)
 		require.Equal(t, "Updated Variant", updated.GetName())
-		require.Equal(t, "EUR", updated.GetPrice().GetCurrencyCode())
+		require.Equal(t, "USD", updated.GetPrice().GetCurrencyCode())
 		require.Equal(t, int64(20), updated.GetPrice().GetUnits())
 	})
 }

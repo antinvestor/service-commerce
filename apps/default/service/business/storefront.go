@@ -16,11 +16,15 @@ package business
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"errors"
 	"net/netip"
 	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	commonv1 "buf.build/gen/go/antinvestor/common/protocolbuffers/go/common/v1"
@@ -44,6 +48,76 @@ const (
 	storefrontMaxName     = 100
 	storefrontKeyPrefix   = "storefront:"
 )
+
+// Storefront checkout limits a deployment does not set.
+const (
+	defaultStorefrontWindow     = 10 * time.Minute
+	defaultCheckoutsPerVisitor  = 10
+	defaultCheckoutsPerContact  = 5
+	defaultCheckoutsPerShop     = 120
+	storefrontVisitorV6PrefixLn = 64
+)
+
+// StorefrontPolicy bounds anonymous checkouts. Every instance counts in the
+// same place, so the limits hold across the deployment.
+type StorefrontPolicy struct {
+	// Window is the fixed window checkouts are counted in.
+	Window time.Duration
+	// PerVisitor, PerContact and PerShop are how many checkouts one visitor
+	// address (an IPv6 /64), one typed contact and one shop may start in a
+	// window.
+	PerVisitor int64
+	PerContact int64
+	PerShop    int64
+}
+
+func (p StorefrontPolicy) withDefaults() StorefrontPolicy {
+	if p.Window <= 0 {
+		p.Window = defaultStorefrontWindow
+	}
+	if p.PerVisitor <= 0 {
+		p.PerVisitor = defaultCheckoutsPerVisitor
+	}
+	if p.PerContact <= 0 {
+		p.PerContact = defaultCheckoutsPerContact
+	}
+	if p.PerShop <= 0 {
+		p.PerShop = defaultCheckoutsPerShop
+	}
+	return p
+}
+
+// StorefrontError is a checkout failure a shopper may be shown as is: its
+// message is fixed text, or about only what they typed.
+type StorefrontError struct {
+	Code    connect.Code
+	Message string
+	// KeepKey means the order may already exist: sending the form again
+	// with the same key carries on with it rather than placing another.
+	KeepKey bool
+}
+
+func (e *StorefrontError) Error() string { return e.Message }
+
+// Unwrap lets connect.CodeOf read the failure's code.
+func (e *StorefrontError) Unwrap() error { return connect.NewError(e.Code, e.Message) }
+
+// Shopper-facing messages.
+const (
+	msgShopNotFound    = "This shop is not available."
+	msgTooMany         = "Too many orders have been started just now. Please wait a few minutes and try again."
+	msgUnavailable     = "We could not take your order just now. Please try again in a moment."
+	msgPaymentDown     = "We could not start your payment just now. Please try again."
+	msgItemsChanged    = "Some of those items are no longer available in the quantities chosen. Please check your order."
+	msgShopBusy        = "This shop has too many unpaid orders just now. Please try again a little later."
+	msgFormReused      = "Your order changed after it was first sent. Please check it and continue."
+	msgNotTakingOrders = "This shop is not taking online orders right now."
+	msgNoPaymentPage   = "This order has no payment page to send you to."
+)
+
+func shopperError(code connect.Code, message string) *StorefrontError {
+	return &StorefrontError{Code: code, Message: message}
+}
 
 var (
 	storefrontEmailPattern  = regexp.MustCompile(`^[^\s@]{1,64}@[^\s@]{1,190}\.[^\s@]{2,63}$`)
@@ -86,32 +160,39 @@ type StorefrontOrder struct {
 	Deposit string
 	// Key makes resubmitting the same form place one order.
 	Key string
+	// Visitor is the address the form came from, as infrastructure
+	// commerce trusts reported it.
+	Visitor string
 }
 
 // StorefrontBusiness serves shops' public pages: anyone may browse a shop
 // that has opted in and buy from it without an account. The buyer becomes
-// (or is matched to) a profile in the profile service.
+// (or is matched to) a profile in the profile service; commerce keeps only
+// the ids it hands back.
 type StorefrontBusiness interface {
 	// Storefront returns the shop with slug and its active products.
 	Storefront(ctx context.Context, slug string) (*Storefront, error)
 	// Checkout places order and returns the hosted checkout page to send
-	// the buyer to.
+	// the buyer to. Every failure is a *StorefrontError.
 	Checkout(ctx context.Context, slug string, order StorefrontOrder) (string, error)
 }
 
 // NewStorefrontBusiness builds the public storefront. A nil buyer directory
-// leaves pages browsable but checkout unavailable.
+// leaves pages browsable but checkout unavailable; a nil limits repository
+// refuses every checkout, since anonymous orders are only taken counted.
 func NewStorefrontBusiness(
 	shopRepo repository.ShopRepository,
 	catalog CatalogBusiness,
 	orders OrderBusiness,
 	payments PaymentBusiness,
 	buyers BuyerDirectory,
+	limits repository.LimitRepository,
+	policy StorefrontPolicy,
 	baseURL string,
 ) StorefrontBusiness {
 	return &storefrontBusiness{
 		shopRepo: shopRepo, catalog: catalog, orders: orders, payments: payments, buyers: buyers,
-		baseURL: baseURL,
+		limits: limits, policy: policy.withDefaults(), baseURL: baseURL,
 	}
 }
 
@@ -121,6 +202,8 @@ type storefrontBusiness struct {
 	orders   OrderBusiness
 	payments PaymentBusiness
 	buyers   BuyerDirectory
+	limits   repository.LimitRepository
+	policy   StorefrontPolicy
 	baseURL  string
 }
 
@@ -143,13 +226,17 @@ func (sb *storefrontBusiness) Storefront(ctx context.Context, slug string) (*Sto
 
 	front := &Storefront{Shop: shop.ToAPI()}
 	front.Shop.StorefrontUrl = StorefrontURL(sb.baseURL, shop.Slug)
+	productIDs := make([]string, 0, len(page.Products))
 	for _, product := range page.Products {
-		variants, listErr := sb.catalog.ListProductVariants(ctx, product.GetId())
-		if listErr != nil {
-			return nil, listErr
-		}
+		productIDs = append(productIDs, product.GetId())
+	}
+	variants, err := sb.catalog.ListVariantsByProduct(ctx, productIDs)
+	if err != nil {
+		return nil, err
+	}
+	for _, product := range page.Products {
 		item := StorefrontItem{Product: product}
-		for _, v := range variants {
+		for _, v := range variants[product.GetId()] {
 			if v.GetStatus() == commercev1.ProductVariantStatus_PRODUCT_VARIANT_STATUS_ACTIVE && v.GetPrice() != nil {
 				item.Variants = append(item.Variants, v)
 			}
@@ -163,32 +250,36 @@ func (sb *storefrontBusiness) Storefront(ctx context.Context, slug string) (*Sto
 
 func (sb *storefrontBusiness) Checkout(ctx context.Context, slug string, order StorefrontOrder) (string, error) {
 	if sb.buyers == nil {
-		return "", connect.NewError(connect.CodeUnimplemented, "checkout is not available for this shop")
+		return "", shopperError(connect.CodeUnimplemented, msgNotTakingOrders)
 	}
 	lines, err := validateStorefrontOrder(&order)
 	if err != nil {
-		return "", err
+		return "", shopperError(connect.CodeInvalidArgument, sentence(messageOf(err)))
 	}
 
 	ctx, shop, err := sb.openShop(ctx, slug, "")
 	if err != nil {
+		return "", shopperError(connect.CodeNotFound, msgShopNotFound)
+	}
+	if err = sb.admit(ctx, shop.GetID(), order); err != nil {
 		return "", err
 	}
 	deposit, err := parseStorefrontAmount(shop.Currency, order.Deposit)
 	if err != nil {
-		return "", err
+		return "", shopperError(connect.CodeInvalidArgument, sentence(messageOf(err)))
 	}
+	// The contact goes to the profile service as typed; commerce keeps
+	// only the ids it answers with.
 	buyer, err := sb.buyers.Resolve(ctx, order.Name, order.Contact)
 	if err != nil {
 		util.Log(ctx).WithError(err).WithField("shop_id", shop.GetID()).Warn("storefront buyer lookup failed")
-		return "", connect.NewError(connect.CodeUnavailable, "we could not take your details just now; try again").
-			WithCause(err)
+		return "", shopperError(connect.CodeUnavailable, msgUnavailable)
 	}
 
 	// Act as the buyer from here on, so the order is theirs.
 	ctx, _, err = sb.openShop(ctx, slug, buyer.ProfileID)
 	if err != nil {
-		return "", err
+		return "", shopperError(connect.CodeNotFound, msgShopNotFound)
 	}
 	placed, err := sb.orders.CreateGuestOrder(ctx, &commercev1.CreateOrderRequest{
 		ShopId:         shop.GetID(),
@@ -196,9 +287,9 @@ func (sb *storefrontBusiness) Checkout(ctx context.Context, slug string, order S
 		ContactId:      buyer.ContactID,
 		Lines:          lines,
 		IdempotencyKey: storefrontKeyPrefix + order.Key,
-	})
+	}, deposit)
 	if err != nil {
-		return "", err
+		return "", orderFailure(ctx, shop.GetID(), err)
 	}
 
 	result, err := sb.payments.CheckoutOrder(ctx, &commercev1.CheckoutOrderRequest{
@@ -207,13 +298,127 @@ func (sb *storefrontBusiness) Checkout(ctx context.Context, slug string, order S
 		Amount:    deposit,
 	})
 	if err != nil {
-		return "", err
+		failure := paymentFailure(ctx, placed.GetId(), err)
+		failure.KeepKey = true
+		return "", failure
 	}
 	target, err := url.Parse(result.Order.GetCheckoutUrl())
 	if err != nil || target.Host == "" || !securePaymentPage(target) {
-		return "", connect.NewError(connect.CodeFailedPrecondition, "this order has no payment page to send you to")
+		return "", &StorefrontError{Code: connect.CodeFailedPrecondition, Message: msgNoPaymentPage, KeepKey: true}
 	}
 	return target.String(), nil
+}
+
+// admit counts the checkout against the visitor, the contact and the shop
+// and refuses it when any is over its limit. When the count cannot be
+// taken the checkout is refused too: anonymous orders are only taken
+// counted.
+func (sb *storefrontBusiness) admit(ctx context.Context, shopID string, order StorefrontOrder) error {
+	if sb.limits == nil {
+		return shopperError(connect.CodeUnavailable, msgUnavailable)
+	}
+	now := time.Now().UTC()
+	window := now.Truncate(sb.policy.Window)
+	visitor := "visitor:" + VisitorGroup(order.Visitor)
+	contact := "contact:" + contactDigest(order.Contact)
+	shop := "shop:" + shopID
+	counts, err := sb.limits.Hit(ctx, []string{visitor, contact, shop}, window, window)
+	if err != nil {
+		util.Log(ctx).WithError(err).WithField("shop_id", shopID).Error("storefront checkout limit unavailable")
+		return shopperError(connect.CodeUnavailable, msgUnavailable)
+	}
+	if counts[visitor] > sb.policy.PerVisitor || counts[contact] > sb.policy.PerContact ||
+		counts[shop] > sb.policy.PerShop {
+		util.Log(ctx).WithField("shop_id", shopID).
+			WithField("visitor_hits", counts[visitor]).
+			WithField("contact_hits", counts[contact]).
+			WithField("shop_hits", counts[shop]).
+			Warn("storefront checkout over its limit")
+		return shopperError(connect.CodeResourceExhausted, msgTooMany)
+	}
+	return nil
+}
+
+// VisitorGroup is the unit a visitor is counted by: their IPv4 address, or
+// the /64 their IPv6 address is in, since one subscriber holds a whole /64.
+// Anything unreadable counts as one shared visitor.
+func VisitorGroup(address string) string {
+	addr, err := netip.ParseAddr(strings.TrimSpace(address))
+	if err != nil {
+		return "unknown"
+	}
+	addr = addr.Unmap()
+	if addr.Is4() {
+		return addr.String()
+	}
+	prefix, err := addr.Prefix(storefrontVisitorV6PrefixLn)
+	if err != nil {
+		return "unknown"
+	}
+	return prefix.String()
+}
+
+// contactDigest identifies a typed contact for counting without keeping
+// it.
+func contactDigest(contact string) string {
+	sum := sha256.Sum256([]byte(normaliseContact(contact)))
+	return hex.EncodeToString(sum[:16])
+}
+
+// orderFailure says why a guest order could not be placed without telling
+// an anonymous caller about stock levels or record ids.
+func orderFailure(ctx context.Context, shopID string, err error) *StorefrontError {
+	var connectErr *connect.Error
+	switch code := connect.CodeOf(err); {
+	case errors.Is(err, ErrDepositRefused) && errors.As(err, &connectErr):
+		return shopperError(code, sentence(connectErr.Message()))
+	case code == connect.CodeAlreadyExists:
+		return shopperError(code, msgFormReused)
+	case code == connect.CodeResourceExhausted:
+		return shopperError(code, msgShopBusy)
+	case code == connect.CodeNotFound, code == connect.CodeInvalidArgument, code == connect.CodeFailedPrecondition:
+		return shopperError(connect.CodeFailedPrecondition, msgItemsChanged)
+	default:
+		util.Log(ctx).WithError(err).WithField("shop_id", shopID).Warn("storefront order failed")
+		return shopperError(connect.CodeUnavailable, msgUnavailable)
+	}
+}
+
+// paymentFailure says why payment could not be started for a placed guest
+// order.
+func paymentFailure(ctx context.Context, orderID string, err error) *StorefrontError {
+	var connectErr *connect.Error
+	switch code := connect.CodeOf(err); {
+	case errors.Is(err, ErrDepositRefused) && errors.As(err, &connectErr):
+		return shopperError(code, sentence(connectErr.Message()))
+	case code == connect.CodeUnimplemented:
+		return shopperError(code, msgNotTakingOrders)
+	default:
+		util.Log(ctx).WithError(err).WithField("order_id", orderID).Warn("storefront payment could not start")
+		return shopperError(connect.CodeUnavailable, msgPaymentDown)
+	}
+}
+
+// messageOf is err's message without its code.
+func messageOf(err error) string {
+	var connectErr *connect.Error
+	if errors.As(err, &connectErr) {
+		return connectErr.Message()
+	}
+	return err.Error()
+}
+
+// sentence capitalises a message for display.
+func sentence(message string) string {
+	message = strings.TrimSpace(message)
+	if message == "" {
+		return "Please check your order and try again."
+	}
+	message = strings.ToUpper(message[:1]) + message[1:]
+	if !strings.HasSuffix(message, ".") {
+		message += "."
+	}
+	return message
 }
 
 // securePaymentPage reports whether buyers may be sent to target to pay: it

@@ -83,15 +83,25 @@ func (bts *BusinessTestSuite) TestCreateOrder_RejectsMixedCurrenciesAndUnsellabl
 		shop := bts.createTestShop(ctx, biz)
 		product, usdVariant := bts.createTestProductWithVariant(ctx, biz, shop.GetId())
 
-		kesVariant, err := biz.catalogBiz.CreateProductVariant(ctx, &commercev1.CreateProductVariantRequest{
+		// A shop prices in one currency, so a variant in another is refused
+		// where it is set rather than when it is ordered.
+		_, err := biz.catalogBiz.CreateProductVariant(ctx, &commercev1.CreateProductVariantRequest{
 			ProductId:     product.GetId(),
 			Sku:           "SKU-KES-" + util.RandomAlphaNumericString(6),
 			Name:          "KES Variant",
 			Price:         &commonv1.Money{CurrencyCode: "KES", Units: 1300},
 			StockQuantity: 10,
 		})
-		require.NoError(t, err)
+		require.Equal(t, connect.CodeInvalidArgument, connect.CodeOf(err))
 
+		kesVariant, err := biz.catalogBiz.CreateProductVariant(ctx, &commercev1.CreateProductVariantRequest{
+			ProductId:     product.GetId(),
+			Sku:           "SKU-2-" + util.RandomAlphaNumericString(6),
+			Name:          "Second Variant",
+			Price:         &commonv1.Money{CurrencyCode: "USD", Units: 13},
+			StockQuantity: 10,
+		})
+		require.NoError(t, err)
 		_, err = biz.orderBiz.CreateOrder(ctx, &commercev1.CreateOrderRequest{
 			ShopId: shop.GetId(),
 			Lines: []*commercev1.CreateOrderLine{
@@ -99,8 +109,7 @@ func (bts *BusinessTestSuite) TestCreateOrder_RejectsMixedCurrenciesAndUnsellabl
 				{VariantId: kesVariant.GetId(), Quantity: 1},
 			},
 		})
-		require.Error(t, err)
-		require.Equal(t, connect.CodeInvalidArgument, connect.CodeOf(err))
+		require.NoError(t, err)
 
 		// Disable the variant; it must no longer be orderable.
 		_, err = biz.catalogBiz.UpdateProductVariant(ctx, &commercev1.UpdateProductVariantRequest{

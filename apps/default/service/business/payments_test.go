@@ -368,7 +368,7 @@ func (bts *BusinessTestSuite) TestListShops_Pages() {
 		page, err := biz.shopBiz.ListShops(ctx, &commercev1.ListShopsRequest{})
 		require.NoError(t, err)
 		require.Len(t, page.Shops, 3)
-		require.Equal(t, "KES", page.Shops[0].GetCurrency())
+		require.Equal(t, "USD", page.Shops[0].GetCurrency())
 	})
 }
 

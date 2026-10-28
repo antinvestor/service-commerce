@@ -442,7 +442,7 @@ func (pb *paymentBusiness) CheckoutOrder(
 
 	amount, err := requestedInstalment(order, req.GetAmount())
 	if err != nil {
-		return nil, err
+		return nil, depositRefused(err)
 	}
 
 	reuse, err := currentSessionReusable(ctx, order, scan, amount, time.Now())

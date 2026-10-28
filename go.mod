@@ -10,22 +10,22 @@ require (
 	buf.build/gen/go/antinvestor/device/protocolbuffers/go v1.36.12-20261010180548-2c1e50223410.2
 	buf.build/gen/go/antinvestor/ledger/connectrpc/go/v2 v2.0.1-20261011184341-460358e58550.1
 	buf.build/gen/go/antinvestor/ledger/protocolbuffers/go v1.36.12-20261011184341-460358e58550.2
-	buf.build/gen/go/antinvestor/manufacturing/connectrpc/go/v2 v2.0.1-20260911062319-cb4cec5af873.1
+	buf.build/gen/go/antinvestor/manufacturing/connectrpc/go/v2 v2.0.2-20260911062319-cb4cec5af873.1
 	buf.build/gen/go/antinvestor/manufacturing/protocolbuffers/go v1.36.12-20260911062319-cb4cec5af873.2
 	buf.build/gen/go/antinvestor/notification/protocolbuffers/go v1.36.12-20260831182621-e7d71a2bcc5d.2
-	buf.build/gen/go/antinvestor/payment/connectrpc/go/v2 v2.0.1-20260831184824-a4a7e9defafa.1
+	buf.build/gen/go/antinvestor/payment/connectrpc/go/v2 v2.0.2-20260831184824-a4a7e9defafa.1
 	buf.build/gen/go/antinvestor/payment/protocolbuffers/go v1.36.12-20260831184824-a4a7e9defafa.2
 	buf.build/gen/go/antinvestor/procurement/connectrpc/go/v2 v2.0.1-20260831163205-8965cef21d40.1
 	buf.build/gen/go/antinvestor/procurement/protocolbuffers/go v1.36.12-20260831163205-8965cef21d40.2
-	buf.build/gen/go/antinvestor/profile/connectrpc/go/v2 v2.0.1-20261010180548-eeb7b4541358.1
+	buf.build/gen/go/antinvestor/profile/connectrpc/go/v2 v2.0.2-20261010180548-eeb7b4541358.1
 	buf.build/gen/go/antinvestor/profile/protocolbuffers/go v1.36.12-20261010180548-eeb7b4541358.2
 	buf.build/gen/go/antinvestor/settingz/connectrpc/go/v2 v2.0.1-20261010180548-c7910134e0de.1
 	buf.build/gen/go/antinvestor/settingz/protocolbuffers/go v1.36.12-20261010180548-c7910134e0de.2
-	buf.build/gen/go/antinvestor/workflow/connectrpc/go/v2 v2.0.1-20260511135803-9b0e411394e1.1
+	buf.build/gen/go/antinvestor/workflow/connectrpc/go/v2 v2.0.2-20260511135803-9b0e411394e1.1
 	buf.build/gen/go/antinvestor/workflow/protocolbuffers/go v1.36.12-20260511135803-9b0e411394e1.2
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.12-20260825204119-511051f7f437.2
 	buf.build/gen/go/gnostic/gnostic/protocolbuffers/go v1.36.12-20230414000709-087bc8072ce4.2
-	connectrpc.com/connect/v2 v2.0.1
+	connectrpc.com/connect/v2 v2.0.2
 	github.com/antinvestor/common/notification v0.2.0
 	github.com/antinvestor/common/v3 v3.0.1
 	github.com/golang-jwt/jwt/v5 v5.3.1

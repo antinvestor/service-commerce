@@ -46,6 +46,7 @@ type allGRBiz struct {
 	poBiz       business.PurchaseOrderBusiness
 	grBiz       business.GoodsReceiptBusiness
 	stock       *fakeStock
+	materials   *fakeInventory
 }
 
 func (gts *GoodsReceiptTestSuite) getBusiness(ctx context.Context, svc *frame.Service) allGRBiz {
@@ -59,12 +60,14 @@ func (gts *GoodsReceiptTestSuite) getBusiness(ctx context.Context, svc *frame.Se
 	grRepo := repository.NewGoodsReceiptRepository(ctx, dbPool, workMan)
 	grlRepo := repository.NewGoodsReceiptLineRepository(ctx, dbPool, workMan)
 	stock := newFakeStock()
+	materials := newFakeInventory()
 
 	return allGRBiz{
 		supplierBiz: business.NewSupplierBusiness(ctx, supplierRepo, supplierItemRepo),
 		poBiz:       business.NewPurchaseOrderBusiness(ctx, poRepo, polRepo, supplierRepo, supplierItemRepo),
-		grBiz:       business.NewGoodsReceiptBusiness(ctx, grRepo, grlRepo, poRepo, stock),
+		grBiz:       business.NewGoodsReceiptBusiness(ctx, grRepo, grlRepo, poRepo, stock, materials),
 		stock:       stock,
+		materials:   materials,
 	}
 }
 

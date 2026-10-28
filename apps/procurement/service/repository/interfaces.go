@@ -121,13 +121,15 @@ type GoodsReceiptLineRepository interface {
 	SettleDelivery(ctx context.Context, lineID string, status int32, note string, at time.Time) (bool, error)
 	// RecordDeliveryAttempt counts a failed attempt that may succeed later.
 	RecordDeliveryAttempt(ctx context.Context, lineID, note string) error
-	// GetInReceipt reads a line of a receipt from the primary.
+	// GetInReceipt reads a line of a receipt, with its receipt, from the
+	// primary.
 	GetInReceipt(ctx context.Context, goodsReceiptID, lineID string) (*models.GoodsReceiptLine, error)
 	// Resolve marks a line booked by hand (RESOLVED) with who, when and the
 	// note, provided its delivery status is still one of from. It reports
 	// false when the line had moved on.
 	Resolve(ctx context.Context, lineID string, from []int32, by, note string, at time.Time) (bool, error)
-	// Requeue puts a FAILED line back to PENDING with note. It reports false
-	// when the line was no longer FAILED.
-	Requeue(ctx context.Context, lineID, note string) (bool, error)
+	// Requeue puts a line in one of from back to PENDING with note, at
+	// locationID when that is not empty. It reports false when the line was
+	// in none of from.
+	Requeue(ctx context.Context, lineID string, from []int32, locationID, note string) (bool, error)
 }

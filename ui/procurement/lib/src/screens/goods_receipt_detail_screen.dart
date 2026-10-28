@@ -183,15 +183,15 @@ class _DeliverySummary extends StatelessWidget {
     final pending = count(StockDeliveryStatus.STOCK_DELIVERY_STATUS_PENDING);
     final messages = [
       if (failed > 0)
-        '$failed ${_lines(failed)} refused by the shop: check the product '
-            'variant and retry, or record the stock there and mark it '
-            'booked.',
+        '$failed ${_lines(failed)} refused where the stock was sent: '
+            'resolve to fix and retry, or record the stock there and mark '
+            'it booked.',
       if (transfer > 0)
-        '$transfer ${_lines(transfer)} of raw material to book into '
-            'manufacturing inventory by hand, then mark booked.',
+        '$transfer ${_lines(transfer)} of raw material waiting for a stock '
+            'location: resolve to choose one, or book it by hand.',
       if (pending > 0)
-        '$pending ${_lines(pending)} on the way to the shop\'s stock; '
-            'retried automatically.',
+        '$pending ${_lines(pending)} on the way to stock; retried '
+            'automatically.',
     ];
     if (messages.isEmpty) return const SizedBox.shrink();
     final urgent = failed > 0 || transfer > 0;

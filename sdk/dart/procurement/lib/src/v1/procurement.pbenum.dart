@@ -288,8 +288,8 @@ class StockDeliveryStatus extends $pb.ProtobufEnum {
       StockDeliveryStatus._(
           2, _omitEnumNames ? '' : 'STOCK_DELIVERY_STATUS_DELIVERED');
 
-  /// Recorded for transfer into manufacturing inventory, which does not yet
-  /// accept receipts from procurement; book it there by hand.
+  /// A raw material received without a stock location: RETRY with one to
+  /// book it into manufacturing inventory, or book it there by hand.
   static const StockDeliveryStatus STOCK_DELIVERY_STATUS_PENDING_TRANSFER =
       StockDeliveryStatus._(
           3, _omitEnumNames ? '' : 'STOCK_DELIVERY_STATUS_PENDING_TRANSFER');
@@ -338,8 +338,9 @@ class GoodsReceiptLineResolution extends $pb.ProtobufEnum {
               ? ''
               : 'GOODS_RECEIPT_LINE_RESOLUTION_BOOKED_MANUALLY');
 
-  /// Try a FAILED product variant line again: it goes back to PENDING and is
-  /// pushed once straight away; the sweep retries it if that fails.
+  /// Try a FAILED line again, or send a PENDING_TRANSFER raw material to the
+  /// location given: it goes back to PENDING and is pushed once straight
+  /// away; the sweep retries it if that fails.
   static const GoodsReceiptLineResolution GOODS_RECEIPT_LINE_RESOLUTION_RETRY =
       GoodsReceiptLineResolution._(
           2, _omitEnumNames ? '' : 'GOODS_RECEIPT_LINE_RESOLUTION_RETRY');

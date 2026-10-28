@@ -124,7 +124,8 @@ func main() {
 	}
 	connectHandler := setupConnectServer(ctx, svc,
 		business.NewManufacturingMaterialSource(manufacturing),
-		business.NewCommerceStockDestination(commerce))
+		business.NewCommerceStockDestination(commerce),
+		business.NewManufacturingMaterialDestination(manufacturing))
 	svc.Init(ctx, frame.WithHTTPHandler(connectHandler))
 
 	err = svc.Run(ctx, "")
@@ -139,6 +140,7 @@ func setupConnectServer(
 	svc *frame.Service,
 	materials business.MaterialSource,
 	stock business.StockDestination,
+	materialStock business.MaterialDestination,
 ) http.Handler {
 	securityMan := svc.SecurityManager()
 
@@ -164,7 +166,7 @@ func setupConnectServer(
 
 	// Property-level permissions middleware.
 	authzMiddleware := authz.NewMiddleware(securityMan.GetAuthorizer(ctx))
-	implementation := handlers.NewProcurementServer(ctx, svc, authzMiddleware, materials, stock)
+	implementation := handlers.NewProcurementServer(ctx, svc, authzMiddleware, materials, stock, materialStock)
 
 	server := connect.NewServer(defaultInterceptorList...)
 	procurementv1connect.RegisterProcurementServiceHandler(server, implementation)
@@ -176,14 +178,16 @@ func setupConnectServer(
 }
 
 // newManufacturingClient builds the client purchase order suggestions read
-// plan shortages through. It returns nil when manufacturing is not
-// configured, which leaves suggestions unavailable.
+// plan shortages through and raw materials are booked into inventory
+// through. It returns nil when manufacturing is not configured, which leaves
+// suggestions unavailable and raw material lines pending.
 func newManufacturingClient(
 	ctx context.Context,
 	cfg *aconfig.ProcurementConfig,
-) (business.ManufacturingClient, error) {
+) (manufacturingv1connect.ManufacturingServiceClient, error) {
 	if cfg.ManufacturingServiceURI == "" {
-		util.Log(ctx).Warn("manufacturing service not configured; purchase order suggestions are unavailable")
+		util.Log(ctx).Warn("manufacturing service not configured; " +
+			"purchase order suggestions are unavailable and raw materials are booked by hand")
 		return nil, nil //nolint:nilnil // not configured is a valid state
 	}
 	cli, err := connection.NewServiceClient(ctx, cfg, common.ServiceTarget{

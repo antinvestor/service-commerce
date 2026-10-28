@@ -311,6 +311,15 @@ Future<_Harness> _pump(
   return harness;
 }
 
+/// A stock location picker that always picks the main store.
+final _locationPicker = SupplyPickers(
+  stockLocation: (context, onPicked) => TextButton(
+    onPressed: () =>
+        onPicked(const SupplyChoice(id: 'loc-main', label: 'Main store')),
+    child: const Text('Pick location'),
+  ),
+);
+
 void main() {
   group('purchase order suggestions', () {
     test('a suggestion becomes a plan-linked draft order', () {
@@ -535,6 +544,34 @@ void main() {
       expect(request.lines.single.lotNumber, 'LOT-8');
       // Lands on the receipt, which shows where each line's stock went.
       expect(h.location, ProcurementPaths.receipt('gr-new'));
+      // Without a location picker raw materials wait for one.
+      expect(request.stockLocationId, isEmpty);
+    });
+
+    testWidgets('raw materials are put away where staff choose', (
+      tester,
+    ) async {
+      final h = await _pump(
+        tester,
+        ProcurementPaths.receiveOrder('po-1'),
+        pickers: _locationPicker,
+      );
+      await tester.enterText(find.widgetWithText(TextFormField, 'Qty'), '6');
+      await tester.pump();
+      await tester.tap(find.text('Next'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Next'));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('receipt_location_picker')), findsOneWidget);
+      await tester.tap(find.text('Pick location'));
+      await tester.pumpAndSettle();
+      expect(find.text('Booked into Main store.'), findsOneWidget);
+      await tester.tap(find.text('Create Receipt'));
+      await tester.pumpAndSettle();
+
+      final request = h.log.whereType<GoodsReceiptCreateRequest>().single;
+      expect(request.stockLocationId, 'loc-main');
     });
   });
 
@@ -716,7 +753,7 @@ void main() {
 
       expect(find.text('In stock'), findsOneWidget);
       expect(find.text('Pending'), findsOneWidget);
-      expect(find.text('Book into inventory'), findsOneWidget);
+      expect(find.text('Needs location'), findsOneWidget);
       expect(find.text('Failed'), findsOneWidget);
       expect(find.text('var-a'), findsOneWidget);
       expect(find.text('inv-c'), findsOneWidget);
@@ -728,14 +765,14 @@ void main() {
       expect(
         find.descendant(
           of: summary,
-          matching: find.textContaining('1 line refused by the shop'),
+          matching: find.textContaining('1 line refused where the stock was sent'),
         ),
         findsOneWidget,
       );
       expect(
         find.descendant(
           of: summary,
-          matching: find.textContaining('1 line of raw material to book'),
+          matching: find.textContaining('1 line of raw material waiting for a stock'),
         ),
         findsOneWidget,
       );
@@ -768,7 +805,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Resolve receipt line'), findsOneWidget);
-      // Raw materials are never pushed, so there is nothing to retry.
+      // Without a location picker a raw material can only be booked by hand.
       expect(find.byKey(const Key('resolve_line_retry')), findsNothing);
       await tester.enterText(
         find.byKey(const Key('resolve_line_note')),
@@ -807,6 +844,39 @@ void main() {
         GoodsReceiptLineResolution.GOODS_RECEIPT_LINE_RESOLUTION_RETRY,
       );
       expect(find.text('Delivered to the shop'), findsOneWidget);
+    });
+
+    testWidgets('a raw material is booked into the location staff choose', (
+      tester,
+    ) async {
+      final h = await _pump(
+        tester,
+        ProcurementPaths.receipt('gr-1'),
+        receipt: mixed,
+        pickers: _locationPicker,
+      );
+      await tester.tap(find.byKey(const Key('resolve_line_c')));
+      await tester.pumpAndSettle();
+
+      final send = find.byKey(const Key('resolve_line_retry'));
+      expect(
+        tester.widget<OutlinedButton>(send).onPressed,
+        isNull,
+        reason: 'nothing is sent before a location is chosen',
+      );
+      await tester.tap(find.text('Pick location'));
+      await tester.pumpAndSettle();
+      await tester.tap(send);
+      await tester.pumpAndSettle();
+
+      final request = h.log.single as GoodsReceiptLineResolveRequest;
+      expect(request.lineId, 'c');
+      expect(
+        request.resolution,
+        GoodsReceiptLineResolution.GOODS_RECEIPT_LINE_RESOLUTION_RETRY,
+      );
+      expect(request.locationId, 'loc-main');
+      expect(find.text('Booked into manufacturing inventory'), findsOneWidget);
     });
 
     testWidgets('dismissing the dialog records nothing', (tester) async {

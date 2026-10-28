@@ -452,8 +452,8 @@ const (
 	StockDeliveryStatus_STOCK_DELIVERY_STATUS_PENDING StockDeliveryStatus = 1
 	// Landed at the destination exactly once.
 	StockDeliveryStatus_STOCK_DELIVERY_STATUS_DELIVERED StockDeliveryStatus = 2
-	// Recorded for transfer into manufacturing inventory, which does not yet
-	// accept receipts from procurement; book it there by hand.
+	// A raw material received without a stock location: RETRY with one to
+	// book it into manufacturing inventory, or book it there by hand.
 	StockDeliveryStatus_STOCK_DELIVERY_STATUS_PENDING_TRANSFER StockDeliveryStatus = 3
 	// The destination refused it for good (see delivery_note); needs staff.
 	StockDeliveryStatus_STOCK_DELIVERY_STATUS_FAILED StockDeliveryStatus = 4
@@ -512,8 +512,9 @@ const (
 	// The stock was booked at its destination by hand (PENDING_TRANSFER or
 	// FAILED lines); the line becomes STOCK_DELIVERY_STATUS_RESOLVED.
 	GoodsReceiptLineResolution_GOODS_RECEIPT_LINE_RESOLUTION_BOOKED_MANUALLY GoodsReceiptLineResolution = 1
-	// Try a FAILED product variant line again: it goes back to PENDING and is
-	// pushed once straight away; the sweep retries it if that fails.
+	// Try a FAILED line again, or send a PENDING_TRANSFER raw material to the
+	// location given: it goes back to PENDING and is pushed once straight
+	// away; the sweep retries it if that fails.
 	GoodsReceiptLineResolution_GOODS_RECEIPT_LINE_RESOLUTION_RETRY GoodsReceiptLineResolution = 2
 )
 
@@ -1699,8 +1700,10 @@ type GoodsReceiptLine struct {
 	ResolvedBy     string                 `protobuf:"bytes,16,opt,name=resolved_by,json=resolvedBy,proto3" json:"resolved_by,omitempty"`
 	ResolvedAt     *timestamppb.Timestamp `protobuf:"bytes,17,opt,name=resolved_at,json=resolvedAt,proto3" json:"resolved_at,omitempty"`
 	ResolutionNote string                 `protobuf:"bytes,18,opt,name=resolution_note,json=resolutionNote,proto3" json:"resolution_note,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// Where a raw material is put away in manufacturing inventory.
+	LocationId    string `protobuf:"bytes,19,opt,name=location_id,json=locationId,proto3" json:"location_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GoodsReceiptLine) Reset() {
@@ -1854,6 +1857,13 @@ func (x *GoodsReceiptLine) GetResolutionNote() string {
 	return ""
 }
 
+func (x *GoodsReceiptLine) GetLocationId() string {
+	if x != nil {
+		return x.LocationId
+	}
+	return ""
+}
+
 func (x *GoodsReceiptLine) SetId(v string) {
 	x.Id = v
 }
@@ -1926,6 +1936,10 @@ func (x *GoodsReceiptLine) SetResolutionNote(v string) {
 	x.ResolutionNote = v
 }
 
+func (x *GoodsReceiptLine) SetLocationId(v string) {
+	x.LocationId = v
+}
+
 func (x *GoodsReceiptLine) HasExpiryDate() bool {
 	if x == nil {
 		return false
@@ -1970,6 +1984,8 @@ type GoodsReceiptLine_builder struct {
 	ResolvedBy     string
 	ResolvedAt     *timestamppb.Timestamp
 	ResolutionNote string
+	// Where a raw material is put away in manufacturing inventory.
+	LocationId string
 }
 
 func (b0 GoodsReceiptLine_builder) Build() *GoodsReceiptLine {
@@ -1994,6 +2010,7 @@ func (b0 GoodsReceiptLine_builder) Build() *GoodsReceiptLine {
 	x.ResolvedBy = b.ResolvedBy
 	x.ResolvedAt = b.ResolvedAt
 	x.ResolutionNote = b.ResolutionNote
+	x.LocationId = b.LocationId
 	return m0
 }
 
@@ -4270,7 +4287,10 @@ type GoodsReceiptCreateRequest struct {
 	PropertyId      string                   `protobuf:"bytes,3,opt,name=property_id,json=propertyId,proto3" json:"property_id,omitempty"`
 	Notes           string                   `protobuf:"bytes,4,opt,name=notes,proto3" json:"notes,omitempty"`
 	Lines           []*GoodsReceiptLineInput `protobuf:"bytes,5,rep,name=lines,proto3" json:"lines,omitempty"`
-	// Manufacturing stock location raw materials are received into.
+	// Manufacturing stock location raw materials are put away in. With one,
+	// raw material lines are booked into manufacturing inventory
+	// automatically; without, they wait (STOCK_DELIVERY_STATUS_PENDING_TRANSFER)
+	// until staff choose a location or book them by hand.
 	StockLocationId string `protobuf:"bytes,6,opt,name=stock_location_id,json=stockLocationId,proto3" json:"stock_location_id,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
@@ -4375,7 +4395,10 @@ type GoodsReceiptCreateRequest_builder struct {
 	PropertyId      string
 	Notes           string
 	Lines           []*GoodsReceiptLineInput
-	// Manufacturing stock location raw materials are received into.
+	// Manufacturing stock location raw materials are put away in. With one,
+	// raw material lines are booked into manufacturing inventory
+	// automatically; without, they wait (STOCK_DELIVERY_STATUS_PENDING_TRANSFER)
+	// until staff choose a location or book them by hand.
 	StockLocationId string
 }
 
@@ -5206,7 +5229,10 @@ type GoodsReceiptLineResolveRequest struct {
 	LineId         string                     `protobuf:"bytes,2,opt,name=line_id,json=lineId,proto3" json:"line_id,omitempty"`
 	Resolution     GoodsReceiptLineResolution `protobuf:"varint,3,opt,name=resolution,proto3,enum=procurement.v1.GoodsReceiptLineResolution" json:"resolution,omitempty"`
 	// Why, or where the stock was booked; at most 1000 characters.
-	Note          string `protobuf:"bytes,4,opt,name=note,proto3" json:"note,omitempty"`
+	Note string `protobuf:"bytes,4,opt,name=note,proto3" json:"note,omitempty"`
+	// RETRY of a raw material: the manufacturing stock location to book it
+	// into; required unless the line already has one.
+	LocationId    string `protobuf:"bytes,5,opt,name=location_id,json=locationId,proto3" json:"location_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -5264,6 +5290,13 @@ func (x *GoodsReceiptLineResolveRequest) GetNote() string {
 	return ""
 }
 
+func (x *GoodsReceiptLineResolveRequest) GetLocationId() string {
+	if x != nil {
+		return x.LocationId
+	}
+	return ""
+}
+
 func (x *GoodsReceiptLineResolveRequest) SetGoodsReceiptId(v string) {
 	x.GoodsReceiptId = v
 }
@@ -5280,6 +5313,10 @@ func (x *GoodsReceiptLineResolveRequest) SetNote(v string) {
 	x.Note = v
 }
 
+func (x *GoodsReceiptLineResolveRequest) SetLocationId(v string) {
+	x.LocationId = v
+}
+
 type GoodsReceiptLineResolveRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
@@ -5288,6 +5325,9 @@ type GoodsReceiptLineResolveRequest_builder struct {
 	Resolution     GoodsReceiptLineResolution
 	// Why, or where the stock was booked; at most 1000 characters.
 	Note string
+	// RETRY of a raw material: the manufacturing stock location to book it
+	// into; required unless the line already has one.
+	LocationId string
 }
 
 func (b0 GoodsReceiptLineResolveRequest_builder) Build() *GoodsReceiptLineResolveRequest {
@@ -5298,6 +5338,7 @@ func (b0 GoodsReceiptLineResolveRequest_builder) Build() *GoodsReceiptLineResolv
 	x.LineId = b.LineId
 	x.Resolution = b.Resolution
 	x.Note = b.Note
+	x.LocationId = b.LocationId
 	return m0
 }
 
@@ -5454,7 +5495,7 @@ const file_v1_procurement_proto_rawDesc = "" +
 	"\x05lines\x18\b \x03(\v2 .procurement.v1.GoodsReceiptLineR\x05lines\x12*\n" +
 	"\x11stock_location_id\x18\t \x01(\tR\x0fstockLocationId\x129\n" +
 	"\n" +
-	"created_at\x18\x0f \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"\xb4\x06\n" +
+	"created_at\x18\x0f \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"\xd5\x06\n" +
 	"\x10GoodsReceiptLine\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12(\n" +
 	"\x10goods_receipt_id\x18\x02 \x01(\tR\x0egoodsReceiptId\x123\n" +
@@ -5479,7 +5520,9 @@ const file_v1_procurement_proto_rawDesc = "" +
 	"resolvedBy\x12;\n" +
 	"\vresolved_at\x18\x11 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
 	"resolvedAt\x12'\n" +
-	"\x0fresolution_note\x18\x12 \x01(\tR\x0eresolutionNote\"\xdd\x01\n" +
+	"\x0fresolution_note\x18\x12 \x01(\tR\x0eresolutionNote\x12\x1f\n" +
+	"\vlocation_id\x18\x13 \x01(\tR\n" +
+	"locationId\"\xdd\x01\n" +
 	"\x17PurchaseOrderSuggestion\x12\x1f\n" +
 	"\vsupplier_id\x18\x01 \x01(\tR\n" +
 	"supplierId\x12#\n" +
@@ -5635,14 +5678,16 @@ const file_v1_procurement_proto_rawDesc = "" +
 	"\x1bGoodsReceiptDeliverResponse\x12\x1c\n" +
 	"\tdelivered\x18\x01 \x01(\x05R\tdelivered\x12\x18\n" +
 	"\apending\x18\x02 \x01(\x05R\apending\x12\x16\n" +
-	"\x06failed\x18\x03 \x01(\x05R\x06failed\"\xc3\x01\n" +
+	"\x06failed\x18\x03 \x01(\x05R\x06failed\"\xe4\x01\n" +
 	"\x1eGoodsReceiptLineResolveRequest\x12(\n" +
 	"\x10goods_receipt_id\x18\x01 \x01(\tR\x0egoodsReceiptId\x12\x17\n" +
 	"\aline_id\x18\x02 \x01(\tR\x06lineId\x12J\n" +
 	"\n" +
 	"resolution\x18\x03 \x01(\x0e2*.procurement.v1.GoodsReceiptLineResolutionR\n" +
 	"resolution\x12\x12\n" +
-	"\x04note\x18\x04 \x01(\tR\x04note\"d\n" +
+	"\x04note\x18\x04 \x01(\tR\x04note\x12\x1f\n" +
+	"\vlocation_id\x18\x05 \x01(\tR\n" +
+	"locationId\"d\n" +
 	"\x1fGoodsReceiptLineResolveResponse\x12A\n" +
 	"\rgoods_receipt\x18\x01 \x01(\v2\x1c.procurement.v1.GoodsReceiptR\fgoodsReceipt*\xa2\x01\n" +
 	"\fSupplierType\x12\x1d\n" +

@@ -21,8 +21,10 @@ import (
 	"time"
 	"unicode/utf8"
 
+	manufacturingv1 "buf.build/gen/go/antinvestor/manufacturing/protocolbuffers/go/v1"
 	"connectrpc.com/connect/v2"
 	"github.com/pitabwire/frame/v3/data"
+	"github.com/pitabwire/frame/v3/security"
 	"github.com/pitabwire/util"
 
 	commercev1 "github.com/antinvestor/service-commerce/gen/go/commerce/v1"
@@ -83,8 +85,84 @@ func (c *commerceStock) ReceiveVariantStock(
 	return err
 }
 
-// refusal reports codes commerce answers with when the request itself is
-// wrong; anything else (outage, timeout, credentials) may pass on retry.
+// MaterialReceipt is a raw material line put away in manufacturing
+// inventory.
+type MaterialReceipt struct {
+	TenantID    string
+	PartitionID string
+	AccessID    string
+	PropertyID  string
+	ItemID      string
+	LocationID  string
+	LotNumber   string
+	Quantity    float64
+	// ReceiptID names the goods receipt the stock came in on.
+	ReceiptID string
+	// Reference names the line; the destination books it once.
+	Reference string
+}
+
+// MaterialDestination is where raw materials land: manufacturing inventory.
+type MaterialDestination interface {
+	// ReceiveMaterial books receipt once per reference. A refusal wraps
+	// ErrDeliveryRefused; any other error may succeed on retry.
+	ReceiveMaterial(ctx context.Context, receipt MaterialReceipt) error
+}
+
+// ManufacturingStockClient is the slice of the manufacturing API material
+// deliveries use.
+type ManufacturingStockClient interface {
+	RecordStockIn(
+		context.Context,
+		*manufacturingv1.RecordStockInRequest,
+	) (*manufacturingv1.RecordStockInResponse, error)
+}
+
+// NewManufacturingMaterialDestination books raw materials through
+// manufacturing's RecordStockIn, as the procurement service itself acting
+// in the receipt's tenancy. A nil client yields nil (not configured): lines
+// then stay pending.
+func NewManufacturingMaterialDestination(cli ManufacturingStockClient) MaterialDestination {
+	if cli == nil {
+		return nil
+	}
+	return &manufacturingStock{cli: cli}
+}
+
+type manufacturingStock struct {
+	cli ManufacturingStockClient
+}
+
+// materialReferenceType tells manufacturing where a stock-in came from.
+const materialReferenceType = "procurement_goods_receipt"
+
+func (m *manufacturingStock) ReceiveMaterial(ctx context.Context, receipt MaterialReceipt) error {
+	inTenancy := util.SetTenancy(ctx, &security.AuthenticationClaims{
+		TenantID:    receipt.TenantID,
+		PartitionID: receipt.PartitionID,
+		AccessID:    receipt.AccessID,
+	})
+	_, err := m.cli.RecordStockIn(inTenancy, manufacturingv1.RecordStockInRequest_builder{
+		PropertyId:     receipt.PropertyID,
+		ItemId:         receipt.ItemID,
+		LocationId:     receipt.LocationID,
+		LotId:          receipt.LotNumber,
+		Quantity:       receipt.Quantity,
+		ReferenceType:  materialReferenceType,
+		ReferenceId:    receipt.ReceiptID,
+		IdempotencyKey: receipt.Reference,
+	}.Build())
+	if err == nil {
+		return nil
+	}
+	if refusal(connect.CodeOf(err)) {
+		return fmt.Errorf("%w: %w", ErrDeliveryRefused, err)
+	}
+	return err
+}
+
+// refusal reports codes a destination answers with when the request itself
+// is wrong; anything else (outage, timeout, credentials) may pass on retry.
 func refusal(code connect.Code) bool {
 	return code == connect.CodeInvalidArgument || code == connect.CodeNotFound ||
 		code == connect.CodeAlreadyExists || code == connect.CodeFailedPrecondition ||
@@ -116,37 +194,65 @@ func (grb *goodsReceiptBusiness) deliverLine(ctx context.Context, line *models.G
 		}
 		return outcome
 	}
-
-	quantity := line.AcceptedQuantity
-	switch {
-	case quantity == 0:
-		return settle(procurementv1.StockDeliveryStatus_STOCK_DELIVERY_STATUS_DELIVERED,
-			"nothing accepted", outcomeDelivered)
-	case !quantity.IsWhole() || line.ProductVariantID == "":
-		return settle(procurementv1.StockDeliveryStatus_STOCK_DELIVERY_STATUS_FAILED,
-			"a product variant receives whole units of a named variant", outcomeFailed)
-	case grb.stock == nil:
-		if err := grb.grlRepo.RecordDeliveryAttempt(ctx, line.GetID(), "commerce is not configured"); err != nil {
+	wait := func(note string) deliveryOutcome {
+		if err := grb.grlRepo.RecordDeliveryAttempt(ctx, line.GetID(), note); err != nil {
 			log.WithError(err).Error("could not record stock delivery attempt")
 		}
 		return outcomePending
 	}
 
-	err := grb.stock.ReceiveVariantStock(ctx, line.TenantID, line.ProductVariantID, quantity.Units(),
-		stockReference(line))
+	var err error
+	material := line.SupplyKind != int32(procurementv1.SupplyKind_SUPPLY_KIND_PRODUCT_VARIANT)
+	quantity := line.AcceptedQuantity
+	switch {
+	case quantity == 0:
+		return settle(procurementv1.StockDeliveryStatus_STOCK_DELIVERY_STATUS_DELIVERED,
+			"nothing accepted", outcomeDelivered)
+	case material && line.LocationID == "":
+		return settle(procurementv1.StockDeliveryStatus_STOCK_DELIVERY_STATUS_PENDING_TRANSFER,
+			noteChooseLocation, outcomeFailed)
+	case material && grb.materials == nil:
+		return wait("manufacturing is not configured")
+	case material:
+		err = grb.materials.ReceiveMaterial(ctx, materialReceipt(line))
+	case !quantity.IsWhole() || line.ProductVariantID == "":
+		return settle(procurementv1.StockDeliveryStatus_STOCK_DELIVERY_STATUS_FAILED,
+			"a product variant receives whole units of a named variant", outcomeFailed)
+	case grb.stock == nil:
+		return wait("commerce is not configured")
+	default:
+		err = grb.stock.ReceiveVariantStock(ctx, line.TenantID, line.ProductVariantID, quantity.Units(),
+			stockReference(line))
+	}
 	switch {
 	case err == nil:
 		return settle(procurementv1.StockDeliveryStatus_STOCK_DELIVERY_STATUS_DELIVERED, "", outcomeDelivered)
 	case errors.Is(err, ErrDeliveryRefused):
-		log.WithError(err).Warn("commerce refused received stock")
+		log.WithError(err).Warn("the destination refused received stock")
 		return settle(procurementv1.StockDeliveryStatus_STOCK_DELIVERY_STATUS_FAILED, err.Error(), outcomeFailed)
 	default:
 		log.WithError(err).Warn("stock delivery failed; it will be retried")
-		if recErr := grb.grlRepo.RecordDeliveryAttempt(ctx, line.GetID(), err.Error()); recErr != nil {
-			log.WithError(recErr).Error("could not record stock delivery attempt")
-		}
-		return outcomePending
+		return wait(err.Error())
 	}
+}
+
+// materialReceipt describes a raw material line for manufacturing.
+func materialReceipt(line *models.GoodsReceiptLine) MaterialReceipt {
+	receipt := MaterialReceipt{
+		TenantID:    line.TenantID,
+		PartitionID: line.PartitionID,
+		AccessID:    line.AccessID,
+		ItemID:      line.InventoryItemID,
+		LocationID:  line.LocationID,
+		LotNumber:   line.LotNumber,
+		Quantity:    line.AcceptedQuantity.Float(),
+		ReceiptID:   line.GoodsReceiptID,
+		Reference:   stockReference(line),
+	}
+	if line.GoodsReceipt != nil {
+		receipt.PropertyID = line.GoodsReceipt.PropertyID
+	}
+	return receipt
 }
 
 func (grb *goodsReceiptBusiness) DeliverPending(ctx context.Context, limit int) (DeliverySummary, error) {
@@ -206,7 +312,7 @@ func (grb *goodsReceiptBusiness) ResolveLine(
 	case procurementv1.GoodsReceiptLineResolution_GOODS_RECEIPT_LINE_RESOLUTION_BOOKED_MANUALLY:
 		err = grb.resolveBookedManually(ctx, line, req.GetNote())
 	case procurementv1.GoodsReceiptLineResolution_GOODS_RECEIPT_LINE_RESOLUTION_RETRY:
-		err = grb.retryDelivery(ctx, line, req.GetNote())
+		err = grb.retryDelivery(ctx, line, req.GetLocationId(), req.GetNote())
 	case procurementv1.GoodsReceiptLineResolution_GOODS_RECEIPT_LINE_RESOLUTION_UNSPECIFIED:
 		return nil, connect.NewError(connect.CodeInvalidArgument, "resolution is BOOKED_MANUALLY or RETRY")
 	default:
@@ -239,24 +345,43 @@ func (grb *goodsReceiptBusiness) resolveBookedManually(
 	return nil
 }
 
-// retryDelivery puts a refused product variant line back in the queue and
-// pushes it once now; whatever is not settled stays pending for the sweep.
-func (grb *goodsReceiptBusiness) retryDelivery(ctx context.Context, line *models.GoodsReceiptLine, note string) error {
-	if line.SupplyKind != int32(procurementv1.SupplyKind_SUPPLY_KIND_PRODUCT_VARIANT) {
-		return connect.NewError(connect.CodeFailedPrecondition,
-			"only product variant lines are delivered automatically; book raw materials by hand")
+// retryDelivery puts a refused line, or a raw material waiting for a stock
+// location, back in the queue and pushes it once now; whatever is not
+// settled stays pending for the sweep.
+func (grb *goodsReceiptBusiness) retryDelivery(
+	ctx context.Context,
+	line *models.GoodsReceiptLine,
+	locationID, note string,
+) error {
+	from := []int32{int32(procurementv1.StockDeliveryStatus_STOCK_DELIVERY_STATUS_FAILED)}
+	if line.SupplyKind == int32(procurementv1.SupplyKind_SUPPLY_KIND_PRODUCT_VARIANT) {
+		locationID = ""
+	} else {
+		if len(locationID) > maxReferenceID {
+			return connect.NewError(connect.CodeInvalidArgument,
+				fmt.Sprintf("location_id is at most %d characters", maxReferenceID))
+		}
+		if locationID == "" && line.LocationID == "" {
+			return connect.NewError(connect.CodeInvalidArgument,
+				"choose the stock location to book this raw material into")
+		}
+		from = append(from, int32(procurementv1.StockDeliveryStatus_STOCK_DELIVERY_STATUS_PENDING_TRANSFER))
 	}
 	if note == "" {
 		note = "retry requested"
 	}
-	ok, err := grb.grlRepo.Requeue(ctx, line.GetID(), note)
+	ok, err := grb.grlRepo.Requeue(ctx, line.GetID(), from, locationID, note)
 	if err != nil {
 		return data.ErrorConvertToAPI(err)
 	}
 	if !ok {
-		return connect.NewError(connect.CodeFailedPrecondition, "only a line refused by its destination can be retried")
+		return connect.NewError(connect.CodeFailedPrecondition,
+			"only a line refused by its destination, or a raw material awaiting a location, can be retried")
 	}
 	line.DeliveryStatus = int32(procurementv1.StockDeliveryStatus_STOCK_DELIVERY_STATUS_PENDING)
+	if locationID != "" {
+		line.LocationID = locationID
+	}
 	grb.deliverLine(ctx, line)
 	return nil
 }

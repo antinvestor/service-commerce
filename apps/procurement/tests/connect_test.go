@@ -100,7 +100,7 @@ func (cs *ConnectTestSuite) TestRPCsServedAndReceiptAuthorisedOnPOProperty() {
 		acl := propertyACL{"buyer-a": {"property-a"}, "buyer-b": {"property-b"}}
 		server := connect.NewServer()
 		procurementv1connect.RegisterProcurementServiceHandler(server,
-			handlers.NewProcurementServer(ctx, svc, acl, nil, nil))
+			handlers.NewProcurementServer(ctx, svc, acl, nil, nil, nil))
 		mux := http.NewServeMux()
 		connecthttp.Mount(mux, server)
 		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

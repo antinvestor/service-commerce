@@ -983,6 +983,7 @@ class GoodsReceiptLine extends $pb.GeneratedMessage {
     $core.String? resolvedBy,
     $0.Timestamp? resolvedAt,
     $core.String? resolutionNote,
+    $core.String? locationId,
   }) {
     final result = GoodsReceiptLine._();
     if (id != null) result.id = id;
@@ -1004,6 +1005,7 @@ class GoodsReceiptLine extends $pb.GeneratedMessage {
     if (resolvedBy != null) result.resolvedBy = resolvedBy;
     if (resolvedAt != null) result.resolvedAt = resolvedAt;
     if (resolutionNote != null) result.resolutionNote = resolutionNote;
+    if (locationId != null) result.locationId = locationId;
     return result;
   }
 
@@ -1042,6 +1044,7 @@ class GoodsReceiptLine extends $pb.GeneratedMessage {
     ..aOM<$0.Timestamp>(17, _omitFieldNames ? '' : 'resolvedAt',
         subBuilder: $0.Timestamp.$_createMessage)
     ..aOS(18, _omitFieldNames ? '' : 'resolutionNote')
+    ..aOS(19, _omitFieldNames ? '' : 'locationId')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -1232,6 +1235,16 @@ class GoodsReceiptLine extends $pb.GeneratedMessage {
   $core.bool hasResolutionNote() => $_has(17);
   @$pb.TagNumber(18)
   void clearResolutionNote() => $_clearField(18);
+
+  /// Where a raw material is put away in manufacturing inventory.
+  @$pb.TagNumber(19)
+  $core.String get locationId => $_getSZ(18);
+  @$pb.TagNumber(19)
+  set locationId($core.String value) => $_setString(18, value);
+  @$pb.TagNumber(19)
+  $core.bool hasLocationId() => $_has(18);
+  @$pb.TagNumber(19)
+  void clearLocationId() => $_clearField(19);
 }
 
 class PurchaseOrderSuggestion extends $pb.GeneratedMessage {
@@ -3461,7 +3474,10 @@ class GoodsReceiptCreateRequest extends $pb.GeneratedMessage {
   @$pb.TagNumber(5)
   $pb.PbList<GoodsReceiptLineInput> get lines => $_getList(4);
 
-  /// Manufacturing stock location raw materials are received into.
+  /// Manufacturing stock location raw materials are put away in. With one,
+  /// raw material lines are booked into manufacturing inventory
+  /// automatically; without, they wait (STOCK_DELIVERY_STATUS_PENDING_TRANSFER)
+  /// until staff choose a location or book them by hand.
   @$pb.TagNumber(6)
   $core.String get stockLocationId => $_getSZ(5);
   @$pb.TagNumber(6)
@@ -4257,12 +4273,14 @@ class GoodsReceiptLineResolveRequest extends $pb.GeneratedMessage {
     $core.String? lineId,
     GoodsReceiptLineResolution? resolution,
     $core.String? note,
+    $core.String? locationId,
   }) {
     final result = GoodsReceiptLineResolveRequest._();
     if (goodsReceiptId != null) result.goodsReceiptId = goodsReceiptId;
     if (lineId != null) result.lineId = lineId;
     if (resolution != null) result.resolution = resolution;
     if (note != null) result.note = note;
+    if (locationId != null) result.locationId = locationId;
     return result;
   }
 
@@ -4284,6 +4302,7 @@ class GoodsReceiptLineResolveRequest extends $pb.GeneratedMessage {
     ..aE<GoodsReceiptLineResolution>(3, _omitFieldNames ? '' : 'resolution',
         enumValues: GoodsReceiptLineResolution.values)
     ..aOS(4, _omitFieldNames ? '' : 'note')
+    ..aOS(5, _omitFieldNames ? '' : 'locationId')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -4350,6 +4369,17 @@ class GoodsReceiptLineResolveRequest extends $pb.GeneratedMessage {
   $core.bool hasNote() => $_has(3);
   @$pb.TagNumber(4)
   void clearNote() => $_clearField(4);
+
+  /// RETRY of a raw material: the manufacturing stock location to book it
+  /// into; required unless the line already has one.
+  @$pb.TagNumber(5)
+  $core.String get locationId => $_getSZ(4);
+  @$pb.TagNumber(5)
+  set locationId($core.String value) => $_setString(4, value);
+  @$pb.TagNumber(5)
+  $core.bool hasLocationId() => $_has(4);
+  @$pb.TagNumber(5)
+  void clearLocationId() => $_clearField(5);
 }
 
 class GoodsReceiptLineResolveResponse extends $pb.GeneratedMessage {

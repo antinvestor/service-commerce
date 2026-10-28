@@ -20,13 +20,17 @@ typedef SupplyPickerBuilder =
 ///
 /// Without one, the supplier item form takes a pasted, validated ID.
 class SupplyPickers {
-  const SupplyPickers({this.material, this.productVariant});
+  const SupplyPickers({this.material, this.productVariant, this.stockLocation});
 
   /// Picks a manufacturing inventory item.
   final SupplyPickerBuilder? material;
 
   /// Picks a commerce product variant.
   final SupplyPickerBuilder? productVariant;
+
+  /// Picks the manufacturing stock location raw materials are put away in.
+  /// Without one, received raw materials are booked by hand.
+  final SupplyPickerBuilder? stockLocation;
 
   SupplyPickerBuilder? forKind(SupplyKind kind) =>
       kind == SupplyKind.SUPPLY_KIND_PRODUCT_VARIANT

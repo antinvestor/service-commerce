@@ -35,6 +35,8 @@ import (
 const (
 	// maxReceiptLines bounds one goods receipt.
 	maxReceiptLines = 200
+	// maxReferenceID bounds an id naming another service's record.
+	maxReferenceID = 50
 	// Delivery sweep bounds.
 	defaultDeliverLimit = 100
 	maxDeliverLimit     = 500
@@ -79,20 +81,23 @@ func NewGoodsReceiptBusiness(
 	grlRepo repository.GoodsReceiptLineRepository,
 	poRepo repository.PurchaseOrderRepository,
 	stock StockDestination,
+	materials MaterialDestination,
 ) GoodsReceiptBusiness {
 	return &goodsReceiptBusiness{
-		grRepo:  grRepo,
-		grlRepo: grlRepo,
-		poRepo:  poRepo,
-		stock:   stock,
+		grRepo:    grRepo,
+		grlRepo:   grlRepo,
+		poRepo:    poRepo,
+		stock:     stock,
+		materials: materials,
 	}
 }
 
 type goodsReceiptBusiness struct {
-	grRepo  repository.GoodsReceiptRepository
-	grlRepo repository.GoodsReceiptLineRepository
-	poRepo  repository.PurchaseOrderRepository
-	stock   StockDestination
+	grRepo    repository.GoodsReceiptRepository
+	grlRepo   repository.GoodsReceiptLineRepository
+	poRepo    repository.PurchaseOrderRepository
+	stock     StockDestination
+	materials MaterialDestination
 }
 
 func (grb *goodsReceiptBusiness) CreateGoodsReceipt(
@@ -157,6 +162,7 @@ func (grb *goodsReceiptBusiness) CreateGoodsReceipt(
 	// retried by DeliverPending.
 	for _, line := range lines {
 		if line.DeliveryStatus == int32(procurementv1.StockDeliveryStatus_STOCK_DELIVERY_STATUS_PENDING) {
+			line.GoodsReceipt = gr
 			grb.deliverLine(ctx, line)
 		}
 	}
@@ -200,6 +206,10 @@ func (grb *goodsReceiptBusiness) validateGoodsReceipt(
 		return nil, nil, connect.NewError(connect.CodeFailedPrecondition,
 			"goods are received only against a submitted, confirmed or partially received purchase order")
 	}
+	if len(req.GetStockLocationId()) > maxReferenceID {
+		return nil, nil, connect.NewError(connect.CodeInvalidArgument,
+			fmt.Sprintf("stock_location_id is at most %d characters", maxReferenceID))
+	}
 	if len(req.GetLines()) == 0 || len(req.GetLines()) > maxReceiptLines {
 		return nil, nil, connect.NewError(connect.CodeInvalidArgument,
 			fmt.Sprintf("a goods receipt has between 1 and %d lines", maxReceiptLines))
@@ -228,7 +238,7 @@ func (grb *goodsReceiptBusiness) validateGoodsReceipt(
 			return nil, nil, lineErr
 		}
 		requested[pol.GetID()] += quantity
-		lines = append(lines, receiptLine(in, pol, quantity))
+		lines = append(lines, receiptLine(in, pol, quantity, req.GetStockLocationId()))
 	}
 	for lineID, qty := range requested {
 		pol := poLines[lineID]
@@ -260,12 +270,14 @@ func receivableLine(pol *models.PurchaseOrderLine, quantity models.Quantity) err
 
 // receiptLine maps a request line onto a receipt line. Accepted equals
 // received until an inspection step records rejections. Resale stock waits
-// to be pushed to commerce; raw materials wait for a transfer into
-// manufacturing inventory, which takes no receipts from procurement yet.
+// to be pushed to commerce. Raw materials wait to be pushed into
+// manufacturing inventory at the receipt's stock location; without one they
+// wait for staff to choose a location or book them by hand.
 func receiptLine(
 	in *procurementv1.GoodsReceiptLineInput,
 	pol *models.PurchaseOrderLine,
 	quantity models.Quantity,
+	locationID string,
 ) *models.GoodsReceiptLine {
 	var expiry *time.Time
 	if in.GetExpiryDate() != nil {
@@ -282,15 +294,21 @@ func receiptLine(
 		LotNumber:           in.GetLotNumber(),
 		ExpiryDate:          expiry,
 		Unit:                pol.Unit,
+		DeliveryStatus:      int32(procurementv1.StockDeliveryStatus_STOCK_DELIVERY_STATUS_PENDING),
 	}
-	if pol.SupplyKind == int32(procurementv1.SupplyKind_SUPPLY_KIND_PRODUCT_VARIANT) {
-		line.DeliveryStatus = int32(procurementv1.StockDeliveryStatus_STOCK_DELIVERY_STATUS_PENDING)
-	} else {
-		line.DeliveryStatus = int32(procurementv1.StockDeliveryStatus_STOCK_DELIVERY_STATUS_PENDING_TRANSFER)
-		line.DeliveryNote = "record this stock in manufacturing inventory; it does not accept procurement receipts yet"
+	if pol.SupplyKind != int32(procurementv1.SupplyKind_SUPPLY_KIND_PRODUCT_VARIANT) {
+		line.LocationID = locationID
+		if locationID == "" {
+			line.DeliveryStatus = int32(procurementv1.StockDeliveryStatus_STOCK_DELIVERY_STATUS_PENDING_TRANSFER)
+			line.DeliveryNote = noteChooseLocation
+		}
 	}
 	return line
 }
+
+// noteChooseLocation is left on a raw material line received without a
+// stock location.
+const noteChooseLocation = "choose a stock location to book this into manufacturing inventory, or book it there by hand"
 
 // resolveReceivedBy extracts the subject ID from the context claims.
 func resolveReceivedBy(ctx context.Context) string {

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../providers/supply_pickers.dart';
 import '../providers/procurement_providers.dart';
 import '../routing/procurement_paths.dart';
 import '../util/idempotency.dart';
@@ -42,6 +43,7 @@ class _GoodsReceiptWizardScreenState
   int _step = 0;
   final Map<String, _ReceiptLineInput> _receiptLines = {};
   String _notes = '';
+  SupplyChoice? _location;
   bool _submitting = false;
 
   /// One key per wizard session, so resubmitting after a lost response
@@ -69,6 +71,8 @@ class _GoodsReceiptWizardScreenState
         ..purchaseOrderId = widget.poId
         ..notes = _notes;
       if (propertyId.isNotEmpty) request.propertyId = propertyId;
+      final location = _location;
+      if (location != null) request.stockLocationId = location.id;
 
       for (final entry in _receiptLines.entries) {
         if (entry.value.quantity > 0) {
@@ -246,6 +250,11 @@ class _GoodsReceiptWizardScreenState
                   ),
                   2 => _StepGRConfirm(
                     receiptLines: _receiptLines,
+                    pickLocation: ref
+                        .watch(supplyPickersProvider)
+                        .stockLocation,
+                    location: _location,
+                    onLocationPicked: (l) => setState(() => _location = l),
                     onNotesChanged: (n) => setState(() => _notes = n),
                   ),
                   _ => const SizedBox.shrink(),
@@ -497,10 +506,18 @@ class _StepLotNumbers extends StatelessWidget {
 class _StepGRConfirm extends StatelessWidget {
   const _StepGRConfirm({
     required this.receiptLines,
+    required this.pickLocation,
+    required this.location,
+    required this.onLocationPicked,
     required this.onNotesChanged,
   });
 
   final Map<String, _ReceiptLineInput> receiptLines;
+
+  /// Picks where raw materials are put away; null when the app has none.
+  final SupplyPickerBuilder? pickLocation;
+  final SupplyChoice? location;
+  final ValueChanged<SupplyChoice> onLocationPicked;
   final ValueChanged<String> onNotesChanged;
 
   @override
@@ -509,6 +526,8 @@ class _StepGRConfirm extends StatelessWidget {
     final activeLines = receiptLines.entries
         .where((e) => e.value.quantity > 0)
         .toList();
+    final materials = activeLines.any((e) => !e.value.wholeUnits);
+    final pick = pickLocation;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -524,6 +543,28 @@ class _StepGRConfirm extends StatelessWidget {
           '${activeLines.length} lines to receive',
           style: theme.textTheme.bodyMedium,
         ),
+        if (materials && pick != null) ...[
+          const SizedBox(height: 16),
+          Text(
+            'Where are the raw materials put away?',
+            style: theme.textTheme.labelLarge,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            location == null
+                ? 'Pick a stock location to book them into manufacturing '
+                      'inventory now. Without one, choose it later from the '
+                      'receipt.'
+                : 'Booked into ${location!.label.isEmpty ? location!.id : location!.label}.',
+            key: const Key('receipt_location_hint'),
+            style: theme.textTheme.bodySmall,
+          ),
+          const SizedBox(height: 8),
+          KeyedSubtree(
+            key: const Key('receipt_location_picker'),
+            child: pick(context, onLocationPicked),
+          ),
+        ],
         const SizedBox(height: 16),
         TextField(
           onChanged: onNotesChanged,

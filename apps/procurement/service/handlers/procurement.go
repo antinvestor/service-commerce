@@ -51,6 +51,7 @@ func NewProcurementServer(
 	authzMiddleware authz.Middleware,
 	materials business.MaterialSource,
 	stock business.StockDestination,
+	materialStock business.MaterialDestination,
 ) *ProcurementServer {
 	workMan := svc.WorkManager()
 	dbPool := svc.DatastoreManager().GetPool(ctx, datastore.DefaultPoolName)
@@ -68,8 +69,10 @@ func NewProcurementServer(
 		purchaseOrderBusiness: business.NewPurchaseOrderBusiness(
 			ctx, poRepo, polRepo, supplierRepo, supplierItemRepo,
 		),
-		goodsReceiptBusiness: business.NewGoodsReceiptBusiness(ctx, grRepo, grlRepo, poRepo, stock),
-		suggestionBusiness:   business.NewSuggestionBusiness(materials, supplierItemRepo),
+		goodsReceiptBusiness: business.NewGoodsReceiptBusiness(
+			ctx, grRepo, grlRepo, poRepo, stock, materialStock,
+		),
+		suggestionBusiness: business.NewSuggestionBusiness(materials, supplierItemRepo),
 	}
 }
 

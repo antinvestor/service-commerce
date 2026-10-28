@@ -239,8 +239,8 @@ type GoodsReceiptLine struct {
 	// DeliveryStatus tracks the accepted stock to its destination
 	// (procurementv1.StockDeliveryStatus); it is written with the receipt and
 	// moves PENDING to DELIVERED or FAILED. Staff move PENDING_TRANSFER and
-	// FAILED lines to RESOLVED once booked by hand, or a FAILED line back to
-	// PENDING to try again.
+	// FAILED lines to RESOLVED once booked by hand, or back to PENDING to try
+	// again.
 	DeliveryStatus   int32
 	DeliveryAttempts int32
 	DeliveryNote     string `gorm:"type:text"`
@@ -252,6 +252,9 @@ type GoodsReceiptLine struct {
 	LotNumber      string `gorm:"type:varchar(255)"`
 	ExpiryDate     *time.Time
 	Unit           string `gorm:"type:varchar(50)"`
+	// LocationID is the manufacturing stock location a raw material is put
+	// away in.
+	LocationID string `gorm:"type:varchar(50)"`
 
 	GoodsReceipt *GoodsReceipt `gorm:"foreignKey:GoodsReceiptID"`
 }
@@ -266,6 +269,7 @@ func (grl *GoodsReceiptLine) ToAPI() *procurementv1.GoodsReceiptLine {
 		AcceptedQuantity:    grl.AcceptedQuantity.Float(),
 		RejectedQuantity:    grl.RejectedQuantity.Float(),
 		RejectionReason:     grl.RejectionReason,
+		LocationId:          grl.LocationID,
 		LotNumber:           grl.LotNumber,
 		Unit:                grl.Unit,
 		SupplyKind:          procurementv1.SupplyKind(grl.SupplyKind),

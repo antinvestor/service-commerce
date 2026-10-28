@@ -262,6 +262,7 @@ func (r *goodsReceiptLineRepository) ListPendingDelivery(
 ) ([]*models.GoodsReceiptLine, error) {
 	var lines []*models.GoodsReceiptLine
 	err := r.Pool().DB(ctx, false).
+		Preload("GoodsReceipt").
 		Where("delivery_status = ?", deliveryStatusPending).
 		Order("delivery_attempts ASC, created_at ASC, id ASC").
 		Limit(limit).
@@ -308,6 +309,7 @@ func (r *goodsReceiptLineRepository) GetInReceipt(
 ) (*models.GoodsReceiptLine, error) {
 	line := &models.GoodsReceiptLine{}
 	err := r.Pool().DB(ctx, false).
+		Preload("GoodsReceipt").
 		First(line, "id = ? AND goods_receipt_id = ?", lineID, goodsReceiptID).Error
 	return line, err
 }
@@ -333,14 +335,23 @@ func (r *goodsReceiptLineRepository) Resolve(
 	return result.RowsAffected == 1, nil
 }
 
-func (r *goodsReceiptLineRepository) Requeue(ctx context.Context, lineID, note string) (bool, error) {
+func (r *goodsReceiptLineRepository) Requeue(
+	ctx context.Context,
+	lineID string,
+	from []int32,
+	locationID, note string,
+) (bool, error) {
+	updates := map[string]any{
+		"delivery_status": deliveryStatusPending,
+		"delivery_note":   note,
+		"delivered_at":    nil,
+	}
+	if locationID != "" {
+		updates["location_id"] = locationID
+	}
 	result := r.Pool().DB(ctx, false).Model(&models.GoodsReceiptLine{}).
-		Where("id = ? AND delivery_status = ?", lineID, deliveryStatusFailed).
-		UpdateColumns(map[string]any{
-			"delivery_status": deliveryStatusPending,
-			"delivery_note":   note,
-			"delivered_at":    nil,
-		})
+		Where("id = ? AND delivery_status IN ?", lineID, from).
+		UpdateColumns(updates)
 	if result.Error != nil {
 		return false, fmt.Errorf("requeue receipt line %s: %w", lineID, result.Error)
 	}

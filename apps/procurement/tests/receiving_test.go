@@ -68,6 +68,39 @@ func (f *fakeStock) ReceiveVariantStock(_ context.Context, tenantID, variantID s
 	return nil
 }
 
+// fakeInventory stands in for manufacturing inventory: it books a
+// reference once. failNext errors are returned before anything is booked;
+// loseNext calls book and then fail, as when manufacturing's answer is lost.
+type fakeInventory struct {
+	booked   map[string]business.MaterialReceipt
+	onHand   map[string]float64
+	calls    int
+	failNext []error
+	loseNext int
+}
+
+func newFakeInventory() *fakeInventory {
+	return &fakeInventory{booked: map[string]business.MaterialReceipt{}, onHand: map[string]float64{}}
+}
+
+func (f *fakeInventory) ReceiveMaterial(_ context.Context, receipt business.MaterialReceipt) error {
+	f.calls++
+	if len(f.failNext) > 0 {
+		err := f.failNext[0]
+		f.failNext = f.failNext[1:]
+		return err
+	}
+	if _, ok := f.booked[receipt.Reference]; !ok {
+		f.booked[receipt.Reference] = receipt
+		f.onHand[receipt.ItemID+"@"+receipt.LocationID] += receipt.Quantity
+	}
+	if f.loseNext > 0 {
+		f.loseNext--
+		return errors.New("connection reset by peer")
+	}
+	return nil
+}
+
 func usdPrice(units int64) *commonv1.Money { return &commonv1.Money{CurrencyCode: "USD", Units: units} }
 
 // supplierWith creates an active supplier and one item for it.
@@ -203,9 +236,11 @@ func (gts *GoodsReceiptTestSuite) TestReceipt_ResaleStockReachesCommerceOnce() {
 	})
 }
 
-// Raw materials are recorded for transfer into manufacturing inventory and
-// never sent to commerce.
-func (gts *GoodsReceiptTestSuite) TestReceipt_RawMaterialAwaitsManufacturingTransfer() {
+// Raw materials received into a stock location are booked into
+// manufacturing inventory once, in the receipt's tenancy and property, and
+// never sent to commerce. Received without a location, they wait until staff
+// choose one.
+func (gts *GoodsReceiptTestSuite) TestReceipt_RawMaterialReachesManufacturingOnce() {
 	t := gts.T()
 
 	gts.WithTestDependancies(t, func(t *testing.T, dep *definition.DependencyOption) {
@@ -217,21 +252,80 @@ func (gts *GoodsReceiptTestSuite) TestReceipt_RawMaterialAwaitsManufacturingTran
 			InventoryItemId: "flour", Unit: "kg",
 		})
 		require.Equal(t, procurementv1.SupplyKind_SUPPLY_KIND_MATERIAL, item.GetSupplyKind())
-		po := gts.submittedPO(ctx, biz, supplier.GetId(), item.GetId(), 12.5)
+		po := gts.submittedPO(ctx, biz, supplier.GetId(), item.GetId(), 20)
 
+		// Manufacturing's answer is lost: the line stays pending, and the
+		// sweep's resend under the same reference is booked once.
+		biz.materials.loseNext = 1
 		req := receiveOn(po, 12.5)
 		req.StockLocationId = "store-1"
+		req.Lines[0].LotNumber = "LOT-7"
 		gr, err := biz.grBiz.CreateGoodsReceipt(ctx, req)
 		require.NoError(t, err)
 		require.Equal(t, "store-1", gr.GetStockLocationId())
-		require.Equal(t, procurementv1.StockDeliveryStatus_STOCK_DELIVERY_STATUS_PENDING_TRANSFER,
-			gr.GetLines()[0].GetDeliveryStatus())
-		require.Equal(t, procurementv1.SupplyKind_SUPPLY_KIND_MATERIAL, gr.GetLines()[0].GetSupplyKind())
+		line := gr.GetLines()[0]
+		require.Equal(t, "store-1", line.GetLocationId())
+		require.Equal(t, procurementv1.StockDeliveryStatus_STOCK_DELIVERY_STATUS_PENDING, line.GetDeliveryStatus())
 
 		summary, err := biz.grBiz.DeliverPending(ctx, 10)
 		require.NoError(t, err)
+		require.Equal(t, business.DeliverySummary{Delivered: 1}, summary)
+		require.InDelta(t, 12.5, biz.materials.onHand["flour@store-1"], 0.000001)
+		require.Equal(t, 2, biz.materials.calls)
+		require.Len(t, biz.materials.booked, 1)
+		for _, booked := range biz.materials.booked {
+			require.Equal(t, "tenant-1", booked.TenantID)
+			require.Equal(t, "partition-1", booked.PartitionID)
+			require.Equal(t, "property-001", booked.PropertyID)
+			require.Equal(t, "LOT-7", booked.LotNumber)
+			require.Equal(t, gr.GetId(), booked.ReceiptID)
+		}
+		require.Zero(t, biz.stock.calls, "raw materials never go to commerce")
+
+		// Received without a location, the line waits for staff.
+		waiting, err := biz.grBiz.CreateGoodsReceipt(ctx, receiveOn(po, 2.5))
+		require.NoError(t, err)
+		require.Equal(t, procurementv1.StockDeliveryStatus_STOCK_DELIVERY_STATUS_PENDING_TRANSFER,
+			waiting.GetLines()[0].GetDeliveryStatus())
+		summary, err = biz.grBiz.DeliverPending(ctx, 10)
+		require.NoError(t, err)
 		require.Equal(t, business.DeliverySummary{}, summary)
-		require.Zero(t, biz.stock.calls)
+
+		// Staff choose a location; it is booked straight away.
+		retry := func(location string) (*procurementv1.GoodsReceipt, error) {
+			return biz.grBiz.ResolveLine(ctx, &procurementv1.GoodsReceiptLineResolveRequest{
+				GoodsReceiptId: waiting.GetId(), LineId: waiting.GetLines()[0].GetId(),
+				Resolution: procurementv1.GoodsReceiptLineResolution_GOODS_RECEIPT_LINE_RESOLUTION_RETRY,
+				LocationId: location,
+			})
+		}
+		_, err = retry("")
+		require.Equal(t, connect.CodeInvalidArgument, connect.CodeOf(err))
+		sent, err := retry("store-2")
+		require.NoError(t, err)
+		require.Equal(t, procurementv1.StockDeliveryStatus_STOCK_DELIVERY_STATUS_DELIVERED,
+			sent.GetLines()[0].GetDeliveryStatus())
+		require.Equal(t, "store-2", sent.GetLines()[0].GetLocationId())
+		require.InDelta(t, 2.5, biz.materials.onHand["flour@store-2"], 0.000001)
+
+		// A location manufacturing refuses is left for staff, who may send
+		// it elsewhere.
+		biz.materials.failNext = []error{fmt.Errorf("%w: location not found", business.ErrDeliveryRefused)}
+		bad := receiveOn(po, 5)
+		bad.StockLocationId = "gone"
+		refused, err := biz.grBiz.CreateGoodsReceipt(ctx, bad)
+		require.NoError(t, err)
+		require.Equal(t, procurementv1.StockDeliveryStatus_STOCK_DELIVERY_STATUS_FAILED,
+			refused.GetLines()[0].GetDeliveryStatus())
+		moved, err := biz.grBiz.ResolveLine(ctx, &procurementv1.GoodsReceiptLineResolveRequest{
+			GoodsReceiptId: refused.GetId(), LineId: refused.GetLines()[0].GetId(),
+			Resolution: procurementv1.GoodsReceiptLineResolution_GOODS_RECEIPT_LINE_RESOLUTION_RETRY,
+			LocationId: "store-1",
+		})
+		require.NoError(t, err)
+		require.Equal(t, procurementv1.StockDeliveryStatus_STOCK_DELIVERY_STATUS_DELIVERED,
+			moved.GetLines()[0].GetDeliveryStatus())
+		require.InDelta(t, 17.5, biz.materials.onHand["flour@store-1"], 0.000001)
 	})
 }
 
@@ -265,7 +359,7 @@ func (gts *GoodsReceiptTestSuite) TestReceipt_StaffResolveLines() {
 		require.NoError(t, err)
 
 		_, err = resolve(matGR, retry, "")
-		require.Equal(t, connect.CodeFailedPrecondition, connect.CodeOf(err), "raw materials are not pushed")
+		require.Equal(t, connect.CodeInvalidArgument, connect.CodeOf(err), "a raw material needs a location")
 		_, err = resolve(matGR, procurementv1.GoodsReceiptLineResolution_GOODS_RECEIPT_LINE_RESOLUTION_UNSPECIFIED, "")
 		require.Equal(t, connect.CodeInvalidArgument, connect.CodeOf(err))
 		_, err = resolve(matGR, booked, strings.Repeat("x", 1001))

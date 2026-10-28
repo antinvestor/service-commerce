@@ -327,8 +327,8 @@ enum StockDeliveryStatus {
   STOCK_DELIVERY_STATUS_PENDING = 1;
   // Landed at the destination exactly once.
   STOCK_DELIVERY_STATUS_DELIVERED = 2;
-  // Recorded for transfer into manufacturing inventory, which does not yet
-  // accept receipts from procurement; book it there by hand.
+  // A raw material received without a stock location: RETRY with one to
+  // book it into manufacturing inventory, or book it there by hand.
   STOCK_DELIVERY_STATUS_PENDING_TRANSFER = 3;
   // The destination refused it for good (see delivery_note); needs staff.
   STOCK_DELIVERY_STATUS_FAILED = 4;
@@ -343,8 +343,9 @@ enum GoodsReceiptLineResolution {
   // The stock was booked at its destination by hand (PENDING_TRANSFER or
   // FAILED lines); the line becomes STOCK_DELIVERY_STATUS_RESOLVED.
   GOODS_RECEIPT_LINE_RESOLUTION_BOOKED_MANUALLY = 1;
-  // Try a FAILED product variant line again: it goes back to PENDING and is
-  // pushed once straight away; the sweep retries it if that fails.
+  // Try a FAILED line again, or send a PENDING_TRANSFER raw material to the
+  // location given: it goes back to PENDING and is pushed once straight
+  // away; the sweep retries it if that fails.
   GOODS_RECEIPT_LINE_RESOLUTION_RETRY = 2;
 }
 
@@ -443,6 +444,8 @@ message GoodsReceiptLine {
   string resolved_by = 16;
   google.protobuf.Timestamp resolved_at = 17;
   string resolution_note = 18;
+  // Where a raw material is put away in manufacturing inventory.
+  string location_id = 19;
 }
 
 message PurchaseOrderSuggestion {
@@ -603,7 +606,10 @@ message GoodsReceiptCreateRequest {
   string property_id = 3;
   string notes = 4;
   repeated GoodsReceiptLineInput lines = 5;
-  // Manufacturing stock location raw materials are received into.
+  // Manufacturing stock location raw materials are put away in. With one,
+  // raw material lines are booked into manufacturing inventory
+  // automatically; without, they wait (STOCK_DELIVERY_STATUS_PENDING_TRANSFER)
+  // until staff choose a location or book them by hand.
   string stock_location_id = 6;
 }
 
@@ -672,6 +678,9 @@ message GoodsReceiptLineResolveRequest {
   GoodsReceiptLineResolution resolution = 3;
   // Why, or where the stock was booked; at most 1000 characters.
   string note = 4;
+  // RETRY of a raw material: the manufacturing stock location to book it
+  // into; required unless the line already has one.
+  string location_id = 5;
 }
 
 message GoodsReceiptLineResolveResponse {

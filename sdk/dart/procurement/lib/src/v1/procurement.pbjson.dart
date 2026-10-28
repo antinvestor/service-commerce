@@ -622,6 +622,7 @@ const GoodsReceiptLine$json = {
       '10': 'resolvedAt'
     },
     {'1': 'resolution_note', '3': 18, '4': 1, '5': 9, '10': 'resolutionNote'},
+    {'1': 'location_id', '3': 19, '4': 1, '5': 9, '10': 'locationId'},
   ],
 };
 
@@ -641,7 +642,8 @@ final $typed_data.Uint8List goodsReceiptLineDescriptor = $convert.base64Decode(
     'YxLlN0b2NrRGVsaXZlcnlTdGF0dXNSDmRlbGl2ZXJ5U3RhdHVzEiMKDWRlbGl2ZXJ5X25vdGUY'
     'DyABKAlSDGRlbGl2ZXJ5Tm90ZRIfCgtyZXNvbHZlZF9ieRgQIAEoCVIKcmVzb2x2ZWRCeRI7Cg'
     'tyZXNvbHZlZF9hdBgRIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXBSCnJlc29sdmVk'
-    'QXQSJwoPcmVzb2x1dGlvbl9ub3RlGBIgASgJUg5yZXNvbHV0aW9uTm90ZQ==');
+    'QXQSJwoPcmVzb2x1dGlvbl9ub3RlGBIgASgJUg5yZXNvbHV0aW9uTm90ZRIfCgtsb2NhdGlvbl'
+    '9pZBgTIAEoCVIKbG9jYXRpb25JZA==');
 
 @$core.Deprecated('Use purchaseOrderSuggestionDescriptor instead')
 const PurchaseOrderSuggestion$json = {
@@ -1535,16 +1537,17 @@ const GoodsReceiptLineResolveRequest$json = {
       '10': 'resolution'
     },
     {'1': 'note', '3': 4, '4': 1, '5': 9, '10': 'note'},
+    {'1': 'location_id', '3': 5, '4': 1, '5': 9, '10': 'locationId'},
   ],
 };
 
 /// Descriptor for `GoodsReceiptLineResolveRequest`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List goodsReceiptLineResolveRequestDescriptor =
-    $convert.base64Decode(
-        'Ch5Hb29kc1JlY2VpcHRMaW5lUmVzb2x2ZVJlcXVlc3QSKAoQZ29vZHNfcmVjZWlwdF9pZBgBIA'
-        'EoCVIOZ29vZHNSZWNlaXB0SWQSFwoHbGluZV9pZBgCIAEoCVIGbGluZUlkEkoKCnJlc29sdXRp'
-        'b24YAyABKA4yKi5wcm9jdXJlbWVudC52MS5Hb29kc1JlY2VpcHRMaW5lUmVzb2x1dGlvblIKcm'
-        'Vzb2x1dGlvbhISCgRub3RlGAQgASgJUgRub3Rl');
+final $typed_data.Uint8List goodsReceiptLineResolveRequestDescriptor = $convert.base64Decode(
+    'Ch5Hb29kc1JlY2VpcHRMaW5lUmVzb2x2ZVJlcXVlc3QSKAoQZ29vZHNfcmVjZWlwdF9pZBgBIA'
+    'EoCVIOZ29vZHNSZWNlaXB0SWQSFwoHbGluZV9pZBgCIAEoCVIGbGluZUlkEkoKCnJlc29sdXRp'
+    'b24YAyABKA4yKi5wcm9jdXJlbWVudC52MS5Hb29kc1JlY2VpcHRMaW5lUmVzb2x1dGlvblIKcm'
+    'Vzb2x1dGlvbhISCgRub3RlGAQgASgJUgRub3RlEh8KC2xvY2F0aW9uX2lkGAUgASgJUgpsb2Nh'
+    'dGlvbklk');
 
 @$core.Deprecated('Use goodsReceiptLineResolveResponseDescriptor instead')
 const GoodsReceiptLineResolveResponse$json = {

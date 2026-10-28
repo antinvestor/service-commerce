@@ -26,15 +26,21 @@ String suppliedId(
 /// and received in whole units.
 bool needsWholeUnits(SupplyKind kind) => isResale(kind);
 
-/// Whether a receipt line's stock still needs a person: refused by the shop,
-/// or a raw material to book into inventory by hand.
+/// Whether a receipt line's stock still needs a person: refused by its
+/// destination, or a raw material waiting for a stock location.
 bool deliveryNeedsAction(GoodsReceiptLine line) =>
     line.deliveryStatus == StockDeliveryStatus.STOCK_DELIVERY_STATUS_FAILED ||
     line.deliveryStatus ==
         StockDeliveryStatus.STOCK_DELIVERY_STATUS_PENDING_TRANSFER;
 
-/// Whether staff can retry a receipt line's delivery: a product variant the
-/// shop refused. Raw materials are only ever booked by hand.
-bool deliveryRetryable(GoodsReceiptLine line) =>
-    line.deliveryStatus == StockDeliveryStatus.STOCK_DELIVERY_STATUS_FAILED &&
-    isResale(line.supplyKind);
+/// Whether staff can send a receipt line's stock again: anything its
+/// destination refused, and a raw material still waiting for a stock
+/// location (which then needs one).
+bool deliveryRetryable(GoodsReceiptLine line) => deliveryNeedsAction(line);
+
+/// Whether sending [line] again needs a stock location chosen first.
+bool needsLocation(GoodsReceiptLine line) =>
+    !isResale(line.supplyKind) &&
+    (line.locationId.isEmpty ||
+        line.deliveryStatus ==
+            StockDeliveryStatus.STOCK_DELIVERY_STATUS_FAILED);

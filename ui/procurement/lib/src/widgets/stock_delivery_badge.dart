@@ -16,9 +16,9 @@ import 'package:flutter/material.dart';
         'Added to stock.',
       ),
       StockDeliveryStatus.STOCK_DELIVERY_STATUS_PENDING_TRANSFER => (
-        'Book into inventory',
+        'Needs location',
         Colors.blue,
-        'Record this stock-in in manufacturing inventory by hand.',
+        'Choose a stock location to book it into manufacturing inventory.',
       ),
       StockDeliveryStatus.STOCK_DELIVERY_STATUS_FAILED => (
         'Failed',

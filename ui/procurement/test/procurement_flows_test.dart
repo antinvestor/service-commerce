@@ -765,14 +765,18 @@ void main() {
       expect(
         find.descendant(
           of: summary,
-          matching: find.textContaining('1 line refused where the stock was sent'),
+          matching: find.textContaining(
+            '1 line refused where the stock was sent',
+          ),
         ),
         findsOneWidget,
       );
       expect(
         find.descendant(
           of: summary,
-          matching: find.textContaining('1 line of raw material waiting for a stock'),
+          matching: find.textContaining(
+            '1 line of raw material waiting for a stock',
+          ),
         ),
         findsOneWidget,
       );

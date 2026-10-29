@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"slices"
+	"strings"
 	"time"
 
 	commonv1 "buf.build/gen/go/antinvestor/common/protocolbuffers/go/common/v1"
@@ -119,6 +120,10 @@ type OrderPayment struct {
 	Currency string `gorm:"type:varchar(3)"`
 	// AmountNanos is the instalment in nanos of Currency.
 	AmountNanos int64
+	// ExcessNanos is the part of AmountNanos the order did not owe: what
+	// went past the total, or all of it on a cancelled order. It is refunded
+	// to the buyer and is never booked as a sale.
+	ExcessNanos int64
 	// Reference is the checkout session ref or the shop's receipt reference.
 	Reference  string    `gorm:"type:varchar(100);uniqueIndex:idx_order_payment_reference"`
 	PaymentID  string    `gorm:"type:varchar(64)"`
@@ -130,17 +135,104 @@ type OrderPayment struct {
 	LedgerTransactionID string `gorm:"type:varchar(64);index:idx_order_payment_ledger"`
 }
 
+// RecordedReferencePrefix keeps a shop's own receipt references apart from
+// checkout session refs, so a recorded payment can never be mistaken for
+// (and so block) an online one.
+const RecordedReferencePrefix = "recorded:"
+
+// SaleNanos is the part of the payment that pays for the order.
+func (op *OrderPayment) SaleNanos() int64 {
+	return op.AmountNanos - op.ExcessNanos
+}
+
 func (op *OrderPayment) ToAPI() *commercev1.OrderPayment {
 	return &commercev1.OrderPayment{
 		Id:         op.ID,
 		Amount:     MoneyFromNanos(op.Currency, op.AmountNanos),
 		Source:     commercev1.OrderPaymentSource(op.Source),
-		Reference:  op.Reference,
+		Reference:  strings.TrimPrefix(op.Reference, RecordedReferencePrefix),
 		PaymentId:  op.PaymentID,
 		PaidAt:     timestamppb.New(op.PaidAt),
 		RecordedBy: op.RecordedBy,
 		Note:       op.Note,
 	}
+}
+
+// Refund states. A refund is raised Pending; the first attempt to send it
+// claims it (SentAt) before calling the payment service, so it is never sent
+// twice; Sent means the payment service accepted it under PaymentID;
+// Confirmed means the money reached the buyer; Failed means the payment
+// service gave up on it and staff must settle it.
+const (
+	RefundPending   int32 = 1
+	RefundSent      int32 = 2
+	RefundConfirmed int32 = 3
+	RefundFailed    int32 = 4
+)
+
+// RefundReferencePrefix starts every refund's payment reference.
+const RefundReferencePrefix = "commerce-refund:"
+
+// OrderRefund is money owed back to an order's buyer, paid out through the
+// payment service to the buyer's profile (and the order's contact, when it
+// has one). Reference is deterministic per cause, so the same refund is
+// never raised twice.
+type OrderRefund struct {
+	data.BaseModel
+	OrderID   string `gorm:"type:varchar(50);index:idx_order_refund_order"`
+	ShopID    string `gorm:"type:varchar(50);index:idx_order_refund_shop_confirmed"`
+	Reference string `gorm:"type:varchar(150);uniqueIndex:idx_order_refund_reference"`
+	Currency  string `gorm:"type:varchar(3)"`
+	// AmountNanos is what is paid back, in nanos of Currency.
+	AmountNanos int64
+	ProfileID   string `gorm:"type:varchar(50)"`
+	ContactID   string `gorm:"type:varchar(50)"`
+	// ReversesSale is true when the money refunded was booked as a sale, so
+	// the end-of-day ledger reverses it once the refund is confirmed. An
+	// excess payment was never a sale and is not reversed.
+	ReversesSale bool
+	Status       int32  `gorm:"index:idx_order_refund_status"`
+	PaymentID    string `gorm:"type:varchar(64)"`
+	// SentAt is the claim on sending: set before the payment service is
+	// called, so an attempt that dies mid-call is found by reference rather
+	// than sent again.
+	SentAt      *time.Time
+	ConfirmedAt *time.Time `gorm:"index:idx_order_refund_shop_confirmed"`
+	LastError   string     `gorm:"type:varchar(500)"`
+	// LedgerTransactionID is the end-of-day transaction the reversal was
+	// merged into.
+	LedgerTransactionID string `gorm:"type:varchar(64);index:idx_order_refund_ledger"`
+	// Attempt counts staff retries of a failed refund; each is a new
+	// payment, sent under its own reference.
+	Attempt int32
+	// ResolvedBy and Note record staff who paid the buyer back themselves.
+	ResolvedBy string `gorm:"type:varchar(50)"`
+	Note       string `gorm:"type:varchar(500)"`
+}
+
+// PaymentReference is the reference the refund's current payment is sent
+// under: the payment service pays a reference once, so a retry after a
+// failed payment needs a new one.
+func (r *OrderRefund) PaymentReference() string {
+	if r.Attempt == 0 {
+		return r.Reference
+	}
+	return fmt.Sprintf("%s:retry%d", r.Reference, r.Attempt)
+}
+
+func (r *OrderRefund) ToAPI() *commercev1.OrderRefund {
+	api := &commercev1.OrderRefund{
+		Id:         r.ID,
+		Amount:     MoneyFromNanos(r.Currency, r.AmountNanos),
+		Status:     commercev1.OrderRefundStatus(r.Status),
+		LastError:  r.LastError,
+		ResolvedBy: r.ResolvedBy,
+		Note:       r.Note,
+	}
+	if r.ConfirmedAt != nil {
+		api.ConfirmedAt = timestamppb.New(*r.ConfirmedAt)
+	}
+	return api
 }
 
 // Order event delivery states, mirroring commercev1.OrderEventDelivery.

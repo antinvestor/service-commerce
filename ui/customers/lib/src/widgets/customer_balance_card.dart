@@ -55,13 +55,17 @@ class CustomerBalanceCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(Icons.account_balance_wallet_outlined,
-                    size: 18, color: theme.colorScheme.primary),
+                Icon(
+                  Icons.account_balance_wallet_outlined,
+                  size: 18,
+                  color: theme.colorScheme.primary,
+                ),
                 const SizedBox(width: 8),
                 Text(
                   'Balance Summary',
-                  style: theme.textTheme.titleSmall
-                      ?.copyWith(fontWeight: FontWeight.w600),
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
                 const Spacer(),
                 CustomerCreditBadge(status: creditStatus),
@@ -115,14 +119,15 @@ class _BalanceRow extends StatelessWidget {
       children: [
         Text(
           label,
-          style: theme.textTheme.bodySmall
-              ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
         ),
         Text(
           value,
-          style: valueStyle ??
-              theme.textTheme.bodySmall
-                  ?.copyWith(fontWeight: FontWeight.w500),
+          style:
+              valueStyle ??
+              theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w500),
         ),
       ],
     );

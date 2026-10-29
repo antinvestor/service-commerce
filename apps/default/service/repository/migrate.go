@@ -20,21 +20,25 @@ import (
 	"github.com/pitabwire/frame/v3/datastore"
 
 	"github.com/antinvestor/service-commerce/apps/default/service/models"
+	"github.com/antinvestor/service-commerce/pkg/dbmigrate"
 )
 
 func Migrate(ctx context.Context, dbManager datastore.Manager, migrationPath string) error {
-	dbPool := dbManager.GetPool(ctx, datastore.DefaultMigrationPoolName)
-
+	dbPool, err := dbmigrate.Pool(ctx, dbManager)
+	if err != nil {
+		return err
+	}
 	return dbManager.Migrate(ctx, dbPool, migrationPath,
 		&models.Shop{},
 		&models.Product{}, &models.ProductVariant{},
 		&models.Cart{}, &models.CartLine{},
 		&models.Order{}, &models.OrderLine{}, &models.OrderSequence{}, &models.OrderPaymentSession{},
-		&models.OrderPayment{}, &models.OrderEvent{},
+		&models.OrderPayment{}, &models.OrderRefund{}, &models.OrderEvent{},
 		&models.Fulfilment{}, &models.FulfilmentLine{},
 		&models.PriceList{}, &models.PriceListEntry{},
 		&models.CustomerPriceListAssignment{}, &models.CustomerPriceOverride{},
 		&models.DiscountRule{},
 		&models.LedgerPosting{},
+		&models.StockReceipt{},
 	)
 }

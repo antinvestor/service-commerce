@@ -26,6 +26,8 @@ import (
 	"github.com/pitabwire/frame/v3/frametests/definition"
 	"github.com/stretchr/testify/require"
 
+	"github.com/antinvestor/service-commerce/apps/default/service/business"
+	"github.com/antinvestor/service-commerce/apps/default/service/models"
 	"github.com/antinvestor/service-commerce/apps/default/service/repository"
 	commercev1 "github.com/antinvestor/service-commerce/gen/go/commerce/v1"
 )
@@ -156,10 +158,24 @@ func (bts *BusinessTestSuite) TestCancelOrder_RestocksAndRespectsRoles() {
 		_, err = biz.paymentBiz.CancelOrder(ctx, paidOrder.GetId(), "", false)
 		require.Equal(t, connect.CodePermissionDenied, connect.CodeOf(err))
 
-		refunded, err := biz.paymentBiz.CancelOrder(ctx, paidOrder.GetId(), "out of stock", true)
+		refunding, err := biz.paymentBiz.CancelOrder(ctx, paidOrder.GetId(), "out of stock", true)
+		require.NoError(t, err)
+		require.Equal(t, commercev1.PaymentStatus_PAYMENT_STATUS_REFUND_PENDING, refunding.GetPaymentStatus(),
+			"the refund is paid out but not yet confirmed")
+		require.Equal(t, int64(100), bts.stockOf(ctx, biz, variant))
+		require.Equal(t, 1, biz.refunds.sendCount(), "the refund went to the payment service at once")
+		require.Equal(t, int64(31_500_000_000), biz.refunds.refunded(models.RefundReferencePrefix+paidOrder.GetId()))
+
+		// The payment service confirms it on the next reconcile run.
+		biz.refunds.confirmAll()
+		summary, err := biz.paymentBiz.ReconcilePayments(ctx, "", 0)
+		require.NoError(t, err)
+		require.Equal(t, int32(1), summary.RefundsConfirmed)
+		refunded, err := biz.orderBiz.GetOrder(ctx, paidOrder.GetId())
 		require.NoError(t, err)
 		require.Equal(t, commercev1.PaymentStatus_PAYMENT_STATUS_REFUNDED, refunded.GetPaymentStatus())
-		require.Equal(t, int64(100), bts.stockOf(ctx, biz, variant))
+		require.Equal(t, int64(31), refunded.GetAmountRefunded().GetUnits())
+		require.Equal(t, 1, biz.refunds.sendCount(), "confirming never sends again")
 
 		// Shipped orders cannot be cancelled.
 		shipped := bts.buyerOrder(ctx, biz, shop.GetId(), variant.GetId(), "buyer-3", 1)
@@ -228,10 +244,11 @@ func (bts *BusinessTestSuite) TestReconcilePayments_SettlesAndExpires() {
 		// 100 - 2 (paid) - 1 (fresh) = 97; the abandoned 5 came back.
 		require.Equal(t, int64(97), bts.stockOf(ctx, biz, variant))
 
-		// A second run finds only the fresh order and changes nothing.
+		// The fresh order was looked at and backed off until its window
+		// closes, so a second run straight away has nothing to examine.
 		again, err := biz.paymentBiz.ReconcilePayments(ctx, shop.GetId(), 10)
 		require.NoError(t, err)
-		require.Equal(t, int32(1), again.Examined)
+		require.Equal(t, int32(0), again.Examined)
 		require.Equal(t, int32(0), again.Paid+again.Expired+again.Failed)
 	})
 }
@@ -254,9 +271,17 @@ func (bts *BusinessTestSuite) TestRunEndOfDayLedger_PostsOnceAndBalances() {
 		bts.payOrder(ctx, biz, c.GetId())
 		_, err := biz.paymentBiz.CancelOrder(ctx, c.GetId(), "damaged", true)
 		require.NoError(t, err)
+		// Only a refund the payment service confirmed is reversed.
+		biz.refunds.confirmAll()
+		_, err = biz.paymentBiz.ReconcilePayments(ctx, "", 0)
+		require.NoError(t, err)
 
 		today := time.Now().UTC().Format("2006-01-02")
-		postings, err := biz.ledgerBiz.RunEndOfDayLedger(ctx, "", today)
+		ledgerBiz := bts.ledgerAt(ctx, svc, biz, 24*time.Hour)
+		_, err = biz.ledgerBiz.RunEndOfDayLedger(ctx, "", today)
+		require.Equal(t, connect.CodeInvalidArgument, connect.CodeOf(err), "a day is only posted once it has ended")
+
+		postings, err := ledgerBiz.RunEndOfDayLedger(ctx, "", today)
 		require.NoError(t, err)
 		require.Len(t, postings, 1)
 		p := postings[0]
@@ -283,7 +308,7 @@ func (bts *BusinessTestSuite) TestRunEndOfDayLedger_PostsOnceAndBalances() {
 		require.NoError(t, err)
 		require.Equal(t, p.GetTransactionId(), stamped.GetLedgerTransactionId())
 
-		rerun, err := biz.ledgerBiz.RunEndOfDayLedger(ctx, shop.GetId(), today)
+		rerun, err := ledgerBiz.RunEndOfDayLedger(ctx, shop.GetId(), today)
 		require.NoError(t, err)
 		require.Len(t, rerun, 1)
 		require.Equal(t, p.GetTransactionId(), rerun[0].GetTransactionId())
@@ -310,17 +335,24 @@ func (bts *BusinessTestSuite) TestRunEndOfDayLedger_FailureIsRetried() {
 		o := bts.buyerOrder(ctx, biz, shop.GetId(), variant.GetId(), "buyer-10", 1)
 		bts.payOrder(ctx, biz, o.GetId())
 		today := time.Now().UTC().Format("2006-01-02")
+		// Two days on, so the nightly run's own day is tomorrow.
+		ledgerBiz := bts.ledgerAt(ctx, svc, biz, 48*time.Hour)
 
 		biz.ledger.failNext = errors.New("ledger unavailable")
-		failed, err := biz.ledgerBiz.RunEndOfDayLedger(ctx, shop.GetId(), today)
+		failed, err := ledgerBiz.RunEndOfDayLedger(ctx, shop.GetId(), today)
 		require.NoError(t, err)
 		require.NotEmpty(t, failed[0].GetError())
 		require.Empty(t, failed[0].GetTransactionId())
 
-		recovered, err := biz.ledgerBiz.RunEndOfDayLedger(ctx, shop.GetId(), today)
+		// The nightly run (no date) retries the failed day before its own.
+		recovered, err := ledgerBiz.RunEndOfDayLedger(ctx, shop.GetId(), "")
 		require.NoError(t, err)
+		require.Len(t, recovered, 2, "the failed day, then the run's own day")
 		require.Empty(t, recovered[0].GetError())
 		require.NotEmpty(t, recovered[0].GetTransactionId())
+		require.Equal(t, today, recovered[0].GetDate())
+		require.True(t, recovered[1].GetSkipped(), "what the failed day claimed stays with it")
+		require.Len(t, biz.ledger.posted(), 1)
 	})
 }
 
@@ -336,7 +368,7 @@ func (bts *BusinessTestSuite) TestListShops_Pages() {
 		page, err := biz.shopBiz.ListShops(ctx, &commercev1.ListShopsRequest{})
 		require.NoError(t, err)
 		require.Len(t, page.Shops, 3)
-		require.Equal(t, "KES", page.Shops[0].GetCurrency())
+		require.Equal(t, "USD", page.Shops[0].GetCurrency())
 	})
 }
 
@@ -370,6 +402,29 @@ func (bts *BusinessTestSuite) backdatePaymentDue(
 	require.NoError(t, err)
 	due := time.Now().Add(by)
 	order.PaymentDueAt = &due
-	_, err = repo.Update(ctx, order, "payment_due_at")
+	// Time has passed: any back-off the reconciler set has run out too.
+	order.NextReconcileAt = nil
+	_, err = repo.Update(ctx, order, "payment_due_at", "next_reconcile_at")
 	require.NoError(t, err)
+}
+
+// ledgerAt is end-of-day posting with the clock moved on by ahead, so the
+// test's own activity falls on a day that has ended.
+func (bts *BusinessTestSuite) ledgerAt(
+	ctx context.Context,
+	svc *frame.Service,
+	biz allBiz,
+	ahead time.Duration,
+) business.LedgerBusiness {
+	dbPool := svc.DatastoreManager().GetPool(ctx, datastore.DefaultPoolName)
+	workMan := svc.WorkManager()
+	return business.NewLedgerBusiness(ctx,
+		repository.NewOrderRepository(ctx, dbPool, workMan),
+		repository.NewShopRepository(ctx, dbPool, workMan),
+		repository.NewLedgerPostingRepository(ctx, dbPool, workMan),
+		biz.ledger, biz.notifier,
+		business.LedgerPolicy{
+			BookType: "merchant", Timezone: "UTC",
+			Clock: func() time.Time { return time.Now().Add(ahead) },
+		})
 }

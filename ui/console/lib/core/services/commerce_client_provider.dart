@@ -14,10 +14,7 @@ import 'api_config.dart';
 /// [authTokenProviderProvider] so every request carries a bearer token.
 final commerceTransportProvider = Provider<Transport>((ref) {
   final tokenProvider = ref.watch(authTokenProviderProvider);
-  return createTransport(
-    tokenProvider,
-    baseUrl: ApiConfig.commerceBaseUrl,
-  );
+  return createTransport(tokenProvider, baseUrl: ApiConfig.commerceBaseUrl);
 });
 
 /// Commerce service client used by console-owned features (e.g. the

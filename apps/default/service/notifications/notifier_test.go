@@ -92,3 +92,37 @@ func TestNotifierWithoutSenderIsSilent(t *testing.T) {
 		notifications.New(nil).OrderPaid(context.Background(), &models.Shop{}, &models.Order{})
 	})
 }
+
+// A storefront guest's contact is only what someone typed; nothing is sent
+// to it until money has been paid towards the order. The seller still
+// hears of the order.
+func TestGuestHearsNothingUntilTheyPay(t *testing.T) {
+	t.Parallel()
+	sender := &capturingSender{}
+	n := notifications.New(sender)
+	ctx := context.Background()
+	shop := &models.Shop{Name: "Duka", ContactID: "seller-contact"}
+	order := &models.Order{
+		OrderNumber: "ORD-000002", ProfileID: "guest", ContactID: "typed-contact", Guest: true,
+		TotalCurrency: "KES", TotalUnits: 21, CheckoutURL: "https://pay.example/c/2",
+	}
+
+	n.OrderPlaced(ctx, shop, order)
+	n.OrderPaymentExpired(ctx, shop, order)
+	n.OrderCancelled(ctx, shop, order, "expired")
+	for _, msg := range sender.sent {
+		require.Equal(t, "seller-contact", msg.GetRecipient().GetContactId(), msg.GetTemplate())
+		require.Empty(t, msg.GetRecipient().GetProfileId(), msg.GetTemplate())
+	}
+
+	sender.sent = nil
+	order.AmountPaidNanos = 21_000_000_000
+	n.OrderPaid(ctx, shop, order)
+	var toBuyer int
+	for _, msg := range sender.sent {
+		if msg.GetRecipient().GetProfileId() == "guest" {
+			toBuyer++
+		}
+	}
+	require.Equal(t, 1, toBuyer, "once paid, the buyer gets their receipt")
+}

@@ -70,7 +70,8 @@ func (bts *BusinessTestSuite) storefront(
 	dbPool := svc.DatastoreManager().GetPool(ctx, datastore.DefaultPoolName)
 	shopRepo := repository.NewShopRepository(ctx, dbPool, svc.WorkManager())
 	return business.NewStorefrontBusiness(
-		shopRepo, biz.catalogBiz, biz.orderBiz, biz.paymentBiz, buyers, "https://api.example/commerce/",
+		shopRepo, biz.catalogBiz, biz.orderBiz, biz.paymentBiz, buyers,
+		repository.NewLimitRepository(dbPool), business.StorefrontPolicy{}, "https://api.example/commerce/",
 	)
 }
 

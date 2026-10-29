@@ -1,4 +1,6 @@
 import 'package:antinvestor_api_commerce/antinvestor_api_commerce.dart';
+import 'package:antinvestor_ui_core/permissions/permission_guard.dart';
+import 'package:antinvestor_ui_core/permissions/permission_provider.dart';
 import 'package:antinvestor_ui_core/widgets/error_helpers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -109,22 +111,34 @@ class _ProductDetailContent extends StatelessWidget {
                   ],
                 ),
               ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
               OutlinedButton.icon(
                 onPressed: () => context.go('/catalog'),
                 icon: const Icon(Icons.arrow_back, size: 18),
                 label: const Text('Back'),
               ),
-              const SizedBox(width: 8),
-              OutlinedButton.icon(
-                onPressed: () => showProductEditDialog(context, product),
-                icon: const Icon(Icons.edit_outlined, size: 18),
-                label: const Text('Edit'),
+              PermissionGuard(
+                permissions: const {'product_manage'},
+                child: OutlinedButton.icon(
+                  onPressed: () => showProductEditDialog(context, product),
+                  icon: const Icon(Icons.edit_outlined, size: 18),
+                  label: const Text('Edit'),
+                ),
               ),
-              const SizedBox(width: 8),
-              FilledButton.icon(
-                onPressed: () => context.go('/catalog/$productId/variants/new'),
-                icon: const Icon(Icons.add, size: 18),
-                label: const Text('Add Variant'),
+              PermissionGuard(
+                permissions: const {'product_manage'},
+                child: FilledButton.icon(
+                  onPressed: () =>
+                      context.go('/catalog/$productId/variants/new'),
+                  icon: const Icon(Icons.add, size: 18),
+                  label: const Text('Add Variant'),
+                ),
               ),
             ],
           ),
@@ -164,7 +178,6 @@ class _ProductDetailContent extends StatelessWidget {
                           ? product.description
                           : '—',
                     ),
-                    _OvRow('Shop ID', product.shopId),
                     _OvRow('Status', productStatusLabel(product.status)),
                     _OvRow(
                       'Fulfilment',
@@ -349,6 +362,7 @@ class _ProductVariantsList extends ConsumerWidget {
     final theme = Theme.of(context);
     final asyncVariants = ref.watch(productVariantsProvider(productId));
     final saving = ref.watch(variantNotifierProvider).isLoading;
+    final canManage = ref.watch(hasPermissionProvider('product_manage'));
 
     return asyncVariants.when(
       loading: () => const Padding(
@@ -388,7 +402,7 @@ class _ProductVariantsList extends ConsumerWidget {
                 padding: const EdgeInsets.only(bottom: 8),
                 child: VariantCard(
                   variant: variant,
-                  onTap: saving
+                  onTap: saving || !canManage
                       ? null
                       : () => showVariantEditDialog(
                           context,
@@ -396,7 +410,7 @@ class _ProductVariantsList extends ConsumerWidget {
                           variant,
                           shopId: shopId,
                         ),
-                  onEdit: saving
+                  onEdit: saving || !canManage
                       ? null
                       : () => showVariantEditDialog(
                           context,

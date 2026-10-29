@@ -14,7 +14,7 @@ ARG BUILDTIME
 COPY go.mod go.sum ./
 RUN go mod download
 
-# Copy project files. gen/ holds the locally generated commerce API code.
+# Copy project files. gen/ holds the locally generated API code.
 COPY ./apps/default ./apps/default
 COPY ./pkg ./pkg
 COPY ./gen ./gen
@@ -25,10 +25,10 @@ COPY ./workflows ./workflows
 RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
     go build -trimpath \
      -ldflags="-s -w \
-         -X github.com/pitabwire/frame/version.Repository=${REPOSITORY} \
-         -X github.com/pitabwire/frame/version.Version=${VERSION} \
-         -X github.com/pitabwire/frame/version.Commit=${REVISION} \
-         -X github.com/pitabwire/frame/version.Date=${BUILDTIME}" \
+         -X github.com/pitabwire/frame/v3/version.Repository=${REPOSITORY} \
+         -X github.com/pitabwire/frame/v3/version.Version=${VERSION} \
+         -X github.com/pitabwire/frame/v3/version.Commit=${REVISION} \
+         -X github.com/pitabwire/frame/v3/version.Date=${BUILDTIME}" \
      -o /app/binary ./apps/default/cmd/main.go
 
 # ---------- Final ----------

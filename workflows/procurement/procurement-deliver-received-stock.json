@@ -1,0 +1,44 @@
+{
+  "version": "1.0",
+  "name": "procurement.deliver_received_stock",
+  "description": "Every hour: push goods receipt lines whose stock has not reached commerce yet (the push right after a receipt failed or its answer was lost). Each line raises its product variant's stock once however often it is sent. A run with nothing to do costs one query.",
+  "schedules": [
+    {
+      "name": "procurement.deliver_received_stock.hourly",
+      "cron_expr": "7 * * * *",
+      "timezone": "UTC"
+    }
+  ],
+  "timeout": "10m",
+  "on_error": {
+    "strategy": "fail"
+  },
+  "steps": [
+    {
+      "id": "deliver",
+      "type": "call",
+      "name": "Deliver received stock",
+      "timeout": "5m",
+      "retry": {
+        "max_attempts": 3,
+        "initial_interval": "10s",
+        "backoff_coefficient": 2.0,
+        "max_interval": "2m"
+      },
+      "call": {
+        "action": "http.request",
+        "input": {
+          "url": "${PROCUREMENT_URI}/procurement.v1.ProcurementService/GoodsReceiptDeliver",
+          "method": "POST",
+          "headers": {
+            "Content-Type": "application/json",
+            "Connect-Protocol-Version": "1"
+          },
+          "body": {
+            "limit": 200
+          }
+        }
+      }
+    }
+  ]
+}

@@ -2,6 +2,7 @@ import 'package:antinvestor_auth_runtime/antinvestor_auth_runtime.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../auth/data/auth_state_provider.dart' show consoleClaimsProvider;
 
 import '../../core/auth/tenant_context_provider.dart';
 import '../../core/theme/app_colors.dart';
@@ -30,7 +31,7 @@ class SettingsPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final themeModeAsync = ref.watch(themeModeProvider);
-    final claimsAsync = ref.watch(userClaimsProvider);
+    final claimsAsync = ref.watch(consoleClaimsProvider);
     final scope = ref.watch(tenantScopeProvider);
     final runtime = ref.watch(authRuntimeProvider);
 

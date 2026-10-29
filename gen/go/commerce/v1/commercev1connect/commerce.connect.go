@@ -69,6 +69,9 @@ const (
 	// CommerceServiceListProductVariantsProcedure is the procedure name of the CommerceService's
 	// ListProductVariants RPC.
 	CommerceServiceListProductVariantsProcedure = "/commerce.v1.CommerceService/ListProductVariants"
+	// CommerceServiceReceiveStockProcedure is the procedure name of the CommerceService's ReceiveStock
+	// RPC.
+	CommerceServiceReceiveStockProcedure = "/commerce.v1.CommerceService/ReceiveStock"
 	// CommerceServiceCreateCartProcedure is the procedure name of the CommerceService's CreateCart RPC.
 	CommerceServiceCreateCartProcedure = "/commerce.v1.CommerceService/CreateCart"
 	// CommerceServiceGetCartProcedure is the procedure name of the CommerceService's GetCart RPC.
@@ -101,6 +104,9 @@ const (
 	// CommerceServiceRecordOrderPaymentProcedure is the procedure name of the CommerceService's
 	// RecordOrderPayment RPC.
 	CommerceServiceRecordOrderPaymentProcedure = "/commerce.v1.CommerceService/RecordOrderPayment"
+	// CommerceServiceResolveOrderRefundProcedure is the procedure name of the CommerceService's
+	// ResolveOrderRefund RPC.
+	CommerceServiceResolveOrderRefundProcedure = "/commerce.v1.CommerceService/ResolveOrderRefund"
 	// CommerceServiceListOrderEventsProcedure is the procedure name of the CommerceService's
 	// ListOrderEvents RPC.
 	CommerceServiceListOrderEventsProcedure = "/commerce.v1.CommerceService/ListOrderEvents"
@@ -245,6 +251,13 @@ var (
 			Procedure:  CommerceServiceListProductVariantsProcedure,
 		}
 	})
+	commerceServiceReceiveStockSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_commerce_proto.Services().ByName("CommerceService").Methods().ByName("ReceiveStock"),
+			Procedure:  CommerceServiceReceiveStockProcedure,
+		}
+	})
 	commerceServiceCreateCartSpec = sync.OnceValue(func() connect.Spec {
 		return connect.Spec{
 			StreamType: connect.StreamTypeUnary,
@@ -327,6 +340,13 @@ var (
 			StreamType: connect.StreamTypeUnary,
 			Schema:     v1.File_v1_commerce_proto.Services().ByName("CommerceService").Methods().ByName("RecordOrderPayment"),
 			Procedure:  CommerceServiceRecordOrderPaymentProcedure,
+		}
+	})
+	commerceServiceResolveOrderRefundSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_v1_commerce_proto.Services().ByName("CommerceService").Methods().ByName("ResolveOrderRefund"),
+			Procedure:  CommerceServiceResolveOrderRefundProcedure,
 		}
 	})
 	commerceServiceListOrderEventsSpec = sync.OnceValue(func() connect.Spec {
@@ -494,6 +514,10 @@ type CommerceServiceClient interface {
 	UpdateProduct(context.Context, *v1.UpdateProductRequest) (*v1.UpdateProductResponse, error)
 	// Lists the variants of a product.
 	ListProductVariants(context.Context, *v1.ListProductVariantsRequest) (*v1.ListProductVariantsResponse, error)
+	// Adds goods received from a supplier to a variant's stock. Internal: the
+	// procurement service calls it once per goods receipt line, and a repeated
+	// reference adds nothing (it answers with the stock as it stands).
+	ReceiveStock(context.Context, *v1.ReceiveStockRequest) (*v1.ReceiveStockResponse, error)
 	CreateCart(context.Context, *v1.CreateCartRequest) (*v1.CreateCartResponse, error)
 	GetCart(context.Context, *v1.GetCartRequest) (*v1.GetCartResponse, error)
 	AddCartLine(context.Context, *v1.AddCartLineRequest) (*v1.AddCartLineResponse, error)
@@ -530,6 +554,9 @@ type CommerceServiceClient interface {
 	// an instalment against the order. Staff only. A reference already
 	// recorded on the order is returned as-is, so retries are safe.
 	RecordOrderPayment(context.Context, *v1.RecordOrderPaymentRequest) (*v1.RecordOrderPaymentResponse, error)
+	// Settles a refund the payment service failed: send it again, or record
+	// that the shop paid the buyer back itself. Staff only.
+	ResolveOrderRefund(context.Context, *v1.ResolveOrderRefundRequest) (*v1.ResolveOrderRefundResponse, error)
 	// Lists payment and lifecycle signals for an order, or for every order in
 	// a shop, oldest first. The same events are pushed to the shop's webhook.
 	ListOrderEvents(context.Context, *v1.ListOrderEventsRequest) (*v1.ListOrderEventsResponse, error)
@@ -614,6 +641,10 @@ type CommerceServiceHandler interface {
 	UpdateProduct(context.Context, *v1.UpdateProductRequest) (*v1.UpdateProductResponse, error)
 	// Lists the variants of a product.
 	ListProductVariants(context.Context, *v1.ListProductVariantsRequest) (*v1.ListProductVariantsResponse, error)
+	// Adds goods received from a supplier to a variant's stock. Internal: the
+	// procurement service calls it once per goods receipt line, and a repeated
+	// reference adds nothing (it answers with the stock as it stands).
+	ReceiveStock(context.Context, *v1.ReceiveStockRequest) (*v1.ReceiveStockResponse, error)
 	CreateCart(context.Context, *v1.CreateCartRequest) (*v1.CreateCartResponse, error)
 	GetCart(context.Context, *v1.GetCartRequest) (*v1.GetCartResponse, error)
 	AddCartLine(context.Context, *v1.AddCartLineRequest) (*v1.AddCartLineResponse, error)
@@ -650,6 +681,9 @@ type CommerceServiceHandler interface {
 	// an instalment against the order. Staff only. A reference already
 	// recorded on the order is returned as-is, so retries are safe.
 	RecordOrderPayment(context.Context, *v1.RecordOrderPaymentRequest) (*v1.RecordOrderPaymentResponse, error)
+	// Settles a refund the payment service failed: send it again, or record
+	// that the shop paid the buyer back itself. Staff only.
+	ResolveOrderRefund(context.Context, *v1.ResolveOrderRefundRequest) (*v1.ResolveOrderRefundResponse, error)
 	// Lists payment and lifecycle signals for an order, or for every order in
 	// a shop, oldest first. The same events are pushed to the shop's webhook.
 	ListOrderEvents(context.Context, *v1.ListOrderEventsRequest) (*v1.ListOrderEventsResponse, error)
@@ -715,6 +749,7 @@ func RegisterCommerceServiceHandler(server *connect.Server, svc CommerceServiceH
 		connect.Method{Spec: commerceServiceUpdateProductVariantSpec(), Handler: adapter.updateProductVariant},
 		connect.Method{Spec: commerceServiceUpdateProductSpec(), Handler: adapter.updateProduct},
 		connect.Method{Spec: commerceServiceListProductVariantsSpec(), Handler: adapter.listProductVariants},
+		connect.Method{Spec: commerceServiceReceiveStockSpec(), Handler: adapter.receiveStock},
 		connect.Method{Spec: commerceServiceCreateCartSpec(), Handler: adapter.createCart},
 		connect.Method{Spec: commerceServiceGetCartSpec(), Handler: adapter.getCart},
 		connect.Method{Spec: commerceServiceAddCartLineSpec(), Handler: adapter.addCartLine},
@@ -727,6 +762,7 @@ func RegisterCommerceServiceHandler(server *connect.Server, svc CommerceServiceH
 		connect.Method{Spec: commerceServiceConfirmOrderPaymentSpec(), Handler: adapter.confirmOrderPayment},
 		connect.Method{Spec: commerceServiceCancelOrderSpec(), Handler: adapter.cancelOrder},
 		connect.Method{Spec: commerceServiceRecordOrderPaymentSpec(), Handler: adapter.recordOrderPayment},
+		connect.Method{Spec: commerceServiceResolveOrderRefundSpec(), Handler: adapter.resolveOrderRefund},
 		connect.Method{Spec: commerceServiceListOrderEventsSpec(), Handler: adapter.listOrderEvents},
 		connect.Method{Spec: commerceServiceReconcilePaymentsSpec(), Handler: adapter.reconcilePayments},
 		connect.Method{Spec: commerceServiceRunEndOfDayLedgerSpec(), Handler: adapter.runEndOfDayLedger},
@@ -800,6 +836,10 @@ func (UnimplementedCommerceServiceHandler) ListProductVariants(context.Context, 
 	return nil, connect.NewError(connect.CodeUnimplemented, "commerce.v1.CommerceService.ListProductVariants is not implemented")
 }
 
+func (UnimplementedCommerceServiceHandler) ReceiveStock(context.Context, *v1.ReceiveStockRequest) (*v1.ReceiveStockResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "commerce.v1.CommerceService.ReceiveStock is not implemented")
+}
+
 func (UnimplementedCommerceServiceHandler) CreateCart(context.Context, *v1.CreateCartRequest) (*v1.CreateCartResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, "commerce.v1.CommerceService.CreateCart is not implemented")
 }
@@ -846,6 +886,10 @@ func (UnimplementedCommerceServiceHandler) CancelOrder(context.Context, *v1.Canc
 
 func (UnimplementedCommerceServiceHandler) RecordOrderPayment(context.Context, *v1.RecordOrderPaymentRequest) (*v1.RecordOrderPaymentResponse, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, "commerce.v1.CommerceService.RecordOrderPayment is not implemented")
+}
+
+func (UnimplementedCommerceServiceHandler) ResolveOrderRefund(context.Context, *v1.ResolveOrderRefundRequest) (*v1.ResolveOrderRefundResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "commerce.v1.CommerceService.ResolveOrderRefund is not implemented")
 }
 
 func (UnimplementedCommerceServiceHandler) ListOrderEvents(context.Context, *v1.ListOrderEventsRequest) (*v1.ListOrderEventsResponse, error) {
@@ -1024,6 +1068,14 @@ func (c *commerceServiceClient) ListProductVariants(ctx context.Context, req *v1
 	return &res, nil
 }
 
+func (c *commerceServiceClient) ReceiveStock(ctx context.Context, req *v1.ReceiveStockRequest) (*v1.ReceiveStockResponse, error) {
+	var res v1.ReceiveStockResponse
+	if err := c.client.CallUnary(ctx, commerceServiceReceiveStockSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
 func (c *commerceServiceClient) CreateCart(ctx context.Context, req *v1.CreateCartRequest) (*v1.CreateCartResponse, error) {
 	var res v1.CreateCartResponse
 	if err := c.client.CallUnary(ctx, commerceServiceCreateCartSpec(), req, &res); err != nil {
@@ -1115,6 +1167,14 @@ func (c *commerceServiceClient) CancelOrder(ctx context.Context, req *v1.CancelO
 func (c *commerceServiceClient) RecordOrderPayment(ctx context.Context, req *v1.RecordOrderPaymentRequest) (*v1.RecordOrderPaymentResponse, error) {
 	var res v1.RecordOrderPaymentResponse
 	if err := c.client.CallUnary(ctx, commerceServiceRecordOrderPaymentSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *commerceServiceClient) ResolveOrderRefund(ctx context.Context, req *v1.ResolveOrderRefundRequest) (*v1.ResolveOrderRefundResponse, error) {
+	var res v1.ResolveOrderRefundResponse
+	if err := c.client.CallUnary(ctx, commerceServiceResolveOrderRefundSpec(), req, &res); err != nil {
 		return nil, err
 	}
 	return &res, nil
@@ -1418,6 +1478,18 @@ func (h commerceServiceHandler) listProductVariants(ctx context.Context, _ conne
 	return stream.Send(res)
 }
 
+func (h commerceServiceHandler) receiveStock(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.ReceiveStockRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.ReceiveStock(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
 func (h commerceServiceHandler) createCart(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
 	var req v1.CreateCartRequest
 	if err := stream.Receive(&req); err != nil {
@@ -1556,6 +1628,18 @@ func (h commerceServiceHandler) recordOrderPayment(ctx context.Context, _ connec
 		return err
 	}
 	res, err := h.svc.RecordOrderPayment(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h commerceServiceHandler) resolveOrderRefund(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.ResolveOrderRefundRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.ResolveOrderRefund(ctx, &req)
 	if err != nil {
 		return err
 	}

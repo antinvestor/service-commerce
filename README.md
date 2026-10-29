@@ -96,11 +96,37 @@ its lines when it is placed.
   until the balance deadline instead of the payment window.
 - Every step raises an `OrderEvent` in the same transaction: payment received,
   deposit paid, threshold crossed, fulfilment released, fully paid, overpaid,
-  balance overdue, cancelled, expired. Events are POSTed to the shop's
-  `webhook_url` signed with `X-Commerce-Signature: sha256=<HMAC of the body>`
-  (https to public hosts only, retried with backoff by the reconciler), drive
-  buyer/seller notifications, and are listed by `ListOrderEvents`.
-- End of day books each instalment on the day it was received.
+  balance overdue, cancelled, expired, refunded. Events are POSTed to the
+  shop's `webhook_url` off the request path, with `X-Commerce-Timestamp: <unix
+  seconds>` and `X-Commerce-Signature: sha256=<HMAC of "<timestamp>.<body>">`
+  under the shop's webhook secret; receivers should reject stale timestamps.
+  A shop with no secret gets nothing. Deliveries go to https public hosts
+  only, are claimed before sending so none is sent twice at once, and are
+  retried with backoff by the reconciler. Events drive buyer/seller
+  notifications and are listed by `ListOrderEvents`.
+- End of day books the sale part of each payment; a payment noticed after
+  its day was posted is booked with the next day. Excess payments are never
+  booked.
+
+## Refunds
+
+Money owed back to a buyer is paid out through the platform payment
+service's `Send`, to the buyer's profile (and the order's contact, when it
+has one); the payment service picks the route. Each refund has a
+deterministic reference (`commerce-refund:<order>:<cause>`) and is claimed
+before it is sent, so it is never paid twice; an attempt whose answer was
+lost is settled by looking the reference up at the payment service.
+
+- A staff cancel of a paid order, and an overdue cancel, refund what was paid
+  towards the order (`REFUND_PENDING`, then `REFUNDED` once every refund is
+  confirmed). An overdue order whose goods have shipped is only flagged.
+- A payment that takes an order past its total, or lands on a cancelled or
+  expired order (the reconciler keeps watching cancelled orders' sessions for
+  `LATE_PAYMENT_WINDOW`), is refunded automatically.
+- The reconcile run sends pending refunds and polls the payment service's
+  `Status` for sent ones. End of day reverses a sale only once its refund is
+  confirmed.
+- A refund the payment service fails is marked failed and logged for staff.
 
 Payments are applied with optimistic concurrency (a version check plus a
 unique payment reference per order), not row locks, so the repository layer
@@ -156,17 +182,19 @@ Standard Frame settings apply. Commerce adds:
 | Variable | Purpose |
 |---|---|
 | `CHECKOUT_SERVICE_URI` | Hosted checkout (service-payment `apps/checkout`). Empty disables online payment. |
+| `PAYMENT_SERVICE_URI` | Platform payment service refunds are paid out through. Required with checkout under `RUN_SERVICE_SECURELY`; empty leaves refunds pending. |
 | `LEDGER_SERVICE_URI` | Ledger for end-of-day posting. Empty disables posting. |
 | `NOTIFICATION_SERVICE_URI` | Notification service. Empty disables messages. |
 | `TRUSTAGE_SERVICE_URI` | Orchestrator that runs the scheduled workflows. Empty skips workflow sync. |
 | `*_WORKLOAD_API_TARGET_PATH` | Workload identity path per peer (defaults match the platform layout). |
 | `COMMERCE_SERVICE_URI` | Public address trustage calls back into; substituted into the workflow DSL. |
-| `CHECKOUT_RETURN_URL` | Storefront page buyers are forwarded to after paying; `{order_id}` is substituted and `order_id`/`payment` are appended. Shops can override it. Empty shows commerce's own status page. |
+| `CHECKOUT_RETURN_URL` | Storefront page buyers are forwarded to after paying; `{order_id}` is substituted and `order_id`/`payment` are appended. Shops can override it. Empty shows commerce's own status page. A `return_url` passed to `CheckoutOrder` must be https on the shop's return host, the storefront host or this URL's host. |
 | `STOREFRONT_BASE_URL` | Where `/shop/{slug}` pages are served (default `PAYMENT_RETURN_BASE_URL`, then `COMMERCE_SERVICE_URI`). |
 | `PAYMENT_RETURN_BASE_URL` | Commerce's public address for `/payments/return` (default `COMMERCE_SERVICE_URI`). Empty on both sends buyers straight to the storefront URL. |
 | `PAYMENT_SETTLE_GRACE` | Extra time stock stays reserved while a payment prompt is outstanding (default 1h). |
 | `ORDER_PAYMENT_WINDOW` | How long stock is held for an unpaid order (default 45m). |
 | `PAYMENT_RECONCILE_BATCH_SIZE` | Orders examined per reconcile run (default 200). |
+| `LATE_PAYMENT_WINDOW` | How long a cancelled order's checkout sessions are still checked for a late payment, which is refunded (default 24h). |
 | `LEDGER_BOOK_TYPE` | Book type for shop books (default `merchant`). |
 | `LEDGER_TIMEZONE` | Trading-day boundary (default `Africa/Nairobi`). |
 | `WEBHOOK_SECRET_KEY` | Base64 of 32 random bytes; seals shop webhook secrets at rest (AES-256-GCM). Empty stores them unencrypted and logs a warning. Rotating it means shops set their secrets again. |
@@ -181,6 +209,7 @@ in service-authentication's tenancy migrations (`service_commerce`,
 | Caller | Audience | Namespace | Permissions |
 |---|---|---|---|
 | commerce | `/checkout` | `service_checkout` | `checkout_session_create`, `checkout_session_view` |
+| commerce | `/payment` | `service_payment` | `payment_send`, `payment_status_view`, `payment_search` |
 | commerce | `/ledger` | `service_ledger` | ledger, account, transaction, and book view and manage |
 | commerce | `/notification` | `service_notification` | `notification_send`, `template_manage`, `template_view` |
 | commerce | `/trustage` | `service_trustage` | `workflow_view`, `workflow_manage` |
@@ -204,6 +233,15 @@ registration are warn-only so a peer outage never blocks a rollout. The
 runtime serves Connect RPC only.
 
 ## Development
+
+To run commerce, the console and the storefront together on one machine,
+with sign-in and a payment simulator standing in for the platform, see
+[tools/devstack](tools/devstack/README.md):
+
+```bash
+make dev-deps && make dev-stack   # Postgres, Keto; devstack on :8090
+make dev-migrate && make dev-commerce && make dev-seed
+```
 
 ```bash
 make proto-generate   # OpenAPI, OPL, Dart SDKs from proto/

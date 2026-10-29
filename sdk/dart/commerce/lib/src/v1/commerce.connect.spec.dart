@@ -110,6 +110,16 @@ abstract final class CommerceService {
     v1commerce.ListProductVariantsResponse.new,
   );
 
+  /// Adds goods received from a supplier to a variant's stock. Internal: the
+  /// procurement service calls it once per goods receipt line, and a repeated
+  /// reference adds nothing (it answers with the stock as it stands).
+  static const receiveStock = connect.Spec(
+    '/$name/ReceiveStock',
+    connect.StreamType.unary,
+    v1commerce.ReceiveStockRequest.new,
+    v1commerce.ReceiveStockResponse.new,
+  );
+
   static const createCart = connect.Spec(
     '/$name/CreateCart',
     connect.StreamType.unary,
@@ -213,6 +223,15 @@ abstract final class CommerceService {
     connect.StreamType.unary,
     v1commerce.RecordOrderPaymentRequest.new,
     v1commerce.RecordOrderPaymentResponse.new,
+  );
+
+  /// Settles a refund the payment service failed: send it again, or record
+  /// that the shop paid the buyer back itself. Staff only.
+  static const resolveOrderRefund = connect.Spec(
+    '/$name/ResolveOrderRefund',
+    connect.StreamType.unary,
+    v1commerce.ResolveOrderRefundRequest.new,
+    v1commerce.ResolveOrderRefundResponse.new,
   );
 
   /// Lists payment and lifecycle signals for an order, or for every order in

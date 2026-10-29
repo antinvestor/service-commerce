@@ -54,14 +54,18 @@ class CatalogRouteModule extends RouteModule {
       icon: Icons.storefront_outlined,
       activeIcon: Icons.storefront,
       route: '/catalog',
-      requiredPermissions: {'catalog_view'},
+      requiredPermissions: {'product_view'},
     ),
   ];
 
+  /// Route prefixes and the permissions (any of) that open them; names are
+  /// the service_commerce permissions in commerce.proto. `:param` segments
+  /// match any value.
   @override
   Map<String, Set<String>> get routePermissions => {
-    '/catalog': {'catalog_view'},
-    '/catalog/new': {'product_create'},
+    '/catalog': {'product_view'},
+    '/catalog/new': {'product_manage'},
+    '/catalog/:productId/variants/new': {'product_manage'},
   };
 
   @override
@@ -69,28 +73,13 @@ class CatalogRouteModule extends RouteModule {
     namespace: 'service_commerce',
     permissions: [
       PermissionEntry(
-        key: 'catalog_view',
+        key: 'product_view',
         label: 'View Catalog',
         scope: PermissionScope.service,
       ),
       PermissionEntry(
-        key: 'product_create',
-        label: 'Create Products',
-        scope: PermissionScope.action,
-      ),
-      PermissionEntry(
-        key: 'product_update',
-        label: 'Update Products',
-        scope: PermissionScope.action,
-      ),
-      PermissionEntry(
-        key: 'variant_create',
-        label: 'Create Variants',
-        scope: PermissionScope.action,
-      ),
-      PermissionEntry(
-        key: 'variant_update',
-        label: 'Update Variants',
+        key: 'product_manage',
+        label: 'Manage Products and Variants',
         scope: PermissionScope.action,
       ),
     ],

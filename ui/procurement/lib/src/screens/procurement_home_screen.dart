@@ -1,4 +1,5 @@
 import 'package:antinvestor_api_procurement/antinvestor_api_procurement.dart';
+import 'package:antinvestor_ui_core/permissions/permission_guard.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -22,10 +23,12 @@ class ProcurementHomeScreen extends ConsumerWidget {
     final openOrders = asyncOrders.whenData(
       (orders) => orders
           .where(
-            (o) =>
-                o.status !=
-                    PurchaseOrderStatus.PURCHASE_ORDER_STATUS_RECEIVED &&
-                o.status != PurchaseOrderStatus.PURCHASE_ORDER_STATUS_CANCELLED,
+            (o) => switch (o.status) {
+              PurchaseOrderStatus.PURCHASE_ORDER_STATUS_RECEIVED ||
+              PurchaseOrderStatus.PURCHASE_ORDER_STATUS_CANCELLED ||
+              PurchaseOrderStatus.PURCHASE_ORDER_STATUS_CLOSED => false,
+              _ => true,
+            },
           )
           .length,
     );
@@ -87,10 +90,13 @@ class ProcurementHomeScreen extends ConsumerWidget {
               ],
             ),
             const SizedBox(height: 16),
-            OutlinedButton.icon(
-              onPressed: () => context.go(ProcurementPaths.newOrder),
-              icon: const Icon(Icons.add, size: 18),
-              label: const Text('New purchase order'),
+            PermissionGuard(
+              permissions: const {'purchase_order_create'},
+              child: OutlinedButton.icon(
+                onPressed: () => context.go(ProcurementPaths.newOrder),
+                icon: const Icon(Icons.add, size: 18),
+                label: const Text('New purchase order'),
+              ),
             ),
           ],
         ),

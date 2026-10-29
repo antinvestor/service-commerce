@@ -75,7 +75,7 @@ class DiscountConditions {
     if (minQuantity != null && minQuantity! > 0) {
       fields[conditionMinQuantity] = Value(numberValue: minQuantity);
     }
-    return Struct(fields: fields);
+    return Struct(fields: fields.entries);
   }
 
   static Value _stringListValue(List<String> items) => Value(

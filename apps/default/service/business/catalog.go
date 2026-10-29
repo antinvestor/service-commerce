@@ -53,6 +53,9 @@ type CatalogBusiness interface {
 		req *commercev1.UpdateProductVariantRequest,
 	) (*commercev1.ProductVariant, error)
 	ListProductVariants(ctx context.Context, productID string) ([]*commercev1.ProductVariant, error)
+	// ListVariantsByProduct returns the variants of every product in
+	// productIDs, by product, in one query.
+	ListVariantsByProduct(ctx context.Context, productIDs []string) (map[string][]*commercev1.ProductVariant, error)
 	// GetShopIDForVariant resolves the owning shop of a variant.
 	GetShopIDForVariant(ctx context.Context, variantID string) (string, error)
 }
@@ -92,12 +95,19 @@ func (cb *catalogBusiness) CreateProduct(
 		return nil, err
 	}
 
+	// Most of what shops sell is handed over physically; say so when the
+	// caller does not.
+	fulfilment := req.GetFulfilmentType()
+	if fulfilment == commercev1.FulfilmentType_FULFILMENT_TYPE_UNSPECIFIED {
+		fulfilment = commercev1.FulfilmentType_FULFILMENT_TYPE_PHYSICAL
+	}
+
 	product := &models.Product{
 		ShopID:         req.GetShopId(),
 		Name:           name,
 		Description:    req.GetDescription(),
 		Attributes:     models.MapToJSONMap(req.GetAttributes()),
-		FulfilmentType: int32(req.GetFulfilmentType()),
+		FulfilmentType: int32(fulfilment),
 		Status:         int32(commercev1.ProductStatus_PRODUCT_STATUS_ACTIVE),
 		MediaIDs:       models.StringArray(req.GetMediaIds()),
 		PaymentPolicy:  models.PaymentPolicyFromAPI(req.GetPaymentPolicy()),
@@ -165,7 +175,8 @@ func (cb *catalogBusiness) CreateProductVariant(
 	ctx context.Context,
 	req *commercev1.CreateProductVariantRequest,
 ) (*commercev1.ProductVariant, error) {
-	if _, err := cb.productRepo.GetByID(ctx, req.GetProductId()); err != nil {
+	product, err := cb.productRepo.GetByID(ctx, req.GetProductId())
+	if err != nil {
 		return nil, connect.NewError(connect.CodeNotFound, "product not found")
 	}
 	if strings.TrimSpace(req.GetSku()) == "" {
@@ -175,10 +186,15 @@ func (cb *catalogBusiness) CreateProductVariant(
 		return nil, connect.NewError(connect.CodeInvalidArgument, "stock quantity must not be negative")
 	}
 
-	currency, units, nanos := models.MoneyFromProto(req.GetPrice())
-	if currency == "" {
-		return nil, connect.NewError(connect.CodeInvalidArgument, "price with currency is required")
+	currency, err := cb.productCurrency(ctx, product)
+	if err != nil {
+		return nil, err
 	}
+	price, err := validateMoney(req.GetPrice(), currency, "price")
+	if err != nil {
+		return nil, err
+	}
+	currency, units, nanos := models.MoneyFromProto(price)
 
 	variant := &models.ProductVariant{
 		ProductID:     req.GetProductId(),
@@ -216,6 +232,29 @@ func (cb *catalogBusiness) ListProductVariants(
 	return result, nil
 }
 
+// productCurrency is the currency of the shop product belongs to.
+func (cb *catalogBusiness) productCurrency(ctx context.Context, product *models.Product) (string, error) {
+	if product.Shop != nil && product.Shop.GetID() == product.ShopID {
+		return normalizeCurrency(product.Shop.Currency), nil
+	}
+	return shopCurrency(ctx, cb.shopRepo, product.ShopID)
+}
+
+func (cb *catalogBusiness) ListVariantsByProduct(
+	ctx context.Context,
+	productIDs []string,
+) (map[string][]*commercev1.ProductVariant, error) {
+	variants, err := cb.variantRepo.ListByProductIDs(ctx, productIDs)
+	if err != nil {
+		return nil, data.ErrorConvertToAPI(err)
+	}
+	byProduct := make(map[string][]*commercev1.ProductVariant, len(productIDs))
+	for _, v := range variants {
+		byProduct[v.ProductID] = append(byProduct[v.ProductID], v.ToAPI())
+	}
+	return byProduct, nil
+}
+
 func (cb *catalogBusiness) GetShopIDForVariant(ctx context.Context, variantID string) (string, error) {
 	variant, err := cb.variantRepo.GetByID(ctx, variantID)
 	if err != nil {
@@ -244,8 +283,20 @@ func (cb *catalogBusiness) UpdateProductVariant(
 	if err != nil {
 		return nil, data.ErrorConvertToAPI(err)
 	}
+	currency := ""
+	if req.GetPrice() != nil {
+		product := variant.Product
+		if product == nil || product.ShopID == "" {
+			if product, err = cb.productRepo.GetByID(ctx, variant.ProductID); err != nil {
+				return nil, connect.NewError(connect.CodeNotFound, "product not found")
+			}
+		}
+		if currency, err = cb.productCurrency(ctx, product); err != nil {
+			return nil, err
+		}
+	}
 
-	updateColumns, setStock, applyErr := applyVariantFields(variant, req)
+	updateColumns, setStock, applyErr := applyVariantFields(variant, req, currency)
 	if applyErr != nil {
 		return nil, applyErr
 	}
@@ -271,6 +322,7 @@ func (cb *catalogBusiness) UpdateProductVariant(
 func applyVariantFields(
 	variant *models.ProductVariant,
 	req *commercev1.UpdateProductVariantRequest,
+	shopCurrency string,
 ) ([]string, bool, error) {
 	fields := req.GetUpdateMask().GetPaths()
 	explicitMask := len(fields) > 0
@@ -292,7 +344,7 @@ func applyVariantFields(
 			setStock = true
 			continue
 		}
-		columns, err := applyVariantField(variant, req, field, explicitMask)
+		columns, err := applyVariantField(variant, req, field, explicitMask, shopCurrency)
 		if err != nil {
 			return nil, false, err
 		}
@@ -306,6 +358,7 @@ func applyVariantField(
 	req *commercev1.UpdateProductVariantRequest,
 	field string,
 	explicitMask bool,
+	shopCurrency string,
 ) ([]string, error) {
 	switch field {
 	case fieldSKU:
@@ -322,10 +375,11 @@ func applyVariantField(
 		if req.GetPrice() == nil {
 			return nil, nil
 		}
-		currency, units, nanos := models.MoneyFromProto(req.GetPrice())
-		if currency == "" {
-			return nil, connect.NewError(connect.CodeInvalidArgument, "price currency is required")
+		price, err := validateMoney(req.GetPrice(), shopCurrency, "price")
+		if err != nil {
+			return nil, err
 		}
+		currency, units, nanos := models.MoneyFromProto(price)
 		variant.CurrencyCode = currency
 		variant.PriceUnits = units
 		variant.PriceNanos = nanos

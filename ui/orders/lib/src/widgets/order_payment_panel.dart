@@ -1,4 +1,5 @@
 import 'package:antinvestor_api_commerce/antinvestor_api_commerce.dart';
+import 'package:antinvestor_ui_core/permissions/permission_provider.dart';
 import 'package:antinvestor_ui_core/widgets/error_helpers.dart';
 import 'package:connectrpc/connect.dart';
 import 'package:flutter/material.dart';
@@ -9,6 +10,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../providers/order_providers.dart';
 import '../utils/instalments.dart';
 import 'order_payment_dialogs.dart';
+import 'order_refunds.dart';
 
 /// Payment state and actions for one order.
 ///
@@ -20,8 +22,12 @@ import 'order_payment_dialogs.dart';
 ///   amount is asked for and validated against the policy), "I've paid —
 ///   check status" (verifies the session), Record payment (staff, offline
 ///   payments), Cancel;
-/// - confirmed and unshipped: Cancel (records a refund of what was paid);
+/// - confirmed and unshipped: Cancel (refunds what was paid, automatically);
 /// - anything else: read-only summary.
+///
+/// Refunds in flight, what has been refunded, and payments held for staff
+/// review are shown so staff know whether anything is theirs to do. Every
+/// action needs `order_manage`.
 ///
 /// While money is owed the order is reloaded whenever the app regains
 /// focus, so returning from the payment page shows the latest state without
@@ -35,7 +41,8 @@ class OrderPaymentPanel extends ConsumerStatefulWidget {
 
   final Order order;
 
-  /// Offer "Record payment" for offline payments (needs `order_manage`).
+  /// Offer "Record payment" for offline payments (also needs
+  /// `order_manage`).
   final bool canRecordPayments;
 
   @override
@@ -98,6 +105,26 @@ class _OrderPaymentPanelState extends ConsumerState<OrderPaymentPanel> {
         payable && (order.paymentSessionRef.isNotEmpty || _checkoutOpened);
     final currency = rules.currencyCode;
     final unpaid = rules.paidMinor <= 0;
+    final canManage = ref.watch(hasPermissionProvider('order_manage'));
+    final refundedMinor = order.hasAmountRefunded()
+        ? moneyToMinor(order.amountRefunded)
+        : 0;
+    final failedRefunds = order.refunds
+        .where((r) => r.status == OrderRefundStatus.ORDER_REFUND_STATUS_FAILED)
+        .toList();
+    // On its way: some refund is still with the payment service (orders
+    // from before refunds were listed show only the payment status).
+    final refundPending =
+        order.paymentStatus == PaymentStatus.PAYMENT_STATUS_REFUND_PENDING &&
+        (order.refunds.isEmpty ||
+            order.refunds.any(
+              (r) =>
+                  r.status == OrderRefundStatus.ORDER_REFUND_STATUS_PENDING ||
+                  r.status == OrderRefundStatus.ORDER_REFUND_STATUS_SENT,
+            ));
+    final owedBackMinor = rules.paidMinor > refundedMinor
+        ? rules.paidMinor - refundedMinor
+        : 0;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -154,6 +181,43 @@ class _OrderPaymentPanelState extends ConsumerState<OrderPaymentPanel> {
               ),
             ),
           ],
+          if (refundedMinor > 0)
+            _row(
+              theme,
+              'Refunded',
+              formatMinor(refundedMinor, currency),
+              key: const ValueKey('payment-refunded'),
+            ),
+          if (refundPending)
+            _notice(
+              theme,
+              key: const ValueKey('payment-refund-pending'),
+              icon: Icons.undo_outlined,
+              color: Colors.deepOrange,
+              text:
+                  'A refund of '
+                  '${formatMinor(owedBackMinor, currency)} '
+                  'is on its way to the buyer. It is sent automatically; '
+                  'the order shows Refunded once the payment service '
+                  'confirms it.',
+            ),
+          for (final refund in failedRefunds)
+            FailedRefundCard(
+              order: order,
+              refund: refund,
+              canManage: canManage,
+            ),
+          if (order.paymentReview.isNotEmpty)
+            _notice(
+              theme,
+              key: const ValueKey('payment-review'),
+              icon: Icons.flag_outlined,
+              color: theme.colorScheme.error,
+              text:
+                  'Needs review: ${order.paymentReview} Payments on this '
+                  'order are no longer checked automatically; settle it with '
+                  'the payment provider.',
+            ),
           if (order.hasBalanceDueAt() && rules.balanceMinor > 0)
             _dueRow(theme, 'Balance due by', order.balanceDueAt.toDateTime()),
           if (order.hasPaymentDueAt() && unpaid && payable)
@@ -220,74 +284,104 @@ class _OrderPaymentPanelState extends ConsumerState<OrderPaymentPanel> {
             ...order.payments.map((p) => OrderPaymentTile(payment: p)),
             const SizedBox(height: 12),
           ],
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              if (canCheckStatus)
-                FilledButton.icon(
-                  onPressed: busy ? null : _confirm,
-                  icon: const Icon(Icons.verified_outlined, size: 18),
-                  label: const Text("I've paid — check status"),
-                ),
-              if (payable && rules.allowsPartial) ...[
-                (canCheckStatus
-                    ? OutlinedButton.icon(
-                        onPressed: busy ? null : _payInstalment,
-                        icon: const Icon(Icons.payments_outlined, size: 18),
-                        label: Text(unpaid ? 'Pay deposit' : 'Pay instalment'),
-                      )
-                    : FilledButton.icon(
-                        onPressed: busy ? null : _payInstalment,
-                        icon: const Icon(Icons.payments_outlined, size: 18),
-                        label: Text(unpaid ? 'Pay deposit' : 'Pay instalment'),
-                      )),
-                if (order.checkoutUrl.isNotEmpty)
+          if (canManage)
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                if (canCheckStatus)
+                  FilledButton.icon(
+                    onPressed: busy ? null : _confirm,
+                    icon: const Icon(Icons.verified_outlined, size: 18),
+                    label: const Text("I've paid — check status"),
+                  ),
+                if (payable && rules.allowsPartial) ...[
+                  (canCheckStatus
+                      ? OutlinedButton.icon(
+                          onPressed: busy ? null : _payInstalment,
+                          icon: const Icon(Icons.payments_outlined, size: 18),
+                          label: Text(
+                            unpaid ? 'Pay deposit' : 'Pay instalment',
+                          ),
+                        )
+                      : FilledButton.icon(
+                          onPressed: busy ? null : _payInstalment,
+                          icon: const Icon(Icons.payments_outlined, size: 18),
+                          label: Text(
+                            unpaid ? 'Pay deposit' : 'Pay instalment',
+                          ),
+                        )),
+                  if (order.checkoutUrl.isNotEmpty)
+                    TextButton.icon(
+                      onPressed: () => _open(order.checkoutUrl),
+                      icon: const Icon(Icons.open_in_new, size: 18),
+                      label: const Text('Open payment page'),
+                    ),
+                ] else if (payable)
+                  (canCheckStatus
+                      ? OutlinedButton.icon(
+                          onPressed: busy ? null : () => _pay(),
+                          icon: const Icon(Icons.open_in_new, size: 18),
+                          label: const Text('Open payment page'),
+                        )
+                      : FilledButton.icon(
+                          onPressed: busy ? null : () => _pay(),
+                          icon: const Icon(Icons.payment, size: 18),
+                          label: Text(
+                            order.checkoutUrl.isEmpty
+                                ? 'Pay now'
+                                : 'Open payment page',
+                          ),
+                        )),
+                if (payable && widget.canRecordPayments)
+                  OutlinedButton.icon(
+                    onPressed: busy ? null : _recordPayment,
+                    icon: const Icon(Icons.point_of_sale_outlined, size: 18),
+                    label: const Text('Record payment'),
+                  ),
+                if (_cancellable)
                   TextButton.icon(
-                    onPressed: () => _open(order.checkoutUrl),
-                    icon: const Icon(Icons.open_in_new, size: 18),
-                    label: const Text('Open payment page'),
+                    onPressed: busy ? null : _cancel,
+                    icon: const Icon(Icons.cancel_outlined, size: 18),
+                    label: Text(
+                      rules.paidMinor > 0 ||
+                              order.paymentStatus ==
+                                  PaymentStatus.PAYMENT_STATUS_PAID
+                          ? 'Cancel and refund'
+                          : 'Cancel order',
+                    ),
                   ),
-              ] else if (payable)
-                (canCheckStatus
-                    ? OutlinedButton.icon(
-                        onPressed: busy ? null : () => _pay(),
-                        icon: const Icon(Icons.open_in_new, size: 18),
-                        label: const Text('Open payment page'),
-                      )
-                    : FilledButton.icon(
-                        onPressed: busy ? null : () => _pay(),
-                        icon: const Icon(Icons.payment, size: 18),
-                        label: Text(
-                          order.checkoutUrl.isEmpty
-                              ? 'Pay now'
-                              : 'Open payment page',
-                        ),
-                      )),
-              if (payable && widget.canRecordPayments)
-                OutlinedButton.icon(
-                  onPressed: busy ? null : _recordPayment,
-                  icon: const Icon(Icons.point_of_sale_outlined, size: 18),
-                  label: const Text('Record payment'),
-                ),
-              if (_cancellable)
-                TextButton.icon(
-                  onPressed: busy ? null : _cancel,
-                  icon: const Icon(Icons.cancel_outlined, size: 18),
-                  label: Text(
-                    rules.paidMinor > 0 ||
-                            order.paymentStatus ==
-                                PaymentStatus.PAYMENT_STATUS_PAID
-                        ? 'Cancel and refund'
-                        : 'Cancel order',
-                  ),
-                ),
-            ],
-          ),
+              ],
+            ),
         ],
       ),
     );
   }
+
+  Widget _notice(
+    ThemeData theme, {
+    required Key key,
+    required IconData icon,
+    required Color color,
+    required String text,
+  }) => Container(
+    key: key,
+    width: double.infinity,
+    margin: const EdgeInsets.only(bottom: 12),
+    padding: const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      color: color.withAlpha(25),
+      borderRadius: BorderRadius.circular(8),
+    ),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 18, color: color),
+        const SizedBox(width: 8),
+        Expanded(child: Text(text, style: theme.textTheme.bodySmall)),
+      ],
+    ),
+  );
 
   Widget _dueRow(ThemeData theme, String label, DateTime due) {
     final overdue = due.isBefore(DateTime.now());
@@ -425,36 +519,26 @@ class _OrderPaymentPanelState extends ConsumerState<OrderPaymentPanel> {
   }
 
   Future<void> _cancel() async {
+    final rules = _rules;
     final reason = await showDialog<String>(
       context: context,
-      builder: (ctx) {
-        final controller = TextEditingController();
-        return AlertDialog(
-          title: const Text('Cancel order'),
-          content: TextField(
-            controller: controller,
-            decoration: const InputDecoration(labelText: 'Reason'),
-            autofocus: true,
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('Keep order'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.of(ctx).pop(controller.text.trim()),
-              child: const Text('Cancel order'),
-            ),
-          ],
-        );
-      },
+      builder: (_) => CancelOrderDialog(
+        paidMinor: rules.paidMinor,
+        currencyCode: rules.currencyCode,
+      ),
     );
     if (reason == null || !mounted) return;
     try {
-      await ref
+      final updated = await ref
           .read(orderNotifierProvider.notifier)
           .cancel(order.id, reason: reason);
-      if (mounted) _toast(context, 'Order cancelled.');
+      if (!mounted) return;
+      _toast(
+        context,
+        updated.paymentStatus == PaymentStatus.PAYMENT_STATUS_REFUND_PENDING
+            ? 'Order cancelled. The buyer is being refunded.'
+            : 'Order cancelled.',
+      );
     } catch (e) {
       if (mounted) _toast(context, friendlyError(e), isError: true);
     }
@@ -471,6 +555,86 @@ class _OrderPaymentPanelState extends ConsumerState<OrderPaymentPanel> {
         content: Text(message),
         backgroundColor: isError ? Theme.of(context).colorScheme.error : null,
       ),
+    );
+  }
+}
+
+/// Asks for a cancellation reason and, when the buyer has paid, says the
+/// money goes back to them on its own. Pops with the trimmed reason, or null
+/// when dismissed.
+class CancelOrderDialog extends StatefulWidget {
+  const CancelOrderDialog({
+    super.key,
+    required this.paidMinor,
+    required this.currencyCode,
+  });
+
+  /// What the buyer has paid towards the order, in minor units.
+  final int paidMinor;
+  final String currencyCode;
+
+  @override
+  State<CancelOrderDialog> createState() => _CancelOrderDialogState();
+}
+
+class _CancelOrderDialogState extends State<CancelOrderDialog> {
+  final _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final paid = widget.paidMinor > 0;
+    return AlertDialog(
+      title: Text(paid ? 'Cancel and refund' : 'Cancel order'),
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 420),
+        child: SizedBox(
+          width: double.maxFinite,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                paid
+                    ? 'The buyer has paid '
+                          '${formatMinor(widget.paidMinor, widget.currencyCode)}. '
+                          'Cancelling refunds it to them automatically; you do '
+                          'not need to pay it back by hand. The order shows '
+                          'Refund pending until the payment service confirms '
+                          'the refund. Reserved stock is returned.'
+                    : 'Reserved stock is returned and the buyer can no '
+                          'longer pay for this order.',
+                key: const ValueKey('cancel-order-explanation'),
+                style: theme.textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                key: const ValueKey('cancel-order-reason'),
+                controller: _controller,
+                autofocus: true,
+                decoration: const InputDecoration(labelText: 'Reason'),
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Keep order'),
+        ),
+        FilledButton(
+          key: const ValueKey('cancel-order-confirm'),
+          onPressed: () => Navigator.of(context).pop(_controller.text.trim()),
+          child: Text(paid ? 'Cancel and refund' : 'Cancel order'),
+        ),
+      ],
     );
   }
 }

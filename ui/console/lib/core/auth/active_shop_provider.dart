@@ -50,8 +50,9 @@ class SelectedShopNotifier extends Notifier<String?> {
   void clear() => state = null;
 }
 
-final selectedShopIdProvider =
-    NotifierProvider<SelectedShopNotifier, String?>(SelectedShopNotifier.new);
+final selectedShopIdProvider = NotifierProvider<SelectedShopNotifier, String?>(
+  SelectedShopNotifier.new,
+);
 
 /// Picks the shop the console operates on.
 ///

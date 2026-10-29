@@ -30,8 +30,8 @@ class ModuleGrid extends StatelessWidget {
         final crossAxisCount = constraints.maxWidth >= 1100
             ? 4
             : constraints.maxWidth >= 700
-                ? 3
-                : 2;
+            ? 3
+            : 2;
 
         return GridView.builder(
           shrinkWrap: true,

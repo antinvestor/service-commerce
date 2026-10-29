@@ -1,4 +1,5 @@
 import 'package:antinvestor_api_commerce/antinvestor_api_commerce.dart';
+import 'package:antinvestor_ui_core/permissions/permission_provider.dart';
 // ignore: implementation_imports
 import 'package:antinvestor_api_commerce/src/common/v1/money.pb.dart'
     show Money;
@@ -159,6 +160,9 @@ void main() {
           catalogServiceClientProvider.overrideWithValue(
             CommerceServiceClient(transport),
           ),
+          userPermissionsProvider.overrideWith(
+            (ref) async => {'product_view', 'product_manage'},
+          ),
         ],
         child: const MaterialApp(
           home: Scaffold(body: ProductDetailScreen(productId: 'prod-1')),
@@ -253,6 +257,9 @@ void main() {
         overrides: [
           catalogServiceClientProvider.overrideWithValue(
             CommerceServiceClient(transport),
+          ),
+          userPermissionsProvider.overrideWith(
+            (ref) async => {'product_view', 'product_manage'},
           ),
         ],
         child: const MaterialApp(

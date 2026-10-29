@@ -1,13 +1,17 @@
 import 'package:antinvestor_api_commerce/antinvestor_api_commerce.dart'
-    show Order;
+    show
+        ListOrdersRequest,
+        Order,
+        OrderStatus,
+        PageCursor,
+        PaymentStatus,
+        SearchRequest;
 import 'package:antinvestor_api_manufacturing/antinvestor_api_manufacturing.dart'
     show Batch, BatchStatus;
 import 'package:antinvestor_api_procurement/antinvestor_api_procurement.dart'
     show PurchaseOrder, PurchaseOrderStatus;
-import 'package:antinvestor_ui_inventory/antinvestor_ui_inventory.dart'
-    show inventoryItemListProvider;
 import 'package:antinvestor_ui_orders/antinvestor_ui_orders.dart'
-    show orderListProvider;
+    show orderServiceClientProvider;
 import 'package:antinvestor_ui_procurement/antinvestor_ui_procurement.dart'
     show purchaseOrderListProvider;
 import 'package:antinvestor_ui_production/antinvestor_ui_production.dart'
@@ -16,33 +20,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/auth/active_shop_provider.dart';
+import 'sales_math.dart';
 import '../../../core/auth/tenant_context_provider.dart';
-
-/// Snapshot of commerce + manufacturing KPIs surfaced on the dashboard.
-class DashboardKpis {
-  const DashboardKpis({
-    required this.todaysSales,
-    required this.openPurchaseOrders,
-    required this.activeBatches,
-    required this.lowStockItems,
-    required this.expiringStockItems,
-  });
-
-  /// Placeholder used before the tenant scope resolves.
-  factory DashboardKpis.empty() => const DashboardKpis(
-    todaysSales: '—',
-    openPurchaseOrders: 0,
-    activeBatches: 0,
-    lowStockItems: 0,
-    expiringStockItems: 0,
-  );
-
-  final String todaysSales;
-  final int openPurchaseOrders;
-  final int activeBatches;
-  final int lowStockItems;
-  final int expiringStockItems;
-}
 
 class RecentActivityEntry {
   const RecentActivityEntry({
@@ -56,32 +35,103 @@ class RecentActivityEntry {
   final DateTime timestamp;
 }
 
-/// Live KPI feed. Each field is computed from the corresponding domain
-/// provider with a graceful fallback when the upstream call fails, so a
-/// single transient backend issue cannot break the entire dashboard.
-final dashboardKpisProvider = FutureProvider<DashboardKpis>((ref) async {
-  final scope = ref.watch(tenantScopeProvider);
-  if (!scope.isReady) {
-    return DashboardKpis.empty();
+// Each KPI loads on its own so a slow or unreachable service only blanks
+// its own card. A null count means the figure could not be loaded; it is
+// shown as a dash rather than a zero that would read as "nothing to do".
+
+/// Orders read for the dashboard figures: at most [dashboardOrderPages]
+/// pages of [dashboardOrderPageSize], newest first. ListOrders has no
+/// aggregate, so the figures are computed over this window and say so when
+/// the shop has more orders than it holds.
+const int dashboardOrderPages = 5;
+const int dashboardOrderPageSize = 100;
+
+/// The newest orders of a shop, and whether older ones were left out.
+class RecentOrders {
+  const RecentOrders(this.orders, {required this.truncated});
+
+  final List<Order> orders;
+  final bool truncated;
+}
+
+/// The active shop's newest orders, read page by page up to the bound.
+final dashboardOrdersProvider = FutureProvider<RecentOrders?>((ref) async {
+  final shopId = ref.watch(tenantScopeProvider.select((s) => s.shopId));
+  if (shopId.isEmpty) return null;
+  final client = ref.watch(orderServiceClientProvider);
+  final orders = <Order>[];
+  var page = '';
+  for (var i = 0; i < dashboardOrderPages; i++) {
+    final cursor = PageCursor(limit: dashboardOrderPageSize);
+    if (page.isNotEmpty) cursor.page = page;
+    final response = await client.listOrders(
+      ListOrdersRequest(
+        shopId: shopId,
+        search: SearchRequest(cursor: cursor),
+      ),
+    );
+    orders.addAll(response.orders);
+    page = response.nextPage;
+    if (page.isEmpty) return RecentOrders(orders, truncated: false);
   }
+  return RecentOrders(orders, truncated: true);
+});
 
+/// A KPI value and an optional note on how it was worked out.
+typedef Kpi = ({String value, String? note});
+
+/// Money received today, in the active shop's currency, before refunds:
+/// an order says how much was refunded (amount_refunded) but not when, so
+/// today's refunds cannot be taken off and the card is labelled gross.
+final todaysSalesProvider = FutureProvider<Kpi>((ref) async {
   final currency = ref.watch(activeShopProvider.select((s) => s?.currency));
+  try {
+    final recent = await ref.watch(dashboardOrdersProvider.future);
+    if (recent == null) return (value: '—', note: null);
+    final code = (currency ?? '').trim().toUpperCase();
+    final now = DateTime.now();
+    final minor = paidMinorSince(
+      recent.orders,
+      DateTime(now.year, now.month, now.day),
+      code,
+    );
+    return (
+      value: formatMinorMoney(minor, code),
+      note: recent.truncated
+          ? 'Payments today on the latest ${recent.orders.length} orders, '
+                'before refunds'
+          : 'Payments received today, before refunds',
+    );
+  } catch (_) {
+    return (value: '—', note: null);
+  }
+});
 
-  final results = await Future.wait<Object>([
-    _todaysSales(ref, scope.shopId, currency ?? ''),
-    _openPurchaseOrders(ref, scope.propertyId),
-    _activeBatches(ref, scope.propertyId),
-    _lowStockItems(ref, scope.propertyId),
-    _expiringStockItems(ref, scope.propertyId),
-  ]);
+/// Open orders with money still owed: unpaid or part-paid.
+final awaitingPaymentProvider = FutureProvider<Kpi>((ref) async {
+  try {
+    final recent = await ref.watch(dashboardOrdersProvider.future);
+    if (recent == null) return (value: '—', note: null);
+    final count = recent.orders.where(_owesMoney).length;
+    return (
+      value: '$count',
+      note: recent.truncated
+          ? 'Of the latest ${recent.orders.length} orders'
+          : null,
+    );
+  } catch (_) {
+    return (value: '—', note: null);
+  }
+});
 
-  return DashboardKpis(
-    todaysSales: results[0] as String,
-    openPurchaseOrders: results[1] as int,
-    activeBatches: results[2] as int,
-    lowStockItems: results[3] as int,
-    expiringStockItems: results[4] as int,
-  );
+/// Purchase orders submitted but not yet fully received.
+final openPurchaseOrdersProvider = FutureProvider<int?>((ref) async {
+  return _openPurchaseOrders(ref, ref.watch(tenantScopeProvider).propertyId);
+});
+
+/// Production batches in flight.
+final activeBatchesProvider = FutureProvider<int?>((ref) async {
+  return _activeBatches(ref, ref.watch(tenantScopeProvider).propertyId);
 });
 
 /// Formats [amount] in the shop's [currency] (ISO 4217), e.g. `KES 1,250.00`.
@@ -90,23 +140,6 @@ String formatShopMoney(double amount, String currency) {
   final code = currency.trim().toUpperCase();
   if (code.isEmpty) return NumberFormat('#,##0.00').format(amount);
   return NumberFormat.currency(name: code, symbol: '$code ').format(amount);
-}
-
-/// Sum of order totals created since the start of the local day, in the
-/// active shop's currency.
-Future<String> _todaysSales(Ref ref, String shopId, String currency) async {
-  if (shopId.isEmpty) return '—';
-  try {
-    final orders = await ref.read(orderListProvider(shopId).future);
-    final now = DateTime.now();
-    final startOfDay = DateTime(now.year, now.month, now.day);
-    final total = orders
-        .where((o) => _orderCreatedAt(o)?.isAfter(startOfDay) ?? false)
-        .fold<double>(0, (sum, o) => sum + _orderTotal(o));
-    return formatShopMoney(total, currency);
-  } catch (_) {
-    return '—';
-  }
 }
 
 DateTime? _orderCreatedAt(Order order) {
@@ -118,20 +151,25 @@ DateTime? _orderCreatedAt(Order order) {
   ).toLocal();
 }
 
-double _orderTotal(Order order) {
-  if (!order.hasTotal()) return 0;
-  final money = order.total;
-  return money.units.toInt() + (money.nanos / 1e9);
+bool _owesMoney(Order order) {
+  if (order.status == OrderStatus.ORDER_STATUS_CANCELLED) return false;
+  switch (order.paymentStatus) {
+    case PaymentStatus.PAYMENT_STATUS_PENDING:
+    case PaymentStatus.PAYMENT_STATUS_PARTIALLY_PAID:
+      return true;
+    default:
+      return false;
+  }
 }
 
 /// Count of purchase orders that are submitted but not yet fully received.
-Future<int> _openPurchaseOrders(Ref ref, String propertyId) async {
-  if (propertyId.isEmpty) return 0;
+Future<int?> _openPurchaseOrders(Ref ref, String propertyId) async {
+  if (propertyId.isEmpty) return null;
   try {
     final pos = await ref.read(purchaseOrderListProvider(propertyId).future);
     return pos.where(_isOpenPurchaseOrder).length;
   } catch (_) {
-    return 0;
+    return null;
   }
 }
 
@@ -147,13 +185,13 @@ bool _isOpenPurchaseOrder(PurchaseOrder po) {
 }
 
 /// Count of batches currently in flight (created through completing).
-Future<int> _activeBatches(Ref ref, String propertyId) async {
-  if (propertyId.isEmpty) return 0;
+Future<int?> _activeBatches(Ref ref, String propertyId) async {
+  if (propertyId.isEmpty) return null;
   try {
     final batches = await ref.read(batchListProvider(propertyId).future);
     return batches.items.where(_isActiveBatch).length;
   } catch (_) {
-    return 0;
+    return null;
   }
 }
 
@@ -169,65 +207,46 @@ bool _isActiveBatch(Batch batch) {
   }
 }
 
-/// Count of inventory items below their reorder threshold.
-///
-/// The current `InventoryItem` protobuf does not expose a reorder level
-/// nor a per-location stock balance in a single list call, so a true
-/// low-stock aggregation needs a server-side endpoint (or N+1 balance
-/// calls per item). Until that lands we surface zero — the dashboard
-/// strip stays visually consistent without claiming false alerts.
-Future<int> _lowStockItems(Ref ref, String propertyId) async {
-  if (propertyId.isEmpty) return 0;
-  try {
-    // Touch the provider so the page still warms the inventory cache;
-    // ignore the result until a dedicated low-stock RPC is available.
-    await ref.read(
-      inventoryItemListProvider((propertyId: propertyId, query: '')).future,
-    );
-    return 0;
-  } catch (_) {
-    return 0;
-  }
-}
-
-/// Count of stock lots expiring within the next 7 days.
-///
-/// Lot/expiry data lives on `StockMovement` / `LabelData` records and is
-/// not exposed via a property-wide listing today. Returns zero until the
-/// manufacturing service publishes an expiry aggregation endpoint.
-Future<int> _expiringStockItems(Ref ref, String propertyId) async {
-  if (propertyId.isEmpty) return 0;
-  return 0;
-}
-
-/// Placeholder recent-activity feed.
-///
-/// A real feed requires an audit/events aggregation (orders, POs,
-/// batches, stock adjustments) that no single service exposes today.
-/// Keeping the sample data here lets the shell render meaningfully
-/// until that cross-cutting feed is built.
-final recentActivityProvider = Provider<List<RecentActivityEntry>>((ref) {
-  final now = DateTime.now();
+/// The shop's most recent orders, newest first, as the activity feed.
+final recentActivityProvider = FutureProvider<List<RecentActivityEntry>>((
+  ref,
+) async {
+  final recent = await ref.watch(dashboardOrdersProvider.future);
+  if (recent == null) return const [];
+  final dated = [
+    for (final order in recent.orders)
+      if (_orderCreatedAt(order) case final created?) (order, created),
+  ]..sort((a, b) => b.$2.compareTo(a.$2));
   return [
-    RecentActivityEntry(
-      title: 'Batch B-1042 completed',
-      subtitle: 'Recipe: Honey & Oat — 480 units yielded',
-      timestamp: now.subtract(const Duration(minutes: 12)),
-    ),
-    RecentActivityEntry(
-      title: 'Purchase order PO-318 received',
-      subtitle: 'Supplier: Acacia Foods',
-      timestamp: now.subtract(const Duration(hours: 1)),
-    ),
-    RecentActivityEntry(
-      title: 'Low stock alert — Vanilla Extract',
-      subtitle: 'Below reorder level at warehouse W-1',
-      timestamp: now.subtract(const Duration(hours: 3)),
-    ),
-    RecentActivityEntry(
-      title: 'Order SO-9821 fulfilled',
-      subtitle: 'Channel: storefront / 24 lines',
-      timestamp: now.subtract(const Duration(hours: 5)),
-    ),
+    for (final (order, created) in dated.take(_recentActivityLimit))
+      RecentActivityEntry(
+        title: 'Order ${order.orderNumber} · ${_paymentLabel(order)}',
+        subtitle:
+            '${_orderTotalText(order)}'
+            ' · ${order.lines.length} line${order.lines.length == 1 ? '' : 's'}',
+        timestamp: created,
+      ),
   ];
 });
+
+const _recentActivityLimit = 6;
+
+String _orderTotalText(Order order) {
+  if (!order.hasTotal()) return '—';
+  final code = order.total.currencyCode.toUpperCase();
+  return formatMinorMoney(
+    toMinor(order.total.units.toInt(), order.total.nanos, currencyDigits(code)),
+    code,
+  );
+}
+
+String _paymentLabel(Order order) {
+  return switch (order.paymentStatus) {
+    PaymentStatus.PAYMENT_STATUS_REFUND_PENDING => 'refund pending',
+    PaymentStatus.PAYMENT_STATUS_REFUNDED => 'refunded',
+    _ when order.status == OrderStatus.ORDER_STATUS_CANCELLED => 'cancelled',
+    PaymentStatus.PAYMENT_STATUS_PAID => 'paid',
+    PaymentStatus.PAYMENT_STATUS_PARTIALLY_PAID => 'part-paid',
+    _ => 'awaiting payment',
+  };
+}

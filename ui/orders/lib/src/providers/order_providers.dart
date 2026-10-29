@@ -16,12 +16,14 @@ final orderListProvider = FutureProvider.family<List<Order>, String>((
 });
 
 /// One loaded page window of the order list: the orders fetched so far for
-/// the current search, and the cursor for the next page (empty at the end).
+/// the current search and status filter, and the cursor for the next page
+/// (empty at the end).
 class OrderListState {
   const OrderListState({
     this.orders = const [],
     this.nextPage = '',
     this.query = '',
+    this.status,
     this.loadingMore = false,
     this.loadMoreError,
     this.searching = false,
@@ -30,6 +32,9 @@ class OrderListState {
   final List<Order> orders;
   final String nextPage;
   final String query;
+
+  /// Only orders in this status, filtered by the server; null lists all.
+  final OrderStatus? status;
   final bool loadingMore;
 
   /// A new search is in flight; [orders] still holds the previous results.
@@ -47,14 +52,16 @@ class OrderListState {
     orders: orders ?? this.orders,
     nextPage: nextPage ?? this.nextPage,
     query: query,
+    status: status,
     loadingMore: loadingMore ?? this.loadingMore,
     loadMoreError: loadMoreError,
   );
 }
 
-/// Server-side searched, cursor-paged order list for a shop.
+/// Server-side searched and status-filtered, cursor-paged order list for a
+/// shop.
 ///
-/// [search] restarts from the first page with `search.query`; [loadMore]
+/// [search] and [filterStatus] restart from the first page; [loadMore]
 /// appends the page named by the previous response's `next_page`.
 class OrderListController extends AsyncNotifier<OrderListState> {
   OrderListController(this.shopId);
@@ -69,23 +76,41 @@ class OrderListController extends AsyncNotifier<OrderListState> {
   @override
   Future<OrderListState> build() async {
     _generation++;
-    final page = await _fetch('', '');
+    final page = await _fetch('', null, '');
     return OrderListState(orders: page.orders, nextPage: page.nextPage);
   }
 
-  Future<ListOrdersResponse> _fetch(String query, String page) {
+  Future<ListOrdersResponse> _fetch(
+    String query,
+    OrderStatus? status,
+    String page,
+  ) {
     final cursor = PageCursor(limit: pageSize);
     if (page.isNotEmpty) cursor.page = page;
     final search = SearchRequest(cursor: cursor);
     if (query.isNotEmpty) search.query = query;
     return ref
         .read(orderServiceClientProvider)
-        .listOrders(ListOrdersRequest(shopId: shopId, search: search));
+        .listOrders(
+          ListOrdersRequest(
+            shopId: shopId,
+            search: search,
+            statuses: [?status],
+          ),
+        );
   }
 
-  /// Runs a new search (`search.query`) from the first page.
-  Future<void> search(String query) async {
-    final q = query.trim();
+  /// Runs a new search (`search.query`) from the first page, keeping the
+  /// status filter.
+  Future<void> search(String query) =>
+      _restart(query.trim(), state.value?.status);
+
+  /// Shows only orders in [status] (null: every status), from the first
+  /// page, keeping the search.
+  Future<void> filterStatus(OrderStatus? status) =>
+      _restart(state.value?.query ?? '', status);
+
+  Future<void> _restart(String q, OrderStatus? status) async {
     final generation = ++_generation;
     final previous = state.value;
     state = previous == null
@@ -95,15 +120,17 @@ class OrderListController extends AsyncNotifier<OrderListState> {
               orders: previous.orders,
               nextPage: previous.nextPage,
               query: q,
+              status: status,
               searching: true,
             ),
           );
     final next = await AsyncValue.guard(() async {
-      final page = await _fetch(q, '');
+      final page = await _fetch(q, status, '');
       return OrderListState(
         orders: page.orders,
         nextPage: page.nextPage,
         query: q,
+        status: status,
       );
     });
     if (generation == _generation) state = next;
@@ -116,7 +143,11 @@ class OrderListController extends AsyncNotifier<OrderListState> {
     if (current == null || !current.hasMore || current.loadingMore) return;
     state = AsyncData(current.copyWith(loadingMore: true));
     try {
-      final page = await _fetch(current.query, current.nextPage);
+      final page = await _fetch(
+        current.query,
+        current.status,
+        current.nextPage,
+      );
       state = AsyncData(
         current.copyWith(
           orders: [...current.orders, ...page.orders],
@@ -378,6 +409,33 @@ class OrderNotifier extends Notifier<AsyncValue<void>> {
       );
       if (note.isNotEmpty) request.note = note;
       final response = await _client.recordOrderPayment(request);
+      state = const AsyncValue.data(null);
+      ref.invalidate(orderByIdProvider(orderId));
+      ref.invalidate(orderEventsProvider(orderId));
+      return response.order;
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+      rethrow;
+    }
+  }
+
+  /// Settles a refund the payment service failed: [resolution] RETRY sends
+  /// it again, PAID_BACK records that the shop paid the buyer back itself.
+  Future<Order> resolveRefund(
+    String orderId,
+    String refundId,
+    OrderRefundResolution resolution, {
+    String note = '',
+  }) async {
+    state = const AsyncValue.loading();
+    try {
+      final request = ResolveOrderRefundRequest(
+        orderId: orderId,
+        refundId: refundId,
+        resolution: resolution,
+      );
+      if (note.isNotEmpty) request.note = note;
+      final response = await _client.resolveOrderRefund(request);
       state = const AsyncValue.data(null);
       ref.invalidate(orderByIdProvider(orderId));
       ref.invalidate(orderEventsProvider(orderId));

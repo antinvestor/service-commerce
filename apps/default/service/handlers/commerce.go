@@ -21,6 +21,7 @@ import (
 	"connectrpc.com/connect/v2"
 	"github.com/pitabwire/frame/v3"
 	"github.com/pitabwire/frame/v3/datastore"
+	"github.com/pitabwire/frame/v3/events"
 	"github.com/pitabwire/frame/v3/security"
 	"github.com/pitabwire/frame/v3/security/authorizer"
 
@@ -31,6 +32,7 @@ import (
 	"github.com/antinvestor/service-commerce/apps/default/service/business"
 	"github.com/antinvestor/service-commerce/apps/default/service/notifications"
 	"github.com/antinvestor/service-commerce/apps/default/service/repository"
+	"github.com/antinvestor/service-commerce/pkg/dbrole"
 	"github.com/antinvestor/service-commerce/pkg/errorutil"
 )
 
@@ -52,16 +54,25 @@ type CommerceServer struct {
 	ledgerBusiness     business.LedgerBusiness
 	eventBusiness      business.EventBusiness
 	storefront         business.StorefrontBusiness
-
-	commercev1connect.UnimplementedCommerceServiceHandler
+	stockReceipts      business.StockReceiptBusiness
 }
+
+// CommerceServer answers every RPC itself; a new one in the proto fails the
+// build here rather than reaching callers as unimplemented.
+var _ commercev1connect.CommerceServiceHandler = (*CommerceServer)(nil)
 
 // Dependencies are the peers and policies the server is built with.
 type Dependencies struct {
-	Checkout      business.CheckoutGateway
-	Ledger        business.LedgerGateway
-	Currencies    business.CurrencyDirectory
-	Webhooks      business.WebhookSender
+	Checkout business.CheckoutGateway
+	// Refunds pays refunds out through the payment service; nil leaves them
+	// pending.
+	Refunds    business.RefundGateway
+	Ledger     business.LedgerGateway
+	Currencies business.CurrencyDirectory
+	Webhooks   business.WebhookSender
+	// WebhookQueue delivers webhooks off the request path; nil leaves them
+	// to the reconcile run.
+	WebhookQueue  business.WebhookQueue
 	Secrets       business.SecretBox
 	Notifier      notifications.Notifier
 	PaymentPolicy business.PaymentPolicy
@@ -71,6 +82,10 @@ type Dependencies struct {
 	Buyers business.BuyerDirectory
 	// StorefrontBaseURL is where shops' public pages are served.
 	StorefrontBaseURL string
+	// Storefront bounds anonymous checkouts; GuestUnitsCap bounds the units
+	// a shop's unpaid guest orders hold at once (0: no bound).
+	Storefront    business.StorefrontPolicy
+	GuestUnitsCap int64
 }
 
 func NewCommerceServer(
@@ -101,7 +116,9 @@ func NewCommerceServer(
 	discountRuleRepo := repository.NewDiscountRuleRepository(ctx, dbPool, workMan)
 	postingRepo := repository.NewLedgerPostingRepository(ctx, dbPool, workMan)
 	eventRepo := repository.NewOrderEventRepository(ctx, dbPool, workMan)
-	events := business.NewEventBusiness(eventRepo, shopRepo, deps.Notifier, deps.Webhooks, deps.Secrets)
+	events := business.NewEventBusiness(
+		eventRepo, shopRepo, deps.Notifier, deps.Webhooks, deps.Secrets, deps.WebhookQueue,
+	)
 
 	pricingBusiness := business.NewPricingBusiness(
 		ctx,
@@ -128,10 +145,10 @@ func NewCommerceServer(
 		cartRepo,
 		cartLineRepo,
 		pricingBusiness,
-		business.OrderPolicy{PaymentWindow: deps.PaymentPolicy.PaymentWindow},
+		business.OrderPolicy{PaymentWindow: deps.PaymentPolicy.PaymentWindow, GuestUnitsCap: deps.GuestUnitsCap},
 	)
 	paymentBusiness := business.NewPaymentBusiness(
-		ctx, orderRepo, shopRepo, deps.Checkout, deps.Notifier, events, deps.PaymentPolicy,
+		ctx, orderRepo, shopRepo, deps.Checkout, deps.Refunds, deps.Notifier, events, deps.PaymentPolicy,
 	)
 
 	return &CommerceServer{
@@ -158,8 +175,12 @@ func NewCommerceServer(
 		),
 		pricingBusiness: pricingBusiness,
 		eventBusiness:   events,
+		stockReceipts: business.NewStockReceiptBusiness(
+			variantRepo, repository.NewStockReceiptRepository(dbPool),
+		),
 		storefront: business.NewStorefrontBusiness(
-			shopRepo, catalogBusiness, orderBusiness, paymentBusiness, deps.Buyers, deps.StorefrontBaseURL,
+			shopRepo, catalogBusiness, orderBusiness, paymentBusiness, deps.Buyers,
+			repository.NewLimitRepository(dbPool), deps.Storefront, deps.StorefrontBaseURL,
 		),
 	}
 }
@@ -260,7 +281,7 @@ func (cs *CommerceServer) GetProduct(
 		return nil, errorutil.CleanErr(err)
 	}
 	if authzErr := cs.authz.CanProductsView(ctx, product.GetShopId()); authzErr != nil {
-		return nil, authorizer.ToConnectError(authzErr)
+		return nil, notVisible(authorizer.ToConnectError(authzErr))
 	}
 	return &commercev1.GetProductResponse{Product: product}, nil
 }
@@ -298,6 +319,43 @@ func (cs *CommerceServer) CreateProductVariant(
 		return nil, errorutil.CleanErr(err)
 	}
 	return &commercev1.CreateProductVariantResponse{ProductVariant: variant}, nil
+}
+
+func (cs *CommerceServer) ListProductVariants(
+	ctx context.Context,
+	req *commercev1.ListProductVariantsRequest,
+) (*commercev1.ListProductVariantsResponse, error) {
+	product, err := cs.catalogBusiness.GetProduct(ctx, req.GetProductId())
+	if err != nil {
+		return nil, errorutil.CleanErr(err)
+	}
+	if authzErr := cs.authz.CanProductsView(ctx, product.GetShopId()); authzErr != nil {
+		return nil, notVisible(authorizer.ToConnectError(authzErr))
+	}
+	variants, err := cs.catalogBusiness.ListProductVariants(ctx, product.GetId())
+	if err != nil {
+		return nil, errorutil.CleanErr(err)
+	}
+	return &commercev1.ListProductVariantsResponse{ProductVariants: variants}, nil
+}
+
+// ReceiveStock is for the procurement service only: stock_receive is
+// granted to its service account and bound to no role, and the caller must
+// be an internal system. The variant is found across tenants and must belong
+// to the tenant the receipt was recorded in.
+func (cs *CommerceServer) ReceiveStock(
+	ctx context.Context,
+	req *commercev1.ReceiveStockRequest,
+) (*commercev1.ReceiveStockResponse, error) {
+	claims := security.ClaimsFromContext(ctx)
+	if claims == nil || !claims.IsInternalSystem() {
+		return nil, connect.NewError(connect.CodePermissionDenied, "stock receipts come from internal services only")
+	}
+	resp, err := cs.stockReceipts.ReceiveStock(dbrole.AcrossTenants(ctx, "receive procurement stock"), req)
+	if err != nil {
+		return nil, errorutil.CleanErr(err)
+	}
+	return resp, nil
 }
 
 func (cs *CommerceServer) UpdateProductVariant(
@@ -339,10 +397,15 @@ func (cs *CommerceServer) CreateCart(
 		if err := cs.authz.CanProductsView(ctx, req.GetShopId()); err != nil {
 			return nil, authorizer.ToConnectError(err)
 		}
+		// A buyer's own cart is reached through their profile's default
+		// contact; a contact id they send is not checked against their
+		// profile, so it is not kept.
+		req.SetContactId("")
 	case req.GetProfileId() == caller:
 		if err := cs.authz.CanProductsView(ctx, req.GetShopId()); err != nil {
 			return nil, authorizer.ToConnectError(err)
 		}
+		req.SetContactId("")
 	default:
 		// Creating a cart on behalf of someone else is a staff action.
 		if err := cs.authz.CanOrdersManage(ctx, req.GetShopId()); err != nil {
@@ -363,7 +426,7 @@ func (cs *CommerceServer) GetCart(
 ) (*commercev1.GetCartResponse, error) {
 	cart, err := cs.authorizedCart(ctx, req.GetId(), false)
 	if err != nil {
-		return nil, err
+		return nil, notVisible(err)
 	}
 	return &commercev1.GetCartResponse{Cart: cart}, nil
 }
@@ -404,8 +467,14 @@ func (cs *CommerceServer) CreateOrderFromCart(
 	ctx context.Context,
 	req *commercev1.CreateOrderFromCartRequest,
 ) (*commercev1.CreateOrderFromCartResponse, error) {
-	if _, err := cs.authorizedCart(ctx, req.GetCartId(), true); err != nil {
+	cart, err := cs.authorizedCart(ctx, req.GetCartId(), true)
+	if err != nil {
 		return nil, err
+	}
+	// As with carts: a buyer converting their own cart is reached through
+	// their profile's default contact.
+	if caller := callerSubject(ctx); caller != "" && cart.GetProfileId() == caller {
+		req.SetContactId("")
 	}
 	order, err := cs.orderBusiness.CreateOrderFromCart(ctx, req)
 	if err != nil {
@@ -439,14 +508,16 @@ func (cs *CommerceServer) GetOrder(
 	}
 	if caller := callerSubject(ctx); caller == "" || order.GetProfileId() != caller {
 		if authzErr := cs.authz.CanOrdersView(ctx, order.GetShopId()); authzErr != nil {
-			return nil, authorizer.ToConnectError(authzErr)
+			return nil, notVisible(authorizer.ToConnectError(authzErr))
 		}
 	}
-	return &commercev1.GetOrderResponse{Order: order}, nil
+	return &commercev1.GetOrderResponse{Order: cs.forViewer(ctx, order)}, nil
 }
 
-// ListOrders lists a shop's orders for staff. A caller without orders_view on
-// the shop gets their own orders instead, so buyers can see their history.
+// ListOrders lists a shop's orders for staff, narrowed to one buyer when
+// profile_id is set. A caller without orders_view on the shop gets their own
+// orders instead, so buyers can see their history; they may name only
+// themselves as profile_id.
 func (cs *CommerceServer) ListOrders(
 	ctx context.Context,
 	req *commercev1.ListOrdersRequest,
@@ -454,17 +525,23 @@ func (cs *CommerceServer) ListOrders(
 	var page *business.OrderPage
 	var err error
 
-	if authzErr := cs.authz.CanOrdersView(ctx, req.GetShopId()); authzErr == nil {
+	switch authzErr := cs.authz.CanOrdersView(ctx, req.GetShopId()); {
+	case authzErr == nil && req.GetProfileId() != "":
+		page, err = cs.orderBusiness.ListOrdersForProfile(ctx, req.GetProfileId(), req)
+	case authzErr == nil:
 		page, err = cs.orderBusiness.ListOrders(ctx, req)
-	} else {
+	default:
 		caller := callerSubject(ctx)
-		if caller == "" {
+		if caller == "" || (req.GetProfileId() != "" && req.GetProfileId() != caller) {
 			return nil, authorizer.ToConnectError(authzErr)
 		}
 		page, err = cs.orderBusiness.ListOrdersForProfile(ctx, caller, req)
 	}
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
+	}
+	for _, order := range page.Orders {
+		cs.forViewer(ctx, order)
 	}
 	return &commercev1.ListOrdersResponse{
 		Orders:   page.Orders,
@@ -490,7 +567,7 @@ func (cs *CommerceServer) CheckoutOrder(
 		return nil, errorutil.CleanErr(err)
 	}
 	return &commercev1.CheckoutOrderResponse{
-		Order:       result.Order,
+		Order:       cs.forViewer(ctx, result.Order),
 		CheckoutUrl: result.Order.GetCheckoutUrl(),
 		SessionRef:  result.Order.GetPaymentSessionRef(),
 		Amount:      result.Amount,
@@ -508,7 +585,7 @@ func (cs *CommerceServer) ConfirmOrderPayment(
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
-	return &commercev1.ConfirmOrderPaymentResponse{Order: order}, nil
+	return &commercev1.ConfirmOrderPaymentResponse{Order: cs.forViewer(ctx, order)}, nil
 }
 
 func (cs *CommerceServer) CancelOrder(
@@ -524,7 +601,7 @@ func (cs *CommerceServer) CancelOrder(
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
-	return &commercev1.CancelOrderResponse{Order: order}, nil
+	return &commercev1.CancelOrderResponse{Order: cs.forViewer(ctx, order)}, nil
 }
 
 // ReconcilePayments is a scheduled, partition-wide operation. The tenant
@@ -537,18 +614,22 @@ func (cs *CommerceServer) ReconcilePayments(
 		if err := cs.authz.CanOrdersManage(ctx, shopID); err != nil {
 			return nil, authorizer.ToConnectError(err)
 		}
+	} else {
+		ctx = sweepContext(ctx, "reconcile payments")
 	}
 	summary, err := cs.paymentBusiness.ReconcilePayments(ctx, req.GetShopId(), int(req.GetLimit()))
 	if err != nil {
 		return nil, errorutil.CleanErr(err)
 	}
 	return &commercev1.ReconcilePaymentsResponse{
-		Examined:        summary.Examined,
-		Paid:            summary.Paid,
-		Expired:         summary.Expired,
-		Failed:          summary.Failed,
-		Overdue:         summary.Overdue,
-		EventsDelivered: summary.EventsDelivered,
+		Examined:         summary.Examined,
+		Paid:             summary.Paid,
+		Expired:          summary.Expired,
+		Failed:           summary.Failed,
+		Overdue:          summary.Overdue,
+		EventsDelivered:  summary.EventsDelivered,
+		RefundsSent:      summary.RefundsSent,
+		RefundsConfirmed: summary.RefundsConfirmed,
 	}, nil
 }
 
@@ -560,6 +641,8 @@ func (cs *CommerceServer) RunEndOfDayLedger(
 		if err := cs.authz.CanOrdersManage(ctx, shopID); err != nil {
 			return nil, authorizer.ToConnectError(err)
 		}
+	} else {
+		ctx = sweepContext(ctx, "end-of-day ledger")
 	}
 	postings, err := cs.ledgerBusiness.RunEndOfDayLedger(ctx, req.GetShopId(), req.GetDate())
 	if err != nil {
@@ -619,7 +702,7 @@ func (cs *CommerceServer) GetFulfilment(
 	// The buyer may track their own shipment; staff need orders_view.
 	if caller := callerSubject(ctx); caller == "" || order.GetProfileId() != caller {
 		if authzErr := cs.authz.CanOrdersView(ctx, order.GetShopId()); authzErr != nil {
-			return nil, authorizer.ToConnectError(authzErr)
+			return nil, notVisible(authorizer.ToConnectError(authzErr))
 		}
 	}
 	return &commercev1.GetFulfilmentResponse{Fulfilment: fulfilment}, nil
@@ -661,7 +744,7 @@ func (cs *CommerceServer) PriceListGet(
 		return nil, errorutil.CleanErr(err)
 	}
 	if authzErr := cs.authz.CanPriceListView(ctx, pl.GetShopId()); authzErr != nil {
-		return nil, authorizer.ToConnectError(authzErr)
+		return nil, notVisible(authorizer.ToConnectError(authzErr))
 	}
 	return &commercev1.PriceListGetResponse{PriceList: pl}, nil
 }
@@ -859,6 +942,26 @@ func (cs *CommerceServer) ResolvePrice(
 // Helpers
 // ----------------------
 
+// notVisible answers a read of a record the caller may not see exactly as a
+// read of one that does not exist, so ids cannot be probed for existence.
+func notVisible(err error) error {
+	if connect.CodeOf(err) == connect.CodePermissionDenied {
+		return connect.NewError(connect.CodeNotFound, "record not found")
+	}
+	return err
+}
+
+// sweepContext lets a partition-wide scheduled run reach every tenant when
+// the scheduler (an internal service account) calls; staff stay within their
+// own tenant, as row-level security binds their claims.
+func sweepContext(ctx context.Context, reason string) context.Context {
+	claims := security.ClaimsFromContext(ctx)
+	if claims != nil && claims.IsInternalSystem() {
+		return dbrole.AcrossTenants(ctx, reason)
+	}
+	return ctx
+}
+
 func callerSubject(ctx context.Context) string {
 	claims := security.ClaimsFromContext(ctx)
 	if claims == nil {
@@ -915,6 +1018,22 @@ func (cs *CommerceServer) authorizedOrder(
 		return nil, authorizer.ToConnectError(authzErr)
 	}
 	return order, nil
+}
+
+// forViewer drops from an order what only shop staff see when its buyer is
+// the one reading it: why a refund payment failed (the payment service's
+// own words) and staff notes on how a refund was settled. It changes order
+// in place and returns it.
+func (cs *CommerceServer) forViewer(ctx context.Context, order *commercev1.Order) *commercev1.Order {
+	if len(order.GetRefunds()) == 0 || cs.authz.CanOrdersView(ctx, order.GetShopId()) == nil {
+		return order
+	}
+	for _, refund := range order.GetRefunds() {
+		refund.LastError = ""
+		refund.ResolvedBy = ""
+		refund.Note = ""
+	}
+	return order
 }
 
 // requireOrderPermission resolves the order's shop and applies check to it.
@@ -993,6 +1112,26 @@ func (cs *CommerceServer) RecordOrderPayment(
 	return &commercev1.RecordOrderPaymentResponse{Order: order}, nil
 }
 
+func (cs *CommerceServer) ResolveOrderRefund(
+	ctx context.Context,
+	req *commercev1.ResolveOrderRefundRequest,
+) (*commercev1.ResolveOrderRefundResponse, error) {
+	if err := cs.requireOrderPermission(ctx, req.GetOrderId(), cs.authz.CanOrdersManage); err != nil {
+		return nil, err
+	}
+	order, err := cs.paymentBusiness.ResolveOrderRefund(ctx, business.RefundResolution{
+		OrderID:    req.GetOrderId(),
+		RefundID:   req.GetRefundId(),
+		Resolution: req.GetResolution(),
+		Note:       req.GetNote(),
+		ResolvedBy: callerSubject(ctx),
+	})
+	if err != nil {
+		return nil, errorutil.CleanErr(err)
+	}
+	return &commercev1.ResolveOrderRefundResponse{Order: order}, nil
+}
+
 // ListOrderEvents serves an order's signals to its buyer or to staff, and a
 // shop's to staff.
 func (cs *CommerceServer) ListOrderEvents(
@@ -1004,7 +1143,7 @@ func (cs *CommerceServer) ListOrderEvents(
 	case orderID != "":
 		order, err := cs.authorizedOrder(ctx, orderID, cs.authz.CanOrdersView)
 		if err != nil {
-			return nil, err
+			return nil, notVisible(err)
 		}
 		if shopID != "" && shopID != order.GetShopId() {
 			return nil, connect.NewError(connect.CodeInvalidArgument, "order is not in that shop")
@@ -1054,7 +1193,7 @@ func (cs *CommerceServer) ListFulfilments(
 	req *commercev1.ListFulfilmentsRequest,
 ) (*commercev1.ListFulfilmentsResponse, error) {
 	if _, err := cs.authorizedOrder(ctx, req.GetOrderId(), cs.authz.CanOrdersView); err != nil {
-		return nil, err
+		return nil, notVisible(err)
 	}
 	fulfilments, err := cs.fulfilmentBusiness.ListFulfilments(ctx, req.GetOrderId())
 	if err != nil {
@@ -1079,4 +1218,9 @@ func (cs *CommerceServer) DiscountRuleApprove(
 		return nil, errorutil.CleanErr(err)
 	}
 	return &commercev1.DiscountRuleApproveResponse{DiscountRule: rule}, nil
+}
+
+// WebhookDeliveryEvent is the Frame event that delivers queued webhooks.
+func (cs *CommerceServer) WebhookDeliveryEvent() events.EventI {
+	return business.NewWebhookDeliveryEvent(cs.eventBusiness)
 }

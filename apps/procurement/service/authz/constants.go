@@ -37,6 +37,8 @@ const (
 	PermissionSuppliersView       = "suppliers_view"
 	PermissionPurchaseOrderCreate = "purchase_order_create"
 	PermissionPurchaseOrderView   = "purchase_order_view"
+	PermissionGoodsReceiptCreate  = "goods_receipt_create"
+	PermissionGoodsReceiptRead    = "goods_receipt_view"
 )
 
 // Granted relation constants for direct permission grants.

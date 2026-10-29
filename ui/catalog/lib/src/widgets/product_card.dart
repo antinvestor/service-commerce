@@ -6,11 +6,7 @@ import 'product_status_badge.dart';
 
 /// A card widget for displaying a [Product] in list or grid views.
 class ProductCard extends StatelessWidget {
-  const ProductCard({
-    super.key,
-    required this.product,
-    this.onTap,
-  });
+  const ProductCard({super.key, required this.product, this.onTap});
 
   final Product product;
   final VoidCallback? onTap;
@@ -59,10 +55,11 @@ class ProductCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
-                    Row(
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
                       children: [
                         ProductStatusBadge(status: product.status),
-                        const SizedBox(width: 8),
                         FulfilmentTypeBadge(type: product.fulfilmentType),
                       ],
                     ),

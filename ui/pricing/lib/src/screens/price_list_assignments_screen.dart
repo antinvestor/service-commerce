@@ -1,4 +1,6 @@
 import 'package:antinvestor_api_commerce/antinvestor_api_commerce.dart';
+import 'package:antinvestor_ui_core/permissions/permission_provider.dart';
+import 'package:antinvestor_ui_core/permissions/permission_guard.dart';
 import 'package:antinvestor_ui_core/widgets/error_helpers.dart';
 import 'package:antinvestor_ui_core/widgets/status_badge.dart';
 import 'package:flutter/material.dart';
@@ -19,12 +21,18 @@ class PriceListAssignmentsScreen extends ConsumerWidget {
     final theme = Theme.of(context);
     final params = (priceListId: priceListId, customerId: null);
     final asyncAssignments = ref.watch(priceListAssignmentListProvider(params));
+    final canAssign = ref.watch(
+      hasPermissionProvider('customer_price_override'),
+    );
 
     return Scaffold(
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _assign(context, ref),
-        icon: const Icon(Icons.person_add_alt_1),
-        label: const Text('Assign Customer'),
+      floatingActionButton: PermissionGuard(
+        permissions: const {'customer_price_override'},
+        child: FloatingActionButton.extended(
+          onPressed: () => _assign(context, ref),
+          icon: const Icon(Icons.person_add_alt_1),
+          label: const Text('Assign Customer'),
+        ),
       ),
       body: asyncAssignments.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -118,7 +126,9 @@ class PriceListAssignmentsScreen extends ConsumerWidget {
                         .map(
                           (a) => _AssignmentTile(
                             assignment: a,
-                            onEdit: () => _assign(context, ref, existing: a),
+                            onEdit: canAssign
+                                ? () => _assign(context, ref, existing: a)
+                                : null,
                           ),
                         )
                         .toList(),

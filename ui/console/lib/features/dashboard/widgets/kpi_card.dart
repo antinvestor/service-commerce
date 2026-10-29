@@ -10,6 +10,7 @@ class KpiCard extends StatelessWidget {
     this.change,
     this.icon,
     this.changePositive = true,
+    this.note,
   });
 
   final String label;
@@ -17,6 +18,9 @@ class KpiCard extends StatelessWidget {
   final String? change;
   final IconData? icon;
   final bool changePositive;
+
+  /// How the figure was worked out, shown under it.
+  final String? note;
 
   @override
   Widget build(BuildContext context) {
@@ -48,7 +52,9 @@ class KpiCard extends StatelessWidget {
                 Flexible(
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 4),
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: changeColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(6),
@@ -56,13 +62,10 @@ class KpiCard extends StatelessWidget {
                     child: Text(
                       change!,
                       overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context)
-                          .textTheme
-                          .labelSmall
-                          ?.copyWith(
-                            color: changeColor,
-                            fontWeight: FontWeight.w600,
-                          ),
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: changeColor,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ),
@@ -73,10 +76,19 @@ class KpiCard extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             value,
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w700),
           ),
+          if (note != null) ...[
+            const SizedBox(height: 4),
+            Text(
+              note!,
+              style: Theme.of(
+                context,
+              ).textTheme.labelSmall?.copyWith(color: AppColors.onSurfaceMuted),
+            ),
+          ],
         ],
       ),
     );

@@ -1,6 +1,10 @@
 import 'package:antinvestor_api_commerce/antinvestor_api_commerce.dart';
+// ignore: implementation_imports
+import 'package:antinvestor_api_commerce/src/common/v1/money.pb.dart'
+    show Money;
 import 'package:antinvestor_ui_pricing/src/screens/customer_price_override_form.dart';
 import 'package:antinvestor_ui_pricing/src/screens/discount_rule_form.dart';
+import 'package:antinvestor_ui_pricing/src/screens/price_list_entry_form.dart';
 import 'package:antinvestor_ui_pricing/src/screens/price_list_form.dart';
 import 'package:fixnum/fixnum.dart';
 import 'package:flutter/material.dart';
@@ -14,8 +18,12 @@ class _Result<T> {
 
 /// Pumps a host page, opens [dialog] and records its popped value in the
 /// returned holder.
-Future<_Result<T>> _openDialog<T>(WidgetTester tester, Widget dialog) async {
-  tester.view.physicalSize = const Size(1200, 2400);
+Future<_Result<T>> _openDialog<T>(
+  WidgetTester tester,
+  Widget dialog, {
+  Size size = const Size(1200, 2400),
+}) async {
+  tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
 
@@ -198,5 +206,79 @@ void main() {
       saved.status,
       CustomerPriceOverrideStatus.CUSTOMER_PRICE_OVERRIDE_STATUS_ACTIVE,
     );
+  });
+
+  group('price list entry', () {
+    testWidgets('validates and returns the variant, price and band', (
+      tester,
+    ) async {
+      final result = await _openDialog<PriceListEntryInput>(
+        tester,
+        const PriceListEntryDialog(shopId: 'shop-1', currency: 'KES'),
+      );
+      await tester.tap(find.byKey(const ValueKey('entry-save')));
+      await tester.pumpAndSettle();
+      expect(find.text('Price is required'), findsOneWidget);
+      expect(result.value, isNull);
+
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Product Variant ID'),
+        'var-tea',
+      );
+      await tester.enterText(find.byKey(const ValueKey('entry-price')), '95.5');
+      await tester.enterText(find.byKey(const ValueKey('entry-min')), '10');
+      await tester.tap(find.byKey(const ValueKey('entry-save')));
+      await tester.pumpAndSettle();
+
+      expect(result.value, (
+        variantId: 'var-tea',
+        price: '95.5',
+        minQuantity: 10,
+        maxQuantity: 0,
+      ));
+    });
+
+    testWidgets('keeps the variant of an existing entry', (tester) async {
+      await _openDialog<PriceListEntryInput>(
+        tester,
+        PriceListEntryDialog(
+          shopId: 'shop-1',
+          currency: 'KES',
+          existing: PriceListEntry(
+            id: 'e-1',
+            productVariantId: 'var-tea',
+            unitPrice: Money(currencyCode: 'KES', units: Int64(90)),
+          ),
+        ),
+      );
+      final field = tester.widget<TextFormField>(
+        find.widgetWithText(TextFormField, 'Product Variant ID'),
+      );
+      expect(field.enabled, isFalse);
+      expect(find.text('Search products'), findsNothing);
+    });
+  });
+
+  group('phone width', () {
+    const phone = Size(360, 800);
+
+    testWidgets('every pricing form fits a phone', (tester) async {
+      for (final dialog in <Widget>[
+        const PriceListEntryDialog(shopId: 'shop-1', currency: 'KES'),
+        const PriceListFormDialog(shopId: 'shop-1', defaultCurrency: 'KES'),
+        const DiscountRuleFormDialog(shopId: 'shop-1'),
+        const CustomerPriceOverrideDialog(
+          shopId: 'shop-1',
+          defaultCurrency: 'KES',
+        ),
+      ]) {
+        await _openDialog<Object>(tester, dialog, size: phone);
+        expect(
+          tester.takeException(),
+          isNull,
+          reason: '${dialog.runtimeType} overflows',
+        );
+      }
+    });
   });
 }

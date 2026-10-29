@@ -174,6 +174,12 @@ func (n *notifier) toBuyer(
 	if order.ProfileID == "" && order.ContactID == "" {
 		return
 	}
+	// A guest's contact is only what someone typed on a public page; it
+	// hears nothing until money has been paid towards the order, so the
+	// storefront cannot be used to message strangers.
+	if order.Guest && order.AmountPaidNanos == 0 {
+		return
+	}
 	n.send(ctx, template, kind, commonv1.ContactLink_builder{
 		ProfileId: order.ProfileID,
 		ContactId: order.ContactID,

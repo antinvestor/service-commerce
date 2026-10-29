@@ -8,8 +8,8 @@ import 'responsive_layout.dart';
 /// Provider for sidebar collapsed state.
 final sidebarCollapsedProvider =
     NotifierProvider<SidebarCollapsedNotifier, bool>(
-  SidebarCollapsedNotifier.new,
-);
+      SidebarCollapsedNotifier.new,
+    );
 
 class SidebarCollapsedNotifier extends Notifier<bool> {
   @override
@@ -35,8 +35,7 @@ class ResponsiveScaffold extends ConsumerStatefulWidget {
   final Widget child;
 
   @override
-  ConsumerState<ResponsiveScaffold> createState() =>
-      _ResponsiveScaffoldState();
+  ConsumerState<ResponsiveScaffold> createState() => _ResponsiveScaffoldState();
 }
 
 class _ResponsiveScaffoldState extends ConsumerState<ResponsiveScaffold> {
@@ -66,12 +65,9 @@ class _ResponsiveScaffoldState extends ConsumerState<ResponsiveScaffold> {
             AppSidebar(
               currentRoute: widget.currentRoute,
               onNavigate: widget.onNavigate,
-              collapsed:
-                  screenSize == ScreenSize.tablet ? true : collapsed,
+              collapsed: screenSize == ScreenSize.tablet ? true : collapsed,
               onToggleCollapse: screenSize == ScreenSize.desktop
-                  ? () => ref
-                      .read(sidebarCollapsedProvider.notifier)
-                      .toggle()
+                  ? () => ref.read(sidebarCollapsedProvider.notifier).toggle()
                   : null,
             ),
           Expanded(
@@ -79,8 +75,7 @@ class _ResponsiveScaffoldState extends ConsumerState<ResponsiveScaffold> {
               children: [
                 AppHeader(
                   showMenuButton: screenSize == ScreenSize.mobile,
-                  onMenuTap: () =>
-                      _scaffoldKey.currentState?.openDrawer(),
+                  onMenuTap: () => _scaffoldKey.currentState?.openDrawer(),
                 ),
                 Expanded(child: widget.child),
               ],

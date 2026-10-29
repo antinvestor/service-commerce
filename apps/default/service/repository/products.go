@@ -88,6 +88,39 @@ func (r *productVariantRepository) ListByProductID(
 	return variants, err
 }
 
+// ListByProductIDs returns every variant of the given products in one query.
+func (r *productVariantRepository) ListByProductIDs(
+	ctx context.Context,
+	productIDs []string,
+) ([]*models.ProductVariant, error) {
+	var variants []*models.ProductVariant
+	if len(productIDs) == 0 {
+		return variants, nil
+	}
+	err := r.Pool().DB(ctx, true).
+		Where("product_id IN ?", productIDs).
+		Order("created_at ASC, id ASC").
+		Find(&variants).Error
+	return variants, err
+}
+
+// ListByIDs returns the variants with the given ids, each with its product,
+// in two queries however many there are. Missing ids are left out.
+func (r *productVariantRepository) ListByIDs(
+	ctx context.Context,
+	ids []string,
+) ([]*models.ProductVariant, error) {
+	var variants []*models.ProductVariant
+	if len(ids) == 0 {
+		return variants, nil
+	}
+	err := r.Pool().DB(ctx, true).
+		Preload("Product").
+		Where("id IN ?", ids).
+		Find(&variants).Error
+	return variants, err
+}
+
 // SetStock overwrites a variant's on-hand quantity. This is an explicit
 // operator action (stock take); order flow only ever adjusts relatively.
 func (r *productVariantRepository) SetStock(ctx context.Context, variantID string, quantity int64) error {

@@ -71,6 +71,24 @@ func (r *priceListRepository) ListActive(
 	return items, err
 }
 
+func (r *priceListRepository) ListActiveByIDs(
+	ctx context.Context,
+	shopID string,
+	ids []string,
+) ([]*models.PriceList, error) {
+	var items []*models.PriceList
+	if len(ids) == 0 {
+		return items, nil
+	}
+	now := time.Now()
+	err := r.Pool().DB(ctx, true).
+		Where("id IN ? AND shop_id = ? AND status = ? AND (valid_from IS NULL OR valid_from <= ?) AND (valid_until IS NULL OR valid_until >= ?)",
+			ids, shopID, 1, now, now).
+		Order("priority DESC, id ASC").
+		Find(&items).Error
+	return items, err
+}
+
 // --- PriceListEntry ---
 
 type priceListEntryRepository struct {
@@ -151,6 +169,22 @@ func (r *priceListEntryRepository) GetByPriceListAndVariant(
 	var items []*models.PriceListEntry
 	err := r.Pool().DB(ctx, true).
 		Where("price_list_id = ? AND product_variant_id = ?", priceListID, variantID).
+		Order("min_quantity DESC, id ASC").
+		Find(&items).Error
+	return items, err
+}
+
+func (r *priceListEntryRepository) ListForVariants(
+	ctx context.Context,
+	priceListIDs, variantIDs []string,
+) ([]*models.PriceListEntry, error) {
+	var items []*models.PriceListEntry
+	if len(priceListIDs) == 0 || len(variantIDs) == 0 {
+		return items, nil
+	}
+	err := r.Pool().DB(ctx, true).
+		Where("price_list_id IN ? AND product_variant_id IN ?", priceListIDs, variantIDs).
+		Order("min_quantity DESC, id ASC").
 		Find(&items).Error
 	return items, err
 }
@@ -248,6 +282,24 @@ func (r *customerPriceOverrideRepository) GetByCustomerAndVariant(
 			customerID, variantID, 1, now, now).
 		Error
 	return item, err
+}
+
+func (r *customerPriceOverrideRepository) ListActiveForVariants(
+	ctx context.Context,
+	customerID string,
+	variantIDs []string,
+) ([]*models.CustomerPriceOverride, error) {
+	var items []*models.CustomerPriceOverride
+	if customerID == "" || len(variantIDs) == 0 {
+		return items, nil
+	}
+	now := time.Now()
+	err := r.Pool().DB(ctx, true).
+		Where("customer_id = ? AND product_variant_id IN ? AND status = ? AND (valid_from IS NULL OR valid_from <= ?) AND (valid_until IS NULL OR valid_until >= ?)",
+			customerID, variantIDs, 1, now, now).
+		Order("id ASC").
+		Find(&items).Error
+	return items, err
 }
 
 // --- DiscountRule ---

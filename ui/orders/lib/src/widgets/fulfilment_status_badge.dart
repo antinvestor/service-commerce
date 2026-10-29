@@ -13,19 +13,38 @@ class FulfilmentStatusBadge extends StatelessWidget {
     return StatusBadge.fromEnum(
       value: status,
       mapper: (s) => switch (s) {
-        FulfilmentStatus.FULFILMENT_STATUS_PENDING =>
-          ('Pending', Colors.orange, null),
-        FulfilmentStatus.FULFILMENT_STATUS_PREPARING =>
-          ('Preparing', Colors.blue, null),
-        FulfilmentStatus.FULFILMENT_STATUS_PACKED =>
-          ('Packed', Colors.indigo, null),
-        FulfilmentStatus.FULFILMENT_STATUS_SHIPPED =>
-          ('Shipped', Colors.teal, null),
-        FulfilmentStatus.FULFILMENT_STATUS_DELIVERED =>
-          ('Delivered', Colors.green, null),
-        FulfilmentStatus.FULFILMENT_STATUS_CANCELLED =>
-          ('Cancelled', Colors.red, null),
-        _ => ('Unknown', Colors.grey, null),
+        FulfilmentStatus.FULFILMENT_STATUS_PENDING => (
+          'Pending',
+          Colors.orange,
+          null,
+        ),
+        FulfilmentStatus.FULFILMENT_STATUS_PREPARING => (
+          'Preparing',
+          Colors.blue,
+          null,
+        ),
+        FulfilmentStatus.FULFILMENT_STATUS_PACKED => (
+          'Packed',
+          Colors.indigo,
+          null,
+        ),
+        FulfilmentStatus.FULFILMENT_STATUS_SHIPPED => (
+          'Shipped',
+          Colors.teal,
+          null,
+        ),
+        FulfilmentStatus.FULFILMENT_STATUS_DELIVERED => (
+          'Delivered',
+          Colors.green,
+          null,
+        ),
+        FulfilmentStatus.FULFILMENT_STATUS_CANCELLED => (
+          'Cancelled',
+          Colors.red,
+          null,
+        ),
+        // Nothing has been fulfilled yet.
+        _ => ('Not fulfilled', Colors.grey, null),
       },
     );
   }

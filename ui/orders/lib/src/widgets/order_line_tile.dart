@@ -38,8 +38,9 @@ class OrderLineTile extends StatelessWidget {
                   line.nameSnapshot.isNotEmpty
                       ? line.nameSnapshot
                       : line.productVariantId,
-                  style: theme.textTheme.bodyMedium
-                      ?.copyWith(fontWeight: FontWeight.w500),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w500,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -56,8 +57,9 @@ class OrderLineTile extends StatelessWidget {
           const SizedBox(width: 8),
           Text(
             'x${line.quantity.toInt()}',
-            style: theme.textTheme.bodyMedium
-                ?.copyWith(fontWeight: FontWeight.w500),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w500,
+            ),
           ),
           const SizedBox(width: 12),
           AmountDisplay(amount: line.totalPrice),

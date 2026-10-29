@@ -21,6 +21,7 @@ import (
 	"time"
 
 	commonv1 "buf.build/gen/go/antinvestor/common/protocolbuffers/go/common/v1"
+	"connectrpc.com/connect/v2"
 	"github.com/pitabwire/frame/v3"
 	"github.com/pitabwire/frame/v3/datastore"
 	"github.com/pitabwire/frame/v3/frametests/definition"
@@ -56,6 +57,7 @@ type allBiz struct {
 	ledgerBiz        business.LedgerBusiness
 	eventBiz         business.EventBusiness
 	checkout         *fakeCheckout
+	refunds          *fakeRefunds
 	ledger           *fakeLedger
 	notifier         *recordingNotifier
 	webhooks         *fakeWebhooks
@@ -91,11 +93,16 @@ func (bts *BusinessTestSuite) getBusiness(ctx context.Context, svc *frame.Servic
 	ledger := newFakeLedger()
 	notifier := &recordingNotifier{}
 	webhooks := &fakeWebhooks{}
+	queue := &syncWebhookQueue{}
 	eventBiz := business.NewEventBusiness(
-		repository.NewOrderEventRepository(ctx, dbPool, workMan), shopRepo, notifier, webhooks, nil)
+		repository.NewOrderEventRepository(ctx, dbPool, workMan), shopRepo, notifier, webhooks, nil, queue)
+	queue.events = eventBiz
+	refunds := newFakeRefunds()
 	paymentPolicy := business.PaymentPolicy{
 		DefaultReturnURL: "https://shop.example/orders/{order_id}",
 		PaymentWindow:    30 * time.Minute,
+		// The deployment's storefront hosts.
+		ReturnHosts: []string{"api.example", "store.example"},
 	}
 
 	return allBiz{
@@ -123,18 +130,21 @@ func (bts *BusinessTestSuite) getBusiness(ctx context.Context, svc *frame.Servic
 			shopRepo,
 			notifier,
 		),
-		paymentBiz: business.NewPaymentBusiness(ctx, orderRepo, shopRepo, checkout, notifier, eventBiz, paymentPolicy),
-		returnPaymentBiz: business.NewPaymentBusiness(ctx, orderRepo, shopRepo, checkout, notifier, eventBiz,
+		paymentBiz: business.NewPaymentBusiness(
+			ctx, orderRepo, shopRepo, checkout, refunds, notifier, eventBiz, paymentPolicy),
+		returnPaymentBiz: business.NewPaymentBusiness(ctx, orderRepo, shopRepo, checkout, refunds, notifier, eventBiz,
 			business.PaymentPolicy{
 				DefaultReturnURL: paymentPolicy.DefaultReturnURL,
 				ReturnBaseURL:    "https://api.example/commerce/",
 				PaymentWindow:    paymentPolicy.PaymentWindow,
+				ReturnHosts:      paymentPolicy.ReturnHosts,
 			}),
 		pricingBiz: pricingBiz,
 		ledgerBiz: business.NewLedgerBusiness(ctx, orderRepo, shopRepo, postingRepo, ledger, notifier,
 			business.LedgerPolicy{BookType: "merchant", Timezone: "UTC"}),
 		eventBiz: eventBiz,
 		checkout: checkout,
+		refunds:  refunds,
 		ledger:   ledger,
 		notifier: notifier,
 		webhooks: webhooks,
@@ -173,8 +183,9 @@ func listFulfilmentsForOrder(ctx context.Context, t *testing.T, svc *frame.Servi
 func (bts *BusinessTestSuite) createTestShop(ctx context.Context, biz allBiz) *commercev1.Shop {
 	t := bts.T()
 	shop, err := biz.shopBiz.CreateShop(ctx, &commercev1.CreateShopRequest{
-		Name: "Test Shop " + util.RandomAlphaNumericString(6),
-		Slug: "test-shop-" + util.RandomAlphaNumericString(6),
+		Name:     "Test Shop " + util.RandomAlphaNumericString(6),
+		Slug:     "test-shop-" + util.RandomAlphaNumericString(6),
+		Currency: "USD",
 	})
 	require.NoError(t, err)
 	return shop
@@ -263,7 +274,14 @@ func (bts *BusinessTestSuite) TestCreateShop_DuplicateSlug() {
 			Name: "Shop 2",
 			Slug: slug,
 		})
-		require.Error(t, err)
+		require.Equal(t, connect.CodeAlreadyExists, connect.CodeOf(err))
+
+		// Another tenant's shop holds the slug too: the answer is the same
+		// plain AlreadyExists, never the database's constraint error.
+		other := bts.WithAuthClaims(ctx, "tenant-"+util.RandomAlphaNumericString(6), "partition-x", "owner-x")
+		_, err = biz.shopBiz.CreateShop(other, &commercev1.CreateShopRequest{Name: "Shop 3", Slug: slug})
+		require.Equal(t, connect.CodeAlreadyExists, connect.CodeOf(err))
+		require.NotContains(t, err.Error(), "duplicate key")
 	})
 }
 
@@ -340,6 +358,8 @@ func (bts *BusinessTestSuite) TestCreateProduct() {
 		require.NoError(t, err)
 		require.NotEmpty(t, product.GetId())
 		require.Equal(t, "Laptop", product.GetName())
+		require.Equal(t, commercev1.FulfilmentType_FULFILMENT_TYPE_PHYSICAL, product.GetFulfilmentType(),
+			"an unspecified fulfilment type is physical")
 
 		// Also test GetProduct
 		retrieved, err := biz.catalogBiz.GetProduct(ctx, product.GetId())
@@ -426,13 +446,13 @@ func (bts *BusinessTestSuite) TestUpdateProductVariant() {
 			VariantId: variant.GetId(),
 			Name:      "Updated Variant",
 			Price: &commonv1.Money{
-				CurrencyCode: "EUR",
+				CurrencyCode: "USD",
 				Units:        20,
 			},
 		})
 		require.NoError(t, err)
 		require.Equal(t, "Updated Variant", updated.GetName())
-		require.Equal(t, "EUR", updated.GetPrice().GetCurrencyCode())
+		require.Equal(t, "USD", updated.GetPrice().GetCurrencyCode())
 		require.Equal(t, int64(20), updated.GetPrice().GetUnits())
 	})
 }

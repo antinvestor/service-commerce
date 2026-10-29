@@ -22,6 +22,7 @@ import (
 	"github.com/pitabwire/frame/v3/datastore"
 	"github.com/pitabwire/frame/v3/datastore/pool"
 	"github.com/pitabwire/frame/v3/workerpool"
+	"gorm.io/gorm"
 
 	"github.com/antinvestor/service-commerce/apps/default/service/models"
 )
@@ -67,9 +68,9 @@ func (r *orderEventRepository) List(
 
 func (r *orderEventRepository) ListDue(ctx context.Context, now time.Time, limit int) ([]*models.OrderEvent, error) {
 	var events []*models.OrderEvent
-	err := r.Pool().DB(ctx, true).
+	err := r.Pool().DB(ctx, false).
 		Where("delivery = ? AND (next_attempt_at IS NULL OR next_attempt_at <= ?)", models.EventDeliveryPending, now).
-		Order("created_at ASC").
+		Order("COALESCE(next_attempt_at, created_at) ASC").
 		Limit(limit).
 		Find(&events).Error
 	if err != nil {
@@ -78,10 +79,42 @@ func (r *orderEventRepository) ListDue(ctx context.Context, now time.Time, limit
 	return events, nil
 }
 
+// ClaimDelivery takes an event for one delivery attempt: it counts the
+// attempt and holds the event until leaseUntil, so a concurrent run neither
+// sends it too nor loses the count if this attempt dies. It reports false
+// when the event is not due or another run holds it.
+func (r *orderEventRepository) ClaimDelivery(
+	ctx context.Context,
+	eventID string,
+	now, leaseUntil time.Time,
+) (*models.OrderEvent, error) {
+	result := r.Pool().DB(ctx, false).
+		Model(&models.OrderEvent{}).
+		Where("id = ? AND delivery = ? AND (next_attempt_at IS NULL OR next_attempt_at <= ?)",
+			eventID, models.EventDeliveryPending, now).
+		UpdateColumns(map[string]any{
+			"next_attempt_at":   leaseUntil,
+			"delivery_attempts": gorm.Expr("delivery_attempts + 1"),
+		})
+	if result.Error != nil {
+		return nil, fmt.Errorf("claim order event delivery: %w", result.Error)
+	}
+	if result.RowsAffected == 0 {
+		return nil, nil //nolint:nilnil // not claimed is a valid outcome
+	}
+	event := &models.OrderEvent{}
+	if err := r.Pool().DB(ctx, false).First(event, "id = ?", eventID).Error; err != nil {
+		return nil, fmt.Errorf("load claimed order event: %w", err)
+	}
+	return event, nil
+}
+
+// RecordDelivery saves the outcome of a claimed attempt; the attempt itself
+// was counted by ClaimDelivery.
 func (r *orderEventRepository) RecordDelivery(ctx context.Context, event *models.OrderEvent) error {
 	return r.Pool().DB(ctx, false).
 		Model(event).
-		Select("delivery", "delivery_attempts", "next_attempt_at", "delivered_at", "last_error").
+		Select("delivery", "next_attempt_at", "delivered_at", "last_error").
 		Updates(event).Error
 }
 

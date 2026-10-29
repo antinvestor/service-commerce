@@ -24,6 +24,7 @@ export 'src/widgets/cart_summary_card.dart';
 export 'src/widgets/checkout_button.dart';
 export 'src/widgets/order_payment_panel.dart';
 export 'src/widgets/order_payment_dialogs.dart';
+export 'src/widgets/order_refunds.dart';
 export 'src/widgets/order_event_timeline.dart';
 export 'src/widgets/fulfilment_panel.dart';
 

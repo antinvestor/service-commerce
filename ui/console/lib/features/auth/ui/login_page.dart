@@ -45,10 +45,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              AppColors.primary,
-              Color(0xFF1E293B),
-            ],
+            colors: [AppColors.primary, Color(0xFF1E293B)],
           ),
         ),
         child: Center(
@@ -86,30 +83,25 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   const SizedBox(height: 24),
                   Text(
                     'Antinvestor',
-                    style: Theme.of(context)
-                        .textTheme
-                        .headlineSmall
-                        ?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.onSurface,
-                        ),
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.onSurface,
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     'Console',
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodyMedium
-                        ?.copyWith(color: AppColors.onSurfaceMuted),
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: AppColors.onSurfaceMuted,
+                    ),
                   ),
                   const SizedBox(height: 32),
                   Text(
                     'Sign in to operate commerce and manufacturing.',
                     textAlign: TextAlign.center,
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodySmall
-                        ?.copyWith(color: AppColors.onSurfaceMuted),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppColors.onSurfaceMuted,
+                    ),
                   ),
                   const SizedBox(height: 32),
                   if (_error != null) ...[
@@ -121,15 +113,16 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.error_outline,
-                              size: 18, color: AppColors.error),
+                          Icon(
+                            Icons.error_outline,
+                            size: 18,
+                            color: AppColors.error,
+                          ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               _error!,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall
+                              style: Theme.of(context).textTheme.bodySmall
                                   ?.copyWith(color: AppColors.error),
                             ),
                           ),
@@ -171,10 +164,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   const SizedBox(height: 24),
                   Text(
                     'Secured by Antinvestor Identity',
-                    style: Theme.of(context)
-                        .textTheme
-                        .labelSmall
-                        ?.copyWith(color: AppColors.onSurfaceMuted),
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: AppColors.onSurfaceMuted,
+                    ),
                   ),
                 ],
               ),

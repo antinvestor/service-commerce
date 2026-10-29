@@ -81,6 +81,16 @@ func TestPaymentReturn_RedirectsToStorefrontWithOutcome(t *testing.T) {
 	require.Equal(t, "no-store", rec.Header().Get("Cache-Control"))
 }
 
+func TestPaymentReturn_OnlyRedirectsOverHTTPS(t *testing.T) {
+	for _, target := range []string{"http://store.example/thanks", "javascript:alert(1)", "https://u@store.example/"} {
+		stub := &stubPayments{result: &business.PaymentReturn{Order: paidOrder(), RedirectURL: target}}
+		rec := serveReturn(t, stub, http.MethodGet, "/payments/return?order=order-1&session=Ab12Cd34Ef56")
+		require.Equal(t, http.StatusOK, rec.Code, target)
+		require.Empty(t, rec.Header().Get("Location"), target)
+		require.Contains(t, rec.Body.String(), "Payment received", target)
+	}
+}
+
 func TestPaymentReturn_RendersStatusWithoutStorefront(t *testing.T) {
 	stub := &stubPayments{result: &business.PaymentReturn{Order: paidOrder()}}
 	rec := serveReturn(t, stub, http.MethodGet, "/payments/return?order=order-1&session=Ab12Cd34Ef56")
@@ -98,6 +108,47 @@ func TestPaymentReturn_RendersStatusWithoutStorefront(t *testing.T) {
 	rec = serveReturn(t, stub, http.MethodGet, "/payments/return?order=order-1&session=Ab12Cd34Ef56")
 	require.Contains(t, rec.Body.String(), "Confirming your payment")
 	require.Contains(t, rec.Body.String(), `http-equiv="refresh"`)
+
+	// A deposit is received in full even though the order is not paid off;
+	// an earlier instalment does not vouch for this one.
+	deposit := paidOrder()
+	deposit.PaymentStatus = commercev1.PaymentStatus_PAYMENT_STATUS_PARTIALLY_PAID
+	deposit.Balance = &commonv1.Money{CurrencyCode: "KES", Units: 850}
+	deposit.Payments = []*commercev1.OrderPayment{{Reference: "Earlier00001"}}
+	stub.result = &business.PaymentReturn{Order: deposit}
+	rec = serveReturn(t, stub, http.MethodGet, "/payments/return?order=order-1&session=Ab12Cd34Ef56")
+	require.Contains(t, rec.Body.String(), "Confirming your payment")
+
+	// A shop's recorded receipt that happens to read like the ref does not
+	// count either: only the session's own checkout payment does.
+	deposit.Payments = append(deposit.Payments, &commercev1.OrderPayment{
+		Reference: "Ab12Cd34Ef56", Source: commercev1.OrderPaymentSource_ORDER_PAYMENT_SOURCE_RECORDED,
+	})
+	rec = serveReturn(t, stub, http.MethodGet, "/payments/return?order=order-1&session=Ab12Cd34Ef56")
+	require.Contains(t, rec.Body.String(), "Confirming your payment")
+
+	deposit.Payments = append(deposit.Payments, &commercev1.OrderPayment{
+		Reference: "Ab12Cd34Ef56", Source: commercev1.OrderPaymentSource_ORDER_PAYMENT_SOURCE_CHECKOUT,
+	})
+	rec = serveReturn(t, stub, http.MethodGet, "/payments/return?order=order-1&session=Ab12Cd34Ef56")
+	body = rec.Body.String()
+	require.Contains(t, body, "Payment received")
+	require.Contains(t, body, "KES 850.00 remains to be paid")
+	require.NotContains(t, body, `http-equiv="refresh"`)
+
+	// The buyer cancelled on the payment page: say so instead of waiting.
+	pending.PaymentStatus = commercev1.PaymentStatus_PAYMENT_STATUS_PENDING
+	stub.result = &business.PaymentReturn{Order: pending, Unpaid: true}
+	rec = serveReturn(t, stub, http.MethodGet, "/payments/return?order=order-1&session=Ab12Cd34Ef56")
+	body = rec.Body.String()
+	require.Contains(t, body, "Payment not completed")
+	require.NotContains(t, body, `http-equiv="refresh"`)
+
+	stub.result = &business.PaymentReturn{Order: pending, Unpaid: true, RedirectURL: "https://store.example/shop/x"}
+	rec = serveReturn(t, stub, http.MethodGet, "/payments/return?order=order-1&session=Ab12Cd34Ef56")
+	location, err := url.Parse(rec.Header().Get("Location"))
+	require.NoError(t, err)
+	require.Equal(t, "unpaid", location.Query().Get("payment"))
 }
 
 func TestPaymentReturn_RejectsBadInput(t *testing.T) {

@@ -1,7 +1,7 @@
-import 'package:antinvestor_auth_runtime/antinvestor_auth_runtime.dart'
-    show userClaimsProvider;
 import 'package:antinvestor_ui_core/auth/tenancy_context.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../features/auth/data/auth_state_provider.dart'
+    show consoleClaimsProvider;
 
 import 'active_shop_provider.dart';
 
@@ -23,12 +23,12 @@ class TenantScope {
 
   /// Sentinel scope used before login completes.
   factory TenantScope.empty() => const TenantScope(
-        shopId: '',
-        propertyId: '',
-        partitionId: '',
-        organizationId: '',
-        branchId: '',
-      );
+    shopId: '',
+    propertyId: '',
+    partitionId: '',
+    organizationId: '',
+    branchId: '',
+  );
 
   final String shopId;
   final String shopName;
@@ -53,7 +53,7 @@ final tenantScopeProvider = Provider<TenantScope>((ref) {
   final branchId = context.branchId;
   var partitionId = context.partitionId;
   if (partitionId.isEmpty) {
-    final claim = ref.watch(userClaimsProvider).value?['partition_id'];
+    final claim = ref.watch(consoleClaimsProvider).value?['partition_id'];
     if (claim is String) partitionId = claim;
   }
 
@@ -62,8 +62,8 @@ final tenantScopeProvider = Provider<TenantScope>((ref) {
   final propertyId = branchId.isNotEmpty
       ? branchId
       : organizationId.isNotEmpty
-          ? organizationId
-          : partitionId;
+      ? organizationId
+      : partitionId;
 
   return TenantScope(
     shopId: shop?.id ?? '',

@@ -2,7 +2,7 @@ module github.com/antinvestor/service-commerce
 
 go 1.26.7
 
-toolchain go1.26.9
+toolchain go1.26.10
 
 require (
 	buf.build/gen/go/antinvestor/common/protocolbuffers/go v1.36.12-20260509050709-3f270876dbf3.2
@@ -15,8 +15,6 @@ require (
 	buf.build/gen/go/antinvestor/notification/protocolbuffers/go v1.36.12-20260831182621-e7d71a2bcc5d.2
 	buf.build/gen/go/antinvestor/payment/connectrpc/go/v2 v2.0.2-20260831184824-a4a7e9defafa.1
 	buf.build/gen/go/antinvestor/payment/protocolbuffers/go v1.36.12-20260831184824-a4a7e9defafa.2
-	buf.build/gen/go/antinvestor/procurement/connectrpc/go/v2 v2.0.1-20260831163205-8965cef21d40.1
-	buf.build/gen/go/antinvestor/procurement/protocolbuffers/go v1.36.12-20260831163205-8965cef21d40.2
 	buf.build/gen/go/antinvestor/profile/connectrpc/go/v2 v2.0.2-20261010180548-eeb7b4541358.1
 	buf.build/gen/go/antinvestor/profile/protocolbuffers/go v1.36.12-20261010180548-eeb7b4541358.2
 	buf.build/gen/go/antinvestor/settingz/connectrpc/go/v2 v2.0.1-20261010180548-c7910134e0de.1
@@ -28,6 +26,7 @@ require (
 	connectrpc.com/connect/v2 v2.0.2
 	github.com/antinvestor/common/notification v0.2.0
 	github.com/antinvestor/common/v3 v3.0.1
+	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/pitabwire/frame/v3 v3.0.0
 	github.com/pitabwire/util v0.9.1
 	github.com/stretchr/testify v1.12.1
@@ -75,7 +74,6 @@ require (
 	github.com/go-logr/logr v1.4.4 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
-	github.com/golang-jwt/jwt/v5 v5.3.1 // indirect
 	github.com/google/s2a-go v0.1.11 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/google/wire v0.7.0 // indirect

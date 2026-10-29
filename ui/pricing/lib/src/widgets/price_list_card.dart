@@ -6,11 +6,7 @@ import 'package:flutter/material.dart';
 ///
 /// Shows name, currency, priority, status, and valid date range.
 class PriceListCard extends StatelessWidget {
-  const PriceListCard({
-    super.key,
-    required this.priceList,
-    this.onTap,
-  });
+  const PriceListCard({super.key, required this.priceList, this.onTap});
 
   final PriceList priceList;
   final VoidCallback? onTap;
@@ -120,12 +116,21 @@ class _PriceListStatusBadge extends StatelessWidget {
     return StatusBadge.fromEnum(
       value: status,
       mapper: (s) => switch (s) {
-        PriceListStatus.PRICE_LIST_STATUS_ACTIVE =>
-          ('Active', Colors.green, null),
-        PriceListStatus.PRICE_LIST_STATUS_DRAFT =>
-          ('Draft', Colors.orange, null),
-        PriceListStatus.PRICE_LIST_STATUS_EXPIRED =>
-          ('Expired', Colors.grey, null),
+        PriceListStatus.PRICE_LIST_STATUS_ACTIVE => (
+          'Active',
+          Colors.green,
+          null,
+        ),
+        PriceListStatus.PRICE_LIST_STATUS_DRAFT => (
+          'Draft',
+          Colors.orange,
+          null,
+        ),
+        PriceListStatus.PRICE_LIST_STATUS_EXPIRED => (
+          'Expired',
+          Colors.grey,
+          null,
+        ),
         _ => ('Unknown', Colors.grey, null),
       },
     );

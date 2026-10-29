@@ -1,8 +1,6 @@
 import 'package:antinvestor_api_commerce/antinvestor_api_commerce.dart';
 // FieldMask is not re-exported by the commerce barrel.
 // ignore: implementation_imports
-import 'package:antinvestor_api_commerce/src/google/protobuf/field_mask.pb.dart'
-    show FieldMask;
 import 'package:antinvestor_ui_core/widgets/money_helpers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -230,6 +228,7 @@ class _DiscountRuleFormDialogState extends State<DiscountRuleFormDialog> {
                   children: [
                     Expanded(
                       child: DropdownButtonFormField<DiscountType>(
+                        isExpanded: true,
                         initialValue: _type,
                         decoration: const InputDecoration(
                           labelText: 'Discount Type',
@@ -265,6 +264,7 @@ class _DiscountRuleFormDialogState extends State<DiscountRuleFormDialog> {
                 ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<DiscountAppliesTo>(
+                  isExpanded: true,
                   initialValue: _scope,
                   decoration: const InputDecoration(labelText: 'Applies To'),
                   items: [
@@ -368,6 +368,7 @@ class _DiscountRuleFormDialogState extends State<DiscountRuleFormDialog> {
                   ),
                 const SizedBox(height: 8),
                 DropdownButtonFormField<DiscountRuleStatus>(
+                  isExpanded: true,
                   initialValue: _status,
                   decoration: const InputDecoration(labelText: 'Status'),
                   items: [

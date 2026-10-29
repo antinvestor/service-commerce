@@ -1,18 +1,27 @@
+import 'package:antinvestor_ui_core/permissions/permission_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../auth/console_permissions.dart';
 import '../router/console_modules.dart';
 import '../theme/app_colors.dart';
 import 'nav_item.dart';
 
-/// Drops items (and child items) whose route the router does not serve.
-List<NavItem> visibleNavItems(List<NavItem> items, Set<String> registered) {
+/// Drops items (and child items) whose route the router does not serve, or
+/// that [allowed] says the user may not open.
+List<NavItem> visibleNavItems(
+  List<NavItem> items,
+  Set<String> registered, {
+  bool Function(String route)? allowed,
+}) {
+  bool shown(String route) =>
+      isRouteRegistered(registered, route) && (allowed?.call(route) ?? true);
   final visible = <NavItem>[];
   for (final item in items) {
-    if (!isRouteRegistered(registered, item.route)) continue;
+    if (!shown(item.route)) continue;
     final children = [
       for (final child in item.children)
-        if (isRouteRegistered(registered, child.route)) child,
+        if (shown(child.route)) child,
     ];
     visible.add(
       NavItem(
@@ -47,9 +56,19 @@ class AppSidebar extends ConsumerWidget {
     // Group secondary items by their `group` label so the drawer/sidebar
     // renders matching sections.
     final registered = ref.watch(registeredRoutePathsProvider);
-    final primary = visibleNavItems(primaryNavItems, registered);
+    final granted = ref.watch(userPermissionsProvider).value ?? const {};
+    bool allowed(String route) => canOpenRoute(route, granted);
+    final primary = visibleNavItems(
+      primaryNavItems,
+      registered,
+      allowed: allowed,
+    );
     final groups = <String, List<NavItem>>{};
-    for (final item in visibleNavItems(secondaryNavItems, registered)) {
+    for (final item in visibleNavItems(
+      secondaryNavItems,
+      registered,
+      allowed: allowed,
+    )) {
       groups.putIfAbsent(item.group ?? 'Other', () => []).add(item);
     }
 

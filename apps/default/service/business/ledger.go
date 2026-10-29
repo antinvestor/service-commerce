@@ -16,6 +16,7 @@ package business
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -57,6 +58,8 @@ type LedgerPolicy struct {
 	BookType string
 	// Timezone decides where a trading day starts and ends.
 	Timezone string
+	// Clock tells the time; nil is the system clock.
+	Clock func() time.Time
 }
 
 type LedgerBusiness interface {
@@ -78,6 +81,9 @@ func NewLedgerBusiness(
 	if policy.BookType == "" {
 		policy.BookType = defaultBookType
 	}
+	if policy.Clock == nil {
+		policy.Clock = time.Now
+	}
 	return &ledgerBusiness{
 		orderRepo:   orderRepo,
 		shopRepo:    shopRepo,
@@ -91,9 +97,15 @@ func NewLedgerBusiness(
 const (
 	defaultBookType    = "merchant"
 	tradingDayLayout   = "2006-01-02"
-	maxShopsPerRun     = 500
 	metadataTradingDay = "trading_day"
+	// failedRetryDays is how far back each run retries failed postings.
+	failedRetryDays = 7
+	// maxFailedRetries caps the failed postings retried in one run.
+	maxFailedRetries = 500
 )
+
+// shopsPerPage is how many shops an all-shops run loads at a time.
+var shopsPerPage = 200 //nolint:gochecknoglobals // tests page with a smaller size
 
 type ledgerBusiness struct {
 	orderRepo   repository.OrderRepository
@@ -116,23 +128,87 @@ func (lb *ledgerBusiness) RunEndOfDayLedger(
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err.Error()).WithCause(err)
 	}
-	day, from, to, err := tradingDayBounds(date, loc)
+	now := lb.policy.Clock()
+	day, to, err := tradingDayBounds(date, loc, now)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err.Error()).WithCause(err)
 	}
 
-	shops, err := lb.targetShops(ctx, shopID)
+	// Days that failed earlier are retried first, so what they had claimed
+	// is posted on its own day.
+	results, err := lb.retryFailed(ctx, shopID, day, loc, now)
 	if err != nil {
-		return nil, err
+		return results, err
 	}
 
-	results := make([]*commercev1.LedgerPosting, 0, len(shops))
-	for _, shop := range shops {
+	err = lb.eachShop(ctx, shopID, func(shop *models.Shop) {
+		results = append(results, lb.postShopDay(ctx, shop, day, to).ToAPI())
+	})
+	return results, err
+}
+
+// eachShop calls fn for the one shop asked for, or for every shop, a page
+// at a time.
+func (lb *ledgerBusiness) eachShop(ctx context.Context, shopID string, fn func(*models.Shop)) error {
+	if shopID != "" {
+		shop, err := lb.shopRepo.GetByID(ctx, shopID)
+		if err != nil {
+			return data.ErrorConvertToAPI(err)
+		}
+		fn(shop)
+		return nil
+	}
+	page := repository.Page{Limit: shopsPerPage}
+	for {
+		shops, next, err := lb.shopRepo.List(ctx, page)
+		if err != nil {
+			return data.ErrorConvertToAPI(err)
+		}
+		for _, shop := range shops {
+			if ctx.Err() != nil {
+				return ctx.Err()
+			}
+			fn(shop)
+		}
+		if next == nil {
+			return nil
+		}
+		page.After = next
+	}
+}
+
+// retryFailed posts again every failed day of the last failedRetryDays
+// before day.
+func (lb *ledgerBusiness) retryFailed(
+	ctx context.Context,
+	shopID, day string,
+	loc *time.Location,
+	now time.Time,
+) ([]*commercev1.LedgerPosting, error) {
+	since := now.In(loc).AddDate(0, 0, -failedRetryDays-1).Format(tradingDayLayout)
+	failed, err := lb.postingRepo.ListFailedSince(ctx, shopID, since, maxFailedRetries)
+	if err != nil {
+		return nil, data.ErrorConvertToAPI(err)
+	}
+	var results []*commercev1.LedgerPosting
+	for _, posting := range failed {
 		if ctx.Err() != nil {
 			return results, ctx.Err()
 		}
-		posting := lb.postShopDay(ctx, shop, day, from, to)
-		results = append(results, posting.ToAPI())
+		if posting.TradingDay == day {
+			continue // posted below
+		}
+		failedDay, to, boundsErr := tradingDayBounds(posting.TradingDay, loc, now)
+		if boundsErr != nil {
+			continue
+		}
+		shop, shopErr := lb.shopRepo.GetByID(ctx, posting.ShopID)
+		if shopErr != nil {
+			util.Log(ctx).WithError(shopErr).WithField(metadataShopID, posting.ShopID).
+				Warn("could not load the shop of a failed ledger posting")
+			continue
+		}
+		results = append(results, lb.postShopDay(ctx, shop, failedDay, to).ToAPI())
 	}
 	return results, nil
 }
@@ -148,47 +224,40 @@ func (lb *ledgerBusiness) location() (*time.Location, error) {
 	return loc, nil
 }
 
-// tradingDayBounds returns the day label and its [from, to) window. Without a
+// tradingDayBounds returns the day label and the end of the day. Without a
 // date the previous calendar day is used, which is what a nightly run wants.
-func tradingDayBounds(date string, loc *time.Location) (string, time.Time, time.Time, error) {
-	var start time.Time
-	if date == "" {
-		now := time.Now().In(loc)
-		y, m, d := now.Date()
-		start = time.Date(y, m, d, 0, 0, 0, 0, loc).AddDate(0, 0, -1)
-	} else {
+// A day that has not ended yet is refused: posting it early would close it
+// before its takings are in.
+func tradingDayBounds(date string, loc *time.Location, now time.Time) (string, time.Time, error) {
+	y, m, d := now.In(loc).Date()
+	today := time.Date(y, m, d, 0, 0, 0, 0, loc)
+	start := today.AddDate(0, 0, -1)
+	if date != "" {
 		parsed, err := time.ParseInLocation(tradingDayLayout, date, loc)
 		if err != nil {
-			return "", time.Time{}, time.Time{}, fmt.Errorf("date must be YYYY-MM-DD: %w", err)
+			return "", time.Time{}, fmt.Errorf("date must be YYYY-MM-DD: %w", err)
 		}
 		start = parsed
 	}
-	return start.Format(tradingDayLayout), start, start.AddDate(0, 0, 1), nil
+	if !start.Before(today) {
+		return "", time.Time{}, errors.New("a trading day can only be posted once it has ended")
+	}
+	return start.Format(tradingDayLayout), start.AddDate(0, 0, 1), nil
 }
 
-func (lb *ledgerBusiness) targetShops(ctx context.Context, shopID string) ([]*models.Shop, error) {
-	if shopID != "" {
-		shop, err := lb.shopRepo.GetByID(ctx, shopID)
-		if err != nil {
-			return nil, data.ErrorConvertToAPI(err)
-		}
-		return []*models.Shop{shop}, nil
-	}
-	shops, _, err := lb.shopRepo.List(ctx, repository.Page{Limit: maxShopsPerRun})
-	if err != nil {
-		return nil, data.ErrorConvertToAPI(err)
-	}
-	return shops, nil
+// dayTransactionID is the ledger transaction id of a shop's trading day.
+func dayTransactionID(shopID, day string) string {
+	return fmt.Sprintf("commerce-eod-%s-%s", shopID, day)
 }
 
 // postShopDay is idempotent per (shop, day): an existing posting is returned
-// as-is, a failed one is retried, and a day with nothing to post is recorded
-// as skipped so later runs do not re-scan it.
+// as-is, a failed one is retried with exactly what it first claimed, and a
+// day whose takings net to nothing is recorded as skipped.
 func (lb *ledgerBusiness) postShopDay(
 	ctx context.Context,
 	shop *models.Shop,
 	day string,
-	from, to time.Time,
+	to time.Time,
 ) *models.LedgerPosting {
 	existing, err := lb.postingRepo.GetByShopAndDay(ctx, shop.GetID(), day)
 	if err == nil && existing.Status != models.LedgerPostingFailed {
@@ -201,17 +270,10 @@ func (lb *ledgerBusiness) postShopDay(
 		existing = nil
 	}
 
-	paid, err := lb.orderRepo.ListPaidBetween(ctx, shop.GetID(), from, to)
+	txnID := dayTransactionID(shop.GetID(), day)
+	items, err := lb.orderRepo.ClaimLedgerItems(ctx, shop.GetID(), to, txnID)
 	if err != nil {
-		return lb.recordFailure(ctx, shop, day, existing, fmt.Errorf("list paid orders: %w", err))
-	}
-	payments, err := lb.orderRepo.ListPaymentsBetween(ctx, shop.GetID(), from, to)
-	if err != nil {
-		return lb.recordFailure(ctx, shop, day, existing, fmt.Errorf("list instalments: %w", err))
-	}
-	refunded, err := lb.orderRepo.ListRefundedBetween(ctx, shop.GetID(), from, to)
-	if err != nil {
-		return lb.recordFailure(ctx, shop, day, existing, fmt.Errorf("list refunded orders: %w", err))
+		return lb.recordFailure(ctx, shop, day, existing, fmt.Errorf("claim the day's takings: %w", err))
 	}
 
 	posting := existing
@@ -220,20 +282,21 @@ func (lb *ledgerBusiness) postShopDay(
 		// The scheduler runs as a service account; postings belong to the shop.
 		posting.CopyPartitionInfo(&shop.BaseModel)
 	}
-	posting.Currency, posting.SalesNanos, posting.RefundNanos, err = sumDay(paid, payments, refunded)
+	posting.Currency, posting.SalesNanos, posting.RefundNanos, err = sumDay(items)
 	if err != nil {
 		return lb.recordFailure(ctx, shop, day, existing, err)
 	}
-	posting.OrderCount = int32(distinctOrders(payments, paid, refunded)) //nolint:gosec // bounded by a day's orders
+	posting.OrderCount = int32(distinctOrders(items)) //nolint:gosec // bounded by a day's orders
 	posting.Error = ""
+	if posting.Currency == "" {
+		posting.Currency = shop.Currency
+	}
 
-	if posting.SalesNanos == 0 && posting.RefundNanos == 0 {
+	// Nothing to move: no takings, or a sale refunded within the day.
+	if posting.SalesNanos == posting.RefundNanos {
 		posting.Status = models.LedgerPostingSkipped
 		lb.save(ctx, posting, existing != nil)
 		return posting
-	}
-	if posting.Currency == "" {
-		posting.Currency = shop.Currency
 	}
 
 	accounts, err := lb.gateway.EnsureShopBook(ctx, shop, lb.policy.BookType)
@@ -241,16 +304,20 @@ func (lb *ledgerBusiness) postShopDay(
 		return lb.recordFailure(ctx, shop, day, existing, fmt.Errorf("ensure shop book: %w", err))
 	}
 
-	txnID, err := lb.gateway.PostTransaction(ctx, buildDayTransaction(shop, day, to, accounts, posting))
+	posted, err := lb.gateway.PostTransaction(ctx, buildDayTransaction(shop, day, txnID, to, accounts, posting))
 	if err != nil {
 		return lb.recordFailure(ctx, shop, day, existing, fmt.Errorf("post transaction: %w", err))
 	}
 
-	posting.TransactionID = txnID
+	posting.TransactionID = posted
 	posting.Status = models.LedgerPostingPosted
 	lb.save(ctx, posting, existing != nil)
 
-	lb.stamp(ctx, shop, day, paid, payments, refunded, txnID)
+	// Orders paid in instalments show the transaction of their latest one.
+	if stampErr := lb.orderRepo.SetLedgerTransaction(ctx, paymentOrderIDs(items.Payments), posted); stampErr != nil {
+		util.Log(ctx).WithError(stampErr).WithField(metadataShopID, shop.GetID()).
+			Warn("posted to ledger but could not stamp the paid orders")
+	}
 
 	lb.notifier.LedgerDayPosted(ctx, shop, posting)
 	return posting
@@ -258,43 +325,34 @@ func (lb *ledgerBusiness) postShopDay(
 
 // distinctOrders counts orders touched by the day, so a sale refunded the
 // same day, or several instalments on one order, count once.
-func distinctOrders(payments []*models.OrderPayment, groups ...[]*models.Order) int {
+func distinctOrders(items *repository.LedgerItems) int {
 	seen := map[string]struct{}{}
-	for _, p := range payments {
+	for _, p := range items.Payments {
 		seen[p.OrderID] = struct{}{}
 	}
-	for _, g := range groups {
-		for _, o := range g {
-			seen[o.GetID()] = struct{}{}
-		}
+	for _, o := range items.Orders {
+		seen[o.GetID()] = struct{}{}
+	}
+	for _, r := range items.Refunds {
+		seen[r.OrderID] = struct{}{}
 	}
 	return len(seen)
 }
 
-func paymentIDs(payments []*models.OrderPayment) []string {
+func paymentOrderIDs(payments []*models.OrderPayment) []string {
 	ids := make([]string, 0, len(payments))
 	for _, p := range payments {
-		ids = append(ids, p.GetID())
+		ids = append(ids, p.OrderID)
 	}
 	return ids
 }
 
-func orderIDs(orders []*models.Order) []string {
-	ids := make([]string, 0, len(orders))
-	for _, o := range orders {
-		ids = append(ids, o.GetID())
-	}
-	return ids
-}
-
-// sumDay totals the money received (legacy whole-order payments plus
-// instalments) and refunded in nanos, and rejects mixed currencies, which
-// would make a single balanced transaction meaningless.
-func sumDay(
-	paid []*models.Order,
-	payments []*models.OrderPayment,
-	refunded []*models.Order,
-) (string, int64, int64, error) {
+// sumDay totals the sales (the sale part of each payment, plus orders paid
+// in full before payments were recorded one by one) and the refunds of
+// sales, in nanos, and rejects mixed currencies, which would make a single
+// balanced transaction meaningless. Excess payments, and their refunds, are
+// owed to the buyer and never booked.
+func sumDay(items *repository.LedgerItems) (string, int64, int64, error) {
 	currency := ""
 	same := func(c, what string) error {
 		if currency == "" {
@@ -307,41 +365,35 @@ func sumDay(
 		return nil
 	}
 	var sales, refunds int64
-	for _, o := range paid {
+	for _, o := range items.Orders {
 		if err := same(o.TotalCurrency, "order "+o.OrderNumber); err != nil {
 			return "", 0, 0, err
 		}
 		sales += o.TotalNanosValue()
 	}
-	for _, p := range payments {
-		if err := same(p.Currency, "instalment "+p.Reference); err != nil {
+	for _, p := range items.Payments {
+		if p.SaleNanos() == 0 {
+			continue
+		}
+		if err := same(p.Currency, "payment "+p.Reference); err != nil {
 			return "", 0, 0, err
 		}
-		sales += p.AmountNanos
+		sales += p.SaleNanos()
 	}
-	for _, o := range refunded {
-		if err := same(o.TotalCurrency, "order "+o.OrderNumber); err != nil {
+	for _, r := range items.Refunds {
+		if err := same(r.Currency, "refund "+r.Reference); err != nil {
 			return "", 0, 0, err
 		}
-		refunds += refundedNanos(o)
+		refunds += r.AmountNanos
 	}
 	return currency, sales, refunds, nil
-}
-
-// refundedNanos is what a refunded order gives back: what was actually paid,
-// or the total for orders paid in full before instalments existed.
-func refundedNanos(o *models.Order) int64 {
-	if o.AmountPaidNanos > 0 {
-		return o.AmountPaidNanos
-	}
-	return o.TotalNanosValue()
 }
 
 // buildDayTransaction debits the receivable account and credits sales with
 // the net of the day. A net refund day posts the mirror image.
 func buildDayTransaction(
 	shop *models.Shop,
-	day string,
+	day, transactionID string,
 	transactedAt time.Time,
 	accounts *ShopAccounts,
 	posting *models.LedgerPosting,
@@ -369,7 +421,7 @@ func buildDayTransaction(
 	})
 
 	return ledgerv1.CreateTransactionRequest_builder{
-		Id:           fmt.Sprintf("commerce-eod-%s-%s", shop.GetID(), day),
+		Id:           transactionID,
 		Currency:     posting.Currency,
 		TransactedAt: at,
 		Data:         meta,
@@ -540,8 +592,9 @@ func (g *connectLedgerGateway) PostTransaction(
 	resp, err := g.cli.CreateTransaction(ctx, req)
 	if err != nil {
 		if isAlreadyExists(err) {
-			// A retry after a lost response: the id is deterministic, so the
-			// earlier post stands.
+			// A retry after a lost response. The id is the shop's day and
+			// the day's items were fixed when first claimed, so the earlier
+			// post carried exactly this content and stands.
 			return req.GetId(), nil
 		}
 		return "", err
@@ -551,36 +604,4 @@ func (g *connectLedgerGateway) PostTransaction(
 
 func isAlreadyExists(err error) bool {
 	return connect.CodeOf(err) == connect.CodeAlreadyExists || data.ErrorIsDuplicateKey(err)
-}
-
-// stamp marks everything merged into txnID so neither a sale nor a refund is
-// merged twice, even when they fall on different trading days. Failures are
-// logged: the posting itself has already succeeded.
-func (lb *ledgerBusiness) stamp(
-	ctx context.Context,
-	shop *models.Shop,
-	day string,
-	paid []*models.Order,
-	payments []*models.OrderPayment,
-	refunded []*models.Order,
-	txnID string,
-) {
-	log := util.Log(ctx).WithFields(map[string]any{
-		metadataShopID: shop.GetID(), metadataTradingDay: day, "transaction_id": txnID,
-	})
-	// An order paid in instalments carries the transaction of its latest
-	// instalment; the instalments themselves carry their own.
-	saleOrders := orderIDs(paid)
-	for _, p := range payments {
-		saleOrders = append(saleOrders, p.OrderID)
-	}
-	if stampErr := lb.orderRepo.SetLedgerTransaction(ctx, saleOrders, txnID); stampErr != nil {
-		log.WithError(stampErr).Error("posted to ledger but could not stamp paid orders")
-	}
-	if stampErr := lb.orderRepo.SetPaymentLedgerTransaction(ctx, paymentIDs(payments), txnID); stampErr != nil {
-		log.WithError(stampErr).Error("posted to ledger but could not stamp instalments")
-	}
-	if stampErr := lb.orderRepo.SetRefundLedgerTransaction(ctx, orderIDs(refunded), txnID); stampErr != nil {
-		log.WithError(stampErr).Error("posted to ledger but could not stamp refunded orders")
-	}
 }

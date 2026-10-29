@@ -6,3 +6,10 @@ WORK_STATE.md
 
 # Stray build artifacts
 /cmd
+
+# Flutter/Dart build output (ui packages and SDKs)
+ui/**/.dart_tool/
+ui/**/build/
+ui/**/.flutter-plugins
+ui/**/.flutter-plugins-dependencies
+sdk/dart/**/.dart_tool/

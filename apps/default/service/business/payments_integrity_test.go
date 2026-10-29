@@ -261,6 +261,7 @@ func (bts *BusinessTestSuite) TestPaymentReturn_VerifiesAndForwards() {
 		pending, err := biz.returnPaymentBiz.HandlePaymentReturn(ctx, order.GetId(), ref)
 		require.NoError(t, err)
 		require.Equal(t, commercev1.PaymentStatus_PAYMENT_STATUS_PENDING, pending.Order.GetPaymentStatus())
+		require.False(t, pending.Unpaid, "an open session may still be paid")
 
 		biz.checkout.complete(ref, "pay-return")
 		result, err := biz.returnPaymentBiz.HandlePaymentReturn(ctx, order.GetId(), ref)
@@ -268,6 +269,20 @@ func (bts *BusinessTestSuite) TestPaymentReturn_VerifiesAndForwards() {
 		require.Equal(t, commercev1.PaymentStatus_PAYMENT_STATUS_PAID, result.Order.GetPaymentStatus())
 		require.Equal(t, "https://store.example/thanks/"+order.GetId(), result.RedirectURL)
 		require.Equal(t, 1, biz.notifier.count("paid", order.GetId()))
+		require.False(t, result.Unpaid)
+
+		// A buyer who cancels on the payment page comes back to an unpaid order.
+		abandoned := bts.buyerOrder(ctx, biz, shop.GetId(), variant.GetId(), "buyer-r2", 1)
+		checked, err = checkoutOrder(ctx, biz.returnPaymentBiz, &commercev1.CheckoutOrderRequest{
+			OrderId: abandoned.GetId(),
+		})
+		require.NoError(t, err)
+		biz.checkout.fail(checked.GetPaymentSessionRef())
+		cancelled, err := biz.returnPaymentBiz.HandlePaymentReturn(
+			ctx, abandoned.GetId(), checked.GetPaymentSessionRef())
+		require.NoError(t, err)
+		require.True(t, cancelled.Unpaid)
+		require.Equal(t, commercev1.PaymentStatus_PAYMENT_STATUS_PENDING, cancelled.Order.GetPaymentStatus())
 	})
 }
 
@@ -278,8 +293,9 @@ func (bts *BusinessTestSuite) TestCheckoutOrder_LongShopNameFitsSessionLimits() 
 		ctx, svc := bts.CreateService(t, dep)
 		biz := bts.getBusiness(ctx, svc)
 		shop, err := biz.shopBiz.CreateShop(ctx, &commercev1.CreateShopRequest{
-			Name: strings.Repeat("Duka ", 50),
-			Slug: "long-name-shop",
+			Name:     strings.Repeat("Duka ", 50),
+			Slug:     "long-name-shop",
+			Currency: "USD",
 		})
 		require.NoError(t, err)
 		_, variant := bts.createTestProductWithVariant(ctx, biz, shop.GetId())

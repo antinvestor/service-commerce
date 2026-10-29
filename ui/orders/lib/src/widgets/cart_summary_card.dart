@@ -3,11 +3,7 @@ import 'package:flutter/material.dart';
 
 /// Summary card showing cart line count and status.
 class CartSummaryCard extends StatelessWidget {
-  const CartSummaryCard({
-    super.key,
-    required this.cart,
-    this.onCheckout,
-  });
+  const CartSummaryCard({super.key, required this.cart, this.onCheckout});
 
   final Cart cart;
   final VoidCallback? onCheckout;
@@ -16,8 +12,10 @@ class CartSummaryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final lineCount = cart.lines.length;
-    final totalQuantity =
-        cart.lines.fold<int>(0, (sum, l) => sum + l.quantity.toInt());
+    final totalQuantity = cart.lines.fold<int>(
+      0,
+      (sum, l) => sum + l.quantity.toInt(),
+    );
 
     return Card(
       elevation: 0,
@@ -32,13 +30,17 @@ class CartSummaryCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(Icons.shopping_cart_outlined,
-                    size: 24, color: theme.colorScheme.primary),
+                Icon(
+                  Icons.shopping_cart_outlined,
+                  size: 24,
+                  color: theme.colorScheme.primary,
+                ),
                 const SizedBox(width: 12),
                 Text(
                   'Cart Summary',
-                  style: theme.textTheme.titleSmall
-                      ?.copyWith(fontWeight: FontWeight.w600),
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ],
             ),
@@ -77,12 +79,18 @@ class _SummaryRow extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label,
-              style: theme.textTheme.bodySmall
-                  ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-          Text(value,
-              style: theme.textTheme.bodySmall
-                  ?.copyWith(fontWeight: FontWeight.w600)),
+          Text(
+            label,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          Text(
+            value,
+            style: theme.textTheme.bodySmall?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ],
       ),
     );

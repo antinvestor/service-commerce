@@ -16,17 +16,20 @@ package handlers
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"html/template"
 	"net"
 	"net/http"
 	"net/netip"
+	"net/url"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"connectrpc.com/connect/v2"
+	"github.com/pitabwire/frame/v3/cache"
+	"github.com/pitabwire/frame/v3/ratelimiter"
 	"github.com/pitabwire/util"
 
 	commercev1 "github.com/antinvestor/service-commerce/gen/go/commerce/v1"
@@ -35,18 +38,23 @@ import (
 )
 
 const (
-	// errShopNotFound is the storefront's message for a shop that is not
-	// public.
-	errShopNotFound = "shop not found"
 	// storefrontFormLimit caps a checkout form body.
 	storefrontFormLimit = 64 << 10
 	// storefrontQuantityField prefixes each variant's quantity input.
 	storefrontQuantityField = "qty."
 
-	// A visitor may start this many checkouts per window on one instance.
-	storefrontCheckoutsPerWindow = 10
-	storefrontCheckoutWindow     = 10 * time.Minute
-	storefrontVisitorsTracked    = 10_000
+	// A visitor may load this many pages a minute from one instance.
+	// Pages only read, and cost a fixed few queries; the shared limits are
+	// on checkout.
+	storefrontPagesPerMinute = 120
+
+	// checkoutSuffix follows a storefront's address to reach its checkout;
+	// catalogueSuffix reaches the same catalogue as JSON, for embedding.
+	checkoutSuffix  = "/checkout"
+	catalogueSuffix = "/catalogue"
+
+	// jsonError carries a catalogue failure.
+	jsonError = "error"
 )
 
 // MountStorefront serves shops' public pages on mux: the catalogue at
@@ -59,30 +67,47 @@ func (cs *CommerceServer) MountStorefront(mux *http.ServeMux) {
 // the shop's own opt-in is what makes them public.
 type StorefrontHandler struct {
 	storefront business.StorefrontBusiness
-	limiter    *visitorLimiter
+	pages      *ratelimiter.WindowLimiter
 }
 
 // NewStorefrontHandler builds the storefront pages over storefront.
 func NewStorefrontHandler(storefront business.StorefrontBusiness) *StorefrontHandler {
-	return &StorefrontHandler{
-		storefront: storefront,
-		limiter: newVisitorLimiter(
-			storefrontCheckoutsPerWindow, storefrontCheckoutWindow, storefrontVisitorsTracked,
-		),
-	}
+	// An in-memory cache always supports per-key expiry, so this cannot
+	// fail.
+	pages, _ := ratelimiter.NewWindowLimiter(cache.NewInMemoryCache(), &ratelimiter.WindowConfig{
+		WindowDuration: time.Minute,
+		MaxPerWindow:   storefrontPagesPerMinute,
+		KeyPrefix:      "storefront-page",
+	})
+	return &StorefrontHandler{storefront: storefront, pages: pages}
 }
 
 // Mount registers the storefront routes on mux.
 func (h *StorefrontHandler) Mount(mux *http.ServeMux) {
 	mux.HandleFunc("GET "+business.StorefrontPath+"{slug}", h.page)
-	mux.HandleFunc("POST "+business.StorefrontPath+"{slug}/checkout", h.checkout)
+	mux.HandleFunc("POST "+business.StorefrontPath+"{slug}"+checkoutSuffix, h.checkout)
+	mux.HandleFunc("GET "+business.StorefrontPath+"{slug}"+catalogueSuffix, h.catalogue)
+}
+
+// pageAllowed reports whether r's visitor may load another page now.
+func (h *StorefrontHandler) pageAllowed(r *http.Request) bool {
+	return h.pages.Allow(r.Context(), business.VisitorGroup(visitorAddress(r)))
 }
 
 func (h *StorefrontHandler) page(w http.ResponseWriter, r *http.Request) {
+	if !h.pageAllowed(r) {
+		renderReturnPage(w, http.StatusTooManyRequests, returnPage{Title: "Please wait",
+			Message: "Too many pages have been loaded from your connection. Please wait a minute and try again."})
+		return
+	}
 	view := storefrontView{Key: util.IDString()}
 	switch r.URL.Query().Get("payment") {
 	case returnStatePaid:
 		view.Notice = "Payment received. Thank you, the shop has your order and will be in touch."
+	case returnStatePartPaid:
+		view.Notice = "Payment received. Thank you, the shop has your order and will be in touch about the balance."
+	case returnStateUnpaid:
+		view.Notice = "Your payment did not go through and nothing was charged. You can try again below."
 	case returnStatePending:
 		view.Notice = "We are still confirming your payment. You will hear from the shop once it is through."
 	case returnStateCancelled:
@@ -107,6 +132,7 @@ func (h *StorefrontHandler) checkout(w http.ResponseWriter, r *http.Request) {
 		Deposit:    r.PostForm.Get("deposit"),
 		Key:        r.PostForm.Get("key"),
 		Quantities: map[string]int64{},
+		Visitor:    visitorAddress(r),
 	}
 	for field, values := range r.PostForm {
 		variantID, ok := strings.CutPrefix(field, storefrontQuantityField)
@@ -125,20 +151,20 @@ func (h *StorefrontHandler) checkout(w http.ResponseWriter, r *http.Request) {
 		Quantities: order.Quantities,
 	}
 
-	if !h.limiter.allow(visitorAddress(r), time.Now()) {
-		view.Error = "Too many orders from your connection. Please wait a few minutes and try again."
-		h.render(r.Context(), w, slug, http.StatusTooManyRequests, view)
-		return
-	}
-
 	target, err := h.storefront.Checkout(r.Context(), slug, order)
 	if err != nil {
-		status, message := storefrontFailure(r.Context(), slug, err)
+		failure := storefrontFailure(r.Context(), slug, err)
+		status := statusOf(failure.Code)
 		if status == http.StatusNotFound {
-			renderReturnPage(w, status, returnPage{Title: "Shop not found", Message: message})
+			renderReturnPage(w, status, returnPage{Title: "Shop not found", Message: failure.Message})
 			return
 		}
-		view.Error = message
+		view.Error = failure.Message
+		// Nothing was placed unless the failure says so: a fresh key lets
+		// the corrected form through as a new order.
+		if !failure.KeepKey {
+			view.Key = util.IDString()
+		}
 		h.render(r.Context(), w, slug, status, view)
 		return
 	}
@@ -148,41 +174,33 @@ func (h *StorefrontHandler) checkout(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusSeeOther)
 }
 
-// storefrontFailure maps a checkout error to a status and a message fit for
-// a shopper. Validation messages come from commerce and are shown as is.
-func storefrontFailure(ctx context.Context, slug string, err error) (int, string) {
-	message := err.Error()
-	var connectErr *connect.Error
-	if errors.As(err, &connectErr) {
-		message = connectErr.Message()
+// storefrontFailure is the shopper-facing form of a checkout error. Only a
+// business.StorefrontError's message is ever shown; anything else is a
+// failure on our side and gets fixed text.
+func storefrontFailure(ctx context.Context, slug string, err error) *business.StorefrontError {
+	var failure *business.StorefrontError
+	if errors.As(err, &failure) {
+		return failure
 	}
-	switch connect.CodeOf(err) { //nolint:exhaustive // every other code is a failure on our side
-	case connect.CodeNotFound:
-		if message == errShopNotFound {
-			return http.StatusNotFound, "This shop is not available."
-		}
-		return http.StatusUnprocessableEntity, "One of those items is no longer available. Please check your order."
-	case connect.CodeInvalidArgument, connect.CodeFailedPrecondition, connect.CodeResourceExhausted:
-		return http.StatusUnprocessableEntity, sentence(message)
-	case connect.CodeUnimplemented:
-		return http.StatusServiceUnavailable, "This shop is not taking online orders right now."
-	default:
-		util.Log(ctx).WithError(err).WithField("slug", slug).Warn("storefront checkout failed")
-		return http.StatusServiceUnavailable, "We could not start your payment just now. Please try again."
+	util.Log(ctx).WithError(err).WithField("slug", slug).Warn("storefront checkout failed")
+	return &business.StorefrontError{
+		Code:    connect.CodeUnavailable,
+		Message: "We could not start your payment just now. Please try again.",
+		KeepKey: true,
 	}
 }
 
-// sentence capitalises a commerce error message for display.
-func sentence(message string) string {
-	message = strings.TrimSpace(message)
-	if message == "" {
-		return "Please check your order and try again."
+func statusOf(code connect.Code) int {
+	switch code { //nolint:exhaustive // every other code is a failure on our side
+	case connect.CodeNotFound:
+		return http.StatusNotFound
+	case connect.CodeInvalidArgument, connect.CodeFailedPrecondition, connect.CodeAlreadyExists:
+		return http.StatusUnprocessableEntity
+	case connect.CodeResourceExhausted:
+		return http.StatusTooManyRequests
+	default:
+		return http.StatusServiceUnavailable
 	}
-	message = strings.ToUpper(message[:1]) + message[1:]
-	if !strings.HasSuffix(message, ".") {
-		message += "."
-	}
-	return message
 }
 
 func (h *StorefrontHandler) render(
@@ -215,6 +233,101 @@ func (h *StorefrontHandler) render(
 		"default-src 'none'; style-src 'unsafe-inline'; frame-ancestors 'none'; base-uri 'none'")
 	w.WriteHeader(status)
 	_ = storefrontTemplate.Execute(w, view)
+}
+
+// catalogue serves what the page shows as JSON, for a shop's own site to
+// embed (web/ai-shop-module). It carries no credentials and needs none:
+// buying goes through the same public checkout form as the page.
+func (h *StorefrontHandler) catalogue(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	w.Header().Set("Content-Type", "application/json")
+	if !h.pageAllowed(r) {
+		writeJSON(
+			w,
+			http.StatusTooManyRequests,
+			map[string]string{jsonError: "too many requests; try again in a minute"},
+		)
+		return
+	}
+	slug := r.PathValue("slug")
+	front, err := h.storefront.Storefront(r.Context(), slug)
+	if err != nil {
+		if connect.CodeOf(err) == connect.CodeNotFound {
+			writeJSON(w, http.StatusNotFound, map[string]string{jsonError: "shop not found"})
+			return
+		}
+		util.Log(r.Context()).WithError(err).WithField("slug", slug).Warn("storefront catalogue failed")
+		writeJSON(w, http.StatusServiceUnavailable, map[string]string{jsonError: "shop unavailable"})
+		return
+	}
+	var view storefrontView
+	view.fill(front)
+	w.Header().Set("Cache-Control", "public, max-age=30")
+	writeJSON(w, http.StatusOK, catalogueOf(front, view))
+}
+
+type catalogueJSON struct {
+	Shop  catalogueShop   `json:"shop"`
+	Items []catalogueItem `json:"items"`
+}
+
+type catalogueShop struct {
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
+	Currency    string `json:"currency"`
+	// CheckoutURL is where the order form is posted; relative to the
+	// commerce address when the storefront's public address is not set.
+	CheckoutURL       string `json:"checkout_url"`
+	Instalments       bool   `json:"instalments"`
+	MinDepositPercent int32  `json:"min_deposit_percent,omitempty"`
+}
+
+type catalogueItem struct {
+	Name        string             `json:"name"`
+	Description string             `json:"description,omitempty"`
+	MediaIDs    []string           `json:"media_ids,omitempty"`
+	Variants    []catalogueVariant `json:"variants"`
+}
+
+type catalogueVariant struct {
+	// Field is the form field that carries this variant's quantity.
+	Field    string `json:"field"`
+	Name     string `json:"name"`
+	Currency string `json:"currency"`
+	Amount   string `json:"amount"`
+	InStock  bool   `json:"in_stock"`
+}
+
+func catalogueOf(front *business.Storefront, view storefrontView) catalogueJSON {
+	out := catalogueJSON{
+		Shop: catalogueShop{
+			Name: view.Shop, Description: view.Description, Currency: view.Currency,
+			CheckoutURL: view.Action, Instalments: view.Instalments, MinDepositPercent: view.MinDeposit,
+		},
+		Items: make([]catalogueItem, 0, len(front.Items)),
+	}
+	for _, item := range front.Items {
+		ci := catalogueItem{
+			Name: item.Product.GetName(), Description: item.Product.GetDescription(),
+			MediaIDs: item.Product.GetMediaIds(),
+		}
+		for _, variant := range item.Variants {
+			v := variantView(variant, len(item.Variants), nil)
+			price := variant.GetPrice()
+			ci.Variants = append(ci.Variants, catalogueVariant{
+				Field: v.Field, Name: v.Name, Currency: price.GetCurrencyCode(),
+				Amount: formatCents(price.GetUnits(), price.GetNanos()), InStock: v.InStock,
+			})
+		}
+		out.Items = append(out.Items, ci)
+	}
+	return out
+}
+
+func writeJSON(w http.ResponseWriter, status int, body any) {
+	w.WriteHeader(status)
+	_ = json.NewEncoder(w).Encode(body)
 }
 
 type storefrontView struct {
@@ -257,7 +370,12 @@ func (v *storefrontView) fill(front *business.Storefront) {
 	v.Shop = shop.GetName()
 	v.Description = shop.GetDescription()
 	v.Currency = shop.GetCurrency()
-	v.Action = business.StorefrontPath + shop.GetSlug() + "/checkout"
+	// The page's public address carries any gateway prefix the path here
+	// lacks, so post back through it when it is known.
+	v.Action = business.StorefrontPath + url.PathEscape(shop.GetSlug()) + checkoutSuffix
+	if public := shop.GetStorefrontUrl(); public != "" {
+		v.Action = public + checkoutSuffix
+	}
 	if policy := shop.GetPaymentPolicy(); policy.GetAllowInstalments() {
 		v.Instalments = true
 		v.MinDeposit = policy.GetMinDepositPercent()
@@ -348,58 +466,6 @@ var cloudflareRanges = func() []netip.Prefix {
 	}
 	return prefixes
 }()
-
-// visitorLimiter allows each visitor a number of actions per fixed window.
-// It is per instance and best effort: it slows down a script hammering one
-// instance, nothing more.
-type visitorLimiter struct {
-	mu      sync.Mutex
-	limit   int
-	window  time.Duration
-	tracked int
-	seen    map[string]*visitorWindow
-}
-
-type visitorWindow struct {
-	start time.Time
-	count int
-}
-
-func newVisitorLimiter(limit int, window time.Duration, tracked int) *visitorLimiter {
-	return &visitorLimiter{limit: limit, window: window, tracked: tracked, seen: map[string]*visitorWindow{}}
-}
-
-func (l *visitorLimiter) allow(visitor string, now time.Time) bool {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-
-	w, ok := l.seen[visitor]
-	if !ok || now.Sub(w.start) >= l.window {
-		if !ok && len(l.seen) >= l.tracked {
-			l.forgetExpired(now)
-		}
-		l.seen[visitor] = &visitorWindow{start: now, count: 1}
-		return true
-	}
-	if w.count >= l.limit {
-		return false
-	}
-	w.count++
-	return true
-}
-
-// forgetExpired drops finished windows, or everything when none has
-// finished, so memory stays bounded.
-func (l *visitorLimiter) forgetExpired(now time.Time) {
-	for visitor, w := range l.seen {
-		if now.Sub(w.start) >= l.window {
-			delete(l.seen, visitor)
-		}
-	}
-	if len(l.seen) >= l.tracked {
-		clear(l.seen)
-	}
-}
 
 //nolint:gochecknoglobals // parsed once, immutable afterwards
 var storefrontTemplate = template.Must(template.New("storefront").Parse(`<!doctype html>

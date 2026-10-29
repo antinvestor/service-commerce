@@ -16,16 +16,18 @@ package tests_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	commonv1 "buf.build/gen/go/antinvestor/common/protocolbuffers/go/common/v1"
-	procurementv1 "buf.build/gen/go/antinvestor/procurement/protocolbuffers/go/v1"
 	"connectrpc.com/connect/v2"
 	"github.com/pitabwire/frame/v3/datastore"
 	"github.com/pitabwire/frame/v3/frametests/definition"
 	"github.com/pitabwire/util"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+
+	procurementv1 "github.com/antinvestor/service-commerce/gen/go/procurement/v1"
 
 	"github.com/antinvestor/service-commerce/apps/procurement/service/business"
 	"github.com/antinvestor/service-commerce/apps/procurement/service/repository"
@@ -155,5 +157,61 @@ func (sts *SuggestionTestSuite) TestSuggestPurchaseOrders_Errors() {
 			&procurementv1.SuggestPurchaseOrdersRequest{PropertyId: "prop-1", PlanId: "plan-1"})
 		require.NoError(t, err)
 		require.Empty(t, empty, "no shortages, nothing to buy")
+	})
+}
+
+// Prices are never compared across currencies: a material offered in two is
+// left for the buyer unless the request names one, and a plan short of more
+// materials than one run handles is refused.
+func (sts *SuggestionTestSuite) TestSuggestPurchaseOrders_CurrencyAware() {
+	t := sts.T()
+
+	sts.WithTestDependancies(t, func(t *testing.T, dep *definition.DependencyOption) {
+		ctx, svc := sts.CreateService(t, dep)
+		dbPool := svc.DatastoreManager().GetPool(ctx, datastore.DefaultPoolName)
+		itemRepo := repository.NewSupplierItemRepository(ctx, dbPool, svc.WorkManager())
+		suppliers := business.NewSupplierBusiness(ctx,
+			repository.NewSupplierRepository(ctx, dbPool, svc.WorkManager()), itemRepo)
+
+		offer := func(name string, price *commonv1.Money) string {
+			s, err := suppliers.SaveSupplier(ctx, &procurementv1.SupplierSaveRequest{Name: name})
+			require.NoError(t, err)
+			item, err := suppliers.SaveSupplierItem(ctx, &procurementv1.SupplierItemSaveRequest{
+				SupplierId: s.GetId(), InventoryItemId: "milk", UnitPrice: price, Unit: "l",
+			})
+			require.NoError(t, err)
+			return item.GetId()
+		}
+		usdItem := offer("Dollar Dairy", usd(5, 0))
+		kesItem := offer("Shilling Dairy", &commonv1.Money{CurrencyCode: "KES", Units: 3})
+
+		source := &fakeMaterials{property: "prop-1", shortages: []business.Shortage{
+			{InventoryItemID: "milk", ItemName: "Milk", Quantity: 2, Unit: "l"},
+		}}
+		biz := business.NewSuggestionBusiness(source, itemRepo)
+		suggest := func(currency string) []*procurementv1.PurchaseOrderSuggestion {
+			got, err := biz.SuggestPurchaseOrders(ctx, &procurementv1.SuggestPurchaseOrdersRequest{
+				PropertyId: "prop-1", PlanId: "plan-1", CurrencyCode: currency,
+			})
+			require.NoError(t, err)
+			require.Len(t, got, 1)
+			return got
+		}
+
+		mixed := suggest("")
+		require.Empty(t, mixed[0].GetSupplierId(), "3 KES is not cheaper than 5 USD; the buyer chooses")
+		require.Equal(t, usdItem, suggest("USD")[0].GetLines()[0].GetSupplierItemId())
+		kes := suggest("kes")[0]
+		require.Equal(t, kesItem, kes.GetLines()[0].GetSupplierItemId())
+		require.Equal(t, "KES", kes.GetEstimatedTotal().GetCurrencyCode())
+		require.Equal(t, int64(6), kes.GetEstimatedTotal().GetUnits())
+
+		many := make([]business.Shortage, 501)
+		for i := range many {
+			many[i] = business.Shortage{InventoryItemID: fmt.Sprintf("m-%d", i), Quantity: 1}
+		}
+		_, err := business.NewSuggestionBusiness(&fakeMaterials{property: "prop-1", shortages: many}, itemRepo).
+			SuggestPurchaseOrders(ctx, &procurementv1.SuggestPurchaseOrdersRequest{PropertyId: "prop-1", PlanId: "p"})
+		require.Equal(t, connect.CodeResourceExhausted, connect.CodeOf(err))
 	})
 }

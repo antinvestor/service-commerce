@@ -1,4 +1,6 @@
 import 'package:antinvestor_ui_core/widgets/error_helpers.dart';
+import 'package:antinvestor_ui_core/permissions/permission_provider.dart';
+import 'package:antinvestor_ui_core/permissions/permission_guard.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -24,6 +26,7 @@ class PriceListDetailScreen extends ConsumerWidget {
     final theme = Theme.of(context);
     final asyncPriceList = ref.watch(priceListByIdProvider(priceListId));
     final asyncEntries = ref.watch(priceListEntryListProvider(priceListId));
+    final canManage = ref.watch(hasPermissionProvider('price_list_manage'));
 
     return Scaffold(
       body: asyncPriceList.when(
@@ -32,15 +35,23 @@ class PriceListDetailScreen extends ConsumerWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.error_outline,
-                  size: 48, color: theme.colorScheme.error),
+              Icon(
+                Icons.error_outline,
+                size: 48,
+                color: theme.colorScheme.error,
+              ),
               const SizedBox(height: 16),
-              Text('Failed to load price list',
-                  style: theme.textTheme.titleMedium),
+              Text(
+                'Failed to load price list',
+                style: theme.textTheme.titleMedium,
+              ),
               const SizedBox(height: 8),
-              Text(friendlyError(error),
-                  style: theme.textTheme.bodySmall
-                      ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+              Text(
+                friendlyError(error),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
             ],
           ),
         ),
@@ -57,8 +68,11 @@ class PriceListDetailScreen extends ConsumerWidget {
                     onPressed: () => context.go('/pricing'),
                   ),
                   const SizedBox(width: 8),
-                  Icon(Icons.price_change_outlined,
-                      size: 28, color: theme.colorScheme.primary),
+                  Icon(
+                    Icons.price_change_outlined,
+                    size: 28,
+                    color: theme.colorScheme.primary,
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
@@ -68,32 +82,45 @@ class PriceListDetailScreen extends ConsumerWidget {
                           priceList.name.isNotEmpty
                               ? priceList.name
                               : 'Price List',
-                          style: theme.textTheme.headlineSmall
-                              ?.copyWith(fontWeight: FontWeight.w600),
+                          style: theme.textTheme.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
-                        Text(priceList.id,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
-                                fontFamily: 'monospace')),
+                        Text(
+                          priceList.id,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                            fontFamily: 'monospace',
+                          ),
+                        ),
                       ],
                     ),
                   ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
                   TextButton.icon(
-                    onPressed: () => context.go(
-                        '/pricing/$priceListId/assignments'),
+                    onPressed: () =>
+                        context.go('/pricing/$priceListId/assignments'),
                     icon: const Icon(Icons.people_outline, size: 18),
                     label: const Text('Assignments'),
                   ),
-                  const SizedBox(width: 8),
-                  OutlinedButton.icon(
-                    onPressed: () => showPriceListForm(
-                      context: context,
-                      ref: ref,
-                      shopId: shopId,
-                      existing: priceList,
+                  PermissionGuard(
+                    permissions: const {'price_list_manage'},
+                    child: OutlinedButton.icon(
+                      onPressed: () => showPriceListForm(
+                        context: context,
+                        ref: ref,
+                        shopId: shopId,
+                        existing: priceList,
+                      ),
+                      icon: const Icon(Icons.edit_outlined, size: 18),
+                      label: const Text('Edit'),
                     ),
-                    icon: const Icon(Icons.edit_outlined, size: 18),
-                    label: const Text('Edit'),
                   ),
                 ],
               ),
@@ -109,58 +136,75 @@ class PriceListDetailScreen extends ConsumerWidget {
               Row(
                 children: [
                   Expanded(
-                    child: Text('Entries',
-                        style: theme.textTheme.titleSmall
-                            ?.copyWith(fontWeight: FontWeight.w600)),
-                  ),
-                  TextButton.icon(
-                    onPressed: () => showPriceListEntryForm(
-                      context: context,
-                      ref: ref,
-                      priceListId: priceListId,
-                      currency: priceList.currency,
+                    child: Text(
+                      'Entries',
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                    icon: const Icon(Icons.add, size: 18),
-                    label: const Text('Add Entry'),
+                  ),
+                  PermissionGuard(
+                    permissions: const {'price_list_manage'},
+                    child: TextButton.icon(
+                      onPressed: () => showPriceListEntryForm(
+                        context: context,
+                        ref: ref,
+                        priceListId: priceListId,
+                        shopId: shopId,
+                        currency: priceList.currency,
+                      ),
+                      icon: const Icon(Icons.add, size: 18),
+                      label: const Text('Add Entry'),
+                    ),
                   ),
                 ],
               ),
               const SizedBox(height: 8),
               asyncEntries.when(
-                loading: () =>
-                    const Center(child: CircularProgressIndicator()),
+                loading: () => const Center(child: CircularProgressIndicator()),
                 error: (e, _) => Text('Failed to load entries: $e'),
                 data: (entries) {
                   if (entries.isEmpty) {
-                    return Text('No entries yet',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant));
+                    return Text(
+                      'No entries yet',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    );
                   }
                   return Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                          color: theme.colorScheme.outlineVariant),
+                        color: theme.colorScheme.outlineVariant,
+                      ),
                     ),
                     child: Column(
                       children: entries
-                          .map((e) => PriceListEntryTile(
-                                entry: e,
-                                onEdit: () => showPriceListEntryForm(
-                                  context: context,
-                                  ref: ref,
-                                  priceListId: priceListId,
-                                  currency: priceList.currency,
-                                  existing: e,
-                                ),
-                                onDelete: () => deletePriceListEntry(
-                                  context: context,
-                                  ref: ref,
-                                  priceListId: priceListId,
-                                  entry: e,
-                                ),
-                              ))
+                          .map(
+                            (e) => PriceListEntryTile(
+                              entry: e,
+                              onEdit: !canManage
+                                  ? null
+                                  : () => showPriceListEntryForm(
+                                      context: context,
+                                      ref: ref,
+                                      priceListId: priceListId,
+                                      shopId: shopId,
+                                      currency: priceList.currency,
+                                      existing: e,
+                                    ),
+                              onDelete: !canManage
+                                  ? null
+                                  : () => deletePriceListEntry(
+                                      context: context,
+                                      ref: ref,
+                                      priceListId: priceListId,
+                                      entry: e,
+                                    ),
+                            ),
+                          )
                           .toList(),
                     ),
                   );
@@ -189,13 +233,19 @@ class _DetailRow extends StatelessWidget {
         children: [
           SizedBox(
             width: 110,
-            child: Text(label,
-                style: theme.textTheme.bodySmall
-                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+            child: Text(
+              label,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
           ),
-          Text(value,
-              style: theme.textTheme.bodySmall
-                  ?.copyWith(fontWeight: FontWeight.w500)),
+          Text(
+            value,
+            style: theme.textTheme.bodySmall?.copyWith(
+              fontWeight: FontWeight.w500,
+            ),
+          ),
         ],
       ),
     );

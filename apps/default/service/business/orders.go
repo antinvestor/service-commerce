@@ -20,11 +20,11 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"math"
 	"sort"
 	"strings"
 	"time"
 
+	commonv1 "buf.build/gen/go/antinvestor/common/protocolbuffers/go/common/v1"
 	"connectrpc.com/connect/v2"
 	"github.com/pitabwire/frame/v3"
 	"github.com/pitabwire/frame/v3/data"
@@ -47,12 +47,21 @@ type OrderPolicy struct {
 	// PaymentWindow is how long stock stays reserved for a buyer order that
 	// has not been paid.
 	PaymentWindow time.Duration
+	// GuestUnitsCap bounds the units a shop's unpaid guest orders may hold
+	// at once; 0 means no bound.
+	GuestUnitsCap int64
 }
 
-// PriceResolver quotes the unit price a customer pays for a variant, after
-// customer overrides, price lists and discounts. PricingBusiness satisfies it.
+// PriceResolver quotes the unit prices a customer pays for a shop's
+// variants, after customer overrides, price lists and discounts, loading
+// what pricing depends on once for all of them. PricingBusiness satisfies
+// it.
 type PriceResolver interface {
-	ResolvePrice(ctx context.Context, req *commercev1.ResolvePriceRequest) (*commercev1.ResolvedPrice, error)
+	QuotePrices(
+		ctx context.Context,
+		shopID, customerID string,
+		queries []PriceQuery,
+	) ([]*commercev1.ResolvedPrice, error)
 }
 
 type OrderBusiness interface {
@@ -61,7 +70,13 @@ type OrderBusiness interface {
 	// It must be paid before it is confirmed (stock is held only for the
 	// payment window) and is priced at list prices: the buyer's identity is
 	// only what they typed, so customer-specific prices do not apply.
-	CreateGuestOrder(ctx context.Context, req *commercev1.CreateOrderRequest) (*commercev1.Order, error)
+	// deposit, when set, is what the buyer will pay first; it is checked
+	// against the order's policy before anything is reserved.
+	CreateGuestOrder(
+		ctx context.Context,
+		req *commercev1.CreateOrderRequest,
+		deposit *commonv1.Money,
+	) (*commercev1.Order, error)
 	// CreateOrderFromCart converts an active cart into an order. The order is
 	// placed for the cart's profile; the request profile is used only when the
 	// cart has none.
@@ -124,8 +139,9 @@ func (ob *orderBusiness) CreateOrder(
 func (ob *orderBusiness) CreateGuestOrder(
 	ctx context.Context,
 	req *commercev1.CreateOrderRequest,
+	deposit *commonv1.Money,
 ) (*commercev1.Order, error) {
-	return ob.createOrder(ctx, req, orderPlacement{awaitPayment: true, listPrices: true})
+	return ob.createOrder(ctx, req, orderPlacement{awaitPayment: true, listPrices: true, guest: true, deposit: deposit})
 }
 
 // orderPlacement is how an order comes about.
@@ -138,6 +154,10 @@ type orderPlacement struct {
 	awaitPayment bool
 	// listPrices ignores prices specific to the order's profile.
 	listPrices bool
+	// guest marks a storefront order from a buyer who did not sign in;
+	// deposit is the first payment they asked to make.
+	guest   bool
+	deposit *commonv1.Money
 }
 
 func (ob *orderBusiness) createOrder(
@@ -206,6 +226,7 @@ func (ob *orderBusiness) createOrder(
 		ProfileID:        req.GetProfileId(),
 		ContactID:        req.GetContactId(),
 		AddressID:        req.GetAddressId(),
+		Guest:            placement.guest,
 		SubtotalCurrency: subtotalCurrency,
 		SubtotalUnits:    subtotalUnits,
 		SubtotalNanos:    subtotalNanos,
@@ -214,14 +235,39 @@ func (ob *orderBusiness) createOrder(
 		TotalNanos:       subtotalNanos,
 	}
 
-	createErr := ob.orderRepo.CreateWithLinesAndStock(
-		ctx, order, orderLines, placement.cartID, placement.cartStatus,
-	)
+	// A deposit the order's policy refuses is reported before any stock is
+	// held, so the buyer can correct it and send the same order again.
+	if placement.deposit != nil {
+		if _, depositErr := requestedInstalment(order, placement.deposit); depositErr != nil {
+			return nil, depositRefused(depositErr)
+		}
+	}
+
+	opts := repository.CreateOrderOptions{
+		ConvertCartID:       placement.cartID,
+		ConvertedCartStatus: placement.cartStatus,
+	}
+	if placement.guest {
+		opts.GuestUnitsCap = ob.policy.GuestUnitsCap
+	}
+	createErr := ob.orderRepo.CreateWithLinesAndStock(ctx, order, orderLines, opts)
 	if createErr != nil {
-		return ob.mapCreateOrderError(ctx, req.GetIdempotencyKey(), createErr)
+		return ob.mapCreateOrderError(ctx, req.GetIdempotencyKey(), requestHash, createErr)
 	}
 
 	return ob.GetOrder(ctx, order.GetID())
+}
+
+// ErrDepositRefused marks an error about the amount a buyer asked to pay
+// now; its message is about that amount alone and fit to show them.
+var ErrDepositRefused = errors.New("deposit refused")
+
+func depositRefused(err error) error {
+	var connectErr *connect.Error
+	if errors.As(err, &connectErr) {
+		return connectErr.WithCause(ErrDepositRefused)
+	}
+	return err
 }
 
 // replayedOrder returns the previously created order for an idempotency key.
@@ -249,20 +295,29 @@ func (ob *orderBusiness) replayedOrder(
 }
 
 // mapCreateOrderError converts repository failures into API errors. A
-// duplicate idempotency key means a concurrent retry committed first, so that
-// order is returned instead of an error.
+// duplicate idempotency key means a concurrent retry committed first: that
+// order is returned when it is the same request, and refused like any
+// other reuse of the key when it is not.
 func (ob *orderBusiness) mapCreateOrderError(
 	ctx context.Context,
-	idempotencyKey string,
+	idempotencyKey, requestHash string,
 	createErr error,
 ) (*commercev1.Order, error) {
 	if errors.Is(createErr, repository.ErrInsufficientStock) ||
 		errors.Is(createErr, repository.ErrCartNotConvertible) {
 		return nil, connect.NewError(connect.CodeFailedPrecondition, createErr.Error()).WithCause(createErr)
 	}
+	if errors.Is(createErr, repository.ErrGuestHoldLimit) {
+		return nil, connect.NewError(connect.CodeResourceExhausted,
+			"the shop has too many unpaid orders just now").WithCause(createErr)
+	}
 	if idempotencyKey != "" && data.ErrorIsDuplicateKey(createErr) {
-		if existing, getErr := ob.orderRepo.GetByIdempotencyKey(ctx, idempotencyKey); getErr == nil {
-			return existing.ToAPI(), nil
+		existing, err := ob.replayedOrder(ctx, idempotencyKey, requestHash)
+		if err != nil {
+			return nil, err
+		}
+		if existing != nil {
+			return existing, nil
 		}
 	}
 	return nil, data.ErrorConvertToAPI(createErr)
@@ -335,7 +390,7 @@ func (ob *orderBusiness) ListOrders(
 	if err != nil {
 		return nil, err
 	}
-	orders, next, err := ob.orderRepo.ListByShopID(ctx, req.GetShopId(), page)
+	orders, next, err := ob.orderRepo.ListByShopID(ctx, req.GetShopId(), orderStatusFilter(req), page)
 	if err != nil {
 		return nil, data.ErrorConvertToAPI(err)
 	}
@@ -354,21 +409,25 @@ func (ob *orderBusiness) ListOrdersForProfile(
 	if err != nil {
 		return nil, err
 	}
-	orders, next, err := ob.orderRepo.ListByProfileID(ctx, profileID, page)
+	// A shop filter narrows the buyer's history to that shop, in the query
+	// so every page is full.
+	orders, next, err := ob.orderRepo.ListByProfileID(ctx, profileID, req.GetShopId(), orderStatusFilter(req), page)
 	if err != nil {
 		return nil, data.ErrorConvertToAPI(err)
 	}
-	// A shop filter narrows the buyer's history to that shop.
-	if shopID := req.GetShopId(); shopID != "" {
-		filtered := orders[:0]
-		for _, o := range orders {
-			if o.ShopID == shopID {
-				filtered = append(filtered, o)
-			}
-		}
-		orders = filtered
-	}
 	return toOrderPage(orders, next), nil
+}
+
+// orderStatusFilter reads the request's order and payment status filters.
+func orderStatusFilter(req *commercev1.ListOrdersRequest) repository.OrderStatusFilter {
+	filter := repository.OrderStatusFilter{}
+	for _, s := range req.GetStatuses() {
+		filter.Statuses = append(filter.Statuses, int32(s))
+	}
+	for _, s := range req.GetPaymentStatuses() {
+		filter.PaymentStatuses = append(filter.PaymentStatuses, int32(s))
+	}
+	return filter
 }
 
 func toOrderPage(orders []*models.Order, next *repository.PageKey) *OrderPage {
@@ -381,79 +440,78 @@ func toOrderPage(orders []*models.Order, next *repository.PageKey) *OrderPage {
 
 const nanosPerUnit int64 = 1_000_000_000
 
+// buildOrderLines prices lines for customerID and checks each can be sold.
+// Variants (with their products) and pricing inputs are loaded once for the
+// whole order.
 func (ob *orderBusiness) buildOrderLines(
 	ctx context.Context,
 	shopID, customerID string,
 	lines []*commercev1.CreateOrderLine,
 ) ([]*models.OrderLine, []*models.PaymentPolicy, string, int64, int32, error) {
-	var orderLines []*models.OrderLine
-	var policies []*models.PaymentPolicy
-	var subtotalCurrency string
-	var subtotalUnits int64
-	var subtotalNanos int64
+	fail := func(err error) ([]*models.OrderLine, []*models.PaymentPolicy, string, int64, int32, error) {
+		return nil, nil, "", 0, 0, err
+	}
 
+	variants, err := ob.lineVariants(ctx, lines)
+	if err != nil {
+		return fail(err)
+	}
+
+	queries := make([]PriceQuery, 0, len(lines))
 	for _, line := range lines {
-		if line.GetQuantity() <= 0 {
-			return nil, nil, "", 0, 0, connect.NewError(connect.CodeInvalidArgument,
-				fmt.Sprintf("quantity must be positive for variant %s", line.GetVariantId()))
+		query, lineErr := sellable(line, variants[line.GetVariantId()], shopID)
+		if lineErr != nil {
+			return fail(lineErr)
 		}
+		queries = append(queries, query)
+	}
 
-		variant, err := ob.variantRepo.GetByID(ctx, line.GetVariantId())
-		if err != nil {
-			return nil, nil, "", 0, 0, connect.NewError(connect.CodeNotFound,
-				fmt.Sprintf("variant %s not found", line.GetVariantId()))
+	var quoted []*commercev1.ResolvedPrice
+	if ob.prices != nil {
+		if quoted, err = ob.prices.QuotePrices(ctx, shopID, customerID, queries); err != nil {
+			return fail(err)
 		}
-		if variant.Status != int32(commercev1.ProductVariantStatus_PRODUCT_VARIANT_STATUS_ACTIVE) {
-			return nil, nil, "", 0, 0, connect.NewError(connect.CodeFailedPrecondition,
-				fmt.Sprintf("variant %s is not available for sale", line.GetVariantId()))
-		}
+	}
 
-		product, shopErr := ob.variantProduct(ctx, variant)
-		if shopErr != nil {
-			return nil, nil, "", 0, 0, shopErr
+	orderLines := make([]*models.OrderLine, 0, len(lines))
+	policies := make([]*models.PaymentPolicy, 0, len(lines))
+	var subtotalCurrency string
+	var subtotalUnits, subtotalNanos int64
+	for i, q := range queries {
+		currency, unitUnits, unitNanos := q.Variant.CurrencyCode, q.Variant.PriceUnits, q.Variant.PriceNanos
+		if i < len(quoted) {
+			if price := quoted[i].GetUnitPrice(); price != nil && price.GetCurrencyCode() != "" {
+				currency, unitUnits, unitNanos = price.GetCurrencyCode(), price.GetUnits(), price.GetNanos()
+			}
 		}
-		if product.ShopID != shopID {
-			return nil, nil, "", 0, 0, connect.NewError(connect.CodeInvalidArgument,
-				fmt.Sprintf("variant %s does not belong to shop %s", line.GetVariantId(), shopID))
+		if currency == "" {
+			return fail(connect.NewError(connect.CodeFailedPrecondition,
+				fmt.Sprintf("variant %s has no price", q.Variant.GetID())))
 		}
-		if product.Status != int32(commercev1.ProductStatus_PRODUCT_STATUS_ACTIVE) {
-			return nil, nil, "", 0, 0, connect.NewError(connect.CodeFailedPrecondition,
-				fmt.Sprintf("product for variant %s is not available for sale", line.GetVariantId()))
-		}
-
-		currency, unitUnits, unitNanos, err := ob.unitPrice(ctx, variant, customerID, line.GetQuantity())
-		if err != nil {
-			return nil, nil, "", 0, 0, err
-		}
+		// Payment is taken to the cent.
+		unitUnits, unitNanos = models.RoundToCents(unitUnits, unitNanos)
 
 		if subtotalCurrency == "" {
 			subtotalCurrency = currency
 		} else if currency != subtotalCurrency {
-			return nil, nil, "", 0, 0, connect.NewError(connect.CodeInvalidArgument,
+			return fail(connect.NewError(connect.CodeInvalidArgument,
 				fmt.Sprintf("variant %s is priced in %s but the order is in %s",
-					line.GetVariantId(), currency, subtotalCurrency))
+					q.Variant.GetID(), currency, subtotalCurrency)))
 		}
 
-		// Advisory stock check; CreateWithLinesAndStock re-checks under row update.
-		if variant.StockQuantity < line.GetQuantity() {
-			return nil, nil, "", 0, 0, connect.NewError(connect.CodeFailedPrecondition,
-				fmt.Sprintf("insufficient stock for variant %s: requested %d, available %d",
-					line.GetVariantId(), line.GetQuantity(), variant.StockQuantity))
-		}
-
-		lineTotalNanos := int64(unitNanos) * line.GetQuantity()
-		lineTotalUnits := unitUnits*line.GetQuantity() + lineTotalNanos/nanosPerUnit
+		lineTotalNanos := int64(unitNanos) * q.Quantity
+		lineTotalUnits := unitUnits*q.Quantity + lineTotalNanos/nanosPerUnit
 		lineTotalNanos %= nanosPerUnit
 
-		policies = append(policies, product.PaymentPolicy)
+		policies = append(policies, q.Product.PaymentPolicy)
 		orderLines = append(orderLines, &models.OrderLine{
-			ProductVariantID:   variant.GetID(),
-			SKUSnapshot:        variant.SKU,
-			NameSnapshot:       variant.Name,
+			ProductVariantID:   q.Variant.GetID(),
+			SKUSnapshot:        q.Variant.SKU,
+			NameSnapshot:       q.Variant.Name,
 			UnitPriceCurrency:  currency,
 			UnitPriceUnits:     unitUnits,
 			UnitPriceNanos:     unitNanos,
-			Quantity:           line.GetQuantity(),
+			Quantity:           q.Quantity,
 			TotalPriceCurrency: currency,
 			TotalPriceUnits:    lineTotalUnits,
 			TotalPriceNanos:    int32(lineTotalNanos),
@@ -468,49 +526,55 @@ func (ob *orderBusiness) buildOrderLines(
 	return orderLines, policies, subtotalCurrency, subtotalUnits, int32(subtotalNanos), nil
 }
 
-// unitPrice is what customerID pays per unit of variant at quantity, rounded
-// to the cent because that is the precision payment is taken at.
-func (ob *orderBusiness) unitPrice(
+// lineVariants loads every variant the lines name, with its product, in one
+// round trip.
+func (ob *orderBusiness) lineVariants(
 	ctx context.Context,
-	variant *models.ProductVariant,
-	customerID string,
-	quantity int64,
-) (string, int64, int32, error) {
-	currency, units, nanos := variant.CurrencyCode, variant.PriceUnits, variant.PriceNanos
-	if ob.prices != nil {
-		resolved, err := ob.prices.ResolvePrice(ctx, &commercev1.ResolvePriceRequest{
-			CustomerId:       customerID,
-			ProductVariantId: variant.GetID(),
-			Quantity:         int32(min(quantity, math.MaxInt32)), //nolint:gosec // clamped
-		})
-		if err != nil {
-			return "", 0, 0, err
-		}
-		if price := resolved.GetUnitPrice(); price != nil && price.GetCurrencyCode() != "" {
-			currency, units, nanos = price.GetCurrencyCode(), price.GetUnits(), price.GetNanos()
-		}
+	lines []*commercev1.CreateOrderLine,
+) (map[string]*models.ProductVariant, error) {
+	ids := make([]string, 0, len(lines))
+	for _, line := range lines {
+		ids = append(ids, line.GetVariantId())
 	}
-	if currency == "" {
-		return "", 0, 0, connect.NewError(connect.CodeFailedPrecondition,
-			fmt.Sprintf("variant %s has no price", variant.GetID()))
+	loaded, err := ob.variantRepo.ListByIDs(ctx, ids)
+	if err != nil {
+		return nil, data.ErrorConvertToAPI(err)
 	}
-	units, nanos = models.RoundToCents(units, nanos)
-	return currency, units, nanos, nil
+	variants := make(map[string]*models.ProductVariant, len(loaded))
+	for _, v := range loaded {
+		variants[v.GetID()] = v
+	}
+	return variants, nil
 }
 
-func (ob *orderBusiness) variantProduct(
-	ctx context.Context,
-	variant *models.ProductVariant,
-) (*models.Product, error) {
-	if variant.Product != nil && variant.Product.ShopID != "" {
-		return variant.Product, nil
+// sellable checks that line can be sold by shopID and returns what to
+// price it by.
+func sellable(line *commercev1.CreateOrderLine, variant *models.ProductVariant, shopID string) (PriceQuery, error) {
+	id := line.GetVariantId()
+	switch {
+	case line.GetQuantity() <= 0:
+		return PriceQuery{}, connect.NewError(connect.CodeInvalidArgument,
+			fmt.Sprintf("quantity must be positive for variant %s", id))
+	case variant == nil:
+		return PriceQuery{}, connect.NewError(connect.CodeNotFound, fmt.Sprintf("variant %s not found", id))
+	case variant.Status != int32(commercev1.ProductVariantStatus_PRODUCT_VARIANT_STATUS_ACTIVE):
+		return PriceQuery{}, connect.NewError(connect.CodeFailedPrecondition,
+			fmt.Sprintf("variant %s is not available for sale", id))
+	case variant.Product == nil:
+		return PriceQuery{}, connect.NewError(connect.CodeNotFound, fmt.Sprintf("product for variant %s not found", id))
+	case variant.Product.ShopID != shopID:
+		return PriceQuery{}, connect.NewError(connect.CodeInvalidArgument,
+			fmt.Sprintf("variant %s does not belong to shop %s", id, shopID))
+	case variant.Product.Status != int32(commercev1.ProductStatus_PRODUCT_STATUS_ACTIVE):
+		return PriceQuery{}, connect.NewError(connect.CodeFailedPrecondition,
+			fmt.Sprintf("product for variant %s is not available for sale", id))
+	case variant.StockQuantity < line.GetQuantity():
+		// Advisory; CreateWithLinesAndStock re-checks under row update.
+		return PriceQuery{}, connect.NewError(connect.CodeFailedPrecondition,
+			fmt.Sprintf("insufficient stock for variant %s: requested %d, available %d",
+				id, line.GetQuantity(), variant.StockQuantity))
 	}
-	product, err := ob.productRepo.GetByID(ctx, variant.ProductID)
-	if err != nil {
-		return nil, connect.NewError(connect.CodeNotFound,
-			fmt.Sprintf("product for variant %s not found", variant.GetID()))
-	}
-	return product, nil
+	return PriceQuery{Variant: variant, Product: variant.Product, Quantity: line.GetQuantity()}, nil
 }
 
 // orderPolicy is the payment policy fixed on a new order: each line's

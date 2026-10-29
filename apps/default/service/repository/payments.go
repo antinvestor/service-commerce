@@ -101,27 +101,45 @@ func (r *orderRepository) applyPaymentOnce(
 		payment.ShopID = order.ShopID
 		// The payment belongs to the order's tenant, whoever applies it.
 		payment.CopyPartitionInfo(&order.BaseModel)
-		if err := tx.Create(&payment).Error; err != nil {
-			return fmt.Errorf("record payment: %w", err)
-		}
 
 		readVersion := order.Version
+		cancelled := order.Status == orderStatusCancelled
+		before := order.AmountPaidNanos
 		order.AmountPaidNanos += payment.AmountNanos
 		events = transition(order, &payment)
 		order.Version = readVersion + 1
 
+		// Whatever the order did not owe goes back to the buyer: all of it
+		// on a cancelled order, else what went past the total.
+		payment.ExcessNanos = excessOf(cancelled, before, order.AmountPaidNanos, order.TotalNanosValue())
+		if err := tx.Create(&payment).Error; err != nil {
+			return fmt.Errorf("record payment: %w", err)
+		}
+		if payment.ExcessNanos > 0 {
+			refund := &models.OrderRefund{
+				Reference:   models.RefundReferencePrefix + orderID + ":" + payment.Reference,
+				Currency:    payment.Currency,
+				AmountNanos: payment.ExcessNanos,
+			}
+			if err := createRefund(tx, order, refund); err != nil {
+				return err
+			}
+		}
+
 		result := tx.Model(&models.Order{}).
 			Where("id = ? AND version = ?", orderID, readVersion).
 			UpdateColumns(map[string]any{
-				columnStatus:        order.Status,
-				"payment_status":    order.PaymentStatus,
-				"payment_id":        order.PaymentID,
-				"paid_at":           order.PaidAt,
-				"payment_due_at":    order.PaymentDueAt,
-				"balance_due_at":    order.BalanceDueAt,
-				"amount_paid_nanos": order.AmountPaidNanos,
-				columnVersion:       order.Version,
-				columnModifiedAt:    time.Now(),
+				columnStatus:            order.Status,
+				"payment_status":        order.PaymentStatus,
+				columnPaymentID:         order.PaymentID,
+				"paid_at":               order.PaidAt,
+				"payment_due_at":        order.PaymentDueAt,
+				"balance_due_at":        order.BalanceDueAt,
+				"amount_paid_nanos":     order.AmountPaidNanos,
+				columnNextReconcileAt:   nil,
+				columnReconcileAttempts: 0,
+				columnVersion:           order.Version,
+				columnModifiedAt:        time.Now(),
 			})
 		if result.Error != nil {
 			return fmt.Errorf("update order payment state: %w", result.Error)
@@ -141,6 +159,15 @@ func (r *orderRepository) applyPaymentOnce(
 	return order, events, applied, nil
 }
 
+// excessOf is the part of a payment that takes the amount paid past total,
+// or the whole payment when the order is cancelled.
+func excessOf(cancelled bool, before, after, total int64) int64 {
+	if cancelled {
+		return after - before
+	}
+	return max(after-total, 0) - max(before-total, 0)
+}
+
 func createEvents(tx *gorm.DB, events []*models.OrderEvent) error {
 	if len(events) == 0 {
 		return nil
@@ -156,7 +183,7 @@ func (r *orderRepository) ListPaymentSessions(
 	orderID string,
 ) ([]*models.OrderPaymentSession, error) {
 	var sessions []*models.OrderPaymentSession
-	err := r.Pool().DB(ctx, true).
+	err := r.Pool().DB(ctx, false).
 		Where("order_id = ?", orderID).
 		Order("created_at ASC").
 		Find(&sessions).Error
@@ -166,23 +193,43 @@ func (r *orderRepository) ListPaymentSessions(
 	return sessions, nil
 }
 
+// awaitingPaymentClause selects orders that may still receive money: unpaid
+// orders inside or past their window, part-paid orders with a checkout
+// session issued since sessionsSince that has not been applied, and orders
+// cancelled since lateSince with such a session, whose buyer may still pay
+// it (that money is then refunded). Orders under staff review, and orders
+// whose next look is not yet due, are left out.
+const awaitingPaymentClause = `payment_review = '' AND (next_reconcile_at IS NULL OR next_reconcile_at <= ?) AND (
+	(status = ? AND payment_status = ?)
+	OR ((payment_status = ? OR (status = ? AND cancelled_at >= ?)) AND EXISTS (
+		SELECT 1 FROM order_payment_sessions s
+		WHERE s.order_id = orders.id AND s.created_at >= ? AND s.deleted_at IS NULL
+		AND NOT EXISTS (
+			SELECT 1 FROM order_payments p
+			WHERE p.order_id = s.order_id AND p.reference = s.session_ref AND p.deleted_at IS NULL))))`
+
+func awaitingPaymentArgs(now, sessionsSince, lateSince time.Time) []any {
+	return []any{
+		now,
+		orderStatusPendingPayment, paymentStatusPending,
+		paymentStatusPartiallyPaid, orderStatusCancelled, lateSince,
+		sessionsSince,
+	}
+}
+
 func (r *orderRepository) ListAwaitingPayment(
 	ctx context.Context,
 	shopID string,
-	sessionsSince time.Time,
+	window ReconcileWindow,
 	limit int,
 ) ([]*models.Order, error) {
 	var orders []*models.Order
 	query := r.Pool().DB(ctx, true).
 		Preload(clause.Associations).
-		Where(`((status = ? AND payment_status = ?) OR (payment_status = ? AND EXISTS (
-			SELECT 1 FROM order_payment_sessions s
-			WHERE s.order_id = orders.id AND s.created_at >= ? AND s.deleted_at IS NULL
-			AND NOT EXISTS (
-				SELECT 1 FROM order_payments p
-				WHERE p.order_id = s.order_id AND p.reference = s.session_ref AND p.deleted_at IS NULL))))`,
-			orderStatusPendingPayment, paymentStatusPending, paymentStatusPartiallyPaid, sessionsSince).
-		Order("created_at ASC")
+		Where(awaitingPaymentClause, awaitingPaymentArgs(window.Now, window.SessionsSince, window.LateSince)...).
+		// Least recently looked at first, so a backed-off order never holds
+		// up one that has not been seen.
+		Order("COALESCE(next_reconcile_at, created_at) ASC")
 	if shopID != "" {
 		query = query.Where("shop_id = ?", shopID)
 	}
@@ -193,6 +240,58 @@ func (r *orderRepository) ListAwaitingPayment(
 		return nil, fmt.Errorf("list orders awaiting payment: %w", err)
 	}
 	return orders, nil
+}
+
+// HasReconcileWork answers, in one round trip, whether a reconcile run has
+// anything to do: an order that may receive money, a part-paid order past
+// its deadline, a refund to send or confirm, or a webhook due.
+func (r *orderRepository) HasReconcileWork(ctx context.Context, shopID string, window ReconcileWindow) (bool, error) {
+	shopFilter, shopArgs := "", []any{}
+	if shopID != "" {
+		shopFilter, shopArgs = " AND shop_id = ?", []any{shopID}
+	}
+	args := append([]any{}, awaitingPaymentArgs(window.Now, window.SessionsSince, window.LateSince)...)
+	args = append(args, shopArgs...)
+	args = append(args, paymentStatusPartiallyPaid, orderStatusCancelled, window.Now)
+	args = append(args, shopArgs...)
+	args = append(args, models.RefundPending, models.RefundSent)
+	args = append(args, shopArgs...)
+	args = append(args, models.EventDeliveryPending, window.Now)
+	args = append(args, shopArgs...)
+
+	var found bool
+	err := r.Pool().DB(ctx, true).Raw(
+		`SELECT EXISTS (SELECT 1 FROM orders WHERE deleted_at IS NULL AND `+awaitingPaymentClause+shopFilter+`)
+		OR EXISTS (SELECT 1 FROM orders WHERE deleted_at IS NULL AND payment_status = ? AND status <> ?
+			AND balance_due_at < ? AND overdue_at IS NULL`+shopFilter+`)
+		OR EXISTS (SELECT 1 FROM order_refunds WHERE deleted_at IS NULL AND status IN (?, ?)`+shopFilter+`)
+		OR EXISTS (SELECT 1 FROM order_events WHERE deleted_at IS NULL AND delivery = ?
+			AND (next_attempt_at IS NULL OR next_attempt_at <= ?)`+shopFilter+`)`,
+		args...).Scan(&found).Error
+	if err != nil {
+		return false, fmt.Errorf("check for reconcile work: %w", err)
+	}
+	return found, nil
+}
+
+// DeferReconcile backs an order off until next and counts the look.
+func (r *orderRepository) DeferReconcile(ctx context.Context, orderID string, next time.Time) error {
+	return r.Pool().DB(ctx, false).
+		Model(&models.Order{}).
+		Where("id = ?", orderID).
+		UpdateColumns(map[string]any{
+			columnNextReconcileAt:   next,
+			columnReconcileAttempts: gorm.Expr("reconcile_attempts + 1"),
+		}).Error
+}
+
+// FlagPaymentReview takes an order out of the reconcile sweep for staff to
+// settle, recording why.
+func (r *orderRepository) FlagPaymentReview(ctx context.Context, orderID, reason string) error {
+	return r.Pool().DB(ctx, false).
+		Model(&models.Order{}).
+		Where("id = ?", orderID).
+		UpdateColumn("payment_review", reason).Error
 }
 
 func (r *orderRepository) ListOverdue(
@@ -239,34 +338,4 @@ func (r *orderRepository) MarkOverdue(
 		return createEvents(tx, events)
 	})
 	return marked, err
-}
-
-func (r *orderRepository) ListPaymentsBetween(
-	ctx context.Context,
-	shopID string,
-	from, to time.Time,
-) ([]*models.OrderPayment, error) {
-	var payments []*models.OrderPayment
-	err := r.Pool().DB(ctx, true).
-		Where("shop_id = ? AND paid_at >= ? AND paid_at < ? AND ledger_transaction_id = ''", shopID, from, to).
-		Order("paid_at ASC").
-		Find(&payments).Error
-	if err != nil {
-		return nil, fmt.Errorf("list payments: %w", err)
-	}
-	return payments, nil
-}
-
-func (r *orderRepository) SetPaymentLedgerTransaction(
-	ctx context.Context,
-	paymentIDs []string,
-	transactionID string,
-) error {
-	if len(paymentIDs) == 0 {
-		return nil
-	}
-	return r.Pool().DB(ctx, false).
-		Model(&models.OrderPayment{}).
-		Where("id IN ?", paymentIDs).
-		UpdateColumn("ledger_transaction_id", transactionID).Error
 }

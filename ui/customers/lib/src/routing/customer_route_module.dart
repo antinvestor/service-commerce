@@ -6,7 +6,6 @@ import 'package:go_router/go_router.dart';
 
 import '../screens/customer_list_screen.dart';
 import '../screens/customer_detail_screen.dart';
-import '../screens/receive_payment_screen.dart';
 
 class CustomerRouteModule extends RouteModule {
   CustomerRouteModule({required this.shopId});
@@ -18,61 +17,58 @@ class CustomerRouteModule extends RouteModule {
 
   @override
   List<RouteBase> buildRoutes() => [
+    GoRoute(
+      path: '/customers',
+      builder: (context, state) => const CustomerListScreen(),
+      routes: [
         GoRoute(
-          path: '/customers',
-          builder: (context, state) => const CustomerListScreen(),
+          path: ':customerId',
+          builder: (context, state) => CustomerDetailScreen(
+            customerId: state.pathParameters['customerId']!,
+            shopId: shopId,
+          ),
           routes: [
+            // Payments are recorded on an order; old links land on the
+            // customer, whose orders open the payment flow.
             GoRoute(
-              path: ':customerId',
-              builder: (context, state) => CustomerDetailScreen(
-                customerId: state.pathParameters['customerId']!,
-                shopId: shopId,
-              ),
-              routes: [
-                GoRoute(
-                  path: 'payment',
-                  builder: (context, state) => ReceivePaymentScreen(
-                    customerId: state.pathParameters['customerId']!,
-                  ),
-                ),
-              ],
+              path: 'payment',
+              redirect: (context, state) =>
+                  '/customers/${state.pathParameters['customerId']}',
             ),
           ],
         ),
-      ];
+      ],
+    ),
+  ];
 
   @override
   List<NavItem> buildNavItems() => [
-        const NavItem(
-          id: 'customers',
-          label: 'Customers',
-          icon: Icons.people_outlined,
-          activeIcon: Icons.people,
-          route: '/customers',
-          requiredPermissions: {'customer_view'},
-        ),
-      ];
+    const NavItem(
+      id: 'customers',
+      label: 'Customers',
+      icon: Icons.people_outlined,
+      activeIcon: Icons.people,
+      route: '/customers',
+      requiredPermissions: {'order_view'},
+    ),
+  ];
 
+  /// Customers are the people who order from the shop: seeing them and
+  /// their history needs `order_view` (commerce.proto service_commerce).
   @override
   Map<String, Set<String>> get routePermissions => {
-        '/customers': {'customer_view'},
-        '/customers/:customerId/payment': {'payment_receive'},
-      };
+    '/customers': {'order_view'},
+  };
 
   @override
   PermissionManifest get permissionManifest => const PermissionManifest(
-        namespace: 'service_commerce',
-        permissions: [
-          PermissionEntry(
-            key: 'customer_view',
-            label: 'View Customers',
-            scope: PermissionScope.service,
-          ),
-          PermissionEntry(
-            key: 'payment_receive',
-            label: 'Receive Payments',
-            scope: PermissionScope.action,
-          ),
-        ],
-      );
+    namespace: 'service_commerce',
+    permissions: [
+      PermissionEntry(
+        key: 'order_view',
+        label: 'View Customers and Orders',
+        scope: PermissionScope.service,
+      ),
+    ],
+  );
 }

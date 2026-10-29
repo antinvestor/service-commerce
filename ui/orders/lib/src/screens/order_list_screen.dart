@@ -1,10 +1,12 @@
 import 'package:antinvestor_api_commerce/antinvestor_api_commerce.dart';
+import 'package:antinvestor_ui_core/permissions/permission_guard.dart';
 import 'package:antinvestor_ui_core/widgets/amount_display.dart';
 import 'package:antinvestor_ui_core/widgets/error_helpers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/order_providers.dart';
+import '../widgets/order_card.dart';
 import '../widgets/order_status_badge.dart';
 import '../widgets/payment_status_badge.dart';
 
@@ -23,7 +25,6 @@ class OrderListScreen extends ConsumerStatefulWidget {
 }
 
 class _OrderListScreenState extends ConsumerState<OrderListScreen> {
-  OrderStatus? _selectedStatus;
   final _search = TextEditingController();
 
   @override
@@ -32,9 +33,10 @@ class _OrderListScreenState extends ConsumerState<OrderListScreen> {
     super.dispose();
   }
 
-  void _runSearch(String query) => ref
-      .read(orderListControllerProvider(widget.shopId).notifier)
-      .search(query);
+  OrderListController get _controller =>
+      ref.read(orderListControllerProvider(widget.shopId).notifier);
+
+  void _runSearch(String query) => _controller.search(query);
 
   @override
   Widget build(BuildContext context) {
@@ -42,10 +44,13 @@ class _OrderListScreenState extends ConsumerState<OrderListScreen> {
     final asyncOrders = ref.watch(orderListControllerProvider(widget.shopId));
 
     return Scaffold(
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.go('/orders/checkout'),
-        icon: const Icon(Icons.add),
-        label: const Text('New Order'),
+      floatingActionButton: PermissionGuard(
+        permissions: const {'order_manage'},
+        child: FloatingActionButton.extended(
+          onPressed: () => context.go('/orders/checkout'),
+          icon: const Icon(Icons.add),
+          label: const Text('New Order'),
+        ),
       ),
       body: asyncOrders.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -77,12 +82,7 @@ class _OrderListScreenState extends ConsumerState<OrderListScreen> {
             ],
           ),
         ),
-        data: (state) {
-          final filtered = _selectedStatus != null
-              ? state.orders.where((o) => o.status == _selectedStatus).toList()
-              : state.orders;
-          return _buildContent(context, theme, filtered, state);
-        },
+        data: (state) => _buildContent(context, theme, state.orders, state),
       ),
     );
   }
@@ -130,16 +130,25 @@ class _OrderListScreenState extends ConsumerState<OrderListScreen> {
                   ],
                 ),
               ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
               OutlinedButton.icon(
                 onPressed: () => context.go('/orders/events'),
                 icon: const Icon(Icons.notifications_active_outlined, size: 18),
                 label: const Text('Events'),
               ),
-              const SizedBox(width: 8),
-              FilledButton.icon(
-                onPressed: () => context.go('/orders/checkout'),
-                icon: const Icon(Icons.add, size: 18),
-                label: const Text('New Order'),
+              PermissionGuard(
+                permissions: const {'order_manage'},
+                child: FilledButton.icon(
+                  onPressed: () => context.go('/orders/checkout'),
+                  icon: const Icon(Icons.add, size: 18),
+                  label: const Text('New Order'),
+                ),
               ),
             ],
           ),
@@ -176,99 +185,38 @@ class _OrderListScreenState extends ConsumerState<OrderListScreen> {
             ),
           const SizedBox(height: 12),
 
-          // Status filter chips
+          // Status filter chips, applied by the server.
           Wrap(
             spacing: 8,
+            runSpacing: 8,
             children: [
-              FilterChip(
-                label: const Text('All'),
-                selected: _selectedStatus == null,
-                onSelected: (_) => setState(() => _selectedStatus = null),
-              ),
-              FilterChip(
-                label: const Text('Awaiting payment'),
-                selected:
-                    _selectedStatus == OrderStatus.ORDER_STATUS_PENDING_PAYMENT,
-                onSelected: (_) => setState(
-                  () => _selectedStatus =
-                      OrderStatus.ORDER_STATUS_PENDING_PAYMENT,
+              for (final (label, status) in _statusFilters)
+                FilterChip(
+                  key: ValueKey('order-status-${status?.value ?? 'all'}'),
+                  label: Text(label),
+                  selected: state.status == status,
+                  onSelected: (_) => _controller.filterStatus(status),
                 ),
-              ),
-              FilterChip(
-                label: const Text('Confirmed'),
-                selected: _selectedStatus == OrderStatus.ORDER_STATUS_CONFIRMED,
-                onSelected: (_) => setState(
-                  () => _selectedStatus = OrderStatus.ORDER_STATUS_CONFIRMED,
-                ),
-              ),
-              FilterChip(
-                label: const Text('Fulfilled'),
-                selected: _selectedStatus == OrderStatus.ORDER_STATUS_FULFILLED,
-                onSelected: (_) => setState(
-                  () => _selectedStatus = OrderStatus.ORDER_STATUS_FULFILLED,
-                ),
-              ),
-              FilterChip(
-                label: const Text('Cancelled'),
-                selected: _selectedStatus == OrderStatus.ORDER_STATUS_CANCELLED,
-                onSelected: (_) => setState(
-                  () => _selectedStatus = OrderStatus.ORDER_STATUS_CANCELLED,
-                ),
-              ),
             ],
           ),
           const SizedBox(height: 16),
 
-          // Data table
-          Container(
-            width: double.infinity,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: theme.colorScheme.outlineVariant),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: DataTable(
-                  showCheckboxColumn: false,
-                  columns: const [
-                    DataColumn(label: Text('ORDER')),
-                    DataColumn(label: Text('STATUS')),
-                    DataColumn(label: Text('PAYMENT')),
-                    DataColumn(label: Text('TOTAL')),
-                    DataColumn(label: Text('DATE')),
-                  ],
-                  rows: List.generate(pageItems.length, (i) {
-                    final order = pageItems[i];
-                    return DataRow(
-                      onSelectChanged: (_) => context.go('/orders/${order.id}'),
-                      cells: [
-                        DataCell(
-                          Text(
-                            order.orderNumber.isNotEmpty
-                                ? '#${order.orderNumber}'
-                                : order.id,
+          // A table where there is room for one; cards on a phone.
+          LayoutBuilder(
+            builder: (context, constraints) => constraints.maxWidth < 600
+                ? Column(
+                    children: [
+                      for (final order in pageItems)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: OrderCard(
+                            order: order,
+                            onTap: () => context.go('/orders/${order.id}'),
                           ),
                         ),
-                        DataCell(OrderStatusBadge(status: order.status)),
-                        DataCell(
-                          PaymentStatusBadge(status: order.paymentStatus),
-                        ),
-                        DataCell(AmountDisplay(amount: order.total)),
-                        DataCell(
-                          Text(
-                            order.hasCreatedAt()
-                                ? _formatDate(order.createdAt.toDateTime())
-                                : '',
-                          ),
-                        ),
-                      ],
-                    );
-                  }),
-                ),
-              ),
-            ),
+                    ],
+                  )
+                : _OrderTable(orders: pageItems),
           ),
 
           // Cursor paging
@@ -278,9 +226,11 @@ class _OrderListScreenState extends ConsumerState<OrderListScreen> {
               padding: const EdgeInsets.all(16),
               child: Center(
                 child: Text(
-                  state.query.isEmpty
-                      ? 'No orders yet'
-                      : 'No orders match "${state.query}"',
+                  state.query.isNotEmpty
+                      ? 'No orders match "${state.query}"'
+                      : state.status != null
+                      ? 'No orders with this status'
+                      : 'No orders yet',
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
@@ -309,6 +259,75 @@ class _OrderListScreenState extends ConsumerState<OrderListScreen> {
               ),
             ),
         ],
+      ),
+    );
+  }
+}
+
+/// The status chips: label and the status the server filters by (null:
+/// every status).
+const List<(String, OrderStatus?)> _statusFilters = [
+  ('All', null),
+  ('Awaiting payment', OrderStatus.ORDER_STATUS_PENDING_PAYMENT),
+  ('Confirmed', OrderStatus.ORDER_STATUS_CONFIRMED),
+  ('Fulfilled', OrderStatus.ORDER_STATUS_FULFILLED),
+  ('Cancelled', OrderStatus.ORDER_STATUS_CANCELLED),
+];
+
+class _OrderTable extends StatelessWidget {
+  const _OrderTable({required this.orders});
+
+  final List<Order> orders;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: DataTable(
+            showCheckboxColumn: false,
+            columns: const [
+              DataColumn(label: Text('ORDER')),
+              DataColumn(label: Text('STATUS')),
+              DataColumn(label: Text('PAYMENT')),
+              DataColumn(label: Text('TOTAL')),
+              DataColumn(label: Text('DATE')),
+            ],
+            rows: [
+              for (final order in orders)
+                DataRow(
+                  onSelectChanged: (_) => context.go('/orders/${order.id}'),
+                  cells: [
+                    DataCell(
+                      Text(
+                        order.orderNumber.isNotEmpty
+                            ? '#${order.orderNumber}'
+                            : order.id,
+                      ),
+                    ),
+                    DataCell(OrderStatusBadge(status: order.status)),
+                    DataCell(PaymentStatusBadge(status: order.paymentStatus)),
+                    DataCell(AmountDisplay(amount: order.total)),
+                    DataCell(
+                      Text(
+                        order.hasCreatedAt()
+                            ? _formatDate(order.createdAt.toDateTime())
+                            : '',
+                      ),
+                    ),
+                  ],
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }

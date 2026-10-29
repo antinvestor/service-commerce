@@ -15,6 +15,11 @@
 // Hand-authored resource-plane (Plane 3) OPL for per-property access control in
 // procurement. Complements the generated service_procurement.opl.ts (Plane 2).
 // Enforced in handlers via authz.Middleware (procurement_property namespace).
+//
+// A property is the console's operational site (a branch, organisation or
+// partition). These relations hold per-property grants; staff roles on the
+// caller's own partition (service_procurement) apply to every property in it,
+// checked by the middleware rather than written here.
 
 import { Namespace, Context } from "@ory/keto-namespace-types"
 

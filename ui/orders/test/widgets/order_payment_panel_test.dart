@@ -1,4 +1,5 @@
 import 'package:antinvestor_api_commerce/antinvestor_api_commerce.dart';
+import 'package:antinvestor_ui_core/permissions/permission_provider.dart';
 import 'package:antinvestor_ui_orders/src/providers/order_providers.dart';
 import 'package:antinvestor_ui_orders/src/providers/order_transport_provider.dart';
 import 'package:antinvestor_ui_orders/src/widgets/order_payment_panel.dart';
@@ -7,7 +8,6 @@ import 'package:connectrpc/test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:protobuf/protobuf.dart';
 
 const _checkStatus = "I've paid — check status";
 
@@ -21,31 +21,31 @@ class _FakeOrders {
   Object? confirmError;
 
   CommerceServiceClient client() => CommerceServiceClient(
-        FakeTransportBuilder()
-            .unary(CommerceService.getOrder, (req, _) {
-              getOrderCalls++;
-              return GetOrderResponse(order: order);
-            })
-            .unary(CommerceService.checkoutOrder, (req, _) {
-              order = order.deepCopy()
-                ..paymentSessionRef = 'sess-1'
-                ..checkoutUrl = 'https://pay.example/sess-1';
-              return CheckoutOrderResponse(
-                checkoutUrl: order.checkoutUrl,
-                order: order,
-              );
-            })
-            .unary(CommerceService.confirmOrderPayment, (req, _) {
-              confirmCalls++;
-              final error = confirmError;
-              if (error != null) throw error;
-              order = order.deepCopy()
-                ..status = OrderStatus.ORDER_STATUS_CONFIRMED
-                ..paymentStatus = PaymentStatus.PAYMENT_STATUS_PAID;
-              return ConfirmOrderPaymentResponse(order: order);
-            })
-            .build(),
-      );
+    FakeTransportBuilder()
+        .unary(CommerceService.getOrder, (req, _) {
+          getOrderCalls++;
+          return GetOrderResponse(order: order);
+        })
+        .unary(CommerceService.checkoutOrder, (req, _) {
+          order = order.deepCopy()
+            ..paymentSessionRef = 'sess-1'
+            ..checkoutUrl = 'https://pay.example/sess-1';
+          return CheckoutOrderResponse(
+            checkoutUrl: order.checkoutUrl,
+            order: order,
+          );
+        })
+        .unary(CommerceService.confirmOrderPayment, (req, _) {
+          confirmCalls++;
+          final error = confirmError;
+          if (error != null) throw error;
+          order = order.deepCopy()
+            ..status = OrderStatus.ORDER_STATUS_CONFIRMED
+            ..paymentStatus = PaymentStatus.PAYMENT_STATUS_PAID;
+          return ConfirmOrderPaymentResponse(order: order);
+        })
+        .build(),
+  );
 }
 
 /// Renders the panel for the order loaded through [orderByIdProvider], as
@@ -69,6 +69,7 @@ Future<void> _pump(WidgetTester tester, _FakeOrders backend) async {
     ProviderScope(
       overrides: [
         orderServiceClientProvider.overrideWithValue(backend.client()),
+        userPermissionsProvider.overrideWith((ref) async => {'order_manage'}),
       ],
       child: const MaterialApp(
         home: Scaffold(body: SingleChildScrollView(child: _Harness())),
@@ -79,16 +80,17 @@ Future<void> _pump(WidgetTester tester, _FakeOrders backend) async {
 }
 
 Order _pendingOrder({String sessionRef = 'sess-1'}) => Order(
-      id: 'ord-1',
-      status: OrderStatus.ORDER_STATUS_PENDING_PAYMENT,
-      paymentStatus: PaymentStatus.PAYMENT_STATUS_PENDING,
-      paymentSessionRef: sessionRef,
-      checkoutUrl: sessionRef.isEmpty ? '' : 'https://pay.example/$sessionRef',
-    );
+  id: 'ord-1',
+  status: OrderStatus.ORDER_STATUS_PENDING_PAYMENT,
+  paymentStatus: PaymentStatus.PAYMENT_STATUS_PENDING,
+  paymentSessionRef: sessionRef,
+  checkoutUrl: sessionRef.isEmpty ? '' : 'https://pay.example/$sessionRef',
+);
 
 void main() {
-  testWidgets('check status explains an unfinished payment without an error',
-      (tester) async {
+  testWidgets('check status explains an unfinished payment without an error', (
+    tester,
+  ) async {
     final backend = _FakeOrders(_pendingOrder())
       ..confirmError = ConnectException(
         Code.failedPrecondition,
@@ -110,7 +112,9 @@ void main() {
       findsOneWidget,
     );
     expect(
-      tester.widget<Text>(find.byKey(const ValueKey('payment-status-note'))).data,
+      tester
+          .widget<Text>(find.byKey(const ValueKey('payment-status-note')))
+          .data,
       kPaymentNotCompletedMessage,
     );
     // Still awaiting payment: the operator can check again.
@@ -141,8 +145,9 @@ void main() {
     expect(snackBar.backgroundColor, isNotNull);
   });
 
-  testWidgets('opening the payment page offers the status check',
-      (tester) async {
+  testWidgets('opening the payment page offers the status check', (
+    tester,
+  ) async {
     final backend = _FakeOrders(_pendingOrder(sessionRef: ''));
     await _pump(tester, backend);
     expect(find.text(_checkStatus), findsNothing);
@@ -167,11 +172,13 @@ void main() {
   });
 
   testWidgets('does not reload a settled order on focus', (tester) async {
-    final backend = _FakeOrders(Order(
-      id: 'ord-1',
-      status: OrderStatus.ORDER_STATUS_CONFIRMED,
-      paymentStatus: PaymentStatus.PAYMENT_STATUS_PAID,
-    ));
+    final backend = _FakeOrders(
+      Order(
+        id: 'ord-1',
+        status: OrderStatus.ORDER_STATUS_CONFIRMED,
+        paymentStatus: PaymentStatus.PAYMENT_STATUS_PAID,
+      ),
+    );
     await _pump(tester, backend);
     final before = backend.getOrderCalls;
 

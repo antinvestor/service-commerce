@@ -42,7 +42,7 @@ func NewFulfilmentRepository(ctx context.Context, dbPool pool.Pool, workMan work
 
 func (r *fulfilmentRepository) GetWithLines(ctx context.Context, id string) (*models.Fulfilment, error) {
 	fulfilment := &models.Fulfilment{}
-	err := r.Pool().DB(ctx, true).
+	err := r.Pool().DB(ctx, false).
 		Preload(clause.Associations).
 		First(fulfilment, "id = ?", id).Error
 	return fulfilment, err
@@ -77,7 +77,7 @@ func (r *fulfilmentRepository) CreateWithLines(
 
 func (r *fulfilmentRepository) ListByOrderID(ctx context.Context, orderID string) ([]*models.Fulfilment, error) {
 	var fulfilments []*models.Fulfilment
-	err := r.Pool().DB(ctx, true).
+	err := r.Pool().DB(ctx, false).
 		Preload(clause.Associations).
 		Where("order_id = ?", orderID).
 		Order("created_at ASC").

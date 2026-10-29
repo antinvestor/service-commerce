@@ -40,6 +40,8 @@ class service_procurement implements Namespace {
     granted_purchase_order_cancel: (profile_user | service_procurement)[]
     granted_goods_receipt_view: (profile_user | service_procurement)[]
     granted_goods_receipt_create: (profile_user | service_procurement)[]
+    granted_goods_receipt_deliver: (profile_user | service_procurement)[]
+    granted_goods_receipt_resolve: (profile_user | service_procurement)[]
   }
 
   permits = {
@@ -99,5 +101,17 @@ class service_procurement implements Namespace {
       this.related.owner.includes(ctx.subject) ||
       this.related.service.includes(ctx.subject) ||
       this.related.granted_goods_receipt_create.includes(ctx.subject),
+
+    goods_receipt_deliver: (ctx: Context): boolean =>
+      this.related.admin.includes(ctx.subject) ||
+      this.related.owner.includes(ctx.subject) ||
+      this.related.service.includes(ctx.subject) ||
+      this.related.granted_goods_receipt_deliver.includes(ctx.subject),
+
+    goods_receipt_resolve: (ctx: Context): boolean =>
+      this.related.admin.includes(ctx.subject) ||
+      this.related.owner.includes(ctx.subject) ||
+      this.related.service.includes(ctx.subject) ||
+      this.related.granted_goods_receipt_resolve.includes(ctx.subject),
   }
 }

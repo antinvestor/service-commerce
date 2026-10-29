@@ -15,10 +15,16 @@ class VariantStatusBadge extends StatelessWidget {
     return StatusBadge.fromEnum(
       value: status,
       mapper: (s) => switch (s) {
-        ProductVariantStatus.PRODUCT_VARIANT_STATUS_ACTIVE =>
-          ('Active', Colors.green, null),
-        ProductVariantStatus.PRODUCT_VARIANT_STATUS_DISABLED =>
-          ('Disabled', Colors.grey, null),
+        ProductVariantStatus.PRODUCT_VARIANT_STATUS_ACTIVE => (
+          'Active',
+          Colors.green,
+          null,
+        ),
+        ProductVariantStatus.PRODUCT_VARIANT_STATUS_DISABLED => (
+          'Disabled',
+          Colors.grey,
+          null,
+        ),
         _ => ('Unknown', Colors.grey, null),
       },
     );

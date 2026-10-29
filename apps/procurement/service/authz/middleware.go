@@ -112,11 +112,13 @@ func (m *middleware) UpdatePropertyMemberRole(
 	}).Debug("UpdatePropertyMemberRole")
 	// Remove old relation if specified
 	if oldRole != "" {
-		_ = m.service.DeleteTuple(ctx, security.RelationTuple{
+		if err := m.service.DeleteTuple(ctx, security.RelationTuple{
 			Object:   security.ObjectRef{Namespace: NamespaceProperty, ID: propertyID},
 			Relation: RoleToRelation(oldRole),
 			Subject:  security.SubjectRef{Namespace: NamespaceProfile, ID: profileID},
-		})
+		}); err != nil {
+			return fmt.Errorf("remove old property role: %w", err)
+		}
 	}
 
 	// Add new relation
@@ -156,6 +158,12 @@ func (m *middleware) checkPropertyPermission(ctx context.Context, propertyID, pe
 	if err != nil {
 		return fmt.Errorf("authorization check failed: %w", err)
 	}
+	if !result.Allowed {
+		result, err = m.checkPartitionPermission(ctx, claims, subjectID, permission)
+		if err != nil {
+			return err
+		}
+	}
 
 	util.Log(ctx).WithFields(map[string]any{
 		logKeyPropertyID: propertyID,
@@ -168,4 +176,42 @@ func (m *middleware) checkPropertyPermission(ctx context.Context, propertyID, pe
 	}
 
 	return nil
+}
+
+// partitionPermissions maps each property permission to the partition-level
+// permission that grants it on every property in the caller's partition.
+var partitionPermissions = map[string]string{ //nolint:gochecknoglobals // permission model registry
+	PermissionPropertyView:              PermissionPurchaseOrderView,
+	PermissionPurchaseOrderPropertyView: PermissionPurchaseOrderView,
+	PermissionPurchaseOrderManage:       PermissionPurchaseOrderCreate,
+	PermissionPropertyUpdate:            PermissionPurchaseOrderCreate,
+	PermissionGoodsReceiptView:          PermissionGoodsReceiptRead,
+	PermissionGoodsReceiptManage:        PermissionGoodsReceiptCreate,
+}
+
+// checkPartitionPermission grants a property permission to a caller who holds
+// the matching permission on their own partition, where the tenancy sync
+// assigns staff roles. Properties are the console's sites (a branch,
+// organisation or partition); row-level security keeps each partition's
+// records to itself, so the partition grant never reaches another
+// partition's data. Nothing is written: a check only reads.
+func (m *middleware) checkPartitionPermission(
+	ctx context.Context,
+	claims *security.AuthenticationClaims,
+	subjectID, permission string,
+) (security.CheckResult, error) {
+	tenantID, partitionID := claims.GetTenantID(), claims.GetPartitionID()
+	partitionPermission, ok := partitionPermissions[permission]
+	if tenantID == "" || partitionID == "" || !ok {
+		return security.CheckResult{}, nil
+	}
+	result, err := m.service.Check(ctx, security.CheckRequest{
+		Object:     security.ObjectRef{Namespace: NamespaceProcurement, ID: tenantID + "/" + partitionID},
+		Permission: partitionPermission,
+		Subject:    security.SubjectRef{Namespace: NamespaceProfile, ID: subjectID},
+	})
+	if err != nil {
+		return security.CheckResult{}, fmt.Errorf("partition authorization check failed: %w", err)
+	}
+	return result, nil
 }

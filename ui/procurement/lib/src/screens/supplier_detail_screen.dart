@@ -1,4 +1,5 @@
 import 'package:antinvestor_api_procurement/antinvestor_api_procurement.dart';
+import 'package:antinvestor_ui_core/permissions/permission_guard.dart';
 import 'package:antinvestor_ui_core/widgets/amount_display.dart';
 import 'package:antinvestor_ui_core/widgets/error_helpers.dart';
 import 'package:antinvestor_ui_core/widgets/status_badge.dart';
@@ -8,6 +9,8 @@ import 'package:go_router/go_router.dart';
 
 import '../providers/procurement_providers.dart';
 import '../routing/procurement_paths.dart';
+import '../util/supply.dart';
+import '../widgets/load_more_footer.dart';
 import '../widgets/supplier_rating_badge.dart';
 import 'supplier_form.dart';
 import 'supplier_item_form.dart';
@@ -89,13 +92,16 @@ class SupplierDetailScreen extends ConsumerWidget {
                       ],
                     ),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.edit_outlined),
-                    tooltip: 'Edit supplier',
-                    onPressed: () => showSupplierForm(
-                      context: context,
-                      ref: ref,
-                      existing: supplier,
+                  PermissionGuard(
+                    permissions: const {'supplier_manage'},
+                    child: IconButton(
+                      icon: const Icon(Icons.edit_outlined),
+                      tooltip: 'Edit supplier',
+                      onPressed: () => showSupplierForm(
+                        context: context,
+                        ref: ref,
+                        existing: supplier,
+                      ),
                     ),
                   ),
                 ],
@@ -160,7 +166,7 @@ class _SupplierItemsSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final asyncItems = ref.watch(supplierItemListProvider(supplier.id));
+    final asyncItems = ref.watch(supplierItemPagesProvider(supplier.id));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -181,15 +187,19 @@ class _SupplierItemsSection extends ConsumerWidget {
                 ),
               ),
             ),
-            TextButton.icon(
-              onPressed: () => showSupplierItemForm(
-                context: context,
-                ref: ref,
-                supplierId: supplier.id,
-                currency: supplier.currency,
+            PermissionGuard(
+              permissions: const {'supplier_manage'},
+              child: TextButton.icon(
+                key: const Key('supplier_add_item'),
+                onPressed: () => showSupplierItemForm(
+                  context: context,
+                  ref: ref,
+                  supplierId: supplier.id,
+                  currency: supplier.currency,
+                ),
+                icon: const Icon(Icons.add, size: 18),
+                label: const Text('Add Item'),
               ),
-              icon: const Icon(Icons.add, size: 18),
-              label: const Text('Add Item'),
             ),
           ],
         ),
@@ -205,8 +215,8 @@ class _SupplierItemsSection extends ConsumerWidget {
               color: theme.colorScheme.error,
             ),
           ),
-          data: (items) {
-            if (items.isEmpty) {
+          data: (list) {
+            if (list.items.isEmpty) {
               return Text(
                 'No items yet',
                 style: theme.textTheme.bodySmall?.copyWith(
@@ -215,11 +225,16 @@ class _SupplierItemsSection extends ConsumerWidget {
               );
             }
             return Column(
-              children: items
-                  .map(
-                    (item) => _SupplierItemTile(item: item, supplier: supplier),
-                  )
-                  .toList(),
+              children: [
+                for (final item in list.items)
+                  _SupplierItemTile(item: item, supplier: supplier),
+                LoadMoreFooter(
+                  list: list,
+                  onLoadMore: () => ref
+                      .read(supplierItemPagesProvider(supplier.id).notifier)
+                      .loadMore(),
+                ),
+              ],
             );
           },
         ),
@@ -237,6 +252,13 @@ class _SupplierItemTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final id = suppliedId(
+      item.supplyKind,
+      inventoryItemId: item.inventoryItemId,
+      productVariantId: item.productVariantId,
+    );
+    final discontinued =
+        item.status == SupplierItemStatus.SUPPLIER_ITEM_STATUS_DISCONTINUED;
     return Card(
       elevation: 0,
       margin: const EdgeInsets.only(bottom: 8),
@@ -246,13 +268,17 @@ class _SupplierItemTile extends ConsumerWidget {
       ),
       child: ListTile(
         title: Text(
-          item.supplierSku.isNotEmpty ? item.supplierSku : item.inventoryItemId,
+          item.supplierSku.isNotEmpty ? item.supplierSku : id,
           style: theme.textTheme.titleSmall?.copyWith(
             fontWeight: FontWeight.w600,
           ),
         ),
         subtitle: Text(
-          item.inventoryItemId,
+          [
+            supplyKindLabel(item.supplyKind),
+            id,
+            if (discontinued) 'Discontinued',
+          ].join(' · '),
           style: theme.textTheme.bodySmall?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
           ),
@@ -261,15 +287,18 @@ class _SupplierItemTile extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (item.hasUnitPrice()) AmountDisplay(amount: item.unitPrice),
-            IconButton(
-              icon: const Icon(Icons.edit_outlined, size: 20),
-              tooltip: 'Edit item',
-              onPressed: () => showSupplierItemForm(
-                context: context,
-                ref: ref,
-                supplierId: supplier.id,
-                currency: supplier.currency,
-                existing: item,
+            PermissionGuard(
+              permissions: const {'supplier_manage'},
+              child: IconButton(
+                icon: const Icon(Icons.edit_outlined, size: 20),
+                tooltip: 'Edit item',
+                onPressed: () => showSupplierItemForm(
+                  context: context,
+                  ref: ref,
+                  supplierId: supplier.id,
+                  currency: supplier.currency,
+                  existing: item,
+                ),
               ),
             ),
           ],

@@ -14,9 +14,7 @@ void main() {
         type: ProfileType.PERSON,
         state: STATE.ACTIVE,
         properties: Struct(
-          fields: {
-            'name': Value(stringValue: 'Jane Doe'),
-          },
+          fields: {'name': Value(stringValue: 'Jane Doe')}.entries,
         ),
       );
     });
@@ -49,10 +47,12 @@ void main() {
     });
 
     testWidgets('shows balance when provided', (tester) async {
-      await tester.pumpWidget(buildTestWidget(
-        balanceAmount: 1500.50,
-        creditStatus: CreditStatus.hasBalance,
-      ));
+      await tester.pumpWidget(
+        buildTestWidget(
+          balanceAmount: 1500.50,
+          creditStatus: CreditStatus.hasBalance,
+        ),
+      );
       expect(find.text('1500.50'), findsOneWidget);
       expect(find.text('balance'), findsOneWidget);
     });
@@ -64,8 +64,9 @@ void main() {
       expect(tapped, isTrue);
     });
 
-    testWidgets('uses Card with elevation 0 and border radius 12',
-        (tester) async {
+    testWidgets('uses Card with elevation 0 and border radius 12', (
+      tester,
+    ) async {
       await tester.pumpWidget(buildTestWidget());
       final card = tester.widget<Card>(find.byType(Card));
       expect(card.elevation, 0);

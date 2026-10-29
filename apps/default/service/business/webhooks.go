@@ -27,6 +27,7 @@ import (
 	"net/http"
 	"net/netip"
 	"net/url"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -40,6 +41,7 @@ const (
 	HeaderWebhookEvent     = "X-Commerce-Event"
 	HeaderWebhookDelivery  = "X-Commerce-Delivery"
 	HeaderWebhookSignature = "X-Commerce-Signature"
+	HeaderWebhookTimestamp = "X-Commerce-Timestamp"
 
 	webhookTimeout      = 5 * time.Second
 	maxWebhookURLLength = 1024
@@ -52,7 +54,9 @@ type WebhookDelivery struct {
 	Secret     string
 	EventType  string
 	DeliveryID string
-	Body       []byte
+	// Timestamp is the Unix time the delivery was signed at.
+	Timestamp int64
+	Body      []byte
 }
 
 // WebhookSender posts order events to shops. A 2xx response is success.
@@ -60,11 +64,15 @@ type WebhookSender interface {
 	Send(ctx context.Context, delivery WebhookDelivery) error
 }
 
-// SignWebhook is the X-Commerce-Signature value for body: the hex
-// HMAC-SHA256 under secret, prefixed "sha256=". Receivers recompute it over
-// the raw body to authenticate the call.
-func SignWebhook(secret string, body []byte) string {
+// SignWebhook is the X-Commerce-Signature value for a delivery: the hex
+// HMAC-SHA256 under secret of the X-Commerce-Timestamp value, a ".", and the
+// raw body, prefixed "sha256=". Receivers recompute it to authenticate the
+// call and reject timestamps too far from their clock, so a captured
+// delivery cannot be replayed later.
+func SignWebhook(secret string, timestamp int64, body []byte) string {
 	mac := hmac.New(sha256.New, []byte(secret))
+	mac.Write([]byte(strconv.FormatInt(timestamp, 10)))
+	mac.Write([]byte("."))
 	mac.Write(body)
 	return "sha256=" + hex.EncodeToString(mac.Sum(nil))
 }
@@ -159,9 +167,11 @@ func (s *httpWebhookSender) Send(ctx context.Context, delivery WebhookDelivery) 
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set(HeaderWebhookEvent, delivery.EventType)
 	req.Header.Set(HeaderWebhookDelivery, delivery.DeliveryID)
-	if delivery.Secret != "" {
-		req.Header.Set(HeaderWebhookSignature, SignWebhook(delivery.Secret, delivery.Body))
+	if delivery.Secret == "" {
+		return errNoWebhookSecret
 	}
+	req.Header.Set(HeaderWebhookTimestamp, strconv.FormatInt(delivery.Timestamp, 10))
+	req.Header.Set(HeaderWebhookSignature, SignWebhook(delivery.Secret, delivery.Timestamp, delivery.Body))
 	resp, err := s.client.Do(req)
 	if err != nil {
 		return fmt.Errorf("post webhook: %w", err)

@@ -39,7 +39,7 @@ func NewCartRepository(ctx context.Context, dbPool pool.Pool, workMan workerpool
 
 func (r *cartRepository) GetWithLines(ctx context.Context, id string) (*models.Cart, error) {
 	cart := &models.Cart{}
-	err := r.Pool().DB(ctx, true).
+	err := r.Pool().DB(ctx, false).
 		Preload(clause.Associations).
 		First(cart, "id = ?", id).Error
 	return cart, err
@@ -68,7 +68,7 @@ func (r *cartLineRepository) GetByCartAndVariant(
 	cartID, variantID string,
 ) (*models.CartLine, error) {
 	line := &models.CartLine{}
-	err := r.Pool().DB(ctx, true).
+	err := r.Pool().DB(ctx, false).
 		Where("cart_id = ? AND product_variant_id = ?", cartID, variantID).
 		First(line).Error
 	return line, err

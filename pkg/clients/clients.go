@@ -25,6 +25,7 @@ import (
 	"buf.build/gen/go/antinvestor/device/connectrpc/go/v2/device/v1/devicev1connect"
 	"buf.build/gen/go/antinvestor/ledger/connectrpc/go/v2/v1/ledgerv1connect"
 	"buf.build/gen/go/antinvestor/payment/connectrpc/go/v2/checkout/v1/checkoutv1connect"
+	"buf.build/gen/go/antinvestor/payment/connectrpc/go/v2/v1/paymentv1connect"
 	"buf.build/gen/go/antinvestor/profile/connectrpc/go/v2/profile/v1/profilev1connect"
 	"buf.build/gen/go/antinvestor/settingz/connectrpc/go/v2/settings/v1/settingsv1connect"
 	"buf.build/gen/go/antinvestor/workflow/connectrpc/go/v2/v1/workflowv1connect"
@@ -45,6 +46,7 @@ import (
 // configured and the feature degrades gracefully.
 type Platform struct {
 	Checkout     checkoutv1connect.CheckoutServiceClient
+	Payment      paymentv1connect.PaymentServiceClient
 	Ledger       ledgerv1connect.LedgerServiceClient
 	Notification notification.Sender
 	Settings     settingsv1connect.SettingsServiceClient
@@ -69,6 +71,20 @@ func New(ctx context.Context, cfg *aconfig.CommerceConfig) (*Platform, error) {
 		p.Checkout = cli
 	} else {
 		log.Warn("checkout service not configured; orders cannot be paid online")
+	}
+
+	if cfg.PaymentEnabled() {
+		cli, err := connection.NewServiceClient(ctx, cfg, common.ServiceTarget{
+			ServiceID:             servicecatalog.ServicePayment,
+			Endpoint:              cfg.PaymentServiceURI,
+			WorkloadAPITargetPath: cfg.PaymentServiceWorkloadAPITargetPath,
+		}, paymentv1connect.NewPaymentServiceClient)
+		if err != nil {
+			return nil, fmt.Errorf("payment client: %w", err)
+		}
+		p.Payment = cli
+	} else {
+		log.Warn("payment service not configured; refunds are recorded but not paid out")
 	}
 
 	if cfg.LedgerEnabled() {

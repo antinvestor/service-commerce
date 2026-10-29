@@ -9,7 +9,7 @@ void main() {
       const MaterialApp(
         home: Scaffold(
           body: KpiCard(
-            label: "Today's sales",
+            label: 'Gross sales today',
             value: 'KSh 1,234',
             icon: Icons.attach_money,
             change: '+5%',
@@ -18,7 +18,7 @@ void main() {
       ),
     );
 
-    expect(find.text("Today's sales"), findsOneWidget);
+    expect(find.text('Gross sales today'), findsOneWidget);
     expect(find.text('KSh 1,234'), findsOneWidget);
     expect(find.text('+5%'), findsOneWidget);
     expect(find.byIcon(Icons.attach_money), findsOneWidget);

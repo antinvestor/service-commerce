@@ -90,7 +90,9 @@ func TestPaymentTransitionOnCancelledOrderSignalsOverpayment(t *testing.T) {
 	events := paymentTransition(&models.Shop{}, time.Now())(order, payment)
 	require.Len(t, events, 2)
 	require.Equal(t, int32(commercev1.OrderEventType_ORDER_EVENT_TYPE_OVERPAID), events[1].Type)
-	require.Equal(t, int32(commercev1.OrderStatus_ORDER_STATUS_CANCELLED), order.Status, "state is left alone")
+	require.Equal(t, int32(commercev1.OrderStatus_ORDER_STATUS_CANCELLED), order.Status, "the order stays cancelled")
+	require.Equal(t, int32(commercev1.PaymentStatus_PAYMENT_STATUS_REFUND_PENDING), order.PaymentStatus,
+		"the money is owed back")
 }
 
 func TestValidateWebhookURL(t *testing.T) {

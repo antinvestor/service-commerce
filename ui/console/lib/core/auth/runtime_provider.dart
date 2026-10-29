@@ -26,24 +26,25 @@ String _resolveRedirectUri() {
 /// host/port — not just localhost:5173. See [_resolveRedirectUri].
 @visibleForTesting
 AuthConfig buildConsoleAuthConfig() => AuthConfig(
-      clientId: ApiConfig.oauth2ClientId,
-      idpBaseUrl: ApiConfig.oauth2IssuerUrl,
-      apiBaseUrl: ApiConfig.apiBaseUrl,
-      redirectScheme: 'com.antinvestor.console',
-      redirectUri: _resolveRedirectUri(),
-      scopes: const ['openid', 'profile', 'offline_access'],
-      audiences: const [
-        'service_commerce',
-        'service_manufacturing',
-        'service_profile',
-        'service_notification',
-        'service_payment',
-        'service_tenancy',
-      ],
-    );
+  clientId: ApiConfig.oauth2ClientId,
+  idpBaseUrl: ApiConfig.oauth2IssuerUrl,
+  apiBaseUrl: ApiConfig.apiBaseUrl,
+  redirectScheme: 'com.antinvestor.console',
+  redirectUri: _resolveRedirectUri(),
+  scopes: const ['openid', 'profile', 'offline_access'],
+  audiences: const [
+    'service_commerce',
+    'service_manufacturing',
+    'service_profile',
+    'service_notification',
+    'service_payment',
+    'service_tenancy',
+  ],
+);
 
 /// Constructs a fresh [AuthRuntime] for the console.
 ///
 /// Call once at app start and override `authRuntimeProvider` with the
 /// resulting instance so every consumer shares the same runtime.
-AuthRuntime buildConsoleRuntime() => createAuthRuntime(buildConsoleAuthConfig());
+AuthRuntime buildConsoleRuntime() =>
+    createAuthRuntime(buildConsoleAuthConfig());

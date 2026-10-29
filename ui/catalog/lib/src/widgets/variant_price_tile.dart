@@ -4,11 +4,7 @@ import 'package:flutter/material.dart';
 
 /// A [ListTile] showing variant name, SKU, and trailing price.
 class VariantPriceTile extends StatelessWidget {
-  const VariantPriceTile({
-    super.key,
-    required this.variant,
-    this.onTap,
-  });
+  const VariantPriceTile({super.key, required this.variant, this.onTap});
 
   final ProductVariant variant;
   final VoidCallback? onTap;

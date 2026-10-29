@@ -143,7 +143,10 @@ func (bts *BusinessTestSuite) TestInstalments_DepositThresholdsAndFullPayment() 
 		}, biz.webhooks.events())
 		first := biz.webhooks.delivered[0]
 		require.Equal(t, "https://hooks.example/commerce", first.URL)
-		require.Equal(t, business.SignWebhook("s3cret", first.Body), business.SignWebhook(first.Secret, first.Body))
+		require.Equal(t, "s3cret", first.Secret)
+		require.NotZero(t, first.Timestamp)
+		require.NotEqual(t, business.SignWebhook("s3cret", first.Timestamp, first.Body),
+			business.SignWebhook("s3cret", first.Timestamp+1, first.Body), "the timestamp is signed")
 
 		// 33% paid is below the 50% the policy needs before fulfilment.
 		lines := []*commercev1.FulfilmentLine{{OrderLineId: order.GetLines()[0].GetId(), Quantity: 1}}
@@ -204,7 +207,8 @@ func (bts *BusinessTestSuite) TestInstalments_DepositThresholdsAndFullPayment() 
 		require.Equal(t, 1, biz.notifier.count("paid", order.GetId()))
 
 		// End of day books every instalment as received.
-		postings, err := biz.ledgerBiz.RunEndOfDayLedger(ctx, shop.GetId(), time.Now().UTC().Format("2006-01-02"))
+		postings, err := bts.ledgerAt(ctx, svc, biz, 24*time.Hour).
+			RunEndOfDayLedger(ctx, shop.GetId(), time.Now().UTC().Format("2006-01-02"))
 		require.NoError(t, err)
 		require.Len(t, postings, 1)
 		require.Equal(t, int64(21), postings[0].GetSales().GetUnits())
@@ -325,14 +329,21 @@ func (bts *BusinessTestSuite) TestInstalments_OverdueFlagsOnceOrCancels() {
 		cancelled, err := biz.orderBiz.GetOrder(ctx, doomed.GetId())
 		require.NoError(t, err)
 		require.Equal(t, commercev1.OrderStatus_ORDER_STATUS_CANCELLED, cancelled.GetStatus())
-		require.Equal(t, commercev1.PaymentStatus_PAYMENT_STATUS_REFUNDED, cancelled.GetPaymentStatus())
+		require.Equal(t, commercev1.PaymentStatus_PAYMENT_STATUS_REFUND_PENDING, cancelled.GetPaymentStatus())
 		require.Equal(t, int64(100), bts.stockOf(ctx, biz, strictVariant))
 		require.Equal(t, 1, biz.notifier.count("cancelled", doomed.GetId()))
+		require.Equal(t, int64(7_000_000_000), biz.refunds.refunded(models.RefundReferencePrefix+doomed.GetId()),
+			"only what was paid is refunded")
 
-		postings, err := biz.ledgerBiz.RunEndOfDayLedger(ctx, strict.GetId(), time.Now().UTC().Format("2006-01-02"))
+		biz.refunds.confirmAll()
+		_, err = biz.paymentBiz.ReconcilePayments(ctx, strict.GetId(), 0)
+		require.NoError(t, err)
+		postings, err := bts.ledgerAt(ctx, svc, biz, 24*time.Hour).
+			RunEndOfDayLedger(ctx, strict.GetId(), time.Now().UTC().Format("2006-01-02"))
 		require.NoError(t, err)
 		require.Equal(t, int64(7), postings[0].GetSales().GetUnits())
-		require.Equal(t, int64(7), postings[0].GetRefunds().GetUnits(), "only what was paid is refunded")
+		require.Equal(t, int64(7), postings[0].GetRefunds().GetUnits(), "only what was paid is reversed")
+		require.True(t, postings[0].GetSkipped(), "a sale refunded the same day nets to nothing")
 	})
 }
 
@@ -400,7 +411,7 @@ func (bts *BusinessTestSuite) TestWebhookSecret_SealedAtRestAndUsedToSign() {
 		webhooks := &fakeWebhooks{}
 		events := business.NewEventBusiness(
 			repository.NewOrderEventRepository(ctx, dbPool, svc.WorkManager()), shopRepo,
-			notifications.New(nil), webhooks, box)
+			notifications.New(nil), webhooks, box, nil)
 		event := &models.OrderEvent{ShopID: shop.GetId(), OrderID: "o1", Type: 1, Delivery: models.EventDeliveryPending}
 		require.NoError(t, repository.NewOrderEventRepository(ctx, dbPool, svc.WorkManager()).Create(ctx, event))
 		require.Equal(t, 1, events.DeliverDue(ctx, time.Now()))

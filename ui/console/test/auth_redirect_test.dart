@@ -1,12 +1,15 @@
 import 'package:console/core/router/app_router.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-String? redirect(String location, {bool loading = false, bool authed = false}) =>
-    resolveAuthRedirect(
-      uri: Uri.parse(location),
-      isLoading: loading,
-      isAuthenticated: authed,
-    );
+String? redirect(
+  String location, {
+  bool loading = false,
+  bool authed = false,
+}) => resolveAuthRedirect(
+  uri: Uri.parse(location),
+  isLoading: loading,
+  isAuthenticated: authed,
+);
 
 void main() {
   group('resolveAuthRedirect', () {

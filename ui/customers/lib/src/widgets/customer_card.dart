@@ -56,11 +56,7 @@ class CustomerCard extends StatelessWidget {
           child: Row(
             children: [
               // Reuse ProfileCard's avatar and name layout inline.
-              ProfileAvatar(
-                profileId: profile.id,
-                name: name,
-                size: 44,
-              ),
+              ProfileAvatar(profileId: profile.id, name: name, size: 44),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(

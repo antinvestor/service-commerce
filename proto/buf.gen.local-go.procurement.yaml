@@ -1,0 +1,30 @@
+# Local Go codegen for the procurement module so new RPCs can be implemented in
+# this repo before the schema registry publishes a new build. Peer modules
+# keep their registry import paths so shared types stay identical.
+version: v2
+managed:
+  enabled: true
+  override:
+    - file_option: go_package_prefix
+      value: github.com/antinvestor/service-commerce/gen/go/procurement
+    - file_option: go_package_prefix
+      module: buf.build/antinvestor/common
+      value: buf.build/gen/go/antinvestor/common/protocolbuffers/go
+    - file_option: go_package_prefix
+      module: buf.build/bufbuild/protovalidate
+      value: buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go
+    - file_option: go_package_prefix
+      module: buf.build/gnostic/gnostic
+      value: buf.build/gen/go/gnostic/gnostic/protocolbuffers/go
+# Remote plugins are pinned so the output never depends on whatever
+# protoc-gen-* happens to be installed locally (connect-go v2 is what the
+# rest of the platform runs).
+plugins:
+  - remote: buf.build/protocolbuffers/go:v1.36.12
+    out: ../gen/go/procurement
+    opt:
+      - paths=source_relative
+      - default_api_level=API_HYBRID
+  - remote: buf.build/connectrpc/go:v2.0.0
+    out: ../gen/go/procurement
+    opt: paths=source_relative

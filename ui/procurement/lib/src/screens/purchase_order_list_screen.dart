@@ -1,4 +1,6 @@
 import 'package:antinvestor_api_procurement/antinvestor_api_procurement.dart';
+import 'package:antinvestor_ui_core/permissions/permission_guard.dart';
+import 'package:antinvestor_ui_core/permissions/permission_provider.dart';
 import 'package:antinvestor_ui_core/widgets/error_helpers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,6 +8,8 @@ import 'package:go_router/go_router.dart';
 
 import '../providers/procurement_providers.dart';
 import '../routing/procurement_paths.dart';
+import '../providers/paged_list.dart';
+import '../widgets/load_more_footer.dart';
 import '../widgets/po_actions.dart';
 import '../widgets/purchase_order_card.dart';
 
@@ -29,6 +33,7 @@ class _PurchaseOrderListScreenState
     'Partially received':
         PurchaseOrderStatus.PURCHASE_ORDER_STATUS_PARTIALLY_RECEIVED,
     'Received': PurchaseOrderStatus.PURCHASE_ORDER_STATUS_RECEIVED,
+    'Closed short': PurchaseOrderStatus.PURCHASE_ORDER_STATUS_CLOSED,
     'Cancelled': PurchaseOrderStatus.PURCHASE_ORDER_STATUS_CANCELLED,
   };
 
@@ -37,13 +42,17 @@ class _PurchaseOrderListScreenState
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final asyncOrders = ref.watch(purchaseOrderListProvider(widget.propertyId));
+    final query = (propertyId: widget.propertyId, status: _selectedStatus);
+    final asyncOrders = ref.watch(purchaseOrderPagesProvider(query));
 
     return Scaffold(
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.go(ProcurementPaths.newOrder),
-        icon: const Icon(Icons.add),
-        label: const Text('New PO'),
+      floatingActionButton: PermissionGuard(
+        permissions: const {'purchase_order_create'},
+        child: FloatingActionButton.extended(
+          onPressed: () => context.go(ProcurementPaths.newOrder),
+          icon: const Icon(Icons.add),
+          label: const Text('New PO'),
+        ),
       ),
       body: asyncOrders.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -68,15 +77,17 @@ class _PurchaseOrderListScreenState
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
+              const SizedBox(height: 16),
+              OutlinedButton.icon(
+                onPressed: () =>
+                    ref.invalidate(purchaseOrderPagesProvider(query)),
+                icon: const Icon(Icons.refresh, size: 18),
+                label: const Text('Retry'),
+              ),
             ],
           ),
         ),
-        data: (orders) {
-          final filtered = _selectedStatus != null
-              ? orders.where((o) => o.status == _selectedStatus).toList()
-              : orders;
-          return _buildContent(context, theme, filtered);
-        },
+        data: (list) => _buildContent(context, theme, list, query),
       ),
     );
   }
@@ -84,8 +95,10 @@ class _PurchaseOrderListScreenState
   Widget _buildContent(
     BuildContext context,
     ThemeData theme,
-    List<PurchaseOrder> orders,
+    PagedList<PurchaseOrder> list,
+    PurchaseOrderQuery query,
   ) {
+    final orders = list.items;
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -116,7 +129,7 @@ class _PurchaseOrderListScreenState
                       ),
                     ),
                     Text(
-                      '${orders.length} orders',
+                      '${orders.length}${list.hasMore ? '+' : ''} orders',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
@@ -124,10 +137,13 @@ class _PurchaseOrderListScreenState
                   ],
                 ),
               ),
-              FilledButton.icon(
-                onPressed: () => context.go(ProcurementPaths.newOrder),
-                icon: const Icon(Icons.add, size: 18),
-                label: const Text('New PO'),
+              PermissionGuard(
+                permissions: const {'purchase_order_create'},
+                child: FilledButton.icon(
+                  onPressed: () => context.go(ProcurementPaths.newOrder),
+                  icon: const Icon(Icons.add, size: 18),
+                  label: const Text('New PO'),
+                ),
               ),
             ],
           ),
@@ -187,6 +203,11 @@ class _PurchaseOrderListScreenState
                 ),
               ),
             ),
+          LoadMoreFooter(
+            list: list,
+            onLoadMore: () =>
+                ref.read(purchaseOrderPagesProvider(query).notifier).loadMore(),
+          ),
         ],
       ),
     );
@@ -197,7 +218,7 @@ class _PurchaseOrderListScreenState
 ///
 /// Submit is offered only for draft orders; cancel is hidden once the order
 /// has reached a terminal state (received or already cancelled).
-class _POActionsMenu extends StatelessWidget {
+class _POActionsMenu extends ConsumerWidget {
   const _POActionsMenu({
     required this.order,
     required this.onSubmit,
@@ -209,9 +230,13 @@ class _POActionsMenu extends StatelessWidget {
   final VoidCallback onCancel;
 
   @override
-  Widget build(BuildContext context) {
-    final canSubmit = canSubmitPO(order);
-    final canCancel = canCancelPO(order);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final canSubmit =
+        canSubmitPO(order) &&
+        ref.watch(hasPermissionProvider('purchase_order_submit'));
+    final canCancel =
+        canCancelPO(order) &&
+        ref.watch(hasPermissionProvider('purchase_order_cancel'));
 
     if (!canSubmit && !canCancel) return const SizedBox.shrink();
 

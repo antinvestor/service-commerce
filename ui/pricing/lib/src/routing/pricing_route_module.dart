@@ -21,95 +21,89 @@ class PricingRouteModule extends RouteModule {
 
   @override
   List<RouteBase> buildRoutes() => [
+    GoRoute(
+      path: '/pricing',
+      builder: (context, state) => PriceListScreen(shopId: shopId),
+      routes: [
         GoRoute(
-          path: '/pricing',
-          builder: (context, state) =>
-              PriceListScreen(shopId: shopId),
+          path: 'overrides',
+          builder: (context, state) => PriceOverridesScreen(shopId: shopId),
+        ),
+        GoRoute(
+          path: 'discounts',
+          builder: (context, state) => DiscountRulesScreen(shopId: shopId),
+        ),
+        GoRoute(
+          path: 'checker',
+          builder: (context, state) => PriceCheckerScreen(shopId: shopId),
+        ),
+        GoRoute(
+          path: ':priceListId',
+          builder: (context, state) => PriceListDetailScreen(
+            priceListId: state.pathParameters['priceListId']!,
+            shopId: shopId,
+          ),
           routes: [
             GoRoute(
-              path: 'overrides',
-              builder: (context, state) =>
-                  PriceOverridesScreen(shopId: shopId),
-            ),
-            GoRoute(
-              path: 'discounts',
-              builder: (context, state) =>
-                  DiscountRulesScreen(shopId: shopId),
-            ),
-            GoRoute(
-              path: 'checker',
-              builder: (context, state) =>
-                  PriceCheckerScreen(shopId: shopId),
-            ),
-            GoRoute(
-              path: ':priceListId',
-              builder: (context, state) => PriceListDetailScreen(
+              path: 'assignments',
+              builder: (context, state) => PriceListAssignmentsScreen(
                 priceListId: state.pathParameters['priceListId']!,
-                shopId: shopId,
               ),
-              routes: [
-                GoRoute(
-                  path: 'assignments',
-                  builder: (context, state) => PriceListAssignmentsScreen(
-                    priceListId: state.pathParameters['priceListId']!,
-                  ),
-                ),
-              ],
             ),
           ],
         ),
-      ];
+      ],
+    ),
+  ];
 
   @override
   List<NavItem> buildNavItems() => [
-        const NavItem(
-          id: 'pricing',
-          label: 'Pricing',
-          icon: Icons.price_change_outlined,
-          activeIcon: Icons.price_change,
-          route: '/pricing',
-          requiredPermissions: {'price_list_view'},
-        ),
-      ];
+    const NavItem(
+      id: 'pricing',
+      label: 'Pricing',
+      icon: Icons.price_change_outlined,
+      activeIcon: Icons.price_change,
+      route: '/pricing',
+      requiredPermissions: {'price_list_view'},
+    ),
+  ];
 
+  /// Every pricing screen reads with `price_list_view` (commerce.proto
+  /// service_commerce); what each lets staff change is gated on its button.
   @override
   Map<String, Set<String>> get routePermissions => {
-        '/pricing': {'price_list_view'},
-        '/pricing/overrides': {'customer_price_override'},
-        '/pricing/discounts': {'discount_manage'},
-        '/pricing/checker': {'price_list_view'},
-        '/pricing/assignments': {'price_list_manage'},
-      };
+    '/pricing': {'price_list_view'},
+  };
 
   @override
   PermissionManifest get permissionManifest => const PermissionManifest(
-        namespace: 'service_commerce',
-        permissions: [
-          PermissionEntry(
-            key: 'price_list_view',
-            label: 'View Price Lists',
-            scope: PermissionScope.service,
-          ),
-          PermissionEntry(
-            key: 'price_list_manage',
-            label: 'Manage Price Lists',
-            scope: PermissionScope.action,
-          ),
-          PermissionEntry(
-            key: 'customer_price_override',
-            label: 'Customer Price Overrides',
-            scope: PermissionScope.action,
-          ),
-          PermissionEntry(
-            key: 'discount_manage',
-            label: 'Manage Discounts',
-            scope: PermissionScope.action,
-          ),
-          PermissionEntry(
-            key: 'discount_approve',
-            label: 'Approve Discounts',
-            scope: PermissionScope.action,
-          ),
-        ],
-      );
+    namespace: 'service_commerce',
+    permissions: [
+      PermissionEntry(
+        key: 'price_list_view',
+        label: 'View Price Lists',
+        scope: PermissionScope.service,
+      ),
+      PermissionEntry(
+        key: 'price_list_manage',
+        label: 'Manage Price Lists',
+        scope: PermissionScope.action,
+      ),
+      PermissionEntry(
+        key: 'customer_price_override',
+        label: 'Customer Price Overrides',
+        scope: PermissionScope.action,
+      ),
+      PermissionEntry(
+        key: 'discount_manage',
+        label: 'Manage Discounts',
+        scope: PermissionScope.action,
+      ),
+      PermissionEntry(
+        key: 'discount_approve',
+        label: 'Approve Discounts',
+        scope: PermissionScope.action,
+      ),
+    ],
+  );
 }

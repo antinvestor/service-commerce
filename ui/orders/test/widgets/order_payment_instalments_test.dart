@@ -1,4 +1,5 @@
 import 'package:antinvestor_api_commerce/antinvestor_api_commerce.dart';
+import 'package:antinvestor_ui_core/permissions/permission_provider.dart';
 import 'package:antinvestor_ui_orders/src/providers/order_providers.dart';
 import 'package:antinvestor_ui_orders/src/providers/order_transport_provider.dart';
 import 'package:antinvestor_ui_orders/src/utils/instalments.dart';
@@ -10,7 +11,6 @@ import 'package:fixnum/fixnum.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:protobuf/protobuf.dart';
 
 Money _kes(int units) => Money(currencyCode: 'KES', units: Int64(units));
 
@@ -116,6 +116,7 @@ Future<void> _pump(WidgetTester tester, _FakeOrders backend) async {
     ProviderScope(
       overrides: [
         orderServiceClientProvider.overrideWithValue(backend.client()),
+        userPermissionsProvider.overrideWith((ref) async => {'order_manage'}),
       ],
       child: const MaterialApp(
         home: Scaffold(body: SingleChildScrollView(child: _Harness())),

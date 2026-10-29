@@ -8,11 +8,7 @@ import 'product_card.dart';
 
 /// Responsive grid of [ProductCard]s driven by [productListProvider].
 class ProductGrid extends ConsumerWidget {
-  const ProductGrid({
-    super.key,
-    required this.shopId,
-    this.onProductTap,
-  });
+  const ProductGrid({super.key, required this.shopId, this.onProductTap});
 
   final String shopId;
   final void Function(Product product)? onProductTap;
@@ -28,15 +24,16 @@ class ProductGrid extends ConsumerWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.error_outline,
-                size: 48, color: theme.colorScheme.error),
+            Icon(Icons.error_outline, size: 48, color: theme.colorScheme.error),
             const SizedBox(height: 16),
-            Text('Failed to load products',
-                style: theme.textTheme.titleMedium),
+            Text('Failed to load products', style: theme.textTheme.titleMedium),
             const SizedBox(height: 8),
-            Text(friendlyError(error),
-                style: theme.textTheme.bodySmall
-                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+            Text(
+              friendlyError(error),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
             const SizedBox(height: 16),
             OutlinedButton.icon(
               onPressed: () => ref.invalidate(productListProvider(shopId)),
@@ -52,9 +49,11 @@ class ProductGrid extends ConsumerWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.inventory_2_outlined,
-                    size: 48,
-                    color: theme.colorScheme.onSurfaceVariant.withAlpha(120)),
+                Icon(
+                  Icons.inventory_2_outlined,
+                  size: 48,
+                  color: theme.colorScheme.onSurfaceVariant.withAlpha(120),
+                ),
                 const SizedBox(height: 12),
                 Text('No products yet', style: theme.textTheme.bodyLarge),
               ],
@@ -66,8 +65,8 @@ class ProductGrid extends ConsumerWidget {
             final crossAxisCount = constraints.maxWidth > 900
                 ? 3
                 : constraints.maxWidth > 600
-                    ? 2
-                    : 1;
+                ? 2
+                : 1;
             return GridView.builder(
               padding: const EdgeInsets.all(16),
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(

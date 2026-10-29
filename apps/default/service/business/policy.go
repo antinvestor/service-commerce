@@ -170,8 +170,10 @@ func paymentTransition(shop *models.Shop, now time.Time) repository.PaymentTrans
 				payment.AmountNanos,
 			),
 		}
-		// Money that arrives on a cancelled order is owed back to the buyer.
+		// Money that arrives on a cancelled order is owed back to the buyer;
+		// ApplyPayment raises the refund alongside.
 		if order.Status == int32(commercev1.OrderStatus_ORDER_STATUS_CANCELLED) {
+			order.PaymentStatus = int32(commercev1.PaymentStatus_PAYMENT_STATUS_REFUND_PENDING)
 			return append(events,
 				newOrderEvent(shop, order, commercev1.OrderEventType_ORDER_EVENT_TYPE_OVERPAID, payment.AmountNanos))
 		}

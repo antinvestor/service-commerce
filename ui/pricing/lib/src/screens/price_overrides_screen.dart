@@ -1,4 +1,5 @@
 import 'package:antinvestor_ui_core/widgets/error_helpers.dart';
+import 'package:antinvestor_ui_core/permissions/permission_guard.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -58,14 +59,17 @@ class _PriceOverridesScreenState extends ConsumerState<PriceOverridesScreen> {
     final filtered = _customerId != null || _variantId != null;
 
     return Scaffold(
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => showCustomerPriceOverrideForm(
-          context: context,
-          ref: ref,
-          shopId: widget.shopId,
+      floatingActionButton: PermissionGuard(
+        permissions: const {'customer_price_override'},
+        child: FloatingActionButton.extended(
+          onPressed: () => showCustomerPriceOverrideForm(
+            context: context,
+            ref: ref,
+            shopId: widget.shopId,
+          ),
+          icon: const Icon(Icons.add),
+          label: const Text('New Override'),
         ),
-        icon: const Icon(Icons.add),
-        label: const Text('New Override'),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),

@@ -18,7 +18,10 @@
 // permits in handlers via authz.Middleware (commerce_shop namespace) after the
 // FunctionAccessInterceptor has already validated the tenant-level permission.
 //
-// Role hierarchy (per shop): owner ⊇ admin ⊇ operator ⊇ viewer/member.
+// Role hierarchy (per shop): owner ⊇ admin ⊇ operator ⊇ viewer ⊇ member.
+// member is the partition's buyers: they see the shop and its catalogue but
+// never its orders, fulfilments or negotiated prices; a buyer reads their own
+// orders through the handlers' own-order path.
 // Direct grants use granted_<permission> relations so a profile can be given a
 // single capability without a full role.
 
@@ -56,7 +59,7 @@ class commerce_shop implements Namespace {
   }
 
   permits = {
-    // --- View permits: any role on the shop (incl. viewer/member) ---
+    // --- Catalogue view permits: any role on the shop, buyers included ---
     shop_view: (ctx: Context): boolean =>
       this.related.owner.includes(ctx.subject) ||
       this.related.admin.includes(ctx.subject) ||
@@ -75,12 +78,12 @@ class commerce_shop implements Namespace {
       this.related.service.includes(ctx.subject) ||
       this.related.granted_products_view.includes(ctx.subject),
 
+    // --- Staff view permits: viewer and up; buyers excluded ---
     orders_view: (ctx: Context): boolean =>
       this.related.owner.includes(ctx.subject) ||
       this.related.admin.includes(ctx.subject) ||
       this.related.operator.includes(ctx.subject) ||
       this.related.viewer.includes(ctx.subject) ||
-      this.related.member.includes(ctx.subject) ||
       this.related.service.includes(ctx.subject) ||
       this.related.granted_orders_view.includes(ctx.subject),
 
@@ -89,7 +92,6 @@ class commerce_shop implements Namespace {
       this.related.admin.includes(ctx.subject) ||
       this.related.operator.includes(ctx.subject) ||
       this.related.viewer.includes(ctx.subject) ||
-      this.related.member.includes(ctx.subject) ||
       this.related.service.includes(ctx.subject) ||
       this.related.granted_fulfilment_view.includes(ctx.subject),
 
@@ -98,7 +100,6 @@ class commerce_shop implements Namespace {
       this.related.admin.includes(ctx.subject) ||
       this.related.operator.includes(ctx.subject) ||
       this.related.viewer.includes(ctx.subject) ||
-      this.related.member.includes(ctx.subject) ||
       this.related.service.includes(ctx.subject) ||
       this.related.granted_price_list_view.includes(ctx.subject),
 

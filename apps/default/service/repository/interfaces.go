@@ -40,6 +40,10 @@ type ProductRepository interface {
 type ProductVariantRepository interface {
 	datastore.BaseRepository[*models.ProductVariant]
 	ListByProductID(ctx context.Context, productID string) ([]*models.ProductVariant, error)
+	// ListByProductIDs returns the variants of every product in productIDs.
+	ListByProductIDs(ctx context.Context, productIDs []string) ([]*models.ProductVariant, error)
+	// ListByIDs returns the variants with ids, each with its Product loaded.
+	ListByIDs(ctx context.Context, ids []string) ([]*models.ProductVariant, error)
 	// SetStock is an explicit absolute stock take; never used by order flow.
 	SetStock(ctx context.Context, variantID string, quantity int64) error
 	DecrementStock(ctx context.Context, variantID string, quantity int64) error
@@ -57,34 +61,50 @@ type CartLineRepository interface {
 	GetByCartAndVariant(ctx context.Context, cartID, variantID string) (*models.CartLine, error)
 }
 
+// CreateOrderOptions are what order creation does besides the order itself.
+type CreateOrderOptions struct {
+	// ConvertCartID is the cart the order converts, set to
+	// ConvertedCartStatus in the same transaction.
+	ConvertCartID       string
+	ConvertedCartStatus int32
+	// GuestUnitsCap bounds the units a shop's unpaid guest orders may hold
+	// at once, this one included; 0 means no bound.
+	GuestUnitsCap int64
+}
+
 type OrderRepository interface {
 	datastore.BaseRepository[*models.Order]
 	GetWithLines(ctx context.Context, id string) (*models.Order, error)
 	GetByIdempotencyKey(ctx context.Context, key string) (*models.Order, error)
-	ListByShopID(ctx context.Context, shopID string, page Page) ([]*models.Order, *PageKey, error)
-	ListByProfileID(ctx context.Context, profileID string, page Page) ([]*models.Order, *PageKey, error)
+	ListByShopID(
+		ctx context.Context,
+		shopID string,
+		filter OrderStatusFilter,
+		page Page,
+	) ([]*models.Order, *PageKey, error)
+	// ListByProfileID pages a buyer's orders, narrowed to one shop when
+	// shopID is set.
+	ListByProfileID(
+		ctx context.Context,
+		profileID, shopID string,
+		filter OrderStatusFilter,
+		page Page,
+	) ([]*models.Order, *PageKey, error)
 	// CreateWithLinesAndStock allocates the order number, inserts the order and
 	// lines, and decrements stock for each line inside a single transaction.
-	// If convertCartID is non-empty, marks that cart as converted in the same
-	// transaction. Returns ErrInsufficientStock when any stock decrement
-	// updates zero rows and ErrCartNotConvertible when the cart is not active.
+	// If opts.ConvertCartID is non-empty, marks that cart as converted in the
+	// same transaction. Returns ErrInsufficientStock when any stock decrement
+	// updates zero rows, ErrCartNotConvertible when the cart is not active and
+	// ErrGuestHoldLimit when a guest order would pass opts.GuestUnitsCap.
 	CreateWithLinesAndStock(
 		ctx context.Context,
 		order *models.Order,
 		lines []*models.OrderLine,
-		convertCartID string,
-		convertedCartStatus int32,
+		opts CreateOrderOptions,
 	) error
 	// UpdateStatus performs a compare-and-set status transition. Returns false
 	// when the order was not in expectedStatus.
 	UpdateStatus(ctx context.Context, orderID string, expectedStatus, newStatus, fulfilmentStatus int32) (bool, error)
-	// ListPaidBetween returns orders whose paid_at falls in [from, to) whose
-	// sale has not yet been merged into a ledger transaction. Refunded
-	// orders are included: their sale still happened on the day they paid.
-	ListPaidBetween(ctx context.Context, shopID string, from, to time.Time) ([]*models.Order, error)
-	// ListRefundedBetween returns orders refunded in [from, to) whose refund
-	// has not yet been merged into a ledger transaction.
-	ListRefundedBetween(ctx context.Context, shopID string, from, to time.Time) ([]*models.Order, error)
 	// ApplyPayment records payment against the order and applies transition
 	// under a row lock, with the events it returns, in one transaction. A
 	// payment whose reference is already recorded on the order is ignored
@@ -95,44 +115,81 @@ type OrderRepository interface {
 		payment *models.OrderPayment,
 		transition PaymentTransition,
 	) (order *models.Order, events []*models.OrderEvent, applied bool, err error)
-	// ListAwaitingPayment returns orders that may still receive money: unpaid
-	// orders inside or past their window, and part-paid orders with a
-	// checkout session issued since sessionsSince that has not been applied.
-	ListAwaitingPayment(ctx context.Context, shopID string, sessionsSince time.Time, limit int) ([]*models.Order, error)
+	// ListAwaitingPayment returns orders that may still receive money:
+	// unpaid orders, part-paid orders with an unapplied session issued since
+	// window.SessionsSince, and orders cancelled since window.LateSince with
+	// one, skipping orders under review or backed off past window.Now.
+	ListAwaitingPayment(ctx context.Context, shopID string, window ReconcileWindow, limit int) ([]*models.Order, error)
+	// HasReconcileWork reports, in one query, whether a reconcile run has
+	// anything to do.
+	HasReconcileWork(ctx context.Context, shopID string, window ReconcileWindow) (bool, error)
+	// DeferReconcile backs an order off until next.
+	DeferReconcile(ctx context.Context, orderID string, next time.Time) error
+	// FlagPaymentReview takes an order out of the sweep for staff to settle.
+	FlagPaymentReview(ctx context.Context, orderID, reason string) error
 	// ListOverdue returns part-paid orders past their balance deadline that
 	// have not been flagged overdue.
 	ListOverdue(ctx context.Context, shopID string, now time.Time, limit int) ([]*models.Order, error)
 	// MarkOverdue flags the order overdue once, recording events with it.
 	MarkOverdue(ctx context.Context, orderID string, now time.Time, events []*models.OrderEvent) (bool, error)
-	// ListPaymentsBetween returns instalments paid in [from, to) not yet
-	// merged into a ledger transaction.
-	ListPaymentsBetween(ctx context.Context, shopID string, from, to time.Time) ([]*models.OrderPayment, error)
-	// SetPaymentLedgerTransaction stamps instalments with their ledger
-	// transaction.
-	SetPaymentLedgerTransaction(ctx context.Context, paymentIDs []string, transactionID string) error
-	// CancelAndRestock cancels an order and returns every line's quantity to
-	// stock in one transaction. Only orders in one of allowedStatuses
-	// transition; returns false otherwise.
-	CancelAndRestock(
+	// Cancel cancels an order as decide plans it, returning stock and raising
+	// any refund in one transaction; see CancelDecision. A nil plan means the
+	// order was left as it was.
+	Cancel(
 		ctx context.Context,
 		orderID string,
-		allowedStatuses []int32,
-		paymentStatus int32,
-		reason string,
 		cancelledAt time.Time,
-		events []*models.OrderEvent,
+		decide CancelDecision,
+	) (*models.Order, *CancelPlan, error)
+	// AttachPaymentSession records the session and makes it current while
+	// the current one is still expectedRef, extending the payment window to
+	// paymentDueAt when that is later. It reports false when another session
+	// became current first.
+	AttachPaymentSession(
+		ctx context.Context,
+		orderID, expectedRef, ref, checkoutURL string,
+		amountNanos int64,
+		paymentDueAt *time.Time,
 	) (bool, error)
-	// AttachPaymentSession makes ref the order's current checkout session and
-	// records it, with the amount it charges, in the order's session
-	// history, atomically.
-	AttachPaymentSession(ctx context.Context, orderID, ref, checkoutURL string, amountNanos int64) error
 	// ListPaymentSessions returns every checkout session ever issued for the
 	// order, oldest first.
 	ListPaymentSessions(ctx context.Context, orderID string) ([]*models.OrderPaymentSession, error)
 	// SetLedgerTransaction stamps the sale-side ledger transaction on orders.
 	SetLedgerTransaction(ctx context.Context, orderIDs []string, transactionID string) error
-	// SetRefundLedgerTransaction stamps the refund-side ledger transaction.
-	SetRefundLedgerTransaction(ctx context.Context, orderIDs []string, transactionID string) error
+	// ListOpenRefunds returns refunds not yet confirmed or failed.
+	ListOpenRefunds(ctx context.Context, shopID string, limit int) ([]*models.OrderRefund, error)
+	// ListRefunds returns an order's refunds.
+	ListRefunds(ctx context.Context, orderID string) ([]*models.OrderRefund, error)
+	// ClaimRefund claims a pending refund for sending; one caller wins.
+	ClaimRefund(ctx context.Context, refundID string, at time.Time) (bool, error)
+	// RetakeRefund takes over a stale claim the caller observed.
+	RetakeRefund(ctx context.Context, refundID string, observed, at time.Time) (bool, error)
+	// RecordRefundSent notes the payment holding a refund.
+	RecordRefundSent(ctx context.Context, refundID, paymentID string) error
+	// TouchRefund records a look that settled nothing.
+	TouchRefund(ctx context.Context, refundID, lastError string) error
+	// FailRefund records a refund the payment service gave up on.
+	FailRefund(ctx context.Context, refundID, paymentID, reason string) error
+	// ConfirmRefund records a confirmed refund on it and its order.
+	ConfirmRefund(
+		ctx context.Context,
+		refundID string,
+		confirmedAt time.Time,
+		events func(order *models.Order, refund *models.OrderRefund) []*models.OrderEvent,
+	) (*models.Order, []*models.OrderEvent, error)
+	// RecordRefundPaidBack confirms a failed refund the shop paid back
+	// itself.
+	RecordRefundPaidBack(
+		ctx context.Context,
+		refundID, by, note string,
+		at time.Time,
+		events func(order *models.Order, refund *models.OrderRefund) []*models.OrderEvent,
+	) (*models.Order, []*models.OrderEvent, error)
+	// RequeueRefund puts a failed refund back to be sent as a new payment.
+	RequeueRefund(ctx context.Context, refundID, note string) (bool, error)
+	// ClaimLedgerItems fixes, and returns, what one end-of-day transaction
+	// merges.
+	ClaimLedgerItems(ctx context.Context, shopID string, to time.Time, transactionID string) (*LedgerItems, error)
 }
 
 type OrderEventRepository interface {
@@ -142,7 +199,10 @@ type OrderEventRepository interface {
 	// ListDue returns events awaiting webhook delivery whose retry time has
 	// come.
 	ListDue(ctx context.Context, now time.Time, limit int) ([]*models.OrderEvent, error)
-	// RecordDelivery saves the outcome of a delivery attempt.
+	// ClaimDelivery takes a due event for one attempt, counting it and
+	// holding the event until leaseUntil; nil when not claimed.
+	ClaimDelivery(ctx context.Context, eventID string, now, leaseUntil time.Time) (*models.OrderEvent, error)
+	// RecordDelivery saves the outcome of a claimed attempt.
 	RecordDelivery(ctx context.Context, event *models.OrderEvent) error
 	// MarkNotRequired stops delivery for events whose shop has no webhook.
 	MarkNotRequired(ctx context.Context, ids []string) error
@@ -151,6 +211,9 @@ type OrderEventRepository interface {
 type LedgerPostingRepository interface {
 	datastore.BaseRepository[*models.LedgerPosting]
 	GetByShopAndDay(ctx context.Context, shopID, tradingDay string) (*models.LedgerPosting, error)
+	// ListFailedSince returns failed postings for trading days from
+	// sinceDay on, optionally for one shop.
+	ListFailedSince(ctx context.Context, shopID, sinceDay string, limit int) ([]*models.LedgerPosting, error)
 }
 
 type OrderLineRepository interface {
@@ -181,6 +244,8 @@ type PriceListRepository interface {
 		ctx context.Context, shopID string, page Page,
 	) ([]*models.PriceList, *PageKey, error)
 	ListActive(ctx context.Context, shopID string) ([]*models.PriceList, error)
+	// ListActiveByIDs returns those of ids that are active lists of shopID.
+	ListActiveByIDs(ctx context.Context, shopID string, ids []string) ([]*models.PriceList, error)
 }
 
 type PriceListEntryRepository interface {
@@ -197,6 +262,9 @@ type PriceListEntryRepository interface {
 	GetByPriceListAndVariant(
 		ctx context.Context, priceListID, variantID string,
 	) ([]*models.PriceListEntry, error)
+	// ListForVariants returns the entries of the given lists for the given
+	// variants, narrowest band first (min_quantity descending, then id).
+	ListForVariants(ctx context.Context, priceListIDs, variantIDs []string) ([]*models.PriceListEntry, error)
 }
 
 type CustomerPriceListAssignmentRepository interface {
@@ -217,6 +285,11 @@ type CustomerPriceOverrideRepository interface {
 	GetByCustomerAndVariant(
 		ctx context.Context, customerID, variantID string,
 	) (*models.CustomerPriceOverride, error)
+	// ListActiveForVariants returns customerID's active overrides on any of
+	// variantIDs, oldest first.
+	ListActiveForVariants(
+		ctx context.Context, customerID string, variantIDs []string,
+	) ([]*models.CustomerPriceOverride, error)
 }
 
 type DiscountRuleRepository interface {
@@ -225,4 +298,16 @@ type DiscountRuleRepository interface {
 		ctx context.Context, shopID string, page Page,
 	) ([]*models.DiscountRule, *PageKey, error)
 	ListActive(ctx context.Context, shopID string) ([]*models.DiscountRule, error)
+}
+
+// StockReceiptRepository adds received goods to variant stock once per
+// reference.
+type StockReceiptRepository interface {
+	// Receive inserts receipt and raises its variant's stock by its quantity
+	// in one transaction, the variant's tenancy copied onto the receipt. When
+	// the reference was already received it changes nothing and returns that
+	// earlier receipt with replayed true. It returns the stock after the
+	// receipt either way.
+	Receive(ctx context.Context, variant *models.ProductVariant, receipt *models.StockReceipt) (
+		stock int64, existing *models.StockReceipt, replayed bool, err error)
 }

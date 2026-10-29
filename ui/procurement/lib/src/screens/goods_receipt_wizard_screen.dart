@@ -4,9 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../providers/supply_pickers.dart';
 import '../providers/procurement_providers.dart';
 import '../routing/procurement_paths.dart';
 import '../util/idempotency.dart';
+import '../util/supply.dart';
 import '../widgets/po_line_tile.dart';
 
 String _formatDate(DateTime dt) =>
@@ -41,6 +43,7 @@ class _GoodsReceiptWizardScreenState
   int _step = 0;
   final Map<String, _ReceiptLineInput> _receiptLines = {};
   String _notes = '';
+  SupplyChoice? _location;
   bool _submitting = false;
 
   /// One key per wizard session, so resubmitting after a lost response
@@ -50,7 +53,9 @@ class _GoodsReceiptWizardScreenState
   static const _stepLabels = ['Quantities', 'Lots & Expiry', 'Confirm'];
 
   bool get _canAdvance => switch (_step) {
-    0 => _receiptLines.values.any((l) => l.quantity > 0),
+    0 =>
+      _receiptLines.values.any((l) => l.quantity > 0) &&
+          _receiptLines.values.every((l) => l.quantityError == null),
     1 => true,
     _ => false,
   };
@@ -66,6 +71,8 @@ class _GoodsReceiptWizardScreenState
         ..purchaseOrderId = widget.poId
         ..notes = _notes;
       if (propertyId.isNotEmpty) request.propertyId = propertyId;
+      final location = _location;
+      if (location != null) request.stockLocationId = location.id;
 
       for (final entry in _receiptLines.entries) {
         if (entry.value.quantity > 0) {
@@ -88,16 +95,23 @@ class _GoodsReceiptWizardScreenState
       }
 
       final notifier = ref.read(procurementNotifierProvider.notifier);
-      await notifier.createGoodsReceipt(request);
+      final receipt = await notifier.createGoodsReceipt(request);
       ref.invalidate(purchaseOrderByIdProvider(widget.poId));
       ref.invalidate(purchaseOrderListProvider);
-      ref.invalidate(goodsReceiptListProvider);
+      ref.invalidate(purchaseOrderPagesProvider);
+      ref.invalidate(goodsReceiptPagesProvider(widget.poId));
 
       if (mounted) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(const SnackBar(content: Text('Goods receipt created')));
-        context.go(ProcurementPaths.order(widget.poId));
+        // The receipt shows where each line's stock went and what, if
+        // anything, still needs doing.
+        context.go(
+          receipt.id.isNotEmpty
+              ? ProcurementPaths.receipt(receipt.id)
+              : ProcurementPaths.order(widget.poId),
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -236,6 +250,11 @@ class _GoodsReceiptWizardScreenState
                   ),
                   2 => _StepGRConfirm(
                     receiptLines: _receiptLines,
+                    pickLocation: ref
+                        .watch(supplyPickersProvider)
+                        .stockLocation,
+                    location: _location,
+                    onLocationPicked: (l) => setState(() => _location = l),
                     onNotesChanged: (n) => setState(() => _notes = n),
                   ),
                   _ => const SizedBox.shrink(),
@@ -306,7 +325,10 @@ class _StepQuantities extends StatelessWidget {
               l.status !=
                   PurchaseOrderLineStatus.PURCHASE_ORDER_LINE_STATUS_RECEIVED &&
               l.status !=
-                  PurchaseOrderLineStatus.PURCHASE_ORDER_LINE_STATUS_CANCELLED,
+                  PurchaseOrderLineStatus
+                      .PURCHASE_ORDER_LINE_STATUS_CANCELLED &&
+              l.status !=
+                  PurchaseOrderLineStatus.PURCHASE_ORDER_LINE_STATUS_CLOSED,
         )
         .toList();
     return Column(
@@ -341,8 +363,13 @@ class _StepQuantities extends StatelessWidget {
                           Expanded(child: POLineTile(line: line)),
                           const SizedBox(width: 8),
                           SizedBox(
-                            width: 80,
+                            width: 96,
                             child: TextFormField(
+                              key: Key('receive_qty_${line.id}'),
+                              autovalidateMode:
+                                  AutovalidateMode.onUserInteraction,
+                              validator: (_) =>
+                                  receiptLines[line.id]?.quantityError,
                               initialValue:
                                   existing != null && existing.quantity > 0
                                   ? '${existing.quantity}'
@@ -364,6 +391,16 @@ class _StepQuantities extends StatelessWidget {
                                           _ReceiptLineInput(
                                             inventoryItemId:
                                                 line.inventoryItemId,
+                                            label: suppliedId(
+                                              line.supplyKind,
+                                              inventoryItemId:
+                                                  line.inventoryItemId,
+                                              productVariantId:
+                                                  line.productVariantId,
+                                            ),
+                                            wholeUnits: needsWholeUnits(
+                                              line.supplyKind,
+                                            ),
                                             quantity: 0,
                                             unit: line.unit,
                                           ))
@@ -430,7 +467,7 @@ class _StepLotNumbers extends StatelessWidget {
                           Expanded(
                             flex: 2,
                             child: Text(
-                              entry.value.inventoryItemId,
+                              entry.value.label,
                               style: theme.textTheme.bodyMedium,
                             ),
                           ),
@@ -469,10 +506,18 @@ class _StepLotNumbers extends StatelessWidget {
 class _StepGRConfirm extends StatelessWidget {
   const _StepGRConfirm({
     required this.receiptLines,
+    required this.pickLocation,
+    required this.location,
+    required this.onLocationPicked,
     required this.onNotesChanged,
   });
 
   final Map<String, _ReceiptLineInput> receiptLines;
+
+  /// Picks where raw materials are put away; null when the app has none.
+  final SupplyPickerBuilder? pickLocation;
+  final SupplyChoice? location;
+  final ValueChanged<SupplyChoice> onLocationPicked;
   final ValueChanged<String> onNotesChanged;
 
   @override
@@ -481,6 +526,8 @@ class _StepGRConfirm extends StatelessWidget {
     final activeLines = receiptLines.entries
         .where((e) => e.value.quantity > 0)
         .toList();
+    final materials = activeLines.any((e) => !e.value.wholeUnits);
+    final pick = pickLocation;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -496,6 +543,28 @@ class _StepGRConfirm extends StatelessWidget {
           '${activeLines.length} lines to receive',
           style: theme.textTheme.bodyMedium,
         ),
+        if (materials && pick != null) ...[
+          const SizedBox(height: 16),
+          Text(
+            'Where are the raw materials put away?',
+            style: theme.textTheme.labelLarge,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            location == null
+                ? 'Pick a stock location to book them into manufacturing '
+                      'inventory now. Without one, choose it later from the '
+                      'receipt.'
+                : 'Booked into ${location!.label.isEmpty ? location!.id : location!.label}.',
+            key: const Key('receipt_location_hint'),
+            style: theme.textTheme.bodySmall,
+          ),
+          const SizedBox(height: 8),
+          KeyedSubtree(
+            key: const Key('receipt_location_picker'),
+            child: pick(context, onLocationPicked),
+          ),
+        ],
         const SizedBox(height: 16),
         TextField(
           onChanged: onNotesChanged,
@@ -550,11 +619,19 @@ class _ReceiptLineInput {
     required this.inventoryItemId,
     required this.quantity,
     required this.unit,
+    this.label = '',
+    this.wholeUnits = false,
     this.lotNumber = '',
     this.expiryDate,
   });
 
   final String inventoryItemId;
+
+  /// What the line supplies, for display.
+  final String label;
+
+  /// Product variants are received in whole units.
+  final bool wholeUnits;
   final double quantity;
   final String unit;
   final String lotNumber;
@@ -562,12 +639,23 @@ class _ReceiptLineInput {
 
   static const Object _keep = Object();
 
+  /// Why [quantity] cannot be received, or null when it can.
+  String? get quantityError {
+    if (quantity < 0) return 'Not negative';
+    if (wholeUnits && quantity != quantity.roundToDouble()) {
+      return 'Whole units';
+    }
+    return null;
+  }
+
   _ReceiptLineInput copyWith({
     double? quantity,
     String? lotNumber,
     Object? expiryDate = _keep,
   }) => _ReceiptLineInput(
     inventoryItemId: inventoryItemId,
+    label: label,
+    wholeUnits: wholeUnits,
     quantity: quantity ?? this.quantity,
     unit: unit,
     lotNumber: lotNumber ?? this.lotNumber,

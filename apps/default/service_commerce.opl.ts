@@ -50,6 +50,7 @@ class service_commerce implements Namespace {
     granted_discount_approve: (profile_user | service_commerce)[]
     granted_shops_list: (profile_user | service_commerce)[]
     granted_ledger_post: (profile_user | service_commerce)[]
+    granted_stock_receive: (profile_user | service_commerce)[]
   }
 
   permits = {
@@ -186,5 +187,8 @@ class service_commerce implements Namespace {
       this.related.owner.includes(ctx.subject) ||
       this.related.service.includes(ctx.subject) ||
       this.related.granted_ledger_post.includes(ctx.subject),
+
+    stock_receive: (ctx: Context): boolean =>
+      this.related.granted_stock_receive.includes(ctx.subject),
   }
 }

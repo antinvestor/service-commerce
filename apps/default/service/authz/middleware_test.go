@@ -295,3 +295,37 @@ func (s *MiddlewareTestSuite) TestShopViewerPermissions() {
 	s.Require().Error(mw.CanOrdersManage(ctx, shopID))
 	s.Require().Error(mw.CanFulfilmentManage(ctx, shopID))
 }
+
+// A partition's buyers (member) see a bridged shop and its catalogue but not
+// its orders, fulfilments or negotiated prices; partition staff see them all.
+func (s *MiddlewareTestSuite) TestPartitionBuyerCannotSeeShopOrders() {
+	auth := s.newAuthorizer()
+	mw := authz.NewMiddleware(auth)
+	ctx := s.T().Context()
+
+	shopID := "shop-bridged"
+	s.Require().NoError(mw.BridgeShopRoles(ctx, shopID, testTenancyPath))
+	s.Require().NoError(auth.WriteTuples(ctx, []security.RelationTuple{
+		{
+			Object:   security.ObjectRef{Namespace: authz.NamespaceCommerce, ID: testTenancyPath},
+			Relation: authz.RoleMember,
+			Subject:  security.SubjectRef{Namespace: authz.NamespaceProfile, ID: "buyer"},
+		},
+		{
+			Object:   security.ObjectRef{Namespace: authz.NamespaceCommerce, ID: testTenancyPath},
+			Relation: authz.RoleViewer,
+			Subject:  security.SubjectRef{Namespace: authz.NamespaceProfile, ID: "clerk"},
+		},
+	}))
+
+	buyer := s.ctxWithClaims("buyer")
+	s.Require().NoError(mw.CanShopView(buyer, shopID))
+	s.Require().NoError(mw.CanProductsView(buyer, shopID))
+	s.Require().Error(mw.CanOrdersView(buyer, shopID))
+	s.Require().Error(mw.CanPriceListView(buyer, shopID))
+
+	clerk := s.ctxWithClaims("clerk")
+	s.Require().NoError(mw.CanOrdersView(clerk, shopID))
+	s.Require().NoError(mw.CanPriceListView(clerk, shopID))
+	s.Require().Error(mw.CanOrdersManage(clerk, shopID))
+}

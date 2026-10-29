@@ -240,7 +240,7 @@ type Order struct {
 	// IdempotencyKey deduplicates retried creates. RequestHash fingerprints the
 	// request so a reused key with different content is rejected instead of
 	// silently returning an unrelated order.
-	IdempotencyKey   string `gorm:"type:varchar(255);uniqueIndex"`
+	IdempotencyKey   string `gorm:"type:varchar(255)"` // unique per tenancy: migrations/0001
 	RequestHash      string `gorm:"type:varchar(64)"`
 	Status           int32  `gorm:"default:1"`
 	PaymentStatus    int32  `gorm:"default:1"`
@@ -248,6 +248,10 @@ type Order struct {
 	ProfileID        string `gorm:"type:varchar(50);index:idx_order_profile_id"`
 	ContactID        string `gorm:"type:varchar(50)"`
 	AddressID        string `gorm:"type:varchar(50)"`
+	// Guest marks an order placed from a public storefront by someone who
+	// did not sign in: the contact on it is only what they typed, so
+	// nothing is sent to it until money has been paid.
+	Guest            bool   `gorm:"not null;default:false"`
 	SubtotalCurrency string `gorm:"type:varchar(3)"`
 	SubtotalUnits    int64
 	SubtotalNanos    int32
@@ -279,8 +283,22 @@ type Order struct {
 	BalanceDueAt    *time.Time `gorm:"index:idx_order_balance_due"`
 	OverdueAt       *time.Time
 
+	// Refunds. AmountRefundedNanos is what the payment service confirmed
+	// was paid back to the buyer.
+	AmountRefundedNanos int64
+
+	// Reconciliation. NextReconcileAt backs off an order the reconciler
+	// looked at without settling it, so a few stuck orders never hold up
+	// the rest; ReconcileAttempts counts those looks. PaymentReview is set
+	// when only staff can settle the order's payment, which takes it out of
+	// the sweep.
+	NextReconcileAt   *time.Time
+	ReconcileAttempts int32
+	PaymentReview     string `gorm:"type:varchar(255)"`
+
 	Lines    []*OrderLine    `gorm:"foreignKey:OrderID"`
 	Payments []*OrderPayment `gorm:"foreignKey:OrderID"`
+	Refunds  []*OrderRefund  `gorm:"foreignKey:OrderID"`
 	Shop     *Shop           `gorm:"foreignKey:ShopID"`
 }
 
@@ -328,6 +346,13 @@ func (o *Order) ToAPI() *commercev1.Order {
 	for _, payment := range o.Payments {
 		api.Payments = append(api.Payments, payment.ToAPI())
 	}
+	for _, refund := range o.Refunds {
+		api.Refunds = append(api.Refunds, refund.ToAPI())
+	}
+	if o.AmountRefundedNanos > 0 {
+		api.AmountRefunded = MoneyFromNanos(o.TotalCurrency, o.AmountRefundedNanos)
+	}
+	api.PaymentReview = o.PaymentReview
 	return api
 }
 
@@ -376,6 +401,18 @@ type OrderPaymentSession struct {
 	// AmountNanos is what the session was created to charge. Sessions made
 	// before instalments existed have 0, meaning the order total.
 	AmountNanos int64
+}
+
+// StockReceipt records goods received into a variant's stock from outside
+// commerce (a procurement goods receipt line), once per reference, so a
+// repeated delivery adds nothing. Unique per tenancy and reference:
+// migrations/0001/20261030_stock_receipts.sql.
+type StockReceipt struct {
+	data.BaseModel
+	VariantID string `gorm:"type:varchar(50);index:idx_stock_receipt_variant_id"`
+	Quantity  int64
+	Reference string `gorm:"type:varchar(255)"`
+	ActorID   string `gorm:"type:varchar(50)"`
 }
 
 // LedgerPosting records one end-of-day merge for a shop and trading day, so

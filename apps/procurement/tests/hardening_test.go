@@ -18,11 +18,12 @@ import (
 	"testing"
 
 	commonv1 "buf.build/gen/go/antinvestor/common/protocolbuffers/go/common/v1"
-	procurementv1 "buf.build/gen/go/antinvestor/procurement/protocolbuffers/go/v1"
 	"connectrpc.com/connect/v2"
 	"github.com/pitabwire/frame/v3/frametests/definition"
 	"github.com/pitabwire/util"
 	"github.com/stretchr/testify/require"
+
+	procurementv1 "github.com/antinvestor/service-commerce/gen/go/procurement/v1"
 )
 
 // Receiving is atomic and cannot overshoot the order, even when the same
@@ -49,7 +50,7 @@ func (gts *GoodsReceiptTestSuite) TestReceipt_DuplicateLinesAndPartialCancelGuar
 		require.Error(t, err)
 		require.Equal(t, connect.CodeFailedPrecondition, connect.CodeOf(err))
 
-		receipts, err := biz.grBiz.SearchGoodsReceipts(ctx, &procurementv1.GoodsReceiptSearchRequest{
+		receipts, _, err := biz.grBiz.SearchGoodsReceipts(ctx, &procurementv1.GoodsReceiptSearchRequest{
 			PurchaseOrderId: po.GetId(),
 		})
 		require.NoError(t, err)

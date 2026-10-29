@@ -1,10 +1,12 @@
 import 'package:antinvestor_api_commerce/antinvestor_api_commerce.dart';
+import 'package:antinvestor_ui_core/permissions/permission_guard.dart';
 import 'package:antinvestor_ui_core/widgets/error_helpers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../providers/catalog_providers.dart';
+import '../widgets/product_card.dart';
 import '../widgets/fulfilment_type_badge.dart';
 import '../widgets/product_status_badge.dart';
 
@@ -59,10 +61,13 @@ class _CatalogBrowseScreenState extends ConsumerState<CatalogBrowseScreen> {
     final asyncPages = ref.watch(productPagesProvider(listQuery));
 
     return Scaffold(
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.go('/catalog/new'),
-        icon: const Icon(Icons.add),
-        label: const Text('New Product'),
+      floatingActionButton: PermissionGuard(
+        permissions: const {'product_manage'},
+        child: FloatingActionButton.extended(
+          onPressed: () => context.go('/catalog/new'),
+          icon: const Icon(Icons.add),
+          label: const Text('New Product'),
+        ),
       ),
       body: asyncPages.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -124,7 +129,29 @@ class _CatalogBrowseScreenState extends ConsumerState<CatalogBrowseScreen> {
       _selectedIndex = null;
     }
 
-    final showDetail = _selectedIndex != null;
+    return LayoutBuilder(
+      builder: (context, constraints) => _buildLayout(
+        context,
+        theme,
+        products,
+        pages,
+        listQuery,
+        narrow: constraints.maxWidth < 840,
+      ),
+    );
+  }
+
+  /// On a narrow screen the products are cards that open the product page;
+  /// on a wide one a table with a detail panel beside it.
+  Widget _buildLayout(
+    BuildContext context,
+    ThemeData theme,
+    List<Product> products,
+    ProductPages pages,
+    ProductListQuery listQuery, {
+    required bool narrow,
+  }) {
+    final showDetail = !narrow && _selectedIndex != null;
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -167,10 +194,13 @@ class _CatalogBrowseScreenState extends ConsumerState<CatalogBrowseScreen> {
                         ],
                       ),
                     ),
-                    FilledButton.icon(
-                      onPressed: () => context.go('/catalog/new'),
-                      icon: const Icon(Icons.add, size: 18),
-                      label: const Text('New Product'),
+                    PermissionGuard(
+                      permissions: const {'product_manage'},
+                      child: FilledButton.icon(
+                        onPressed: () => context.go('/catalog/new'),
+                        icon: const Icon(Icons.add, size: 18),
+                        label: const Text('New Product'),
+                      ),
                     ),
                   ],
                 ),
@@ -238,75 +268,91 @@ class _CatalogBrowseScreenState extends ConsumerState<CatalogBrowseScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // Data table
-                Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: theme.colorScheme.outlineVariant),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: DataTable(
-                        showCheckboxColumn: false,
-                        columns: const [
-                          DataColumn(label: Text('NAME')),
-                          DataColumn(label: Text('STATUS')),
-                          DataColumn(label: Text('FULFILMENT')),
-                        ],
-                        rows: List.generate(products.length, (i) {
-                          final product = products[i];
-                          final globalIndex = i;
-                          return DataRow(
-                            selected: _selectedIndex == globalIndex,
-                            onSelectChanged: (_) {
-                              setState(() => _selectedIndex = globalIndex);
-                            },
-                            color: WidgetStateProperty.resolveWith((states) {
-                              if (states.contains(WidgetState.selected)) {
-                                return theme.colorScheme.primaryContainer
-                                    .withAlpha(40);
-                              }
-                              return null;
-                            }),
-                            cells: [
-                              DataCell(
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      Icons.inventory_2_outlined,
-                                      size: 18,
-                                      color: theme.colorScheme.primary,
-                                    ),
-                                    const SizedBox(width: 10),
-                                    Text(
-                                      product.name.isNotEmpty
-                                          ? product.name
-                                          : product.id,
-                                    ),
-                                  ],
+                if (narrow)
+                  Column(
+                    children: [
+                      for (final product in products)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: ProductCard(
+                            product: product,
+                            onTap: () => context.go('/catalog/${product.id}'),
+                          ),
+                        ),
+                    ],
+                  )
+                else
+                  // Data table
+                  Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: theme.colorScheme.outlineVariant,
+                      ),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: DataTable(
+                          showCheckboxColumn: false,
+                          columns: const [
+                            DataColumn(label: Text('NAME')),
+                            DataColumn(label: Text('STATUS')),
+                            DataColumn(label: Text('FULFILMENT')),
+                          ],
+                          rows: List.generate(products.length, (i) {
+                            final product = products[i];
+                            final globalIndex = i;
+                            return DataRow(
+                              selected: _selectedIndex == globalIndex,
+                              onSelectChanged: (_) {
+                                setState(() => _selectedIndex = globalIndex);
+                              },
+                              color: WidgetStateProperty.resolveWith((states) {
+                                if (states.contains(WidgetState.selected)) {
+                                  return theme.colorScheme.primaryContainer
+                                      .withAlpha(40);
+                                }
+                                return null;
+                              }),
+                              cells: [
+                                DataCell(
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.inventory_2_outlined,
+                                        size: 18,
+                                        color: theme.colorScheme.primary,
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Text(
+                                        product.name.isNotEmpty
+                                            ? product.name
+                                            : product.id,
+                                      ),
+                                    ],
+                                  ),
+                                  onTap: () =>
+                                      context.go('/catalog/${product.id}'),
                                 ),
-                                onTap: () =>
-                                    context.go('/catalog/${product.id}'),
-                              ),
-                              DataCell(
-                                ProductStatusBadge(status: product.status),
-                              ),
-                              DataCell(
-                                FulfilmentTypeBadge(
-                                  type: product.fulfilmentType,
+                                DataCell(
+                                  ProductStatusBadge(status: product.status),
                                 ),
-                              ),
-                            ],
-                          );
-                        }),
+                                DataCell(
+                                  FulfilmentTypeBadge(
+                                    type: product.fulfilmentType,
+                                  ),
+                                ),
+                              ],
+                            );
+                          }),
+                        ),
                       ),
                     ),
                   ),
-                ),
 
                 // Load more
                 const SizedBox(height: 12),
@@ -474,19 +520,18 @@ class _ProductDetailPanel extends StatelessWidget {
         if (product.description.isNotEmpty)
           _DetailRow(label: 'Description', value: product.description),
         if (product.shopId.isNotEmpty)
-          _DetailRow(label: 'Shop ID', value: product.shopId),
-        if (product.attributes.isNotEmpty) ...[
-          const SizedBox(height: 8),
-          Text(
-            'Attributes',
-            style: theme.textTheme.labelMedium?.copyWith(
-              fontWeight: FontWeight.w500,
+          if (product.attributes.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(
+              'Attributes',
+              style: theme.textTheme.labelMedium?.copyWith(
+                fontWeight: FontWeight.w500,
+              ),
             ),
-          ),
-          const SizedBox(height: 4),
-          for (final entry in product.attributes.entries)
-            _DetailRow(label: entry.key, value: entry.value),
-        ],
+            const SizedBox(height: 4),
+            for (final entry in product.attributes.entries)
+              _DetailRow(label: entry.key, value: entry.value),
+          ],
       ],
     );
   }

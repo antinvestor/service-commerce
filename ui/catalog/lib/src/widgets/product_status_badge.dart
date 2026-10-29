@@ -16,10 +16,12 @@ class ProductStatusBadge extends StatelessWidget {
       value: status,
       mapper: (s) => switch (s) {
         ProductStatus.PRODUCT_STATUS_ACTIVE => ('Active', Colors.green, null),
-        ProductStatus.PRODUCT_STATUS_INACTIVE =>
-          ('Inactive', Colors.grey, null),
-        ProductStatus.PRODUCT_STATUS_ARCHIVED =>
-          ('Archived', Colors.red, null),
+        ProductStatus.PRODUCT_STATUS_INACTIVE => (
+          'Inactive',
+          Colors.grey,
+          null,
+        ),
+        ProductStatus.PRODUCT_STATUS_ARCHIVED => ('Archived', Colors.red, null),
         _ => ('Unknown', Colors.grey, null),
       },
     );

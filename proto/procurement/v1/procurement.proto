@@ -69,7 +69,9 @@ service ProcurementService {
       "purchase_order_submit",
       "purchase_order_cancel",
       "goods_receipt_view",
-      "goods_receipt_create"
+      "goods_receipt_create",
+      "goods_receipt_deliver",
+      "goods_receipt_resolve"
     ]
     role_bindings: [
       {
@@ -82,7 +84,9 @@ service ProcurementService {
           "purchase_order_submit",
           "purchase_order_cancel",
           "goods_receipt_view",
-          "goods_receipt_create"
+          "goods_receipt_create",
+          "goods_receipt_deliver",
+          "goods_receipt_resolve"
         ]
       },
       {
@@ -95,7 +99,9 @@ service ProcurementService {
           "purchase_order_submit",
           "purchase_order_cancel",
           "goods_receipt_view",
-          "goods_receipt_create"
+          "goods_receipt_create",
+          "goods_receipt_deliver",
+          "goods_receipt_resolve"
         ]
       },
       {
@@ -127,7 +133,9 @@ service ProcurementService {
           "purchase_order_submit",
           "purchase_order_cancel",
           "goods_receipt_view",
-          "goods_receipt_create"
+          "goods_receipt_create",
+          "goods_receipt_deliver",
+          "goods_receipt_resolve"
         ]
       }
     ]
@@ -188,6 +196,14 @@ service ProcurementService {
       permissions: ["purchase_order_cancel"]
     };
   }
+  // Closes a partially received order short: what was received stands, the
+  // remainder of every open line is cancelled and no further receipt is
+  // accepted.
+  rpc PurchaseOrderClose(PurchaseOrderCloseRequest) returns (PurchaseOrderCloseResponse) {
+    option (common.v1.method_permissions) = {
+      permissions: ["purchase_order_cancel"]
+    };
+  }
 
   // ---- Goods Receipts ----
   rpc GoodsReceiptCreate(GoodsReceiptCreateRequest) returns (GoodsReceiptCreateResponse) {
@@ -203,6 +219,24 @@ service ProcurementService {
   rpc GoodsReceiptSearch(GoodsReceiptSearchRequest) returns (GoodsReceiptSearchResponse) {
     option (common.v1.method_permissions) = {
       permissions: ["goods_receipt_view"]
+    };
+  }
+  // Pushes received stock that has not reached its destination yet (commerce
+  // product variants), oldest and least-tried first, at most limit lines.
+  // Each line lands once whatever the number of calls. Scheduled.
+  rpc GoodsReceiptDeliver(GoodsReceiptDeliverRequest) returns (GoodsReceiptDeliverResponse) {
+    option (common.v1.method_permissions) = {
+      permissions: ["goods_receipt_deliver"]
+    };
+  }
+
+  // Settles a receipt line that needs a person: stock booked by hand
+  // (BOOKED_MANUALLY) is marked resolved with who, when and why; a FAILED
+  // product variant line is put back to PENDING and pushed once (RETRY).
+  // Authorised on the receipt's property (goods_receipt_manage).
+  rpc GoodsReceiptLineResolve(GoodsReceiptLineResolveRequest) returns (GoodsReceiptLineResolveResponse) {
+    option (common.v1.method_permissions) = {
+      permissions: ["goods_receipt_resolve"]
     };
   }
 
@@ -253,6 +287,8 @@ enum PurchaseOrderStatus {
   PURCHASE_ORDER_STATUS_PARTIALLY_RECEIVED = 4;
   PURCHASE_ORDER_STATUS_RECEIVED = 5;
   PURCHASE_ORDER_STATUS_CANCELLED = 6;
+  // Partially received and closed short: nothing more will be received.
+  PURCHASE_ORDER_STATUS_CLOSED = 7;
 }
 
 enum PurchaseOrderLineStatus {
@@ -261,6 +297,8 @@ enum PurchaseOrderLineStatus {
   PURCHASE_ORDER_LINE_STATUS_PARTIALLY_RECEIVED = 2;
   PURCHASE_ORDER_LINE_STATUS_RECEIVED = 3;
   PURCHASE_ORDER_LINE_STATUS_CANCELLED = 4;
+  // The order was closed short; received_quantity is final.
+  PURCHASE_ORDER_LINE_STATUS_CLOSED = 5;
 }
 
 enum GoodsReceiptStatus {
@@ -269,6 +307,46 @@ enum GoodsReceiptStatus {
   GOODS_RECEIPT_STATUS_ACCEPTED = 2;
   GOODS_RECEIPT_STATUS_PARTIALLY_ACCEPTED = 3;
   GOODS_RECEIPT_STATUS_REJECTED = 4;
+}
+
+// What a supplier item supplies, and so where its received stock lands.
+enum SupplyKind {
+  SUPPLY_KIND_UNSPECIFIED = 0;
+  // A manufacturing inventory item (raw material, packaging), named by
+  // inventory_item_id. Received stock goes to manufacturing inventory.
+  SUPPLY_KIND_MATERIAL = 1;
+  // A commerce product variant bought for resale, named by
+  // product_variant_id. Received stock raises the variant's stock.
+  SUPPLY_KIND_PRODUCT_VARIANT = 2;
+}
+
+// Whether a receipt line's stock has reached its destination.
+enum StockDeliveryStatus {
+  STOCK_DELIVERY_STATUS_UNSPECIFIED = 0;
+  // Waiting to be pushed; GoodsReceiptDeliver retries it.
+  STOCK_DELIVERY_STATUS_PENDING = 1;
+  // Landed at the destination exactly once.
+  STOCK_DELIVERY_STATUS_DELIVERED = 2;
+  // A raw material received without a stock location: RETRY with one to
+  // book it into manufacturing inventory, or book it there by hand.
+  STOCK_DELIVERY_STATUS_PENDING_TRANSFER = 3;
+  // The destination refused it for good (see delivery_note); needs staff.
+  STOCK_DELIVERY_STATUS_FAILED = 4;
+  // Booked at its destination by hand and marked so by staff (see
+  // resolved_by, resolved_at and resolution_note).
+  STOCK_DELIVERY_STATUS_RESOLVED = 5;
+}
+
+// How staff settle a receipt line that needs action.
+enum GoodsReceiptLineResolution {
+  GOODS_RECEIPT_LINE_RESOLUTION_UNSPECIFIED = 0;
+  // The stock was booked at its destination by hand (PENDING_TRANSFER or
+  // FAILED lines); the line becomes STOCK_DELIVERY_STATUS_RESOLVED.
+  GOODS_RECEIPT_LINE_RESOLUTION_BOOKED_MANUALLY = 1;
+  // Try a FAILED line again, or send a PENDING_TRANSFER raw material to the
+  // location given: it goes back to PENDING and is pushed once straight
+  // away; the sweep retries it if that fails.
+  GOODS_RECEIPT_LINE_RESOLUTION_RETRY = 2;
 }
 
 // ---- Messages ----
@@ -297,6 +375,8 @@ message SupplierItem {
   string unit = 7;
   int32 lead_time_days = 8;
   SupplierItemStatus status = 9;
+  SupplyKind supply_kind = 10;
+  string product_variant_id = 11;
   google.protobuf.Timestamp created_at = 15;
 }
 
@@ -326,6 +406,8 @@ message PurchaseOrderLine {
   common.v1.Money unit_price = 7;
   string unit = 8;
   PurchaseOrderLineStatus status = 9;
+  SupplyKind supply_kind = 10;
+  string product_variant_id = 11;
 }
 
 message GoodsReceipt {
@@ -337,6 +419,8 @@ message GoodsReceipt {
   GoodsReceiptStatus status = 6;
   string notes = 7;
   repeated GoodsReceiptLine lines = 8;
+  // Manufacturing stock location raw materials are received into.
+  string stock_location_id = 9;
   google.protobuf.Timestamp created_at = 15;
 }
 
@@ -352,6 +436,16 @@ message GoodsReceiptLine {
   string lot_number = 9;
   google.protobuf.Timestamp expiry_date = 10;
   string unit = 11;
+  SupplyKind supply_kind = 12;
+  string product_variant_id = 13;
+  StockDeliveryStatus delivery_status = 14;
+  string delivery_note = 15;
+  // Who marked the line resolved, when, and their note.
+  string resolved_by = 16;
+  google.protobuf.Timestamp resolved_at = 17;
+  string resolution_note = 18;
+  // Where a raw material is put away in manufacturing inventory.
+  string location_id = 19;
 }
 
 message PurchaseOrderSuggestion {
@@ -418,6 +512,10 @@ message SupplierItemSaveRequest {
   string unit = 7;
   int32 lead_time_days = 8;
   SupplierItemStatus status = 9;
+  // Fixed when the item is created. Unspecified with an inventory_item_id
+  // means SUPPLY_KIND_MATERIAL.
+  SupplyKind supply_kind = 10;
+  string product_variant_id = 11;
 }
 
 message SupplierItemSaveResponse {
@@ -493,12 +591,26 @@ message PurchaseOrderCancelResponse {
   PurchaseOrder purchase_order = 1;
 }
 
+message PurchaseOrderCloseRequest {
+  string id = 1;
+  string reason = 2;
+}
+
+message PurchaseOrderCloseResponse {
+  PurchaseOrder purchase_order = 1;
+}
+
 message GoodsReceiptCreateRequest {
   string idempotency_key = 1;
   string purchase_order_id = 2;
   string property_id = 3;
   string notes = 4;
   repeated GoodsReceiptLineInput lines = 5;
+  // Manufacturing stock location raw materials are put away in. With one,
+  // raw material lines are booked into manufacturing inventory
+  // automatically; without, they wait (STOCK_DELIVERY_STATUS_PENDING_TRANSFER)
+  // until staff choose a location or book them by hand.
+  string stock_location_id = 6;
 }
 
 message GoodsReceiptLineInput {
@@ -537,8 +649,40 @@ message GoodsReceiptSearchResponse {
 message SuggestPurchaseOrdersRequest {
   string property_id = 1;
   string plan_id = 2;
+  // Only supplier items priced in this currency are considered. When empty,
+  // a material offered in more than one currency is left unsourced rather
+  // than compared across currencies.
+  string currency_code = 3;
 }
 
 message SuggestPurchaseOrdersResponse {
   repeated PurchaseOrderSuggestion suggestions = 1;
+}
+
+message GoodsReceiptDeliverRequest {
+  // Most lines to push in this call; 0 means 100, at most 500.
+  int32 limit = 1;
+}
+
+message GoodsReceiptDeliverResponse {
+  int32 delivered = 1;
+  // Still pending after this call (transient failures), to retry later.
+  int32 pending = 2;
+  // Refused for good and marked STOCK_DELIVERY_STATUS_FAILED.
+  int32 failed = 3;
+}
+
+message GoodsReceiptLineResolveRequest {
+  string goods_receipt_id = 1;
+  string line_id = 2;
+  GoodsReceiptLineResolution resolution = 3;
+  // Why, or where the stock was booked; at most 1000 characters.
+  string note = 4;
+  // RETRY of a raw material: the manufacturing stock location to book it
+  // into; required unless the line already has one.
+  string location_id = 5;
+}
+
+message GoodsReceiptLineResolveResponse {
+  GoodsReceipt goods_receipt = 1;
 }

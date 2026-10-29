@@ -1,3 +1,4 @@
+import 'package:antinvestor_ui_core/permissions/permission_guard.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -7,6 +8,7 @@ import '../../features/auth/ui/login_page.dart';
 import '../../features/auth/ui/splash_page.dart';
 import '../../features/dashboard/dashboard_page.dart';
 import '../../features/settings/settings_page.dart';
+import '../auth/console_permissions.dart';
 import '../auth/tenant_context_provider.dart';
 import '../widgets/responsive_scaffold.dart';
 import 'console_modules.dart';
@@ -132,7 +134,7 @@ GoRouter createAppRouter(Ref ref, {String initialLocation = '/'}) {
           return ResponsiveScaffold(
             currentRoute: state.uri.toString(),
             onNavigate: (route) => context.go(route),
-            child: child,
+            child: RouteGate(location: state.uri.path, child: child),
           );
         },
         routes: [
@@ -157,6 +159,23 @@ GoRouter createAppRouter(Ref ref, {String initialLocation = '/'}) {
       ),
     ],
   );
+}
+
+/// Opens [child] only for a user holding a permission [location] needs
+/// ([consoleRoutePermissions]); others see "Access denied". Routes that
+/// need none open straight away.
+class RouteGate extends StatelessWidget {
+  const RouteGate({super.key, required this.location, required this.child});
+
+  final String location;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final needed = consoleRoutePermissionsFor(location);
+    if (needed.isEmpty) return child;
+    return RoutePermissionGuard(permissions: needed, child: child);
+  }
 }
 
 /// Remembers the router location across router rebuilds.

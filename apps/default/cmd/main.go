@@ -24,7 +24,7 @@ import (
 	"github.com/antinvestor/common/v3/permissions"
 	"github.com/pitabwire/frame/v3"
 	"github.com/pitabwire/frame/v3/config"
-	"github.com/pitabwire/frame/v3/datastore"
+	"github.com/pitabwire/frame/v3/events"
 	"github.com/pitabwire/frame/v3/security/authorizer"
 	connectInterceptors "github.com/pitabwire/frame/v3/security/interceptors/connect"
 	"github.com/pitabwire/frame/v3/setup"
@@ -36,11 +36,13 @@ import (
 	"github.com/antinvestor/service-commerce/apps/default/service/handlers"
 	"github.com/antinvestor/service-commerce/apps/default/service/notifications"
 	"github.com/antinvestor/service-commerce/apps/default/service/repository"
-	"github.com/antinvestor/service-commerce/apps/default/service/workflows"
 	commercepb "github.com/antinvestor/service-commerce/gen/go/commerce/v1"
 	"github.com/antinvestor/service-commerce/gen/go/commerce/v1/commercev1connect"
 	"github.com/antinvestor/service-commerce/pkg/clients"
+	"github.com/antinvestor/service-commerce/pkg/dbmigrate"
+	"github.com/antinvestor/service-commerce/pkg/dbrole"
 	"github.com/antinvestor/service-commerce/pkg/messages"
+	"github.com/antinvestor/service-commerce/pkg/workflows"
 	workflowdefs "github.com/antinvestor/service-commerce/workflows"
 )
 
@@ -66,8 +68,15 @@ func main() {
 	svc.Setup().RegisterFunc(setup.NameMigrate, func(ctx context.Context) error {
 		return repository.Migrate(ctx, svc.DatastoreManager(), cfg.GetDatabaseMigrationPath())
 	})
+	svc.Setup().RegisterFunc(dbrole.StepName, dbrole.Step(svc.DatastoreManager()))
 	defer svc.Stop(ctx)
 	log := svc.Log(ctx)
+
+	// Frame keeps an empty pool when the database cannot be reached; stop
+	// here rather than build repositories or migrate on it.
+	if dbErr := dbmigrate.Ready(ctx, svc); dbErr != nil {
+		log.WithError(dbErr).Fatal("database is unavailable; check DATABASE_URL and the database provider's status")
+	}
 
 	// Setup Job: migrate, publish the permission manifest, register
 	// notification templates, and register scheduled workflows. Then exit.
@@ -94,11 +103,15 @@ func main() {
 	}
 
 	// Runtime: HTTP only, no permission registration.
-	// Without a database every repository would be built on a nil pool; say
-	// so plainly instead of crashing on the first dereference.
-	if svc.DatastoreManager().GetPool(ctx, datastore.DefaultPoolName) == nil {
-		log.Error("database is unavailable; check DATABASE_URL and the database provider's status")
-		return
+	if cfgErr := cfg.Validate(); cfgErr != nil {
+		log.WithError(cfgErr).Fatal("configuration is not deployment-safe")
+	}
+	dbrole.MustVerify(ctx, svc.DatastoreManager())
+	// A query that names no tenant is refused from here on; only the
+	// scheduled sweeps, the storefront slug lookup and the payment return
+	// page read across tenants, explicitly.
+	if tenancyErr := dbrole.FailClosed(svc); tenancyErr != nil {
+		log.WithError(tenancyErr).Fatal("could not enforce tenant isolation")
 	}
 
 	platform, err := clients.New(ctx, &cfg)
@@ -106,12 +119,34 @@ func main() {
 		log.WithError(err).Fatal("could not build peer clients")
 	}
 
-	connectHandler := setupConnectServer(ctx, svc, &cfg, platform)
-	svc.Init(ctx, frame.WithHTTPHandler(connectHandler))
+	connectHandler, deliveries := setupConnectServer(ctx, svc, &cfg, platform)
+	svc.Init(ctx, frame.WithHTTPHandler(connectHandler), frame.WithRegisterEvents(deliveries))
 
 	if runErr := svc.Run(ctx, ""); runErr != nil {
 		log.WithError(runErr).Fatal("could not run Server")
 	}
+}
+
+// moneyGateways adapts the payment-side peers. Typed nils must not reach
+// the business layer as non-nil interfaces.
+func moneyGateways(
+	platform *clients.Platform,
+) (business.CheckoutGateway, business.RefundGateway, business.LedgerGateway) {
+	var (
+		checkout business.CheckoutGateway
+		refunds  business.RefundGateway
+		ledger   business.LedgerGateway
+	)
+	if platform.Checkout != nil {
+		checkout = business.NewConnectCheckoutGateway(platform.Checkout)
+	}
+	if platform.Payment != nil {
+		refunds = business.NewConnectRefundGateway(platform.Payment)
+	}
+	if platform.Ledger != nil {
+		ledger = business.NewConnectLedgerGateway(platform.Ledger)
+	}
+	return checkout, refunds, ledger
 }
 
 // setupConnectServer wires the interceptor chain and the Connect handler.
@@ -120,7 +155,7 @@ func setupConnectServer(
 	svc *frame.Service,
 	cfg *aconfig.CommerceConfig,
 	platform *clients.Platform,
-) http.Handler {
+) (http.Handler, events.EventI) {
 	securityMan := svc.SecurityManager()
 	auth := securityMan.GetAuthorizer(ctx)
 
@@ -145,14 +180,7 @@ func setupConnectServer(
 	// Layer 3: per-shop and per-record checks inside the handlers.
 	authzMiddleware := authz.NewMiddleware(auth)
 
-	var checkout business.CheckoutGateway
-	if platform.Checkout != nil {
-		checkout = business.NewConnectCheckoutGateway(platform.Checkout)
-	}
-	var ledger business.LedgerGateway
-	if platform.Ledger != nil {
-		ledger = business.NewConnectLedgerGateway(platform.Ledger)
-	}
+	checkout, refunds, ledger := moneyGateways(platform)
 
 	// Typed nils must not reach the directory as non-nil interfaces.
 	var (
@@ -175,22 +203,29 @@ func setupConnectServer(
 		util.Log(ctx).WithError(err).Fatal("invalid WEBHOOK_SECRET_KEY")
 	}
 	if !business.Sealing(secrets) {
-		util.Log(ctx).Warn("WEBHOOK_SECRET_KEY not set; shop webhook secrets are stored unencrypted")
+		util.Log(ctx).Warn("WEBHOOK_SECRET_KEY not set; shop webhook secrets are stored unencrypted (local runs only)")
 	}
 
 	implementation := handlers.NewCommerceServer(ctx, svc, authzMiddleware, handlers.Dependencies{
-		Checkout:   checkout,
-		Ledger:     ledger,
-		Currencies: business.NewConnectCurrencyDirectory(settingsCli, devicesCli, profilesCli),
-		Webhooks:   business.NewHTTPWebhookSender(ctx),
-		Secrets:    secrets,
-		Notifier:   notifications.New(platform.Notification),
+		Checkout:     checkout,
+		Refunds:      refunds,
+		Ledger:       ledger,
+		Currencies:   business.NewConnectCurrencyDirectory(settingsCli, devicesCli, profilesCli),
+		Webhooks:     business.NewHTTPWebhookSender(ctx),
+		WebhookQueue: business.NewFrameWebhookQueue(svc.EventsManager),
+		Secrets:      secrets,
+		Notifier:     notifications.New(platform.Notification),
 		PaymentPolicy: business.PaymentPolicy{
 			DefaultReturnURL:   cfg.CheckoutReturnURL,
 			ReturnBaseURL:      cfg.ReturnBaseURL(),
 			PaymentWindow:      cfg.OrderPaymentWindow,
 			SettleGrace:        cfg.PaymentSettleGrace,
 			ReconcileBatchSize: cfg.PaymentReconcileBatchSize,
+			LatePaymentWindow:  cfg.LatePaymentWindow,
+			ReturnHosts: []string{
+				business.ReturnHost(cfg.StorefrontURL()),
+				business.ReturnHost(cfg.CheckoutReturnURL),
+			},
 		},
 		LedgerPolicy: business.LedgerPolicy{
 			BookType: cfg.LedgerBookType,
@@ -198,6 +233,13 @@ func setupConnectServer(
 		},
 		Buyers:            business.NewProfileBuyerDirectory(profilesCli),
 		StorefrontBaseURL: cfg.StorefrontURL(),
+		Storefront: business.StorefrontPolicy{
+			Window:     cfg.StorefrontLimitWindow,
+			PerVisitor: cfg.StorefrontCheckoutsPerVisitor,
+			PerContact: cfg.StorefrontCheckoutsPerContact,
+			PerShop:    cfg.StorefrontCheckoutsPerShop,
+		},
+		GuestUnitsCap: cfg.StorefrontUnpaidUnitsPerShop,
 	})
 
 	server := connect.NewServer(defaultInterceptorList...)
@@ -208,5 +250,5 @@ func setupConnectServer(
 	implementation.MountStorefront(mux)
 	connecthttp.Mount(mux, server)
 
-	return mux
+	return mux, implementation.WebhookDeliveryEvent()
 }

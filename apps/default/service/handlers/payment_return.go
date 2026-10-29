@@ -23,13 +23,13 @@ import (
 	"regexp"
 
 	"connectrpc.com/connect/v2"
-	"github.com/pitabwire/frame/v3/tenancy"
 	"github.com/pitabwire/util"
 
 	commercev1 "github.com/antinvestor/service-commerce/gen/go/commerce/v1"
 
 	"github.com/antinvestor/service-commerce/apps/default/service/business"
 	"github.com/antinvestor/service-commerce/apps/default/service/models"
+	"github.com/antinvestor/service-commerce/pkg/dbrole"
 )
 
 // Payment states reported to the storefront in the redirect.
@@ -37,6 +37,11 @@ const (
 	returnStatePaid      = "paid"
 	returnStatePending   = "pending"
 	returnStateCancelled = "cancelled"
+	// returnStatePartPaid is a confirmed payment that leaves a balance, such
+	// as an instalment deposit.
+	returnStatePartPaid = "part-paid"
+	// returnStateUnpaid is a payment the buyer cancelled or that failed.
+	returnStateUnpaid = "unpaid"
 
 	// pendingRefreshSeconds is how often the status page re-checks an
 	// unconfirmed payment.
@@ -78,17 +83,17 @@ func NewPaymentReturnHandler(payments business.PaymentBusiness) http.Handler {
 		}
 
 		// No caller identity: the lookup is keyed by the unguessable ref.
-		ctx := tenancy.WithSkipEnforcement(r.Context())
+		ctx := dbrole.AcrossTenants(r.Context(), "payment return page")
 		result, err := payments.HandlePaymentReturn(ctx, orderID, sessionRef)
 		if err != nil {
 			renderReturnError(ctx, w, orderID, err)
 			return
 		}
 
-		state := returnState(result.Order)
+		state := returnState(result, sessionRef)
 		if target := storefrontRedirect(result.RedirectURL, result.Order.GetId(), state); target != "" {
 			// The target is the storefront URL commerce itself stored on the
-			// session when the order was checked out, restricted to http(s).
+			// session, on a host commerce trusts.
 			w.Header().Set("Location", target)
 			w.WriteHeader(http.StatusSeeOther)
 			return
@@ -112,25 +117,37 @@ func renderReturnError(ctx context.Context, w http.ResponseWriter, orderID strin
 	})
 }
 
-func returnState(order *commercev1.Order) string {
+func returnState(result *business.PaymentReturn, sessionRef string) string {
+	order := result.Order
 	switch {
 	case order.GetPaymentStatus() == commercev1.PaymentStatus_PAYMENT_STATUS_PAID:
 		return returnStatePaid
 	case order.GetStatus() == commercev1.OrderStatus_ORDER_STATUS_CANCELLED:
 		return returnStateCancelled
-	default:
-		return returnStatePending
 	}
+	// Only this session's own payment counts: an earlier instalment says
+	// nothing about the one the buyer just made.
+	for _, payment := range order.GetPayments() {
+		if payment.GetSource() == commercev1.OrderPaymentSource_ORDER_PAYMENT_SOURCE_CHECKOUT &&
+			payment.GetReference() == sessionRef {
+			return returnStatePartPaid
+		}
+	}
+	if result.Unpaid {
+		return returnStateUnpaid
+	}
+	return returnStatePending
 }
 
-// storefrontRedirect appends the outcome to the storefront URL. Only absolute
-// http(s) targets are followed.
+// storefrontRedirect appends the outcome to the storefront URL. The business
+// layer only passes a destination on a host commerce trusts; anything but an
+// absolute https URL is still refused here.
 func storefrontRedirect(raw, orderID, state string) string {
 	if raw == "" {
 		return ""
 	}
 	u, err := url.Parse(raw)
-	if err != nil || (u.Scheme != "https" && u.Scheme != "http") || u.Host == "" {
+	if err != nil || u.Scheme != "https" || u.Host == "" || u.User != nil {
 		return ""
 	}
 	q := u.Query()
@@ -149,10 +166,21 @@ func statusPage(order *commercev1.Order, state string) returnPage {
 	case returnStatePaid:
 		page.Title = "Payment received"
 		page.Message = "Thank you. Your payment has been received and the shop has been notified."
+	case returnStatePartPaid:
+		page.Title = "Payment received"
+		page.Message = "Thank you. Your payment has been received and the shop has been notified."
+		if balance := order.GetBalance(); balance != nil {
+			page.Message += " " + balance.GetCurrencyCode() + " " +
+				formatCents(balance.GetUnits(), balance.GetNanos()) + " remains to be paid on this order."
+		}
+	case returnStateUnpaid:
+		page.Title = "Payment not completed"
+		page.Message = "Your payment did not go through and nothing was charged. " +
+			"Contact the shop to pay for this order."
 	case returnStateCancelled:
 		page.Title = "Order cancelled"
 		page.Message = "This order was cancelled before payment was confirmed. " +
-			"If you were charged, contact the shop for a refund."
+			"Any payment you made is refunded to you automatically."
 	default:
 		page.Title = "Confirming your payment"
 		page.Message = "We are waiting for your payment to be confirmed. This page updates automatically."

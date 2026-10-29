@@ -19,13 +19,14 @@ import (
 	"testing"
 
 	commonv1 "buf.build/gen/go/antinvestor/common/protocolbuffers/go/common/v1"
-	procurementv1 "buf.build/gen/go/antinvestor/procurement/protocolbuffers/go/v1"
 	"github.com/pitabwire/frame/v3"
 	"github.com/pitabwire/frame/v3/datastore"
 	"github.com/pitabwire/frame/v3/frametests/definition"
 	"github.com/pitabwire/util"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+
+	procurementv1 "github.com/antinvestor/service-commerce/gen/go/procurement/v1"
 
 	"github.com/antinvestor/service-commerce/apps/procurement/service/business"
 	"github.com/antinvestor/service-commerce/apps/procurement/service/repository"
@@ -44,6 +45,8 @@ type allGRBiz struct {
 	supplierBiz business.SupplierBusiness
 	poBiz       business.PurchaseOrderBusiness
 	grBiz       business.GoodsReceiptBusiness
+	stock       *fakeStock
+	materials   *fakeInventory
 }
 
 func (gts *GoodsReceiptTestSuite) getBusiness(ctx context.Context, svc *frame.Service) allGRBiz {
@@ -56,11 +59,15 @@ func (gts *GoodsReceiptTestSuite) getBusiness(ctx context.Context, svc *frame.Se
 	polRepo := repository.NewPurchaseOrderLineRepository(ctx, dbPool, workMan)
 	grRepo := repository.NewGoodsReceiptRepository(ctx, dbPool, workMan)
 	grlRepo := repository.NewGoodsReceiptLineRepository(ctx, dbPool, workMan)
+	stock := newFakeStock()
+	materials := newFakeInventory()
 
 	return allGRBiz{
 		supplierBiz: business.NewSupplierBusiness(ctx, supplierRepo, supplierItemRepo),
-		poBiz:       business.NewPurchaseOrderBusiness(ctx, poRepo, polRepo, supplierItemRepo),
-		grBiz:       business.NewGoodsReceiptBusiness(ctx, grRepo, grlRepo, poRepo, polRepo),
+		poBiz:       business.NewPurchaseOrderBusiness(ctx, poRepo, polRepo, supplierRepo, supplierItemRepo),
+		grBiz:       business.NewGoodsReceiptBusiness(ctx, grRepo, grlRepo, poRepo, stock, materials),
+		stock:       stock,
+		materials:   materials,
 	}
 }
 

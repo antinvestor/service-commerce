@@ -4330,7 +4330,9 @@ type ReceiveStockRequest struct {
 	// other variant or quantity it is refused.
 	Reference string `protobuf:"bytes,3,opt,name=reference,proto3" json:"reference,omitempty"`
 	// The tenant the receipt was recorded in; the variant must belong to it.
-	TenantId      string `protobuf:"bytes,4,opt,name=tenant_id,json=tenantId,proto3" json:"tenant_id,omitempty"`
+	TenantId string `protobuf:"bytes,4,opt,name=tenant_id,json=tenantId,proto3" json:"tenant_id,omitempty"`
+	// The partition the receipt was recorded in; the variant must belong to it.
+	PartitionId   string `protobuf:"bytes,5,opt,name=partition_id,json=partitionId,proto3" json:"partition_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -4388,6 +4390,13 @@ func (x *ReceiveStockRequest) GetTenantId() string {
 	return ""
 }
 
+func (x *ReceiveStockRequest) GetPartitionId() string {
+	if x != nil {
+		return x.PartitionId
+	}
+	return ""
+}
+
 func (x *ReceiveStockRequest) SetVariantId(v string) {
 	x.VariantId = v
 }
@@ -4404,6 +4413,10 @@ func (x *ReceiveStockRequest) SetTenantId(v string) {
 	x.TenantId = v
 }
 
+func (x *ReceiveStockRequest) SetPartitionId(v string) {
+	x.PartitionId = v
+}
+
 type ReceiveStockRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
@@ -4416,6 +4429,8 @@ type ReceiveStockRequest_builder struct {
 	Reference string
 	// The tenant the receipt was recorded in; the variant must belong to it.
 	TenantId string
+	// The partition the receipt was recorded in; the variant must belong to it.
+	PartitionId string
 }
 
 func (b0 ReceiveStockRequest_builder) Build() *ReceiveStockRequest {
@@ -4426,6 +4441,7 @@ func (b0 ReceiveStockRequest_builder) Build() *ReceiveStockRequest {
 	x.Quantity = b.Quantity
 	x.Reference = b.Reference
 	x.TenantId = b.TenantId
+	x.PartitionId = b.PartitionId
 	return m0
 }
 
@@ -13684,13 +13700,14 @@ const file_v1_commerce_proto_rawDesc = "" +
 	"\n" +
 	"product_id\x18\x01 \x01(\tB\x1b\xbaH\x18r\x16\x10\x03\x18(2\x10[0-9a-z_-]{3,40}R\tproductId\"e\n" +
 	"\x1bListProductVariantsResponse\x12F\n" +
-	"\x10product_variants\x18\x01 \x03(\v2\x1b.commerce.v1.ProductVariantR\x0fproductVariants\"\x8b\x01\n" +
+	"\x10product_variants\x18\x01 \x03(\v2\x1b.commerce.v1.ProductVariantR\x0fproductVariants\"\xae\x01\n" +
 	"\x13ReceiveStockRequest\x12\x1d\n" +
 	"\n" +
 	"variant_id\x18\x01 \x01(\tR\tvariantId\x12\x1a\n" +
 	"\bquantity\x18\x02 \x01(\x03R\bquantity\x12\x1c\n" +
 	"\treference\x18\x03 \x01(\tR\treference\x12\x1b\n" +
-	"\ttenant_id\x18\x04 \x01(\tR\btenantId\"Y\n" +
+	"\ttenant_id\x18\x04 \x01(\tR\btenantId\x12!\n" +
+	"\fpartition_id\x18\x05 \x01(\tR\vpartitionId\"Y\n" +
 	"\x14ReceiveStockResponse\x12%\n" +
 	"\x0estock_quantity\x18\x01 \x01(\x03R\rstockQuantity\x12\x1a\n" +
 	"\breplayed\x18\x02 \x01(\bR\breplayed\"d\n" +

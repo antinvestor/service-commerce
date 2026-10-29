@@ -965,6 +965,8 @@ message ReceiveStockRequest {
   string reference = 3;
   // The tenant the receipt was recorded in; the variant must belong to it.
   string tenant_id = 4;
+  // The partition the receipt was recorded in; the variant must belong to it.
+  string partition_id = 5;
 }
 
 message ReceiveStockResponse {

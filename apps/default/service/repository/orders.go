@@ -295,6 +295,7 @@ const (
 	columnStatus            = "status"
 	columnVersion           = "version"
 	columnModifiedAt        = "modified_at"
+	columnSentAt            = "sent_at"
 	columnNextReconcileAt   = "next_reconcile_at"
 	columnReconcileAttempts = "reconcile_attempts"
 	columnPaymentID         = "payment_id"

@@ -1406,6 +1406,7 @@ const ReceiveStockRequest$json = {
     {'1': 'quantity', '3': 2, '4': 1, '5': 3, '10': 'quantity'},
     {'1': 'reference', '3': 3, '4': 1, '5': 9, '10': 'reference'},
     {'1': 'tenant_id', '3': 4, '4': 1, '5': 9, '10': 'tenantId'},
+    {'1': 'partition_id', '3': 5, '4': 1, '5': 9, '10': 'partitionId'},
   ],
 };
 
@@ -1413,7 +1414,8 @@ const ReceiveStockRequest$json = {
 final $typed_data.Uint8List receiveStockRequestDescriptor = $convert.base64Decode(
     'ChNSZWNlaXZlU3RvY2tSZXF1ZXN0Eh0KCnZhcmlhbnRfaWQYASABKAlSCXZhcmlhbnRJZBIaCg'
     'hxdWFudGl0eRgCIAEoA1IIcXVhbnRpdHkSHAoJcmVmZXJlbmNlGAMgASgJUglyZWZlcmVuY2US'
-    'GwoJdGVuYW50X2lkGAQgASgJUgh0ZW5hbnRJZA==');
+    'GwoJdGVuYW50X2lkGAQgASgJUgh0ZW5hbnRJZBIhCgxwYXJ0aXRpb25faWQYBSABKAlSC3Bhcn'
+    'RpdGlvbklk');
 
 @$core.Deprecated('Use receiveStockResponseDescriptor instead')
 const ReceiveStockResponse$json = {

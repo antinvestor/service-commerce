@@ -49,7 +49,7 @@ func newFakeStock() *fakeStock {
 	return &fakeStock{stock: map[string]int64{}, received: map[string]int64{}}
 }
 
-func (f *fakeStock) ReceiveVariantStock(_ context.Context, tenantID, variantID string, qty int64, ref string) error {
+func (f *fakeStock) ReceiveVariantStock(_ context.Context, tenantID, _, variantID string, qty int64, ref string) error {
 	f.calls++
 	if len(f.failNext) > 0 {
 		err := f.failNext[0]
@@ -670,12 +670,16 @@ func TestCommerceStockDestination_ClassifiesErrors(t *testing.T) {
 	} {
 		code, refused := tc.code, tc.refused
 		dest := business.NewCommerceStockDestination(&commerceAnswering{err: connect.NewError(code, "x")})
-		err := dest.ReceiveVariantStock(t.Context(), "t", "v", 1, "r")
+		err := dest.ReceiveVariantStock(t.Context(), "t", "p", "v", 1, "r")
 		require.Error(t, err)
 		require.Equal(t, refused, errors.Is(err, business.ErrDeliveryRefused), code.String())
 	}
 	ok := commerceAnswering{}
-	require.NoError(t, business.NewCommerceStockDestination(&ok).ReceiveVariantStock(t.Context(), "t", "v", 2, "r"))
+	require.NoError(
+		t,
+		business.NewCommerceStockDestination(&ok).ReceiveVariantStock(t.Context(), "t", "p", "v", 2, "r"),
+	)
+	require.Equal(t, "p", ok.got.GetPartitionId())
 	require.Nil(t, business.NewCommerceStockDestination(nil))
 }
 

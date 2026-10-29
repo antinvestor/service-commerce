@@ -38,6 +38,12 @@ var ErrOverReceipt = errors.New("received quantity exceeds remaining ordered qua
 // is not submitted, confirmed or partially received.
 var ErrNotReceivable = errors.New("purchase order is not open for receipts")
 
+// Receipt line delivery columns.
+const (
+	colDeliveryStatus = "delivery_status"
+	colDeliveryNote   = "delivery_note"
+)
+
 // Purchase order, line and delivery statuses mirrored from procurementv1 so
 // the repository needs no API package.
 const (
@@ -277,7 +283,7 @@ func (r *goodsReceiptLineRepository) SettleDelivery(
 	note string,
 	at time.Time,
 ) (bool, error) {
-	updates := map[string]any{"delivery_status": status, "delivery_note": note}
+	updates := map[string]any{colDeliveryStatus: status, colDeliveryNote: note}
 	if status != deliveryStatusPending {
 		updates["delivered_at"] = at
 	}
@@ -295,7 +301,7 @@ func (r *goodsReceiptLineRepository) RecordDeliveryAttempt(ctx context.Context, 
 		Where("id = ? AND delivery_status = ?", lineID, deliveryStatusPending).
 		UpdateColumns(map[string]any{
 			"delivery_attempts": gorm.Expr("delivery_attempts + 1"),
-			"delivery_note":     note,
+			colDeliveryNote:     note,
 		}).Error
 	if err != nil {
 		return fmt.Errorf("record delivery attempt for receipt line %s: %w", lineID, err)
@@ -324,7 +330,7 @@ func (r *goodsReceiptLineRepository) Resolve(
 	result := r.Pool().DB(ctx, false).Model(&models.GoodsReceiptLine{}).
 		Where("id = ? AND delivery_status IN ?", lineID, from).
 		UpdateColumns(map[string]any{
-			"delivery_status": deliveryStatusResolved,
+			colDeliveryStatus: deliveryStatusResolved,
 			"resolved_by":     by,
 			"resolved_at":     at,
 			"resolution_note": note,
@@ -342,8 +348,8 @@ func (r *goodsReceiptLineRepository) Requeue(
 	locationID, note string,
 ) (bool, error) {
 	updates := map[string]any{
-		"delivery_status": deliveryStatusPending,
-		"delivery_note":   note,
+		colDeliveryStatus: deliveryStatusPending,
+		colDeliveryNote:   note,
 		"delivered_at":    nil,
 	}
 	if locationID != "" {

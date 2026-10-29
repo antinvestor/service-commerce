@@ -104,7 +104,7 @@ func (r *orderRepository) ClaimRefund(ctx context.Context, refundID string, at t
 	result := r.Pool().DB(ctx, false).
 		Model(&models.OrderRefund{}).
 		Where("id = ? AND status = ? AND sent_at IS NULL", refundID, models.RefundPending).
-		UpdateColumns(map[string]any{"sent_at": at, columnModifiedAt: at})
+		UpdateColumns(map[string]any{columnSentAt: at, columnModifiedAt: at})
 	if result.Error != nil {
 		return false, fmt.Errorf("claim refund: %w", result.Error)
 	}
@@ -118,7 +118,7 @@ func (r *orderRepository) RetakeRefund(ctx context.Context, refundID string, obs
 	result := r.Pool().DB(ctx, false).
 		Model(&models.OrderRefund{}).
 		Where("id = ? AND status = ? AND payment_id = '' AND sent_at = ?", refundID, models.RefundPending, observed).
-		UpdateColumns(map[string]any{"sent_at": at, columnModifiedAt: at})
+		UpdateColumns(map[string]any{columnSentAt: at, columnModifiedAt: at})
 	if result.Error != nil {
 		return false, fmt.Errorf("retake refund: %w", result.Error)
 	}
@@ -202,7 +202,7 @@ func (r *orderRepository) RequeueRefund(ctx context.Context, refundID, note stri
 		UpdateColumns(map[string]any{
 			columnStatus:     models.RefundPending,
 			"attempt":        gorm.Expr("attempt + 1"),
-			"sent_at":        nil,
+			columnSentAt:     nil,
 			columnPaymentID:  "",
 			columnLastError:  "",
 			"note":           note,

@@ -42,7 +42,13 @@ type StockDestination interface {
 	// ReceiveVariantStock adds quantity to the variant's stock once per
 	// reference. A refusal wraps ErrDeliveryRefused; any other error may
 	// succeed on retry.
-	ReceiveVariantStock(ctx context.Context, tenantID, variantID string, quantity int64, reference string) error
+	// The variant must belong to the receipt's tenant and partition.
+	ReceiveVariantStock(
+		ctx context.Context,
+		tenantID, partitionID, variantID string,
+		quantity int64,
+		reference string,
+	) error
 }
 
 // CommerceStockClient is the slice of the commerce API deliveries use.
@@ -66,15 +72,16 @@ type commerceStock struct {
 
 func (c *commerceStock) ReceiveVariantStock(
 	ctx context.Context,
-	tenantID, variantID string,
+	tenantID, partitionID, variantID string,
 	quantity int64,
 	reference string,
 ) error {
 	_, err := c.cli.ReceiveStock(ctx, commercev1.ReceiveStockRequest_builder{
-		VariantId: variantID,
-		Quantity:  quantity,
-		Reference: reference,
-		TenantId:  tenantID,
+		VariantId:   variantID,
+		Quantity:    quantity,
+		Reference:   reference,
+		TenantId:    tenantID,
+		PartitionId: partitionID,
 	}.Build())
 	if err == nil {
 		return nil
@@ -221,8 +228,14 @@ func (grb *goodsReceiptBusiness) deliverLine(ctx context.Context, line *models.G
 	case grb.stock == nil:
 		return wait("commerce is not configured")
 	default:
-		err = grb.stock.ReceiveVariantStock(ctx, line.TenantID, line.ProductVariantID, quantity.Units(),
-			stockReference(line))
+		err = grb.stock.ReceiveVariantStock(
+			ctx,
+			line.TenantID,
+			line.PartitionID,
+			line.ProductVariantID,
+			quantity.Units(),
+			stockReference(line),
+		)
 	}
 	switch {
 	case err == nil:

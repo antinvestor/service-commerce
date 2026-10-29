@@ -31,7 +31,7 @@ import (
 )
 
 // A procurement receipt line raises a variant's stock once, however often it
-// is delivered, and only within the tenant it was recorded in.
+// is delivered, and only within the tenancy it was recorded in.
 func (bts *BusinessTestSuite) TestReceiveStock_OncePerReferenceWithinTenant() {
 	t := bts.T()
 
@@ -54,10 +54,14 @@ func (bts *BusinessTestSuite) TestReceiveStock_OncePerReferenceWithinTenant() {
 		}).ClaimsToContext(ctx)
 		procurement = dbrole.AcrossTenants(procurement, "test")
 
-		receive := func(variantID, tenantID, reference string, quantity int64) (*commercev1.ReceiveStockResponse, error) {
+		receiveIn := func(variantID, tenantID, partitionID, reference string, quantity int64) (*commercev1.ReceiveStockResponse, error) {
 			return receipts.ReceiveStock(procurement, &commercev1.ReceiveStockRequest{
-				VariantId: variantID, TenantId: tenantID, Reference: reference, Quantity: quantity,
+				VariantId: variantID, TenantId: tenantID, PartitionId: partitionID,
+				Reference: reference, Quantity: quantity,
 			})
+		}
+		receive := func(variantID, tenantID, reference string, quantity int64) (*commercev1.ReceiveStockResponse, error) {
+			return receiveIn(variantID, tenantID, "partition-a", reference, quantity)
 		}
 
 		first, err := receive(variant.GetId(), "tenant-a", "procurement:grl:line-1", 12)
@@ -78,6 +82,10 @@ func (bts *BusinessTestSuite) TestReceiveStock_OncePerReferenceWithinTenant() {
 
 		// Another tenant's receipt cannot reach this variant.
 		_, err = receive(variant.GetId(), "tenant-b", "procurement:grl:line-2", 3)
+		require.Equal(t, connect.CodeNotFound, connect.CodeOf(err))
+
+		// Nor can a receipt from another partition of the same tenant.
+		_, err = receiveIn(variant.GetId(), "tenant-a", "partition-b", "procurement:grl:line-5", 3)
 		require.Equal(t, connect.CodeNotFound, connect.CodeOf(err))
 
 		_, err = receive(variant.GetId(), "tenant-a", "procurement:grl:line-3", 0)

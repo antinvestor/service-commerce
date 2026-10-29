@@ -37,7 +37,7 @@ const maxStockReferenceLength = 255
 type StockReceiptBusiness interface {
 	// ReceiveStock adds req.quantity to the variant's stock unless
 	// req.reference was already received, in which case it changes nothing.
-	// The variant must belong to req.tenant_id. ctx must be able to read the
+	// The variant must belong to req.tenant_id and req.partition_id. ctx must be able to read the
 	// variant's tenant (the handler reads across tenants for the internal
 	// caller).
 	ReceiveStock(ctx context.Context, req *commercev1.ReceiveStockRequest) (*commercev1.ReceiveStockResponse, error)
@@ -64,8 +64,8 @@ func (b *stockReceiptBusiness) ReceiveStock(
 	switch {
 	case req.GetVariantId() == "":
 		return nil, connect.NewError(connect.CodeInvalidArgument, "variant_id is required")
-	case req.GetTenantId() == "":
-		return nil, connect.NewError(connect.CodeInvalidArgument, "tenant_id is required")
+	case req.GetTenantId() == "" || req.GetPartitionId() == "":
+		return nil, connect.NewError(connect.CodeInvalidArgument, "tenant_id and partition_id are required")
 	case req.GetQuantity() <= 0:
 		return nil, connect.NewError(connect.CodeInvalidArgument, "quantity must be positive")
 	case reference == "" || len(reference) > maxStockReferenceLength:
@@ -79,8 +79,8 @@ func (b *stockReceiptBusiness) ReceiveStock(
 		}
 		return nil, data.ErrorConvertToAPI(err)
 	}
-	// Another tenant's variant is reported exactly as a missing one.
-	if variant.TenantID != req.GetTenantId() {
+	// Another tenancy's variant is reported exactly as a missing one.
+	if variant.TenantID != req.GetTenantId() || variant.PartitionID != req.GetPartitionId() {
 		return nil, connect.NewError(connect.CodeNotFound, "product variant not found")
 	}
 

@@ -2792,12 +2792,14 @@ class ReceiveStockRequest extends $pb.GeneratedMessage {
     $fixnum.Int64? quantity,
     $core.String? reference,
     $core.String? tenantId,
+    $core.String? partitionId,
   }) {
     final result = ReceiveStockRequest._();
     if (variantId != null) result.variantId = variantId;
     if (quantity != null) result.quantity = quantity;
     if (reference != null) result.reference = reference;
     if (tenantId != null) result.tenantId = tenantId;
+    if (partitionId != null) result.partitionId = partitionId;
     return result;
   }
 
@@ -2818,6 +2820,7 @@ class ReceiveStockRequest extends $pb.GeneratedMessage {
     ..aInt64(2, _omitFieldNames ? '' : 'quantity')
     ..aOS(3, _omitFieldNames ? '' : 'reference')
     ..aOS(4, _omitFieldNames ? '' : 'tenantId')
+    ..aOS(5, _omitFieldNames ? '' : 'partitionId')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -2883,6 +2886,16 @@ class ReceiveStockRequest extends $pb.GeneratedMessage {
   $core.bool hasTenantId() => $_has(3);
   @$pb.TagNumber(4)
   void clearTenantId() => $_clearField(4);
+
+  /// The partition the receipt was recorded in; the variant must belong to it.
+  @$pb.TagNumber(5)
+  $core.String get partitionId => $_getSZ(4);
+  @$pb.TagNumber(5)
+  set partitionId($core.String value) => $_setString(4, value);
+  @$pb.TagNumber(5)
+  $core.bool hasPartitionId() => $_has(4);
+  @$pb.TagNumber(5)
+  void clearPartitionId() => $_clearField(5);
 }
 
 class ReceiveStockResponse extends $pb.GeneratedMessage {

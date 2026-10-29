@@ -2,7 +2,7 @@ module github.com/antinvestor/service-commerce
 
 go 1.26.7
 
-toolchain go1.26.9
+toolchain go1.26.10
 
 require (
 	buf.build/gen/go/antinvestor/common/protocolbuffers/go v1.36.12-20260509050709-3f270876dbf3.2
